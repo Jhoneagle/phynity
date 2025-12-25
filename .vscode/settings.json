@@ -1,0 +1,14 @@
+{
+  "cmake.configureOnOpen": true,
+  "cmake.configurePreset": "debug",
+  "cmake.buildPreset": "debug",
+  "cmake.testPreset": "debug",
+  "cmake.statusbar.advanced": {
+    "buildTarget": {
+      "visibility": "visible"
+    },
+    "configurePreset": {
+      "visibility": "visible"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 {
-"name": "physics-engine",
-"version": "0.1.0",
-"dependencies": []
+	"name": "phynity",
+	"version-string": "0.1.0",
+	"dependencies": []
 }

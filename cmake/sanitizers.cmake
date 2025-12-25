@@ -1,0 +1,26 @@
+function(phynity_apply_sanitizers target)
+	if(NOT PHYNITY_ENABLE_SANITIZERS)
+		return()
+	endif()
+
+	get_target_property(_type ${target} TYPE)
+	if(_type STREQUAL "INTERFACE_LIBRARY")
+		set(_scope INTERFACE)
+	else()
+		set(_scope PUBLIC)
+	endif()
+
+	# Skip sanitizers on MSVC and MinGW, unless explicitly supported by toolchain.
+	if(MSVC)
+		message(STATUS "[sanitizers] Skipping for ${target}: MSVC support is limited")
+		return()
+	endif()
+	if(MINGW)
+		message(STATUS "[sanitizers] Skipping for ${target}: MinGW ASAN/UBSAN not available")
+		return()
+	endif()
+
+	set(_san_flags -fsanitize=address -fsanitize=undefined)
+	target_compile_options(${target} ${_scope} ${_san_flags} -fno-omit-frame-pointer)
+	target_link_options(${target} ${_scope} ${_san_flags})
+endfunction()

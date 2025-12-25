@@ -1,0 +1,111 @@
+{
+	"version": 5,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 27,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": "base",
+			"hidden": true,
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/build/${presetName}",
+			"cacheVariables": {
+				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+				"CMAKE_CXX_STANDARD": "20",
+				"PHYNITY_ENABLE_WARNINGS": "ON"
+			}
+		},
+		{
+			"name": "debug",
+			"displayName": "Debug (sanitizers on clang/gcc)",
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"PHYNITY_ENABLE_SANITIZERS": "OFF",
+				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+			}
+		},
+		{
+			"name": "release",
+			"displayName": "Release (no LTO)",
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release",
+				"PHYNITY_ENABLE_LTO": "OFF",
+				"PHYNITY_ENABLE_SANITIZERS": "OFF",
+				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+			}
+		},
+		{
+			"name": "debug-asan",
+			"displayName": "Debug with sanitizers (requires supported toolchain)",
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"PHYNITY_ENABLE_SANITIZERS": "ON",
+				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+			}
+		},
+		{
+			"name": "release-lto",
+			"displayName": "Release with LTO (requires lto1 tooling)",
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release",
+				"PHYNITY_ENABLE_LTO": "ON",
+				"PHYNITY_ENABLE_SANITIZERS": "OFF",
+				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+			}
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "debug",
+			"configurePreset": "debug"
+		},
+		{
+			"name": "release",
+			"configurePreset": "release"
+		},
+		{
+			"name": "debug-asan",
+			"configurePreset": "debug-asan"
+		},
+		{
+			"name": "release-lto",
+			"configurePreset": "release-lto"
+		}
+	],
+	"testPresets": [
+		{
+			"name": "debug",
+			"configurePreset": "debug",
+			"output": {
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "release",
+			"configurePreset": "release",
+			"output": {
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "debug-asan",
+			"configurePreset": "debug-asan",
+			"output": {
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "release-lto",
+			"configurePreset": "release-lto",
+			"output": {
+				"outputOnFailure": true
+			}
+		}
+	]
+}
