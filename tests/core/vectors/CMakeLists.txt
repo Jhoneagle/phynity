@@ -1,0 +1,36 @@
+# Vector tests
+
+add_executable(vec2_test vec2_test.cpp)
+phynity_target_defaults(vec2_test)
+phynity_apply_warnings(vec2_test)
+phynity_apply_sanitizers(vec2_test)
+target_link_libraries(vec2_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.vectors.vec2 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:vec2_test>)
+
+add_executable(vec3_test vec3_test.cpp)
+phynity_target_defaults(vec3_test)
+phynity_apply_warnings(vec3_test)
+phynity_apply_sanitizers(vec3_test)
+target_link_libraries(vec3_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.vectors.vec3 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:vec3_test>)
+
+add_executable(vec4_test vec4_test.cpp)
+phynity_target_defaults(vec4_test)
+phynity_apply_warnings(vec4_test)
+phynity_apply_sanitizers(vec4_test)
+target_link_libraries(vec4_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.vectors.vec4 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:vec4_test>)
+
+add_executable(vec_n_test vec_n_test.cpp)
+phynity_target_defaults(vec_n_test)
+phynity_apply_warnings(vec_n_test)
+phynity_apply_sanitizers(vec_n_test)
+target_link_libraries(vec_n_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.vectors.vec_n COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:vec_n_test>)
+
+add_executable(vec_dynamic_test vec_dynamic_test.cpp)
+phynity_target_defaults(vec_dynamic_test)
+phynity_apply_warnings(vec_dynamic_test)
+phynity_apply_sanitizers(vec_dynamic_test)
+target_link_libraries(vec_dynamic_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.vectors.vec_dynamic COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:vec_dynamic_test>)

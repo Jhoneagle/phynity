@@ -55,5 +55,4 @@ build
 vcpkg_installed
 
 # Temp
-AI-conversation-txt
 log.txt

@@ -2,6 +2,8 @@ if(NOT BUILD_TESTING)
 	return()
 endif()
 
+find_package(Catch2 REQUIRED CONFIG)
+
 add_library(phynity_tests INTERFACE)
 add_library(phynity::tests ALIAS phynity_tests)
 

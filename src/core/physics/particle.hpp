@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/math/vec3.hpp>
+#include <core/math/vectors/vec3.hpp>
 
 namespace phynity::physics {
 

@@ -11,10 +11,12 @@
 			"hidden": true,
 			"generator": "Ninja",
 			"binaryDir": "${sourceDir}/build/${presetName}",
+			"toolchainFile": "${sourceDir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
 			"cacheVariables": {
 				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
 				"CMAKE_CXX_STANDARD": "20",
-				"PHYNITY_ENABLE_WARNINGS": "ON"
+				"PHYNITY_ENABLE_WARNINGS": "ON",
+				"VCPKG_TARGET_TRIPLET": "x64-mingw-static"
 			}
 		},
 		{
