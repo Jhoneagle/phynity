@@ -2,6 +2,7 @@
 
 add_subdirectory(vectors)
 add_subdirectory(matrices)
+add_subdirectory(quaternions)
 
 add_executable(particle_test particle_test.cpp)
 phynity_target_defaults(particle_test)
