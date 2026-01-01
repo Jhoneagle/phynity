@@ -6,7 +6,7 @@ This module contains matrix implementations for linear transformations and 3D gr
 
 - **mat2.hpp** - Specialized 2×2 matrix for 2D transformations
 - **mat3.hpp** - Specialized 3×3 matrix for 2D homogeneous coordinates and 3D rotations
-- **mat4.hpp** - Specialized 4×4 matrix for 3D transformations (coming soon)
+- **mat4.hpp** - Specialized 4×4 matrix for 3D transformations (the most commonly used)
 - **mat_n.hpp** - Template-based MxN matrices for general linear algebra (coming soon)
 - **mat_dynamic.hpp** - Runtime-sized matrices (coming soon)
 
@@ -59,5 +59,5 @@ using phynity::math::matrices::Mat4;
 
 - **Mat2:** ✓ Implemented
 - **Mat3:** ✓ Implemented
-- **Mat4:** Coming next
+- **Mat4:** ✓ Implemented
 - **Linear algebra operations:** Planned for Phase 3
