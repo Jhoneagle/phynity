@@ -53,6 +53,12 @@ struct Vec2 {
         return *this;
     }
 
+    Vec2& operator*=(const Vec2& other) {
+        x *= other.x;
+        y *= other.y;
+        return *this;
+    }
+
     Vec2& operator-=(const Vec2& other) {
         x -= other.x;
         y -= other.y;
@@ -62,6 +68,12 @@ struct Vec2 {
     Vec2& operator/=(float scalar) {
         x /= scalar;
         y /= scalar;
+        return *this;
+    }
+
+    Vec2& operator/=(const Vec2& other) {
+        x /= other.x;
+        y /= other.y;
         return *this;
     }
 
@@ -100,6 +112,14 @@ struct Vec2 {
     Vec2 normalized() const {
         float len = length();
         return len > 0.0f ? *this / len : Vec2(0.0f);
+    }
+
+    Vec2& normalize() {
+        float len = length();
+        if (len > 0.0f) {
+            *this /= len;
+        }
+        return *this;
     }
 
     float distance(const Vec2& other) const {
@@ -175,6 +195,14 @@ struct Vec2 {
     bool isNormalized() const {
         float lenSq = squaredLength();
         return std::abs(lenSq - 1.0f) < 1e-5f;
+    }
+
+    bool approxEqual(const Vec2& other, float epsilon = 1e-5f) const {
+        return std::abs(x - other.x) < epsilon && std::abs(y - other.y) < epsilon;
+    }
+
+    Vec2 abs() const {
+        return Vec2(std::abs(x), std::abs(y));
     }
 
     // Static utility vectors

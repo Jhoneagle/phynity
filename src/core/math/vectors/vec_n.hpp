@@ -91,9 +91,23 @@ struct VecN {
         return *this;
     }
 
+    VecN& operator*=(const VecN& other) {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] *= other.data[i];
+        }
+        return *this;
+    }
+
     VecN& operator/=(float scalar) {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] /= scalar;
+        }
+        return *this;
+    }
+
+    VecN& operator/=(const VecN& other) {
+        for (std::size_t i = 0; i < N; ++i) {
+            data[i] /= other.data[i];
         }
         return *this;
     }
@@ -144,6 +158,14 @@ struct VecN {
     VecN normalized() const {
         float len = length();
         return len > 0.0f ? *this / len : VecN(0.0f);
+    }
+
+    VecN& normalize() {
+        float len = length();
+        if (len > 0.0f) {
+            *this /= len;
+        }
+        return *this;
     }
 
     float distance(const VecN& other) const {
@@ -218,6 +240,21 @@ struct VecN {
     bool isNormalized() const {
         float lenSq = squaredLength();
         return std::abs(lenSq - 1.0f) < 1e-5f;
+    }
+
+    bool approxEqual(const VecN& other, float epsilon = 1e-5f) const {
+        for (std::size_t i = 0; i < N; ++i) {
+            if (std::abs(data[i] - other.data[i]) >= epsilon) return false;
+        }
+        return true;
+    }
+
+    VecN abs() const {
+        VecN result;
+        for (std::size_t i = 0; i < N; ++i) {
+            result.data[i] = std::abs(data[i]);
+        }
+        return result;
     }
 
     // Get size

@@ -59,6 +59,14 @@ struct Vec4 {
         return *this;
     }
 
+    Vec4& operator*=(const Vec4& other) {
+        x *= other.x;
+        y *= other.y;
+        z *= other.z;
+        w *= other.w;
+        return *this;
+    }
+
     Vec4& operator-=(const Vec4& other) {
         x -= other.x;
         y -= other.y;
@@ -72,6 +80,14 @@ struct Vec4 {
         y /= scalar;
         z /= scalar;
         w /= scalar;
+        return *this;
+    }
+
+    Vec4& operator/=(const Vec4& other) {
+        x /= other.x;
+        y /= other.y;
+        z /= other.z;
+        w /= other.w;
         return *this;
     }
 
@@ -110,6 +126,14 @@ struct Vec4 {
     Vec4 normalized() const {
         float len = length();
         return len > 0.0f ? *this / len : Vec4(0.0f);
+    }
+
+    Vec4& normalize() {
+        float len = length();
+        if (len > 0.0f) {
+            *this /= len;
+        }
+        return *this;
     }
 
     float distance(const Vec4& other) const {
@@ -185,9 +209,24 @@ struct Vec4 {
         return std::abs(lenSq - 1.0f) < 1e-5f;
     }
 
+    bool approxEqual(const Vec4& other, float epsilon = 1e-5f) const {
+        return std::abs(x - other.x) < epsilon && 
+               std::abs(y - other.y) < epsilon && 
+               std::abs(z - other.z) < epsilon && 
+               std::abs(w - other.w) < epsilon;
+    }
+
+    Vec4 abs() const {
+        return Vec4(std::abs(x), std::abs(y), std::abs(z), std::abs(w));
+    }
+
     // Static utility vectors
     static Vec4 zero() { return Vec4(0.0f, 0.0f, 0.0f, 0.0f); }
     static Vec4 one() { return Vec4(1.0f, 1.0f, 1.0f, 1.0f); }
+    static Vec4 unitX() { return Vec4(1.0f, 0.0f, 0.0f, 0.0f); }
+    static Vec4 unitY() { return Vec4(0.0f, 1.0f, 0.0f, 0.0f); }
+    static Vec4 unitZ() { return Vec4(0.0f, 0.0f, 1.0f, 0.0f); }
+    static Vec4 unitW() { return Vec4(0.0f, 0.0f, 0.0f, 1.0f); }
 };
 
 inline Vec4 operator*(float scalar, const Vec4& v) {

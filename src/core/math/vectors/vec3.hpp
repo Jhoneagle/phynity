@@ -56,6 +56,13 @@ struct Vec3 {
         return *this;
     }
 
+    Vec3& operator*=(const Vec3& other) {
+        x *= other.x;
+        y *= other.y;
+        z *= other.z;
+        return *this;
+    }
+
     Vec3& operator-=(const Vec3& other) {
         x -= other.x;
         y -= other.y;
@@ -67,6 +74,13 @@ struct Vec3 {
         x /= scalar;
         y /= scalar;
         z /= scalar;
+        return *this;
+    }
+
+    Vec3& operator/=(const Vec3& other) {
+        x /= other.x;
+        y /= other.y;
+        z /= other.z;
         return *this;
     }
 
@@ -105,6 +119,14 @@ struct Vec3 {
     Vec3 normalized() const {
         float len = length();
         return len > 0.0f ? *this / len : Vec3(0.0f);
+    }
+
+    Vec3& normalize() {
+        float len = length();
+        if (len > 0.0f) {
+            *this /= len;
+        }
+        return *this;
     }
 
     Vec3 cross(const Vec3& other) const {
@@ -193,6 +215,16 @@ struct Vec3 {
     bool isNormalized() const {
         float lenSq = squaredLength();
         return std::abs(lenSq - 1.0f) < 1e-5f;
+    }
+
+    bool approxEqual(const Vec3& other, float epsilon = 1e-5f) const {
+        return std::abs(x - other.x) < epsilon && 
+               std::abs(y - other.y) < epsilon && 
+               std::abs(z - other.z) < epsilon;
+    }
+
+    Vec3 abs() const {
+        return Vec3(std::abs(x), std::abs(y), std::abs(z));
     }
 
     // Static utility vectors

@@ -127,9 +127,25 @@ public:
         return *this;
     }
 
+    VecDynamic& operator*=(const VecDynamic& other) {
+        if (size() != other.size()) throw std::invalid_argument("Vector sizes do not match");
+        for (std::size_t i = 0; i < size(); ++i) {
+            data[i] *= other.data[i];
+        }
+        return *this;
+    }
+
     VecDynamic& operator/=(float scalar) {
         for (std::size_t i = 0; i < size(); ++i) {
             data[i] /= scalar;
+        }
+        return *this;
+    }
+
+    VecDynamic& operator/=(const VecDynamic& other) {
+        if (size() != other.size()) throw std::invalid_argument("Vector sizes do not match");
+        for (std::size_t i = 0; i < size(); ++i) {
+            data[i] /= other.data[i];
         }
         return *this;
     }
@@ -175,6 +191,14 @@ public:
     VecDynamic normalized() const {
         float len = length();
         return len > 0.0f ? *this / len : VecDynamic(size(), 0.0f);
+    }
+
+    VecDynamic& normalize() {
+        float len = length();
+        if (len > 0.0f) {
+            *this /= len;
+        }
+        return *this;
     }
 
     float distance(const VecDynamic& other) const {
@@ -251,6 +275,22 @@ public:
     bool isNormalized() const {
         float lenSq = squaredLength();
         return std::abs(lenSq - 1.0f) < 1e-5f;
+    }
+
+    bool approxEqual(const VecDynamic& other, float epsilon = 1e-5f) const {
+        if (size() != other.size()) return false;
+        for (std::size_t i = 0; i < size(); ++i) {
+            if (std::abs(data[i] - other.data[i]) >= epsilon) return false;
+        }
+        return true;
+    }
+
+    VecDynamic abs() const {
+        VecDynamic result(size());
+        for (std::size_t i = 0; i < size(); ++i) {
+            result.data[i] = std::abs(data[i]);
+        }
+        return result;
     }
 
     // Resize

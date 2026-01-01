@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <cmath>
+#include <sstream>
 
 using phynity::math::vectors::Vec3;
 using Catch::Matchers::WithinAbs;
@@ -147,6 +148,20 @@ TEST_CASE("Vec3: Assignment operators", "[Vec3][assignment]") {
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(1.5f, 1e-6f));
     }
+
+    SECTION("Component-wise multiplication assignment") {
+        v *= Vec3(2.0f, 3.0f, 4.0f);
+        REQUIRE_THAT(v.x, WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(v.y, WithinAbs(6.0f, 1e-6f));
+        REQUIRE_THAT(v.z, WithinAbs(12.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division assignment") {
+        v /= Vec3(2.0f, 2.0f, 3.0f);
+        REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
+        REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(v.z, WithinAbs(1.0f, 1e-6f));
+    }
 }
 
 // ============================================================================
@@ -231,6 +246,12 @@ TEST_CASE("Vec3: Normalization", "[Vec3][normalization]") {
         REQUIRE_THAT(n.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(n.y, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(n.z, WithinAbs(0.0f, 1e-6f));
+    }
+
+    SECTION("In-place normalize") {
+        Vec3 v(2.0f, 3.0f, 6.0f);
+        v.normalize();
+        REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-5f));
     }
 }
 
@@ -418,6 +439,36 @@ TEST_CASE("Vec3: Projection", "[Vec3][project]") {
 }
 
 // ============================================================================
+// Perpendicular
+// ============================================================================
+
+TEST_CASE("Vec3: Perpendicular vector generation", "[Vec3][perpendicular]") {
+    SECTION("Perpendicular is orthogonal") {
+        Vec3 v(1.0f, 2.0f, 3.0f);
+        Vec3 perp = v.perpendicular();
+        REQUIRE_THAT(v.dot(perp), WithinAbs(0.0f, 1e-5f));
+    }
+
+    SECTION("Perpendicular is normalized") {
+        Vec3 v(3.0f, 4.0f, 5.0f);
+        Vec3 perp = v.perpendicular();
+        REQUIRE_THAT(perp.length(), WithinAbs(1.0f, 1e-5f));
+    }
+
+    SECTION("Perpendicular to X-axis") {
+        Vec3 x(1.0f, 0.0f, 0.0f);
+        Vec3 perp = x.perpendicular();
+        REQUIRE_THAT(x.dot(perp), WithinAbs(0.0f, 1e-6f));
+    }
+
+    SECTION("Perpendicular to Y-axis") {
+        Vec3 y(0.0f, 1.0f, 0.0f);
+        Vec3 perp = y.perpendicular();
+        REQUIRE_THAT(y.dot(perp), WithinAbs(0.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
 // Reflection
 // ============================================================================
 
@@ -469,6 +520,54 @@ TEST_CASE("Vec3: Query functions", "[Vec3][query]") {
         REQUIRE(Vec3(1.0f, 0.0f, 0.0f).isNormalized());
         REQUIRE(!Vec3(2.0f, 0.0f, 0.0f).isNormalized());
     }
+
+    SECTION("approxEqual") {
+        Vec3 a(1.0f, 2.0f, 3.0f);
+        Vec3 b(1.00001f, 2.00001f, 3.00001f);
+        Vec3 c(1.1f, 2.0f, 3.0f);
+        REQUIRE(a.approxEqual(b, 1e-4f));
+        REQUIRE(!a.approxEqual(c, 1e-4f));
+    }
+
+    SECTION("abs") {
+        Vec3 v(-3.0f, 4.0f, -5.0f);
+        Vec3 result = v.abs();
+        REQUIRE_THAT(result.x, WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
+        REQUIRE_THAT(result.z, WithinAbs(5.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// Edge Cases
+// ============================================================================
+
+TEST_CASE("Vec3: Edge cases", "[Vec3][edge]") {
+    SECTION("Division by zero scalar") {
+        Vec3 v(1.0f, 2.0f, 3.0f);
+        Vec3 result = v / 0.0f;
+        REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
+    }
+
+    SECTION("Normalization of very small vector") {
+        Vec3 v(1e-20f, 1e-20f, 1e-20f);
+        Vec3 n = v.normalized();
+        REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
+    }
+
+    SECTION("Cross product of parallel vectors") {
+        Vec3 a(1.0f, 2.0f, 3.0f);
+        Vec3 b(2.0f, 4.0f, 6.0f);
+        Vec3 cross = a.cross(b);
+        REQUIRE_THAT(cross.length(), WithinAbs(0.0f, 1e-4f));
+    }
+
+    SECTION("Angle between zero vectors") {
+        Vec3 a(0.0f, 0.0f, 0.0f);
+        Vec3 b(1.0f, 0.0f, 0.0f);
+        float angle = a.angle(b);
+        REQUIRE_THAT(angle, WithinAbs(0.0f, 1e-6f));
+    }
 }
 
 // ============================================================================
@@ -484,4 +583,11 @@ TEST_CASE("Vec3: Static utility vectors", "[Vec3][static]") {
     REQUIRE(Vec3::left() == Vec3(-1.0f, 0.0f, 0.0f));
     REQUIRE(Vec3::forward() == Vec3(0.0f, 0.0f, 1.0f));
     REQUIRE(Vec3::back() == Vec3(0.0f, 0.0f, -1.0f));
+}
+
+TEST_CASE("Vec3: Stream output", "[Vec3][stream]") {
+    Vec3 v(1.5f, 2.5f, 3.5f);
+    std::ostringstream oss;
+    oss << v;
+    REQUIRE(oss.str() == "(1.5, 2.5, 3.5)");
 }

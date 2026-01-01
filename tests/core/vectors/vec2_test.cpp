@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec2.hpp>
 #include <cmath>
+#include <sstream>
 
 using phynity::math::vectors::Vec2;
 using Catch::Matchers::WithinAbs;
@@ -132,6 +133,18 @@ TEST_CASE("Vec2: Assignment operators", "[Vec2][assignment]") {
         REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
     }
+
+    SECTION("Component-wise multiplication assignment") {
+        v *= Vec2(2.0f, 3.0f);
+        REQUIRE_THAT(v.x, WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(v.y, WithinAbs(6.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division assignment") {
+        v /= Vec2(2.0f, 2.0f);
+        REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
+        REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
+    }
 }
 
 // ============================================================================
@@ -211,6 +224,12 @@ TEST_CASE("Vec2: Normalization", "[Vec2][normalization]") {
         Vec2 n = v.normalized();
         REQUIRE_THAT(n.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(n.y, WithinAbs(0.0f, 1e-6f));
+    }
+
+    SECTION("In-place normalize") {
+        Vec2 v(3.0f, 4.0f);
+        v.normalize();
+        REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-5f));
     }
 }
 
@@ -459,6 +478,55 @@ TEST_CASE("Vec2: Query functions", "[Vec2][query]") {
         REQUIRE(Vec2(0.0f, 1.0f).isNormalized());
         REQUIRE(!Vec2(2.0f, 0.0f).isNormalized());
     }
+
+    SECTION("approxEqual") {
+        Vec2 a(1.0f, 2.0f);
+        Vec2 b(1.00001f, 2.00001f);
+        Vec2 c(1.1f, 2.0f);
+        REQUIRE(a.approxEqual(b, 1e-4f));
+        REQUIRE(!a.approxEqual(c, 1e-4f));
+    }
+
+    SECTION("abs") {
+        Vec2 v(-3.0f, 4.0f);
+        Vec2 result = v.abs();
+        REQUIRE_THAT(result.x, WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// Edge Cases
+// ============================================================================
+
+TEST_CASE("Vec2: Edge cases", "[Vec2][edge]") {
+    SECTION("Division by zero scalar") {
+        Vec2 v(1.0f, 2.0f);
+        Vec2 result = v / 0.0f;
+        // Result should be infinity or NaN, just verify it doesn't crash
+        REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
+    }
+
+    SECTION("Normalization of very small vector") {
+        Vec2 v(1e-20f, 1e-20f);
+        Vec2 n = v.normalized();
+        // Normalized vector should still have length 1 (or handle underflow gracefully)
+        // With very small inputs, normalized() still produces a unit vector
+        REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
+    }
+
+    SECTION("Operations on very large numbers") {
+        Vec2 v(1e20f, 1e20f);
+        float len = v.length();
+        REQUIRE(len > 1e20f);
+    }
+
+    SECTION("Component-wise division by zero vector") {
+        Vec2 a(1.0f, 2.0f);
+        Vec2 b(0.0f, 0.0f);
+        Vec2 result = a / b;
+        REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
+    }
 }
 
 // ============================================================================
@@ -472,4 +540,11 @@ TEST_CASE("Vec2: Static utility vectors", "[Vec2][static]") {
     REQUIRE(Vec2::down() == Vec2(0.0f, -1.0f));
     REQUIRE(Vec2::right() == Vec2(1.0f, 0.0f));
     REQUIRE(Vec2::left() == Vec2(-1.0f, 0.0f));
+}
+
+TEST_CASE("Vec2: Stream output", "[Vec2][stream]") {
+    Vec2 v(1.5f, 2.5f);
+    std::ostringstream oss;
+    oss << v;
+    REQUIRE(oss.str() == "(1.5, 2.5)");
 }
