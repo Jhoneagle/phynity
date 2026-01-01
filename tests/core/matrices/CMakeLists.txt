@@ -1,0 +1,8 @@
+# Matrix tests
+
+add_executable(mat2_test mat2_test.cpp)
+phynity_target_defaults(mat2_test)
+phynity_apply_warnings(mat2_test)
+phynity_apply_sanitizers(mat2_test)
+target_link_libraries(mat2_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.matrices.mat2 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat2_test>)
