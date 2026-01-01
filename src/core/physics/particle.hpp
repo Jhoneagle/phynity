@@ -4,7 +4,7 @@
 
 namespace phynity::physics {
 
-using namespace phynity::math;
+using namespace phynity::math::vectors;
 
 /// Represents a single particle in the simulation.
 struct Particle {

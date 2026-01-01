@@ -7,6 +7,8 @@
 
 namespace phynity::math::matrices {
 
+using phynity::math::vectors::Vec2;
+
 /// 2×2 floating-point matrix for 2D transformations.
 /// Storage is in row-major order: m[row][col]
 struct Mat2 {

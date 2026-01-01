@@ -44,6 +44,16 @@ Runtime-sized vector using `std::vector<float>`.
 
 **Note:** Includes bounds checking via `at()` and throws exceptions on size mismatches.
 
+## Namespace
+
+All vectors are in the nested namespace `phynity::math::vectors`.
+
+```cpp
+using phynity::math::vectors::Vec2;
+using phynity::math::vectors::Vec3;
+using phynity::math::vectors::Vec4;
+```
+
 ## Performance Considerations
 
 - **Vec2/Vec3/Vec4:** Best for performance-critical code (physics, rendering)

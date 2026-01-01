@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <array>
 
-namespace phynity::math {
+namespace phynity::math::vectors {
 
 /// Fixed-length floating-point vector with compile-time size.
 template<std::size_t N>
@@ -249,4 +249,4 @@ using Vec6 = VecN<6>;
 using Vec8 = VecN<8>;
 using Vec16 = VecN<16>;
 
-}  // namespace phynity::math
+}  // namespace phynity::math::vectors

@@ -6,7 +6,7 @@
 #include <vector>
 #include <stdexcept>
 
-namespace phynity::math {
+namespace phynity::math::vectors {
 
 /// Runtime-sized floating-point vector with dynamic dimensions.
 class VecDynamic {
@@ -279,4 +279,4 @@ inline std::ostream& operator<<(std::ostream& os, const VecDynamic& v) {
     return os;
 }
 
-}  // namespace phynity::math
+}  // namespace phynity::math::vectors

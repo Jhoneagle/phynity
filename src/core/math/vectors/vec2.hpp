@@ -4,7 +4,7 @@
 #include <ostream>
 #include <algorithm>
 
-namespace phynity::math {
+namespace phynity::math::vectors {
 
 /// Two-component floating-point vector.
 struct Vec2 {
@@ -195,4 +195,4 @@ inline std::ostream& operator<<(std::ostream& os, const Vec2& v) {
     return os;
 }
 
-}  // namespace phynity::math
+}  // namespace phynity::math::vectors

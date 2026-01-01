@@ -3,7 +3,7 @@
 #include <cmath>
 
 using phynity::physics::Particle;
-using phynity::math::Vec3;
+using phynity::math::vectors::Vec3;
 
 static bool near_equal(float a, float b, float eps = 1e-4f) {
     return std::fabs(a - b) <= eps;

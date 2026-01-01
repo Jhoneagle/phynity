@@ -3,7 +3,7 @@
 #include <core/math/vectors/vec_n.hpp>
 #include <cmath>
 
-using phynity::math::VecN;
+using phynity::math::vectors::VecN;
 using Catch::Matchers::WithinAbs;
 
 TEST_CASE("VecN: Constructors", "[VecN][constructor]") {

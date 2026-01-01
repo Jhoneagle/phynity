@@ -3,7 +3,7 @@
 #include <core/math/vectors/vec2.hpp>
 #include <cmath>
 
-using phynity::math::Vec2;
+using phynity::math::vectors::Vec2;
 using Catch::Matchers::WithinAbs;
 
 // ============================================================================

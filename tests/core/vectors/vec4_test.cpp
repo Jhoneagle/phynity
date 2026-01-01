@@ -3,7 +3,7 @@
 #include <core/math/vectors/vec4.hpp>
 #include <cmath>
 
-using phynity::math::Vec4;
+using phynity::math::vectors::Vec4;
 using Catch::Matchers::WithinAbs;
 
 TEST_CASE("Vec4: Constructors", "[Vec4][constructor]") {

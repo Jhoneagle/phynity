@@ -3,7 +3,7 @@
 #include <core/math/vectors/vec_dynamic.hpp>
 #include <cmath>
 
-using phynity::math::VecDynamic;
+using phynity::math::vectors::VecDynamic;
 using Catch::Matchers::WithinAbs;
 
 TEST_CASE("VecDynamic: Constructors", "[VecDynamic][constructor]") {

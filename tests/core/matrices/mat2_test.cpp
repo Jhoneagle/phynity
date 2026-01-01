@@ -9,7 +9,7 @@
 #endif
 
 using phynity::math::matrices::Mat2;
-using phynity::math::Vec2;
+using phynity::math::vectors::Vec2;
 using Catch::Matchers::WithinAbs;
 
 // Helper function to check if two matrices are approximately equal
