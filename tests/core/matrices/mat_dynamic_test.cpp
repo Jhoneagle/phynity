@@ -103,6 +103,86 @@ TEST_CASE("MatDynamic: arithmetic", "[MatDynamic][arithmetic]") {
         c /= 3.0f;
         REQUIRE(matdyn_approx_equal(c, a));
     }
+
+    SECTION("Negation") {
+        MatDynamic m(2, 2);
+        m(0, 0) = 1.0f; m(0, 1) = -2.0f;
+        m(1, 0) = 3.0f; m(1, 1) = -4.0f;
+        
+        MatDynamic result = -m;
+        
+        REQUIRE_THAT(result(0, 0), WithinAbs(-1.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(1, 0), WithinAbs(-3.0f, 1e-6f));
+        REQUIRE_THAT(result(1, 1), WithinAbs(4.0f, 1e-6f));
+        
+        // Double negation
+        MatDynamic double_neg = -(-m);
+        REQUIRE_THAT(double_neg(0, 0), WithinAbs(m(0, 0), 1e-6f));
+        REQUIRE_THAT(double_neg(1, 1), WithinAbs(m(1, 1), 1e-6f));
+    }
+}
+
+TEST_CASE("MatDynamic: Approximate equality", "[MatDynamic][comparison]") {
+    MatDynamic m1(2, 2, 1.0f);
+    MatDynamic m2(2, 2, 1.0f);
+    MatDynamic m3(2, 2, 1.000001f);
+    MatDynamic m4(2, 2, 2.0f);
+    MatDynamic m5(3, 3, 1.0f); // Different size
+
+    REQUIRE(m1.approxEqual(m2));
+    REQUIRE(m1.approxEqual(m3, 1e-5f));
+    REQUIRE_FALSE(m1.approxEqual(m4, 1e-6f));
+    REQUIRE(m1.approxEqual(m4, 1.5f));
+    REQUIRE_FALSE(m1.approxEqual(m5)); // Different dimensions
+}
+
+TEST_CASE("MatDynamic: Absolute value", "[MatDynamic][operations]") {
+    MatDynamic m(2, 3);
+    m(0, 0) = -1.0f; m(0, 1) = 2.0f;  m(0, 2) = -3.0f;
+    m(1, 0) = 4.0f;  m(1, 1) = -5.0f; m(1, 2) = 6.0f;
+
+    MatDynamic result = m.abs();
+
+    REQUIRE_THAT(result(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 2), WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 0), WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 1), WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 2), WithinAbs(6.0f, 1e-6f));
+}
+
+TEST_CASE("MatDynamic: Component-wise operations", "[MatDynamic][arithmetic]") {
+    MatDynamic m1(2, 2);
+    m1(0, 0) = 4.0f; m1(0, 1) = 6.0f;
+    m1(1, 0) = 8.0f; m1(1, 1) = 10.0f;
+    MatDynamic m2(2, 2);
+    m2(0, 0) = 2.0f; m2(0, 1) = 3.0f;
+    m2(1, 0) = 4.0f; m2(1, 1) = 5.0f;
+
+    SECTION("Component-wise multiplication") {
+        MatDynamic m = m1;
+        m.mulComponentWise(m2);
+        REQUIRE_THAT(m(0, 0), WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(32.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(50.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division") {
+        MatDynamic m = m1;
+        m.divComponentWise(m2);
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(2.0f, 1e-6f));
+    }
+
+    SECTION("Shape mismatch throws") {
+        MatDynamic m3(3, 3, 1.0f);
+        REQUIRE_THROWS_AS(m1.mulComponentWise(m3), std::invalid_argument);
+        REQUIRE_THROWS_AS(m1.divComponentWise(m3), std::invalid_argument);
+    }
 }
 
 TEST_CASE("MatDynamic: shape mismatch throws", "[MatDynamic][errors]") {
@@ -220,4 +300,58 @@ TEST_CASE("MatDynamic: stream output", "[MatDynamic][stream]") {
     std::ostringstream oss;
     oss << m;
     REQUIRE(oss.str() == "[(1, 2), (3, 4)]");
+}
+
+TEST_CASE("MatDynamic: Edge cases", "[MatDynamic][edge]") {
+    SECTION("Division by zero scalar") {
+        MatDynamic m(2, 2, 1.0f);
+        MatDynamic result = m / 0.0f;
+        REQUIRE((std::isinf(result(0, 0)) || std::isnan(result(0, 0))));
+    }
+
+    SECTION("Empty matrix operations") {
+        MatDynamic m(0, 0);
+        REQUIRE(m.isEmpty());
+        REQUIRE(m.numRows() == 0);
+        REQUIRE(m.numCols() == 0);
+    }
+
+    SECTION("Non-square matrix operations") {
+        MatDynamic m(2, 3, 1.0f);
+        MatDynamic n(2, 3, 2.0f);
+        MatDynamic sum = m + n;
+        REQUIRE_THAT(sum(0, 0), WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(sum(1, 2), WithinAbs(3.0f, 1e-6f));
+    }
+
+    SECTION("Very large numbers") {
+        MatDynamic m(3, 3, 1e20f);
+        MatDynamic product = m * 2.0f;
+        REQUIRE(product(1, 1) > 1e20f);
+    }
+
+    SECTION("Very small numbers") {
+        MatDynamic m(2, 2, 1e-20f);
+        MatDynamic sum = m + m;
+        REQUIRE(sum(0, 0) > 0.0f);
+    }
+
+    SECTION("Transpose of non-square matrix") {
+        MatDynamic m(2, 3, 0.0f);
+        m(0, 0) = 1.0f; m(0, 1) = 2.0f; m(0, 2) = 3.0f;
+        m(1, 0) = 4.0f; m(1, 1) = 5.0f; m(1, 2) = 6.0f;
+        
+        MatDynamic t = m.transposed();
+        REQUIRE(t.numRows() == 3);
+        REQUIRE(t.numCols() == 2);
+        REQUIRE_THAT(t(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(t(1, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(t(2, 1), WithinAbs(6.0f, 1e-6f));
+    }
+
+    SECTION("Single element matrix") {
+        MatDynamic m(1, 1, 42.0f);
+        REQUIRE_THAT(m(0, 0), WithinAbs(42.0f, 1e-6f));
+        REQUIRE(m.size() == 1);
+    }
 }

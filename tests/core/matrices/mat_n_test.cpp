@@ -98,6 +98,76 @@ TEST_CASE("MatN: arithmetic", "[MatN][arithmetic]") {
         c /= 3.0f;
         REQUIRE(matn_approx_equal(c, a));
     }
+
+    SECTION("Negation") {
+        MatN<2, 2> m = MatN<2, 2>::identity();
+        m(0, 1) = -3.0f;
+        MatN<2, 2> result = -m;
+        
+        REQUIRE_THAT(result(0, 0), WithinAbs(-1.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 1), WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(result(1, 1), WithinAbs(-1.0f, 1e-6f));
+        
+        // Double negation
+        MatN<2, 2> double_neg = -(-m);
+        REQUIRE_THAT(double_neg(0, 0), WithinAbs(m(0, 0), 1e-6f));
+        REQUIRE_THAT(double_neg(0, 1), WithinAbs(m(0, 1), 1e-6f));
+    }
+}
+
+TEST_CASE("MatN: Approximate equality", "[MatN][comparison]") {
+    MatN<2, 2> m1 = MatN<2, 2>::identity();
+    MatN<2, 2> m2 = MatN<2, 2>::identity();
+    MatN<2, 2> m3 = MatN<2, 2>::identity();
+    m3(0, 0) = 1.000001f;
+    MatN<2, 2> m4 = MatN<2, 2>::zero();
+
+    REQUIRE(m1.approxEqual(m2));
+    REQUIRE(m1.approxEqual(m3, 1e-5f));
+    REQUIRE_FALSE(m1.approxEqual(m4, 1e-6f));
+    REQUIRE(m1.approxEqual(m4, 2.0f));
+}
+
+TEST_CASE("MatN: Absolute value", "[MatN][operations]") {
+    MatN<2, 3> m;
+    m(0, 0) = -1.0f; m(0, 1) = 2.0f;  m(0, 2) = -3.0f;
+    m(1, 0) = 4.0f;  m(1, 1) = -5.0f; m(1, 2) = 6.0f;
+
+    MatN<2, 3> result = m.abs();
+
+    REQUIRE_THAT(result(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 2), WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 0), WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 1), WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 2), WithinAbs(6.0f, 1e-6f));
+}
+
+TEST_CASE("MatN: Component-wise operations", "[MatN][arithmetic]") {
+    MatN<2, 2> m1;
+    m1(0, 0) = 4.0f; m1(0, 1) = 6.0f;
+    m1(1, 0) = 8.0f; m1(1, 1) = 10.0f;
+    MatN<2, 2> m2;
+    m2(0, 0) = 2.0f; m2(0, 1) = 3.0f;
+    m2(1, 0) = 4.0f; m2(1, 1) = 5.0f;
+
+    SECTION("Component-wise multiplication") {
+        MatN<2, 2> m = m1;
+        m.mulComponentWise(m2);
+        REQUIRE_THAT(m(0, 0), WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(32.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(50.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division") {
+        MatN<2, 2> m = m1;
+        m.divComponentWise(m2);
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(2.0f, 1e-6f));
+    }
 }
 
 TEST_CASE("MatN: matrix multiplication", "[MatN][multiply]") {
@@ -215,4 +285,54 @@ TEST_CASE("MatN: stream output", "[MatN][stream]") {
     std::ostringstream oss;
     oss << m;
     REQUIRE(oss.str() == "[(1, 2), (3, 4)]");
+}
+
+TEST_CASE("MatN: Edge cases", "[MatN][edge]") {
+    SECTION("Division by zero scalar") {
+        MatN<2, 2> m = MatN<2, 2>::identity();
+        MatN<2, 2> result = m / 0.0f;
+        REQUIRE((std::isinf(result(0, 0)) || std::isnan(result(0, 0))));
+    }
+
+    SECTION("Very large numbers") {
+        MatN<3, 3> m(1e20f);
+        float trace = m.trace();
+        REQUIRE(trace > 1e20f);
+    }
+
+    SECTION("Very small numbers") {
+        MatN<2, 2> m(1e-20f);
+        MatN<2, 2> scaled = m * 2.0f;
+        REQUIRE(scaled(0, 0) > 0.0f);
+    }
+
+    SECTION("Non-square matrix operations") {
+        MatN<2, 3> m(1.0f);
+        MatN<2, 3> sum = m + m;
+        REQUIRE_THAT(sum(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(sum(1, 2), WithinAbs(2.0f, 1e-6f));
+    }
+
+    SECTION("Large dimension matrix") {
+        MatN<10, 10> m = MatN<10, 10>::identity();
+        float trace = m.trace();
+        REQUIRE_THAT(trace, WithinAbs(10.0f, 1e-6f));
+    }
+
+    SECTION("Transpose of non-square matrix") {
+        MatN<2, 3> m(1.0f);
+        m(0, 0) = 1.0f; m(0, 1) = 2.0f; m(0, 2) = 3.0f;
+        m(1, 0) = 4.0f; m(1, 1) = 5.0f; m(1, 2) = 6.0f;
+        
+        MatN<3, 2> t = m.transposed();
+        REQUIRE_THAT(t(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(t(1, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(t(2, 1), WithinAbs(6.0f, 1e-6f));
+    }
+
+    SECTION("Zero matrix determinant") {
+        MatN<3, 3> m = MatN<3, 3>::zero();
+        float det = m.determinant();
+        REQUIRE_THAT(det, WithinAbs(0.0f, 1e-6f));
+    }
 }

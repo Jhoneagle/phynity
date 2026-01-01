@@ -3,6 +3,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat3.hpp>
 #include <cmath>
+#include <sstream>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -138,6 +139,20 @@ TEST_CASE("Mat3: Scalar division", "[Mat3][arithmetic]") {
     REQUIRE_THAT(result.m[2][2], WithinAbs(9.0f, 1e-6f));
 }
 
+TEST_CASE("Mat3: Negation", "[Mat3][arithmetic]") {
+    Mat3 m(1.0f, -2.0f, 3.0f, -4.0f, 5.0f, -6.0f, 7.0f, -8.0f, 9.0f);
+    Mat3 result = -m;
+
+    REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][0], WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result.m[2][2], WithinAbs(-9.0f, 1e-6f));
+
+    // Double negation
+    Mat3 double_neg = -(-m);
+    REQUIRE(mat3_approx_equal(double_neg, m));
+}
+
 TEST_CASE("Mat3: Matrix multiplication", "[Mat3][arithmetic]") {
     Mat3 a(1.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 3.0f);
     Mat3 b(2.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 0.0f, 4.0f);
@@ -253,6 +268,63 @@ TEST_CASE("Mat3: Determinant", "[Mat3][operations]") {
         // det = 1*(5*10 - 6*8) - 2*(4*10 - 6*7) + 3*(4*8 - 5*7)
         // det = 1*2 - 2*(-2) + 3*(-3) = 2 + 4 - 9 = -3
         REQUIRE_THAT(det, WithinAbs(-3.0f, 1e-6f));
+    }
+}
+
+TEST_CASE("Mat3: Approximate equality", "[Mat3][comparison]") {
+    Mat3 m1 = Mat3::identity();
+    Mat3 m2 = Mat3::identity();
+    Mat3 m3 = Mat3::identity();
+    m3.m[0][0] = 1.00001f;
+    Mat3 m4 = Mat3::identity();
+    m4.m[0][0] = 2.0f;
+
+    REQUIRE(m1.approxEqual(m2));
+    REQUIRE(m1.approxEqual(m3, 1e-4f));
+    REQUIRE_FALSE(m1.approxEqual(m4, 1e-6f));
+    REQUIRE(m1.approxEqual(m4, 1.5f));
+}
+
+TEST_CASE("Mat3: Absolute value", "[Mat3][operations]") {
+    Mat3 m;
+    m.m[0][0] = -1.0f; m.m[0][1] = 2.0f;  m.m[0][2] = -3.0f;
+    m.m[1][0] = 4.0f;  m.m[1][1] = -5.0f; m.m[1][2] = 6.0f;
+    m.m[2][0] = -7.0f; m.m[2][1] = 8.0f;  m.m[2][2] = -9.0f;
+
+    Mat3 result = m.abs();
+
+    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][2], WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][0], WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][1], WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][2], WithinAbs(6.0f, 1e-6f));
+    REQUIRE_THAT(result.m[2][0], WithinAbs(7.0f, 1e-6f));
+    REQUIRE_THAT(result.m[2][1], WithinAbs(8.0f, 1e-6f));
+    REQUIRE_THAT(result.m[2][2], WithinAbs(9.0f, 1e-6f));
+}
+
+TEST_CASE("Mat3: Component-wise operations", "[Mat3][arithmetic]") {
+    Mat3 m1(2.0f, 4.0f, 6.0f, 8.0f, 10.0f, 12.0f, 14.0f, 16.0f, 18.0f);
+    Mat3 m2(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
+
+    SECTION("Component-wise multiplication") {
+        Mat3 m = m1;
+        m.mulComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[0][1], WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m.m[0][2], WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(50.0f, 1e-6f));
+        REQUIRE_THAT(m.m[2][2], WithinAbs(162.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division") {
+        Mat3 m = m1;
+        m.divComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[2][2], WithinAbs(2.0f, 1e-6f));
     }
 }
 
@@ -457,5 +529,49 @@ TEST_CASE("Mat3: Scale matrix", "[Mat3][transform]") {
     SECTION("Scale determinant equals product") {
         Mat3 scale = Mat3::scale(2.0f, 3.0f, 4.0f);
         REQUIRE_THAT(scale.determinant(), WithinAbs(24.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// Edge Cases
+// ============================================================================
+
+TEST_CASE("Mat3: Edge cases", "[Mat3][edge]") {
+    SECTION("Division by zero scalar") {
+        Mat3 m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
+        Mat3 result = m / 0.0f;
+        REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
+    }
+
+    SECTION("Operations with very large numbers") {
+        Mat3 m(1e20f);
+        Mat3 sum = m + m;
+        REQUIRE(sum.m[0][0] > 1e20f);
+    }
+
+    SECTION("Operations with very small numbers") {
+        Mat3 m(1e-20f);
+        Mat3 product = m * 2.0f;
+        REQUIRE(product.m[1][1] > 0.0f);
+    }
+
+    SECTION("Singular matrix determinant is zero") {
+        Mat3 m(1.0f, 2.0f, 3.0f,
+               2.0f, 4.0f, 6.0f,
+               3.0f, 6.0f, 9.0f);
+        REQUIRE_THAT(m.determinant(), WithinAbs(0.0f, 1e-5f));
+    }
+
+    SECTION("Identity matrix properties") {
+        Mat3 identity = Mat3::identity();
+        Mat3 m(2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f);
+        Mat3 result = m * identity;
+        REQUIRE(mat3_approx_equal(result, m));
+    }
+
+    SECTION("Transpose of transpose returns original") {
+        Mat3 m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
+        Mat3 result = m.transposed().transposed();
+        REQUIRE(mat3_approx_equal(result, m));
     }
 }

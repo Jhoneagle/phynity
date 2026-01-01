@@ -104,6 +104,14 @@ struct MatN {
         return result;
     }
 
+    MatN operator-() const {
+        MatN result;
+        for (std::size_t i = 0; i < M * N; ++i) {
+            result.data[i] = -data[i];
+        }
+        return result;
+    }
+
     MatN& operator+=(const MatN& other) {
         for (std::size_t i = 0; i < M * N; ++i) {
             data[i] += other.data[i];
@@ -128,6 +136,22 @@ struct MatN {
     MatN& operator/=(float scalar) {
         for (std::size_t i = 0; i < M * N; ++i) {
             data[i] /= scalar;
+        }
+        return *this;
+    }
+
+    /// Component-wise (Hadamard) multiplication
+    MatN& mulComponentWise(const MatN& other) {
+        for (std::size_t i = 0; i < M * N; ++i) {
+            data[i] *= other.data[i];
+        }
+        return *this;
+    }
+
+    /// Component-wise division
+    MatN& divComponentWise(const MatN& other) {
+        for (std::size_t i = 0; i < M * N; ++i) {
+            data[i] /= other.data[i];
         }
         return *this;
     }
@@ -199,6 +223,25 @@ struct MatN {
             sum += (*this)(i, i);
         }
         return sum;
+    }
+
+    /// Approximate equality with epsilon tolerance
+    bool approxEqual(const MatN& other, float epsilon = 1e-5f) const {
+        for (std::size_t i = 0; i < M * N; ++i) {
+            if (std::abs(data[i] - other.data[i]) >= epsilon) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// Return matrix with absolute values of all elements
+    MatN abs() const {
+        MatN result;
+        for (std::size_t i = 0; i < M * N; ++i) {
+            result.data[i] = std::abs(data[i]);
+        }
+        return result;
     }
 
     /// Minor determinant after removing row r and column c (square, size>1, N<=4)

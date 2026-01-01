@@ -3,6 +3,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat4.hpp>
 #include <cmath>
+#include <sstream>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -100,6 +101,22 @@ TEST_CASE("Mat4: Scalar multiplication", "[Mat4][arithmetic]") {
         REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.m[3][3], WithinAbs(2.0f, 1e-6f));
     }
+}
+
+TEST_CASE("Mat4: Negation", "[Mat4][arithmetic]") {
+    Mat4 m = Mat4::identity();
+    m.m[0][1] = -2.0f;
+    m.m[3][3] = 5.0f;
+    
+    Mat4 result = -m;
+
+    REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[3][3], WithinAbs(-5.0f, 1e-6f));
+
+    // Double negation
+    Mat4 double_neg = -(-m);
+    REQUIRE(mat4_approx_equal(double_neg, m));
 }
 
 TEST_CASE("Mat4: Matrix multiplication", "[Mat4][arithmetic]") {
@@ -310,6 +327,60 @@ TEST_CASE("Mat4: Row and column accessors", "[Mat4][access][rowcol]") {
     REQUIRE_THAT(m.m[3][2], WithinAbs(4.0f, 1e-6f));
 }
 
+TEST_CASE("Mat4: Approximate equality", "[Mat4][comparison]") {
+    Mat4 m1 = Mat4::identity();
+    Mat4 m2 = Mat4::identity();
+    Mat4 m3 = Mat4::identity();
+    m3.m[2][2] = 1.000001f;
+    Mat4 m4 = Mat4::translation(1.0f, 2.0f, 3.0f);
+
+    REQUIRE(m1.approxEqual(m2));
+    REQUIRE(m1.approxEqual(m3, 1e-5f));
+    REQUIRE_FALSE(m1.approxEqual(m4, 1e-6f));
+    REQUIRE(m1.approxEqual(m4, 4.0f));
+}
+
+TEST_CASE("Mat4: Absolute value", "[Mat4][operations]") {
+    Mat4 m = Mat4::identity();
+    m.m[0][3] = -5.0f;
+    m.m[1][2] = -3.0f;
+    m.m[2][1] = -2.0f;
+    m.m[3][0] = -1.0f;
+
+    Mat4 result = m.abs();
+
+    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][3], WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][2], WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result.m[2][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[3][0], WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Mat4: Component-wise operations", "[Mat4][arithmetic]") {
+    Mat4 m1 = Mat4::identity();
+    m1.m[0][0] = 4.0f; m1.m[1][1] = 6.0f; m1.m[2][2] = 8.0f; m1.m[3][3] = 10.0f;
+    Mat4 m2 = Mat4::identity();
+    m2.m[0][0] = 2.0f; m2.m[1][1] = 3.0f; m2.m[2][2] = 4.0f; m2.m[3][3] = 5.0f;
+
+    SECTION("Component-wise multiplication") {
+        Mat4 m = m1;
+        m.mulComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m.m[2][2], WithinAbs(32.0f, 1e-6f));
+        REQUIRE_THAT(m.m[3][3], WithinAbs(50.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division") {
+        Mat4 m = m1;
+        m.divComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[2][2], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[3][3], WithinAbs(2.0f, 1e-6f));
+    }
+}
+
 // ============================================================================
 // Translation Matrices
 // ============================================================================
@@ -488,5 +559,75 @@ TEST_CASE("Mat4: Combined transformations", "[Mat4][combined]") {
         REQUIRE_THAT(result.x, WithinAbs(3.0f, 1e-5f));
         REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-5f));
         REQUIRE_THAT(result.z, WithinAbs(5.0f, 1e-5f));
+    }
+}
+
+// ============================================================================
+// Stream Output
+// ============================================================================
+
+TEST_CASE("Mat4: Stream output", "[Mat4][stream]") {
+    Mat4 m(1.0f, 2.0f, 3.0f, 4.0f,
+           5.0f, 6.0f, 7.0f, 8.0f,
+           9.0f, 10.0f, 11.0f, 12.0f,
+           13.0f, 14.0f, 15.0f, 16.0f);
+    std::ostringstream oss;
+    oss << m;
+    std::string output = oss.str();
+    REQUIRE(output.find("1") != std::string::npos);
+    REQUIRE(output.find("6") != std::string::npos);
+    REQUIRE(output.find("11") != std::string::npos);
+    REQUIRE(output.find("16") != std::string::npos);
+}
+
+// ============================================================================
+// Edge Cases
+// ============================================================================
+
+TEST_CASE("Mat4: Edge cases", "[Mat4][edge]") {
+    SECTION("Division by zero scalar") {
+        Mat4 m = Mat4::identity();
+        Mat4 result = m / 0.0f;
+        REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
+    }
+
+    SECTION("Operations with very large numbers") {
+        Mat4 m(1e20f);
+        Mat4 sum = m + m;
+        REQUIRE(sum.m[2][2] > 1e20f);
+    }
+
+    SECTION("Operations with very small numbers") {
+        Mat4 m(1e-20f);
+        float trace = m.trace();
+        REQUIRE(trace > 0.0f);
+    }
+
+    SECTION("Singular matrix returns zero inverse") {
+        Mat4 m = Mat4::zero();
+        Mat4 inv = m.inverse();
+        REQUIRE(mat4_approx_equal(inv, Mat4::zero()));
+    }
+
+    SECTION("Identity matrix inverse is itself") {
+        Mat4 identity = Mat4::identity();
+        Mat4 inv = identity.inverse();
+        REQUIRE(mat4_approx_equal(inv, identity));
+    }
+
+    SECTION("Matrix times inverse is identity") {
+        Mat4 m(2.0f, 0.0f, 0.0f, 0.0f,
+               0.0f, 3.0f, 0.0f, 0.0f,
+               0.0f, 0.0f, 4.0f, 0.0f,
+               0.0f, 0.0f, 0.0f, 5.0f);
+        Mat4 inv = m.inverse();
+        Mat4 result = m * inv;
+        REQUIRE(mat4_approx_equal(result, Mat4::identity(), 1e-5f));
+    }
+
+    SECTION("Transpose properties") {
+        Mat4 m = Mat4::identity();
+        Mat4 t = m.transposed();
+        REQUIRE(mat4_approx_equal(t, m));
     }
 }

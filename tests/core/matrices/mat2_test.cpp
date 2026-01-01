@@ -3,6 +3,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat2.hpp>
 #include <cmath>
+#include <sstream>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -107,7 +108,19 @@ TEST_CASE("Mat2: Subtraction", "[Mat2][arithmetic]") {
     REQUIRE_THAT(c.m[1][0], WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(c.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
+TEST_CASE("Mat2: Negation", "[Mat2][arithmetic]") {
+    Mat2 m(1.0f, -2.0f, 3.0f, -4.0f);
+    Mat2 result = -m;
 
+    REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][0], WithinAbs(-3.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][1], WithinAbs(4.0f, 1e-6f));
+
+    // Double negation
+    Mat2 double_neg = -(-m);
+    REQUIRE(mat2_approx_equal(double_neg, m));
+}
 TEST_CASE("Mat2: Scalar multiplication", "[Mat2][arithmetic]") {
     Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
     
@@ -254,6 +267,55 @@ TEST_CASE("Mat2: Matrix-vector multiplication", "[Mat2][vector]") {
         // [5*1 + 6*3, 5*2 + 6*4] = [23, 34]
         REQUIRE_THAT(result.x, WithinAbs(23.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(34.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// Approximate Equality
+// ============================================================================
+
+TEST_CASE("Mat2: Approximate equality", "[Mat2][comparison]") {
+    Mat2 m1(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2 m2(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2 m3(1.00001f, 2.00001f, 3.00001f, 4.00001f);
+    Mat2 m4(1.1f, 2.1f, 3.1f, 4.1f);
+
+    REQUIRE(m1.approxEqual(m2));
+    REQUIRE(m1.approxEqual(m3, 1e-4f));
+    REQUIRE_FALSE(m1.approxEqual(m4, 1e-6f));
+    REQUIRE(m1.approxEqual(m4, 0.2f));
+}
+
+TEST_CASE("Mat2: Absolute value", "[Mat2][operations]") {
+    Mat2 m(-1.0f, 2.0f, -3.0f, 4.0f);
+    Mat2 result = m.abs();
+
+    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][0], WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result.m[1][1], WithinAbs(4.0f, 1e-6f));
+}
+
+TEST_CASE("Mat2: Component-wise operations", "[Mat2][arithmetic]") {
+    Mat2 m1(2.0f, 4.0f, 6.0f, 8.0f);
+    Mat2 m2(1.0f, 2.0f, 3.0f, 4.0f);
+
+    SECTION("Component-wise multiplication") {
+        Mat2 m = m1;
+        m.mulComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[0][1], WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][0], WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(32.0f, 1e-6f));
+    }
+
+    SECTION("Component-wise division") {
+        Mat2 m = m1;
+        m.divComponentWise(m2);
+        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
     }
 }
 
@@ -472,5 +534,64 @@ TEST_CASE("Mat2: Scale matrix", "[Mat2][transform]") {
     SECTION("Scale determinant equals product") {
         Mat2 scale = Mat2::scale(2.0f, 3.0f);
         REQUIRE_THAT(scale.determinant(), WithinAbs(6.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// Stream Output
+// ============================================================================
+
+TEST_CASE("Mat2: Stream output", "[Mat2][stream]") {
+    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+    std::ostringstream oss;
+    oss << m;
+    // Verify output contains matrix elements (exact format may vary)
+    std::string output = oss.str();
+    REQUIRE(output.find("1") != std::string::npos);
+    REQUIRE(output.find("2") != std::string::npos);
+    REQUIRE(output.find("3") != std::string::npos);
+    REQUIRE(output.find("4") != std::string::npos);
+}
+
+// ============================================================================
+// Edge Cases
+// ============================================================================
+
+TEST_CASE("Mat2: Edge cases", "[Mat2][edge]") {
+    SECTION("Division by zero scalar") {
+        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2 result = m / 0.0f;
+        REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
+    }
+
+    SECTION("Operations with very large numbers") {
+        Mat2 m(1e20f, 1e20f, 1e20f, 1e20f);
+        Mat2 sum = m + m;
+        REQUIRE(sum.m[0][0] > 1e20f);
+    }
+
+    SECTION("Operations with very small numbers") {
+        Mat2 m(1e-20f, 1e-20f, 1e-20f, 1e-20f);
+        Mat2 product = m * 2.0f;
+        REQUIRE(product.m[0][0] > 0.0f);
+    }
+
+    SECTION("Singular matrix determinant is zero") {
+        Mat2 m(1.0f, 2.0f, 2.0f, 4.0f);
+        REQUIRE_THAT(m.determinant(), WithinAbs(0.0f, 1e-6f));
+    }
+
+    SECTION("Zero matrix operations") {
+        Mat2 zero = Mat2::zero();
+        Mat2 identity = Mat2::identity();
+        Mat2 result = zero + identity;
+        REQUIRE(mat2_approx_equal(result, identity));
+    }
+
+    SECTION("Matrix multiplication by zero") {
+        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2 zero = Mat2::zero();
+        Mat2 result = m * zero;
+        REQUIRE(mat2_approx_equal(result, zero));
     }
 }

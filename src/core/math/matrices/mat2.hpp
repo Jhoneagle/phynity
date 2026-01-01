@@ -83,6 +83,13 @@ struct Mat2 {
         );
     }
 
+    Mat2 operator-() const {
+        return Mat2(
+            -m[0][0], -m[0][1],
+            -m[1][0], -m[1][1]
+        );
+    }
+
     Mat2& operator+=(const Mat2& other) {
         m[0][0] += other.m[0][0]; m[0][1] += other.m[0][1];
         m[1][0] += other.m[1][0]; m[1][1] += other.m[1][1];
@@ -109,6 +116,20 @@ struct Mat2 {
 
     Mat2& operator*=(const Mat2& other) {
         *this = *this * other;
+        return *this;
+    }
+
+    /// Component-wise (Hadamard) multiplication
+    Mat2& mulComponentWise(const Mat2& other) {
+        m[0][0] *= other.m[0][0]; m[0][1] *= other.m[0][1];
+        m[1][0] *= other.m[1][0]; m[1][1] *= other.m[1][1];
+        return *this;
+    }
+
+    /// Component-wise division
+    Mat2& divComponentWise(const Mat2& other) {
+        m[0][0] /= other.m[0][0]; m[0][1] /= other.m[0][1];
+        m[1][0] /= other.m[1][0]; m[1][1] /= other.m[1][1];
         return *this;
     }
 
@@ -185,6 +206,22 @@ struct Mat2 {
     /// Trace (sum of diagonal elements)
     float trace() const {
         return m[0][0] + m[1][1];
+    }
+
+    /// Approximate equality with epsilon tolerance
+    bool approxEqual(const Mat2& other, float epsilon = 1e-5f) const {
+        return std::abs(m[0][0] - other.m[0][0]) < epsilon &&
+               std::abs(m[0][1] - other.m[0][1]) < epsilon &&
+               std::abs(m[1][0] - other.m[1][0]) < epsilon &&
+               std::abs(m[1][1] - other.m[1][1]) < epsilon;
+    }
+
+    /// Return matrix with absolute values of all elements
+    Mat2 abs() const {
+        return Mat2(
+            std::abs(m[0][0]), std::abs(m[0][1]),
+            std::abs(m[1][0]), std::abs(m[1][1])
+        );
     }
 
     /// Create identity matrix

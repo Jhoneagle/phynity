@@ -106,6 +106,16 @@ struct Mat3 {
         );
     }
 
+    Mat3 operator-() const {
+        Mat3 result;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                result.m[i][j] = -m[i][j];
+            }
+        }
+        return result;
+    }
+
     Mat3& operator+=(const Mat3& other) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -144,6 +154,26 @@ struct Mat3 {
 
     Mat3& operator*=(const Mat3& other) {
         *this = *this * other;
+        return *this;
+    }
+
+    /// Component-wise (Hadamard) multiplication
+    Mat3& mulComponentWise(const Mat3& other) {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                m[i][j] *= other.m[i][j];
+            }
+        }
+        return *this;
+    }
+
+    /// Component-wise division
+    Mat3& divComponentWise(const Mat3& other) {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                m[i][j] /= other.m[i][j];
+            }
+        }
         return *this;
     }
 
@@ -250,6 +280,29 @@ struct Mat3 {
     /// Trace (sum of diagonal elements)
     float trace() const {
         return m[0][0] + m[1][1] + m[2][2];
+    }
+
+    /// Approximate equality with epsilon tolerance
+    bool approxEqual(const Mat3& other, float epsilon = 1e-5f) const {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (std::abs(m[i][j] - other.m[i][j]) >= epsilon) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /// Return matrix with absolute values of all elements
+    Mat3 abs() const {
+        Mat3 result;
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                result.m[i][j] = std::abs(m[i][j]);
+            }
+        }
+        return result;
     }
 
     /// Create identity matrix

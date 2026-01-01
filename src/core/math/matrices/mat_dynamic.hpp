@@ -99,6 +99,14 @@ struct MatDynamic {
         return !(*this == other);
     }
 
+    MatDynamic operator-() const {
+        MatDynamic result(rows, cols);
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            result.data[i] = -data[i];
+        }
+        return result;
+    }
+
     MatDynamic operator+(const MatDynamic& other) const {
         validate_same_shape(other, "+");
         MatDynamic result(rows, cols);
@@ -163,6 +171,24 @@ struct MatDynamic {
         return *this;
     }
 
+    /// Component-wise (Hadamard) multiplication
+    MatDynamic& mulComponentWise(const MatDynamic& other) {
+        validate_same_shape(other, "mulComponentWise");
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            data[i] *= other.data[i];
+        }
+        return *this;
+    }
+
+    /// Component-wise division
+    MatDynamic& divComponentWise(const MatDynamic& other) {
+        validate_same_shape(other, "divComponentWise");
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            data[i] /= other.data[i];
+        }
+        return *this;
+    }
+
     MatDynamic operator*(const MatDynamic& other) const {
         if (cols != other.rows) {
             throw std::invalid_argument("Matrix multiplication shape mismatch");
@@ -208,6 +234,28 @@ struct MatDynamic {
     MatDynamic& transpose() {
         *this = transposed();
         return *this;
+    }
+
+    /// Approximate equality with epsilon tolerance
+    bool approxEqual(const MatDynamic& other, float epsilon = 1e-5f) const {
+        if (rows != other.rows || cols != other.cols) {
+            return false;
+        }
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            if (std::abs(data[i] - other.data[i]) >= epsilon) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// Return matrix with absolute values of all elements
+    MatDynamic abs() const {
+        MatDynamic result(rows, cols);
+        for (std::size_t i = 0; i < data.size(); ++i) {
+            result.data[i] = std::abs(data[i]);
+        }
+        return result;
     }
 
     static MatDynamic zero(std::size_t r, std::size_t c) {
