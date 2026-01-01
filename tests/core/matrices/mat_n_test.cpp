@@ -3,6 +3,7 @@
 #include <core/math/matrices/mat_n.hpp>
 #include <array>
 #include <cmath>
+#include <sstream>
 
 using phynity::math::matrices::MatN;
 using phynity::math::vectors::VecN;
@@ -22,9 +23,9 @@ bool matn_approx_equal(const MatN<M, N>& a, const MatN<M, N>& b, float eps = 1e-
 }
 
 TEST_CASE("MatN: constructors", "[MatN][constructor]") {
-    SECTION("Default square is identity") {
+    SECTION("Default square is zero") {
         MatN<3, 3> m;
-        REQUIRE(matn_approx_equal(m, MatN<3, 3>::identity()));
+        REQUIRE(matn_approx_equal(m, MatN<3, 3>::zero()));
     }
 
     SECTION("Default non-square is zero") {
@@ -185,4 +186,33 @@ TEST_CASE("MatN: element access", "[MatN][access]") {
     MatN<2, 2> m;
     m(0, 1) = 3.5f;
     REQUIRE_THAT(m(0, 1), WithinAbs(3.5f, 1e-6f));
+}
+
+TEST_CASE("MatN: row and column accessors", "[MatN][access][rowcol]") {
+    MatN<2, 3> m(std::array<float, 6>{1, 2, 3, 4, 5, 6});
+
+    VecN<3> row0 = m.getRow(0);
+    REQUIRE_THAT(row0[0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(row0[2], WithinAbs(3.0f, 1e-6f));
+
+    VecN<2> col1 = m.getColumn(1);
+    REQUIRE_THAT(col1[0], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(col1[1], WithinAbs(5.0f, 1e-6f));
+
+    VecN<3> newRow{};
+    newRow[0] = 7.0f; newRow[1] = 8.0f; newRow[2] = 9.0f;
+    m.setRow(0, newRow);
+    REQUIRE_THAT(m(0, 2), WithinAbs(9.0f, 1e-6f));
+
+    VecN<2> newCol{};
+    newCol[0] = 10.0f; newCol[1] = 11.0f;
+    m.setColumn(1, newCol);
+    REQUIRE_THAT(m(1, 1), WithinAbs(11.0f, 1e-6f));
+}
+
+TEST_CASE("MatN: stream output", "[MatN][stream]") {
+    MatN<2, 2> m(std::array<float, 4>{1.0f, 2.0f, 3.0f, 4.0f});
+    std::ostringstream oss;
+    oss << m;
+    REQUIRE(oss.str() == "[(1, 2), (3, 4)]");
 }

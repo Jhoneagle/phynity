@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <vector>
+#include <ostream>
 
 namespace phynity::math::matrices {
 
@@ -21,6 +22,12 @@ struct MatDynamic {
 
     MatDynamic(std::size_t r, std::size_t c, float scalar)
         : rows(r), cols(c), data(r * c, scalar) {}
+
+    /// Query methods
+    std::size_t numRows() const { return rows; }
+    std::size_t numCols() const { return cols; }
+    std::size_t size() const { return data.size(); }
+    bool isEmpty() const { return data.empty(); }
 
     /// Element access (row, col)
     float& operator()(std::size_t row, std::size_t col) {
@@ -44,6 +51,44 @@ struct MatDynamic {
             throw std::out_of_range("MatDynamic index out of range");
         }
         return (*this)(row, col);
+    }
+
+    /// Get row as vector
+    VecDynamic getRow(std::size_t row) const {
+        VecDynamic result(cols);
+        for (std::size_t j = 0; j < cols; ++j) {
+            result[j] = (*this)(row, j);
+        }
+        return result;
+    }
+
+    /// Get column as vector
+    VecDynamic getColumn(std::size_t col) const {
+        VecDynamic result(rows);
+        for (std::size_t i = 0; i < rows; ++i) {
+            result[i] = (*this)(i, col);
+        }
+        return result;
+    }
+
+    /// Set row from vector
+    void setRow(std::size_t row, const VecDynamic& v) {
+        if (v.size() != cols) {
+            throw std::invalid_argument("Vector size does not match number of columns");
+        }
+        for (std::size_t j = 0; j < cols; ++j) {
+            (*this)(row, j) = v[j];
+        }
+    }
+
+    /// Set column from vector
+    void setColumn(std::size_t col, const VecDynamic& v) {
+        if (v.size() != rows) {
+            throw std::invalid_argument("Vector size does not match number of rows");
+        }
+        for (std::size_t i = 0; i < rows; ++i) {
+            (*this)(i, col) = v[i];
+        }
     }
 
     bool operator==(const MatDynamic& other) const {
@@ -187,6 +232,22 @@ private:
 
 inline MatDynamic operator*(float scalar, const MatDynamic& m) {
     return m * scalar;
+}
+
+/// Stream output
+inline std::ostream& operator<<(std::ostream& os, const MatDynamic& m) {
+    os << "[";
+    for (std::size_t i = 0; i < m.rows; ++i) {
+        if (i > 0) os << ", ";
+        os << "(";
+        for (std::size_t j = 0; j < m.cols; ++j) {
+            if (j > 0) os << ", ";
+            os << m(i, j);
+        }
+        os << ")";
+    }
+    os << "]";
+    return os;
 }
 
 }  // namespace phynity::math::matrices

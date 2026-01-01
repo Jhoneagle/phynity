@@ -19,10 +19,11 @@ Hand-optimized specializations with row-major storage `m[row][col]`.
 - Arithmetic: `+`, `-`, `*` (scalar/matrix/vector), `/` (scalar)
 - Assignment: `+=`, `-=`, `*=`, `/=`
 - Comparison: `==`, `!=`
-- Element access: `operator()(row, col)`
+- Element access: `operator()(row, col)`, `getRow()`, `getColumn()`, `setRow()`, `setColumn()`
 - Matrix operations: `determinant()`, `inverse()`, `transposed()`, `transpose()`, `trace()`
 - Utilities: `identity()`, `zero()`, `rotation()`, `scale()`
 - Matrix-vector multiplication: `matrix * vector`, `vector * matrix`
+- Stream output: `operator<<`
 
 ### MatN<M, N>
 Template-based matrix with compile-time dimensions using `std::array` storage.
@@ -36,8 +37,11 @@ Template-based matrix with compile-time dimensions using `std::array` storage.
 - Arithmetic: `+`, `-`, `*` (scalar/matrix/vector), `/` (scalar)
 - Assignment: `+=`, `-=`, `*=`, `/=`
 - Element access: `operator()(row, col)`
+- Row/column access: `getRow()`, `getColumn()`, `setRow()`, `setColumn()`
 - Matrix ops (square N≤4): `trace()`, `minor(r,c)`, `cofactor()`, `determinant()`, `inverse()`
 - Utilities: `identity()` (square), `zero()`, `transposed()`, `transpose()`
+- Stream output: `operator<<`
+ - Default constructor: zero-initialized for all M, N
 
 ### MatDynamic
 Runtime-sized matrix using `std::vector<float>` storage.
@@ -51,7 +55,10 @@ Runtime-sized matrix using `std::vector<float>` storage.
 - Arithmetic: `+`, `-`, `*` (scalar/matrix/vector), `/` (scalar)
 - Assignment: `+=`, `-=`, `*=`, `/=`
 - Element access: `operator()(row, col)`, `at(row, col)` (bounds-checked)
+- Row/column access: `getRow()`, `getColumn()`, `setRow()`, `setColumn()`
 - Matrix ops: `transposed()`, `transpose()`, `identity(n)`, `zero(r, c)`
+- Queries: `numRows()`, `numCols()`, `size()`, `isEmpty()`
+- Stream output: `operator<<`
 
 ## Namespace
 

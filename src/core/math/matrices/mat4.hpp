@@ -187,6 +187,32 @@ struct Mat4 {
         return m[row][col];
     }
 
+    /// Get row as vector
+    Vec4 getRow(int row) const {
+        return Vec4(m[row][0], m[row][1], m[row][2], m[row][3]);
+    }
+
+    /// Get column as vector
+    Vec4 getColumn(int col) const {
+        return Vec4(m[0][col], m[1][col], m[2][col], m[3][col]);
+    }
+
+    /// Set row from vector
+    void setRow(int row, const Vec4& v) {
+        m[row][0] = v.x;
+        m[row][1] = v.y;
+        m[row][2] = v.z;
+        m[row][3] = v.w;
+    }
+
+    /// Set column from vector
+    void setColumn(int col, const Vec4& v) {
+        m[0][col] = v.x;
+        m[1][col] = v.y;
+        m[2][col] = v.z;
+        m[3][col] = v.w;
+    }
+
     /// Determinant using cofactor expansion
     float determinant() const {
         // Calculate 3x3 determinants (minors)

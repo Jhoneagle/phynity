@@ -170,6 +170,30 @@ struct Mat3 {
         return m[row][col];
     }
 
+    /// Get row as vector
+    Vec3 getRow(int row) const {
+        return Vec3(m[row][0], m[row][1], m[row][2]);
+    }
+
+    /// Get column as vector
+    Vec3 getColumn(int col) const {
+        return Vec3(m[0][col], m[1][col], m[2][col]);
+    }
+
+    /// Set row from vector
+    void setRow(int row, const Vec3& v) {
+        m[row][0] = v.x;
+        m[row][1] = v.y;
+        m[row][2] = v.z;
+    }
+
+    /// Set column from vector
+    void setColumn(int col, const Vec3& v) {
+        m[0][col] = v.x;
+        m[1][col] = v.y;
+        m[2][col] = v.z;
+    }
+
     /// Determinant
     float determinant() const {
         return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -

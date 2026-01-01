@@ -380,6 +380,28 @@ TEST_CASE("Mat2: Element access", "[Mat2][access]") {
     }
 }
 
+TEST_CASE("Mat2: Row and column accessors", "[Mat2][access][rowcol]") {
+    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+
+    Vec2 row0 = m.getRow(0);
+    REQUIRE_THAT(row0.x, WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(row0.y, WithinAbs(2.0f, 1e-6f));
+
+    Vec2 col1 = m.getColumn(1);
+    REQUIRE_THAT(col1.x, WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(col1.y, WithinAbs(4.0f, 1e-6f));
+
+    Vec2 newRow(9.0f, 8.0f);
+    m.setRow(1, newRow);
+    REQUIRE_THAT(m.m[1][0], WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(m.m[1][1], WithinAbs(8.0f, 1e-6f));
+
+    Vec2 newCol(5.0f, 6.0f);
+    m.setColumn(0, newCol);
+    REQUIRE_THAT(m.m[0][0], WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(m.m[1][0], WithinAbs(6.0f, 1e-6f));
+}
+
 // ============================================================================
 // Transformation Matrices
 // ============================================================================

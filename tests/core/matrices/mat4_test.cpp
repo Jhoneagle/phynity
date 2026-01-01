@@ -281,6 +281,35 @@ TEST_CASE("Mat4: Element access", "[Mat4][access]") {
     }
 }
 
+TEST_CASE("Mat4: Row and column accessors", "[Mat4][access][rowcol]") {
+    Mat4 m(1.0f, 2.0f, 3.0f, 4.0f,
+           5.0f, 6.0f, 7.0f, 8.0f,
+           9.0f, 10.0f, 11.0f, 12.0f,
+           13.0f, 14.0f, 15.0f, 16.0f);
+
+    Vec4 row2 = m.getRow(2);
+    REQUIRE_THAT(row2.x, WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(row2.y, WithinAbs(10.0f, 1e-6f));
+    REQUIRE_THAT(row2.z, WithinAbs(11.0f, 1e-6f));
+    REQUIRE_THAT(row2.w, WithinAbs(12.0f, 1e-6f));
+
+    Vec4 col3 = m.getColumn(3);
+    REQUIRE_THAT(col3.x, WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(col3.y, WithinAbs(8.0f, 1e-6f));
+    REQUIRE_THAT(col3.z, WithinAbs(12.0f, 1e-6f));
+    REQUIRE_THAT(col3.w, WithinAbs(16.0f, 1e-6f));
+
+    Vec4 newRow(16.0f, 15.0f, 14.0f, 13.0f);
+    m.setRow(0, newRow);
+    REQUIRE_THAT(m.m[0][0], WithinAbs(16.0f, 1e-6f));
+    REQUIRE_THAT(m.m[0][3], WithinAbs(13.0f, 1e-6f));
+
+    Vec4 newCol(1.0f, 2.0f, 3.0f, 4.0f);
+    m.setColumn(2, newCol);
+    REQUIRE_THAT(m.m[1][2], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(m.m[3][2], WithinAbs(4.0f, 1e-6f));
+}
+
 // ============================================================================
 // Translation Matrices
 // ============================================================================

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <stdexcept>
+#include <sstream>
 
 using phynity::math::matrices::MatDynamic;
 using phynity::math::vectors::VecDynamic;
@@ -34,6 +35,20 @@ TEST_CASE("MatDynamic: constructors", "[MatDynamic][constructor]") {
         REQUIRE_THAT(m(0, 0), WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(m(1, 1), WithinAbs(4.0f, 1e-6f));
     }
+}
+
+TEST_CASE("MatDynamic: queries", "[MatDynamic][query]") {
+    MatDynamic empty;
+    REQUIRE(empty.isEmpty());
+    REQUIRE(empty.numRows() == 0);
+    REQUIRE(empty.numCols() == 0);
+    REQUIRE(empty.size() == 0);
+
+    MatDynamic filled(2, 3, 1.0f);
+    REQUIRE_FALSE(filled.isEmpty());
+    REQUIRE(filled.numRows() == 2);
+    REQUIRE(filled.numCols() == 3);
+    REQUIRE(filled.size() == 6);
 }
 
 TEST_CASE("MatDynamic: factories", "[MatDynamic][factory]") {
@@ -142,6 +157,40 @@ TEST_CASE("MatDynamic: matrix-vector multiplication", "[MatDynamic][vector]") {
     REQUIRE_THROWS_AS(m * wrong, std::invalid_argument);
 }
 
+TEST_CASE("MatDynamic: row and column accessors", "[MatDynamic][access][rowcol]") {
+    MatDynamic m(2, 3);
+    float val = 1.0f;
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            m(i, j) = val++;
+        }
+    }
+
+    VecDynamic row0 = m.getRow(0);
+    REQUIRE_THAT(row0[0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(row0[2], WithinAbs(3.0f, 1e-6f));
+
+    VecDynamic col1 = m.getColumn(1);
+    REQUIRE_THAT(col1[0], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(col1[1], WithinAbs(5.0f, 1e-6f));
+
+    VecDynamic newRow(3);
+    newRow[0] = 7.0f; newRow[1] = 8.0f; newRow[2] = 9.0f;
+    m.setRow(1, newRow);
+    REQUIRE_THAT(m(1, 2), WithinAbs(9.0f, 1e-6f));
+
+    VecDynamic wrongRow(2, 1.0f);
+    REQUIRE_THROWS_AS(m.setRow(0, wrongRow), std::invalid_argument);
+
+    VecDynamic newCol(2);
+    newCol[0] = -1.0f; newCol[1] = -2.0f;
+    m.setColumn(0, newCol);
+    REQUIRE_THAT(m(1, 0), WithinAbs(-2.0f, 1e-6f));
+
+    VecDynamic wrongCol(3, 1.0f);
+    REQUIRE_THROWS_AS(m.setColumn(2, wrongCol), std::invalid_argument);
+}
+
 TEST_CASE("MatDynamic: transpose", "[MatDynamic][transpose]") {
     MatDynamic m(2, 3);
     m(0, 1) = 2.0f;
@@ -162,4 +211,13 @@ TEST_CASE("MatDynamic: equality", "[MatDynamic][comparison]") {
 
     REQUIRE(a == b);
     REQUIRE(a != c);
+}
+
+TEST_CASE("MatDynamic: stream output", "[MatDynamic][stream]") {
+    MatDynamic m(2, 2);
+    m(0, 0) = 1.0f; m(0, 1) = 2.0f;
+    m(1, 0) = 3.0f; m(1, 1) = 4.0f;
+    std::ostringstream oss;
+    oss << m;
+    REQUIRE(oss.str() == "[(1, 2), (3, 4)]");
 }

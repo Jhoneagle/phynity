@@ -338,6 +338,32 @@ TEST_CASE("Mat3: Element access", "[Mat3][access]") {
     }
 }
 
+TEST_CASE("Mat3: Row and column accessors", "[Mat3][access][rowcol]") {
+    Mat3 m(1.0f, 2.0f, 3.0f,
+           4.0f, 5.0f, 6.0f,
+           7.0f, 8.0f, 9.0f);
+
+    Vec3 row1 = m.getRow(1);
+    REQUIRE_THAT(row1.x, WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(row1.y, WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(row1.z, WithinAbs(6.0f, 1e-6f));
+
+    Vec3 col2 = m.getColumn(2);
+    REQUIRE_THAT(col2.x, WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(col2.y, WithinAbs(6.0f, 1e-6f));
+    REQUIRE_THAT(col2.z, WithinAbs(9.0f, 1e-6f));
+
+    Vec3 newRow(9.0f, 8.0f, 7.0f);
+    m.setRow(0, newRow);
+    REQUIRE_THAT(m.m[0][0], WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(m.m[0][2], WithinAbs(7.0f, 1e-6f));
+
+    Vec3 newCol(1.0f, 2.0f, 3.0f);
+    m.setColumn(1, newCol);
+    REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(m.m[2][1], WithinAbs(3.0f, 1e-6f));
+}
+
 // ============================================================================
 // Rotation Matrices
 // ============================================================================

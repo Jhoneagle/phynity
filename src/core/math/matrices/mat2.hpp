@@ -129,6 +129,28 @@ struct Mat2 {
         return m[row][col];
     }
 
+    /// Get row as vector
+    Vec2 getRow(int row) const {
+        return Vec2(m[row][0], m[row][1]);
+    }
+
+    /// Get column as vector
+    Vec2 getColumn(int col) const {
+        return Vec2(m[0][col], m[1][col]);
+    }
+
+    /// Set row from vector
+    void setRow(int row, const Vec2& v) {
+        m[row][0] = v.x;
+        m[row][1] = v.y;
+    }
+
+    /// Set column from vector
+    void setColumn(int col, const Vec2& v) {
+        m[0][col] = v.x;
+        m[1][col] = v.y;
+    }
+
     /// Determinant
     float determinant() const {
         return m[0][0] * m[1][1] - m[0][1] * m[1][0];

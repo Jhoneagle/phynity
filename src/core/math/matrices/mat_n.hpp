@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cmath>
+#include <ostream>
 
 namespace phynity::math::matrices {
 
@@ -19,11 +20,6 @@ struct MatN {
     // Constructors
     MatN() {
         data.fill(0.0f);
-        if constexpr (M == N) {
-            for (std::size_t i = 0; i < M; ++i) {
-                (*this)(i, i) = 1.0f;
-            }
-        }
     }
 
     /// Fill constructor - sets all elements to scalar
@@ -41,6 +37,38 @@ struct MatN {
 
     const float& operator()(std::size_t row, std::size_t col) const {
         return data[row * N + col];
+    }
+
+    /// Get row as vector
+    VecN<N> getRow(std::size_t row) const {
+        VecN<N> result;
+        for (std::size_t j = 0; j < N; ++j) {
+            result[j] = (*this)(row, j);
+        }
+        return result;
+    }
+
+    /// Get column as vector
+    VecN<M> getColumn(std::size_t col) const {
+        VecN<M> result;
+        for (std::size_t i = 0; i < M; ++i) {
+            result[i] = (*this)(i, col);
+        }
+        return result;
+    }
+
+    /// Set row from vector
+    void setRow(std::size_t row, const VecN<N>& v) {
+        for (std::size_t j = 0; j < N; ++j) {
+            (*this)(row, j) = v[j];
+        }
+    }
+
+    /// Set column from vector
+    void setColumn(std::size_t col, const VecN<M>& v) {
+        for (std::size_t i = 0; i < M; ++i) {
+            (*this)(i, col) = v[i];
+        }
     }
 
     // Arithmetic operators
@@ -281,6 +309,23 @@ private:
 template <std::size_t M, std::size_t N>
 inline MatN<M, N> operator*(float scalar, const MatN<M, N>& m) {
     return m * scalar;
+}
+
+/// Stream output
+template <std::size_t M, std::size_t N>
+inline std::ostream& operator<<(std::ostream& os, const MatN<M, N>& m) {
+    os << "[";
+    for (std::size_t i = 0; i < M; ++i) {
+        if (i > 0) os << ", ";
+        os << "(";
+        for (std::size_t j = 0; j < N; ++j) {
+            if (j > 0) os << ", ";
+            os << m(i, j);
+        }
+        os << ")";
+    }
+    os << "]";
+    return os;
 }
 
 }  // namespace phynity::math::matrices
