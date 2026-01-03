@@ -147,35 +147,6 @@ inline Quat toQuaternion(const Mat3& m) {
     return q.normalized();
 }
 
-/// ============================================================================
-/// QUATERNION TO EULER ANGLES (ZYX ORDER)
-/// ============================================================================
-/// Converts a unit quaternion to Euler angles (roll, pitch, yaw) using ZYX rotation order.
-///
-/// Rotation order: ZYX (intrinsic) = XYZ (extrinsic)
-/// This means: R = Rz(ψ) * Ry(θ) * Rx(φ)
-///
-/// Output angles:
-/// - Vec3.x = roll  (φ) in range [-π, π]
-/// - Vec3.y = pitch (θ) in range [-π/2, π/2]
-/// - Vec3.z = yaw   (ψ) in range [-π, π]
-///
-/// GIMBAL LOCK HANDLING:
-/// When pitch ≈ ±90°, gimbal lock occurs and roll/yaw become dependent.
-/// In this case:
-/// - Roll is set to 0 by convention
-/// - Yaw captures the combined rotation
-/// - Threshold of 0.499 is used to detect gimbal lock (slightly less than 0.5
-///   to avoid edge case numerical errors)
-///
-/// NUMERICAL STABILITY NOTES:
-/// - Input quaternion is normalized before conversion
-/// - atan2 is always stable (handles all quadrants, no division by zero)
-/// - asin argument is implicitly clamped by gimbal lock detection
-/// - Gimbal lock cases avoid undefined atan2(0,0) situations
-///
-/// @param q The quaternion to convert
-/// @return Vec3 containing (roll, pitch, yaw) in radians
 inline Vec3 toEulerAngles(const Quat& q) {
     // Normalize quaternion to ensure stability
     Quat normalizedQ = q.normalized();
@@ -192,19 +163,16 @@ inline Vec3 toEulerAngles(const Quat& q) {
 
     Vec3 euler;
 
-    // CASE 2: Gimbal lock at pitch = +90°
     if (singularity_test >= 0.9999f) {
         euler.x = 0.0f;                      // roll = 0 (by convention)
         euler.y = 0.5f * mathf::pi;          // pitch = π/2 (90 degrees)
         euler.z = std::atan2(-2.0f*(x*y - w*z), 1.0f - 2.0f*(y*y + z*z));   // yaw captures combined rotation
     }
-    // CASE 3: Gimbal lock at pitch = -90°
     else if (singularity_test <= -0.9999f) {
         euler.x = 0.0f;                      // roll = 0 (by convention)
         euler.y = -0.5f * mathf::pi;         // pitch = -π/2 (-90 degrees)
         euler.z = std::atan2(-2.0f*(x*y - w*z), 1.0f - 2.0f*(y*y + z*z));  // yaw captures combined rotation
     }
-    // CASE 1: Normal case (no gimbal lock)
     else {
         euler.x = std::atan2(2.0f * (w * x + y * z), 1.0f - 2.0f * (x * x + y * y));  // roll
         euler.y = std::asin(std::clamp(singularity_test, -1.0f, 1.0f));                                   // pitch
@@ -212,6 +180,26 @@ inline Vec3 toEulerAngles(const Quat& q) {
     }
 
     return euler;
+}
+
+inline Quat toQuaternion(const Vec3& euler) {
+    float roll  = euler.x;
+    float pitch = euler.y;
+    float yaw   = euler.z;
+
+    float cr = std::cos(roll  * 0.5f);
+    float sr = std::sin(roll  * 0.5f);
+    float cp = std::cos(pitch * 0.5f);
+    float sp = std::sin(pitch * 0.5f);
+    float cy = std::cos(yaw   * 0.5f);
+    float sy = std::sin(yaw   * 0.5f);
+
+    return Quat(
+        cy*cp*cr + sy*sp*sr, // w
+        cy*cp*sr - sy*sp*cr, // x
+        cy*sp*cr + sy*cp*sr, // y
+        sy*cp*cr - cy*sp*sr  // z
+    );
 }
 
 }  // namespace phynity::math::quaternions
