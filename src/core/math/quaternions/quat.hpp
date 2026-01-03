@@ -24,15 +24,17 @@ struct Quat {
         : w(w), x(x), y(y), z(z) {}
 
     /// Axis-angle constructor: creates rotation of angle θ around axis n̂
-    /// @param axis Unit vector representing rotation axis
+    /// @param axis Vector representing rotation axis
     /// @param angle Rotation angle in radians
     Quat(const Vec3& axis, float angle) {
+        Vec3 normAxis = axis.normalized();
         float halfAngle = angle * 0.5f;
         float sinHalf = std::sin(halfAngle);
+
         w = std::cos(halfAngle);
-        x = axis.x * sinHalf;
-        y = axis.y * sinHalf;
-        z = axis.z * sinHalf;
+        x = normAxis.x * sinHalf;
+        y = normAxis.y * sinHalf;
+        z = normAxis.z * sinHalf;
     }
 
     // ========================================================================
