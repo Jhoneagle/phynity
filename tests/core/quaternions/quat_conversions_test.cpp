@@ -587,3 +587,282 @@ TEST_CASE("Stress test: All Shepperd's method branches", "[conversion][stress]")
     }
 }
 
+// ============================================================================
+// EULER ANGLES <-> QUATERNION CONVERSION TESTS
+// ============================================================================
+
+/// Helper to normalize angle to [-π, π] range
+float normalizeAngle(float angle) {
+    while (angle > mathf::pi) angle -= mathf::two_pi;
+    while (angle < -mathf::pi) angle += mathf::two_pi;
+    return angle;
+}
+
+/// Compare two Vec3 Euler angles considering angle wrapping
+bool approxEuler(const Vec3& a, const Vec3& b, float tolerance = 1e-5f) {
+    return std::abs(normalizeAngle(a.x - b.x)) < tolerance &&
+           std::abs(normalizeAngle(a.y - b.y)) < tolerance &&
+           std::abs(normalizeAngle(a.z - b.z)) < tolerance;
+}
+
+TEST_CASE("Conversion: Identity Euler to quaternion", "[conversion][euler-to-quat]") {
+    Vec3 euler(0.0f, 0.0f, 0.0f);
+    Quat q = toQuaternion(euler);
+    
+    // Identity should give (1, 0, 0, 0)
+    REQUIRE_THAT(q.w, WithinAbs(1.0f, 1e-5f));
+    REQUIRE_THAT(q.x, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.y, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Conversion: 90° roll Euler to quaternion", "[conversion][euler-to-quat]") {
+    Vec3 euler(mathf::pi / 2.0f, 0.0f, 0.0f);
+    Quat q = toQuaternion(euler);
+    
+    // 90° around X-axis: q = (cos(45°), sin(45°), 0, 0)
+    float expected = std::sqrt(2.0f) / 2.0f;
+    REQUIRE_THAT(q.w, WithinAbs(expected, 1e-5f));
+    REQUIRE_THAT(q.x, WithinAbs(expected, 1e-5f));
+    REQUIRE_THAT(q.y, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Conversion: 90° pitch Euler to quaternion", "[conversion][euler-to-quat]") {
+    Vec3 euler(0.0f, mathf::pi / 2.0f, 0.0f);
+    Quat q = toQuaternion(euler);
+    
+    // 90° around Y-axis: q = (cos(45°), 0, sin(45°), 0)
+    float expected = std::sqrt(2.0f) / 2.0f;
+    REQUIRE_THAT(q.w, WithinAbs(expected, 1e-5f));
+    REQUIRE_THAT(q.x, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.y, WithinAbs(expected, 1e-5f));
+    REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Conversion: 90° yaw Euler to quaternion", "[conversion][euler-to-quat]") {
+    Vec3 euler(0.0f, 0.0f, mathf::pi / 2.0f);
+    Quat q = toQuaternion(euler);
+    
+    // 90° around Z-axis: q = (cos(45°), 0, 0, sin(45°))
+    float expected = std::sqrt(2.0f) / 2.0f;
+    REQUIRE_THAT(q.w, WithinAbs(expected, 1e-5f));
+    REQUIRE_THAT(q.x, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.y, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(q.z, WithinAbs(expected, 1e-5f));
+}
+
+TEST_CASE("Conversion: Combined Euler angles to quaternion", "[conversion][euler-to-quat]") {
+    Vec3 euler(
+        30.0f * mathf::deg_to_rad,
+        45.0f * mathf::deg_to_rad,
+        60.0f * mathf::deg_to_rad
+    );
+    Quat q = toQuaternion(euler);
+    
+    // Should be unit quaternion
+    float magnitude = std::sqrt(q.w*q.w + q.x*q.x + q.y*q.y + q.z*q.z);
+    REQUIRE_THAT(magnitude, WithinAbs(1.0f, 1e-5f));
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (identity)", "[conversion][euler-round-trip]") {
+    Vec3 original(0.0f, 0.0f, 0.0f);
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    REQUIRE(approxEuler(original, recovered));
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (single axis rotations)", "[conversion][euler-round-trip]") {
+    std::vector<Vec3> testAngles = {
+        Vec3(mathf::pi / 4.0f, 0.0f, 0.0f),   // 45° roll
+        Vec3(0.0f, mathf::pi / 6.0f, 0.0f),   // 30° pitch
+        Vec3(0.0f, 0.0f, mathf::pi / 3.0f),   // 60° yaw
+        Vec3(mathf::pi / 2.0f, 0.0f, 0.0f),   // 90° roll
+        Vec3(0.0f, 0.0f, mathf::pi / 2.0f),   // 90° yaw
+    };
+    
+    for (const auto& original : testAngles) {
+        Quat q = toQuaternion(original);
+        Vec3 recovered = toEulerAngles(q);
+        REQUIRE(approxEuler(original, recovered));
+    }
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (combined rotations)", "[conversion][euler-round-trip]") {
+    std::vector<Vec3> testAngles = {
+        Vec3(30.0f * mathf::deg_to_rad, 45.0f * mathf::deg_to_rad, 60.0f * mathf::deg_to_rad),
+        Vec3(-30.0f * mathf::deg_to_rad, 20.0f * mathf::deg_to_rad, 15.0f * mathf::deg_to_rad),
+        Vec3(15.0f * mathf::deg_to_rad, -45.0f * mathf::deg_to_rad, 120.0f * mathf::deg_to_rad),
+        Vec3(80.0f * mathf::deg_to_rad, 70.0f * mathf::deg_to_rad, 50.0f * mathf::deg_to_rad),
+        Vec3(-45.0f * mathf::deg_to_rad, -30.0f * mathf::deg_to_rad, -60.0f * mathf::deg_to_rad),
+    };
+    
+    for (const auto& original : testAngles) {
+        Quat q = toQuaternion(original);
+        Vec3 recovered = toEulerAngles(q);
+        REQUIRE(approxEuler(original, recovered));
+    }
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (gimbal lock at +90°)", "[conversion][euler-round-trip][gimbal-lock]") {
+    // At gimbal lock, roll and yaw combine - roll becomes 0, yaw captures combined rotation
+    Vec3 original(0.0f, mathf::pi / 2.0f, 0.0f);
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    // Pitch should be preserved
+    REQUIRE_THAT(recovered.y, WithinAbs(mathf::pi / 2.0f, 1e-5f));
+    // Roll should be 0 by convention
+    REQUIRE_THAT(recovered.x, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (gimbal lock at -90°)", "[conversion][euler-round-trip][gimbal-lock]") {
+    Vec3 original(0.0f, -mathf::pi / 2.0f, 0.0f);
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    REQUIRE_THAT(recovered.y, WithinAbs(-mathf::pi / 2.0f, 1e-5f));
+    REQUIRE_THAT(recovered.x, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Round-trip: Euler -> Quat -> Euler (gimbal lock with non-zero angles)", "[conversion][euler-round-trip][gimbal-lock]") {
+    // When at gimbal lock, roll+yaw combine into yaw only
+    Vec3 original(
+        30.0f * mathf::deg_to_rad,
+        mathf::pi / 2.0f,
+        45.0f * mathf::deg_to_rad
+    );
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    REQUIRE_THAT(recovered.y, WithinAbs(mathf::pi / 2.0f, 1e-5f));
+    REQUIRE_THAT(recovered.x, WithinAbs(0.0f, 1e-5f));
+    Quat q2 = toQuaternion(recovered);
+    REQUIRE(quaternionsEqual(q, q2, 1e-5f));
+}
+
+TEST_CASE("Round-trip: Quat -> Euler -> Quat (identity)", "[conversion][quat-round-trip]") {
+    Quat original(1.0f, 0.0f, 0.0f, 0.0f);
+    Vec3 euler = toEulerAngles(original);
+    Quat recovered = toQuaternion(euler);
+    
+    REQUIRE(quaternionsEqual(original, recovered));
+}
+
+TEST_CASE("Round-trip: Quat -> Euler -> Quat (simple rotations)", "[conversion][quat-round-trip]") {
+    std::vector<Quat> testQuats = {
+        Quat(Vec3(1.0f, 0.0f, 0.0f), mathf::pi / 4.0f),  // 45° around X
+        Quat(Vec3(0.0f, 1.0f, 0.0f), mathf::pi / 6.0f),  // 30° around Y
+        Quat(Vec3(0.0f, 0.0f, 1.0f), mathf::pi / 3.0f),  // 60° around Z
+    };
+    
+    for (const auto& original : testQuats) {
+        Vec3 euler = toEulerAngles(original);
+        Quat recovered = toQuaternion(euler);
+        REQUIRE(quaternionsEqual(original, recovered));
+    }
+}
+
+TEST_CASE("Round-trip: Quat -> Euler -> Quat (arbitrary quaternions)", "[conversion][quat-round-trip]") {
+    std::vector<Quat> testQuats = {
+        Quat(0.8660254f, 0.5f, 0.0f, 0.0f),           // Normalized
+        Quat(0.7071068f, 0.0f, 0.7071068f, 0.0f),     // 90° Y
+        Quat(0.9238795f, 0.2209424f, 0.2705981f, 0.1410142f),  // Combined
+    };
+    
+    for (const auto& original : testQuats) {
+        Vec3 euler = toEulerAngles(original);
+        Quat recovered = toQuaternion(euler);
+        REQUIRE(quaternionsEqual(original, recovered, 1e-5f));
+    }
+}
+
+TEST_CASE("Round-trip: Quat -> Euler -> Quat (near gimbal lock)", "[conversion][quat-round-trip]") {
+    // Test quaternions that produce pitch close to ±90°
+    Vec3 euler1(10.0f * mathf::deg_to_rad, 89.0f * mathf::deg_to_rad, 20.0f * mathf::deg_to_rad);
+    Quat q1 = toQuaternion(euler1);
+    Vec3 recovered1 = toEulerAngles(q1);
+    Quat q1_back = toQuaternion(recovered1);
+    REQUIRE(quaternionsEqual(q1, q1_back, 1e-4f));
+    
+    Vec3 euler2(10.0f * mathf::deg_to_rad, -89.0f * mathf::deg_to_rad, 20.0f * mathf::deg_to_rad);
+    Quat q2 = toQuaternion(euler2);
+    Vec3 recovered2 = toEulerAngles(q2);
+    Quat q2_back = toQuaternion(recovered2);
+    REQUIRE(quaternionsEqual(q2, q2_back, 1e-4f));
+}
+
+TEST_CASE("Stress: Random Euler angles round-trip", "[conversion][euler-round-trip][stress]") {
+    // Test with random Euler angles (avoiding exact gimbal lock)
+    std::srand(12345); // Fixed seed for reproducibility
+    
+    for (int i = 0; i < 100; ++i) {
+        Vec3 original(
+            static_cast<float>(std::rand() % 360 - 180) * mathf::deg_to_rad,  // roll: [-180, 180]
+            static_cast<float>(std::rand() % 178 - 89) * mathf::deg_to_rad,   // pitch: [-89, 89] (avoid exact gimbal lock)
+            static_cast<float>(std::rand() % 360 - 180) * mathf::deg_to_rad   // yaw: [-180, 180]
+        );
+        
+        Quat q = toQuaternion(original);
+        Vec3 recovered = toEulerAngles(q);
+        
+        REQUIRE(approxEuler(original, recovered, 1e-4f));
+    }
+}
+
+TEST_CASE("Stress: Euler conversion is deterministic", "[conversion][euler-round-trip][stress]") {
+    Vec3 euler(30.0f * mathf::deg_to_rad, 45.0f * mathf::deg_to_rad, 60.0f * mathf::deg_to_rad);
+    
+    // Convert multiple times - should always get same result
+    Quat q1 = toQuaternion(euler);
+    Quat q2 = toQuaternion(euler);
+    Quat q3 = toQuaternion(euler);
+    
+    REQUIRE(quaternionsEqual(q1, q2));
+    REQUIRE(quaternionsEqual(q2, q3));
+    
+    Vec3 e1 = toEulerAngles(q1);
+    Vec3 e2 = toEulerAngles(q1);
+    Vec3 e3 = toEulerAngles(q1);
+    
+    REQUIRE(approxEuler(e1, e2));
+    REQUIRE(approxEuler(e2, e3));
+}
+
+TEST_CASE("Edge case: Very small Euler angles", "[conversion][euler-round-trip][edge-case]") {
+    Vec3 original(0.001f, 0.002f, 0.003f);
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    REQUIRE(approxEuler(original, recovered));
+}
+
+TEST_CASE("Edge case: Large Euler angles (angle wrapping)", "[conversion][euler-round-trip][edge-case]") {
+    // Test angles outside [-π, π] range
+    Vec3 original(
+        3.0f * mathf::pi,        // 540° (wraps to 180°)
+        mathf::pi / 4.0f,        // 45°
+        -2.5f * mathf::pi        // -450° (wraps to -90°)
+    );
+    
+    Quat q = toQuaternion(original);
+    Vec3 recovered = toEulerAngles(q);
+    
+    // Recovered should be in normalized range but represent same rotation
+    Quat q_recovered = toQuaternion(recovered);
+    REQUIRE(quaternionsEqual(q, q_recovered));
+}
+
+TEST_CASE("Consistency: Euler -> Quat matches expected quaternion", "[conversion][euler-to-quat][validation]") {
+    // Known test case from conversion_formulas.txt
+    Vec3 euler(0.0f, 0.0f, 0.0f);
+    Quat q = toQuaternion(euler);
+    
+    // Identity: q = (1, 0, 0, 0)
+    REQUIRE_THAT(q.w, WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(q.x, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(q.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-6f));
+}
+
