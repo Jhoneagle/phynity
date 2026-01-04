@@ -1,20 +1,31 @@
 # Quaternions
 
-This module will contain quaternion implementations for efficient 3D rotations.
+This module provides quaternion implementations for efficient 3D rotations in the physics engine.
 
-## Planned Classes
+## Implemented Classes
 
-- **Quat** - Quaternion for representing 3D rotations without gimbal lock
-- **QuatInterpolation** - Utilities for smooth rotation interpolation (slerp, nlerp)
-
-## Operations
-
-- Basic arithmetic: addition, multiplication (quaternion algebra)
-- Conversion to/from matrices, Euler angles, axis-angle
-- Normalization, conjugate, inverse
-- Rotation of vectors
-- Interpolation (slerp, nlerp)
+- **Quat** (`quat.hpp`) - Quaternion for representing 3D rotations without gimbal lock
+- **Conversions** (`quat_conversions.hpp`) - Conversion utilities between quaternions and other rotation representations
 
 ## Status
 
-Coming soon...
+### ✅ Basic Arithmetic
+- Addition, subtraction, negation
+- Quaternion multiplication (rotation composition)
+- Scalar multiplication and division
+- Dot product
+
+### ✅ Conversions
+- **To/from rotation matrices** (3×3)
+- **To/from Euler angles** (roll, pitch, yaw with ZYX order)
+- **To/from axis-angle representation**
+- Numerically stable implementations using Shepperd's method and gimbal lock handling
+
+### ✅ Core Operations
+- Normalization (in-place and copy)
+- Magnitude and squared magnitude
+- Conjugate and inverse
+- Vector rotation (`rotateVector`, `unrotateVector`)
+
+### ❌ Pending Implementation
+- **Interpolation** (slerp, nlerp) - Planned for smooth rotation interpolation
