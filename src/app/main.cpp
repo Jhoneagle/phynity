@@ -2,8 +2,8 @@
 #include <iostream>
 #include <iomanip>
 
-using namespace phynity::math;
-using namespace phynity::physics;
+using phynity::physics::ParticleSystem;
+using phynity::math::vectors::Vec3f;
 
 int main() {
     std::cout << "=== Phynity Phase 0 - Simple Particle System ===" << std::endl;
@@ -11,9 +11,9 @@ int main() {
     ParticleSystem system;
     
     // Spawn some particles
-    system.spawn(Vec3(0.0f, 5.0f, 0.0f), Vec3(1.0f, 0.0f, 0.0f), 1.0f);
-    system.spawn(Vec3(0.0f, 5.0f, 0.0f), Vec3(-1.0f, 0.0f, 0.0f), 1.0f);
-    system.spawn(Vec3(0.0f, 5.0f, 0.0f), Vec3(0.0f, 0.0f, 1.0f), 1.0f);
+    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(1.0f, 0.0f, 0.0f), 1.0f);
+    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(-1.0f, 0.0f, 0.0f), 1.0f);
+    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(0.0f, 0.0f, 1.0f), 1.0f);
     
     std::cout << "Spawned " << system.particleCount() << " particles at y=5" << std::endl;
 
@@ -25,7 +25,7 @@ int main() {
     // Run simulation
     for (int i = 0; i < steps; ++i) {
         // Apply gravity
-        system.applyGravity(Vec3(0.0f, gravity, 0.0f));
+        system.applyGravity(Vec3f(0.0f, gravity, 0.0f));
         
         // Step simulation
         system.step(dt);

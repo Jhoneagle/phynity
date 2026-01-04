@@ -8,6 +8,8 @@
 
 namespace phynity::math::matrices {
 
+using phynity::math::vectors::Vec2;
+
 /// 2×2 floating-point matrix for 2D transformations with dual-precision support.
 /// Storage is in row-major order: m[row][col]
 template<typename T = float>
@@ -32,7 +34,7 @@ struct Mat2 {
     }
 
     /// Column vector constructor (two column vectors)
-    Mat2(const phynity::math::vectors::Vec2<T>& col0, const phynity::math::vectors::Vec2<T>& col1) {
+    Mat2(const Vec2<T>& col0, const Vec2<T>& col1) {
         m[0][0] = col0.x; m[0][1] = col1.x;
         m[1][0] = col0.y; m[1][1] = col1.y;
     }
@@ -77,8 +79,8 @@ struct Mat2 {
     }
 
     /// Matrix-vector multiplication
-    phynity::math::vectors::Vec2<T> operator*(const phynity::math::vectors::Vec2<T>& v) const {
-        return phynity::math::vectors::Vec2<T>(
+    Vec2<T> operator*(const Vec2<T>& v) const {
+        return Vec2<T>(
             m[0][0] * v.x + m[0][1] * v.y,
             m[1][0] * v.x + m[1][1] * v.y
         );
@@ -152,23 +154,23 @@ struct Mat2 {
     }
 
     /// Get row as vector
-    phynity::math::vectors::Vec2<T> getRow(int row) const {
-        return phynity::math::vectors::Vec2<T>(m[row][0], m[row][1]);
+    Vec2<T> getRow(int row) const {
+        return Vec2<T>(m[row][0], m[row][1]);
     }
 
     /// Get column as vector
-    phynity::math::vectors::Vec2<T> getColumn(int col) const {
-        return phynity::math::vectors::Vec2<T>(m[0][col], m[1][col]);
+    Vec2<T> getColumn(int col) const {
+        return Vec2<T>(m[0][col], m[1][col]);
     }
 
     /// Set row from vector
-    void setRow(int row, const phynity::math::vectors::Vec2<T>& v) {
+    void setRow(int row, const Vec2<T>& v) {
         m[row][0] = v.x;
         m[row][1] = v.y;
     }
 
     /// Set column from vector
-    void setColumn(int col, const phynity::math::vectors::Vec2<T>& v) {
+    void setColumn(int col, const Vec2<T>& v) {
         m[0][col] = v.x;
         m[1][col] = v.y;
     }
@@ -273,8 +275,8 @@ inline Mat2<T> operator*(T scalar, const Mat2<T>& m) {
 
 /// Vector * Matrix multiplication (treats vector as row vector)
 template<typename T = float>
-inline phynity::math::vectors::Vec2<T> operator*(const phynity::math::vectors::Vec2<T>& v, const Mat2<T>& m) {
-    return phynity::math::vectors::Vec2<T>(
+inline Vec2<T> operator*(const Vec2<T>& v, const Mat2<T>& m) {
+    return Vec2<T>(
         v.x * m.m[0][0] + v.y * m.m[1][0],
         v.x * m.m[0][1] + v.y * m.m[1][1]
     );

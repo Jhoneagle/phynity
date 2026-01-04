@@ -9,7 +9,8 @@
 
 namespace phynity::math::matrices {
 
-/// 4×4 floating-point matrix for 3D transformations and homogeneous coordinates with dual-precision support.
+using phynity::math::vectors::Vec3;
+using phynity::math::vectors::Vec4;
 /// Storage is in row-major order: m[row][col]
 template<typename T = float>
 struct Mat4 {
@@ -43,7 +44,7 @@ struct Mat4 {
     }
 
     /// Column vector constructor (four column vectors)
-    Mat4(const phynity::math::vectors::Vec4<T>& col0, const phynity::math::vectors::Vec4<T>& col1, const phynity::math::vectors::Vec4<T>& col2, const phynity::math::vectors::Vec4<T>& col3) {
+    Mat4(const Vec4<T>& col0, const Vec4<T>& col1, const Vec4<T>& col2, const Vec4<T>& col3) {
         m[0][0] = col0.x; m[0][1] = col1.x; m[0][2] = col2.x; m[0][3] = col3.x;
         m[1][0] = col0.y; m[1][1] = col1.y; m[1][2] = col2.y; m[1][3] = col3.y;
         m[2][0] = col0.z; m[2][1] = col1.z; m[2][2] = col2.z; m[2][3] = col3.z;
@@ -106,8 +107,8 @@ struct Mat4 {
     }
 
     /// Matrix-vector multiplication (column vector)
-    phynity::math::vectors::Vec4<T> operator*(const phynity::math::vectors::Vec4<T>& v) const {
-        return phynity::math::vectors::Vec4<T>(
+    Vec4<T> operator*(const Vec4<T>& v) const {
+        return Vec4<T>(
             m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w,
             m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w,
             m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w,
@@ -116,11 +117,11 @@ struct Mat4 {
     }
 
     /// Matrix-vector multiplication with Vec3 (treats as Vec4 with w=1)
-    phynity::math::vectors::Vec3<T> operator*(const phynity::math::vectors::Vec3<T>& v) const {
+    Vec3<T> operator*(const Vec3<T>& v) const {
         T x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
         T y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
         T z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3];
-        return phynity::math::vectors::Vec3<T>(x, y, z);
+        return Vec3<T>(x, y, z);
     }
 
     Mat4& operator+=(const Mat4& other) {
@@ -218,17 +219,17 @@ struct Mat4 {
     }
 
     /// Get row as vector
-    phynity::math::vectors::Vec4<T> getRow(int row) const {
-        return phynity::math::vectors::Vec4<T>(m[row][0], m[row][1], m[row][2], m[row][3]);
+    Vec4<T> getRow(int row) const {
+        return Vec4<T>(m[row][0], m[row][1], m[row][2], m[row][3]);
     }
 
     /// Get column as vector
-    phynity::math::vectors::Vec4<T> getColumn(int col) const {
-        return phynity::math::vectors::Vec4<T>(m[0][col], m[1][col], m[2][col], m[3][col]);
+    Vec4<T> getColumn(int col) const {
+        return Vec4<T>(m[0][col], m[1][col], m[2][col], m[3][col]);
     }
 
     /// Set row from vector
-    void setRow(int row, const phynity::math::vectors::Vec4<T>& v) {
+    void setRow(int row, const Vec4<T>& v) {
         m[row][0] = v.x;
         m[row][1] = v.y;
         m[row][2] = v.z;
@@ -236,7 +237,7 @@ struct Mat4 {
     }
 
     /// Set column from vector
-    void setColumn(int col, const phynity::math::vectors::Vec4<T>& v) {
+    void setColumn(int col, const Vec4<T>& v) {
         m[0][col] = v.x;
         m[1][col] = v.y;
         m[2][col] = v.z;
@@ -384,7 +385,7 @@ struct Mat4 {
     }
 
     /// Create translation matrix from Vec3
-    static Mat4 translation(const phynity::math::vectors::Vec3<T>& t) {
+    static Mat4 translation(const Vec3<T>& t) {
         return translation(t.x, t.y, t.z);
     }
 
@@ -404,7 +405,7 @@ struct Mat4 {
     }
 
     /// Create 3D scale matrix from Vec3
-    static Mat4 scale(const phynity::math::vectors::Vec3<T>& s) {
+    static Mat4 scale(const Vec3<T>& s) {
         return scale(s.x, s.y, s.z);
     }
 
@@ -445,7 +446,7 @@ struct Mat4 {
     }
 
     /// Create rotation matrix around an arbitrary axis (angle in radians, axis must be normalized)
-    static Mat4 rotationAxis(const phynity::math::vectors::Vec3<T>& axis, T angleRadians) {
+    static Mat4 rotationAxis(const Vec3<T>& axis, T angleRadians) {
         T c = std::cos(angleRadians);
         T s = std::sin(angleRadians);
         T omc = T(1) - c;
@@ -506,8 +507,8 @@ inline Mat4<T> operator*(T scalar, const Mat4<T>& m) {
 
 /// Vector * Matrix multiplication (treats vector as row vector)
 template<typename T = float>
-inline phynity::math::vectors::Vec4<T> operator*(const phynity::math::vectors::Vec4<T>& v, const Mat4<T>& m) {
-    return phynity::math::vectors::Vec4<T>(
+inline Vec4<T> operator*(const Vec4<T>& v, const Mat4<T>& m) {
+    return Vec4<T>(
         v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0] + v.w * m.m[3][0],
         v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1] + v.w * m.m[3][1],
         v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2] + v.w * m.m[3][2],
@@ -517,13 +518,13 @@ inline phynity::math::vectors::Vec4<T> operator*(const phynity::math::vectors::V
 
 /// Matrix * Vector multiplication (treats vector as column vector) - for Vec4
 template<typename T = float>
-inline phynity::math::vectors::Vec4<T> operator*(const Mat4<T>& m, const phynity::math::vectors::Vec4<T>& v) {
+inline Vec4<T> operator*(const Mat4<T>& m, const Vec4<T>& v) {
     return m * v;
 }
 
 /// Matrix * Vector multiplication (treats vector as column vector, w=1) - for Vec3
 template<typename T = float>
-inline phynity::math::vectors::Vec3<T> operator*(const Mat4<T>& m, const phynity::math::vectors::Vec3<T>& v) {
+inline Vec3<T> operator*(const Mat4<T>& m, const Vec3<T>& v) {
     return m * v;
 }
 

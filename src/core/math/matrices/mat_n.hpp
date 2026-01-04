@@ -11,7 +11,7 @@
 
 namespace phynity::math::matrices {
 
-/// Compile-time sized MxN matrix with dual-precision support (row-major storage)
+using phynity::math::vectors::VecN;
 template <std::size_t M, std::size_t N, typename T = float>
 struct MatN {
     static_assert(std::is_floating_point_v<T>, "MatN template parameter must be a floating-point type");
@@ -40,8 +40,8 @@ struct MatN {
     }
 
     /// Get row as vector
-    phynity::math::vectors::VecN<N, T> getRow(std::size_t row) const {
-        phynity::math::vectors::VecN<N, T> result;
+    VecN<N, T> getRow(std::size_t row) const {
+        VecN<N, T> result;
         for (std::size_t j = 0; j < N; ++j) {
             result[j] = (*this)(row, j);
         }
@@ -49,8 +49,8 @@ struct MatN {
     }
 
     /// Get column as vector
-    phynity::math::vectors::VecN<M, T> getColumn(std::size_t col) const {
-        phynity::math::vectors::VecN<M, T> result;
+    VecN<M, T> getColumn(std::size_t col) const {
+        VecN<M, T> result;
         for (std::size_t i = 0; i < M; ++i) {
             result[i] = (*this)(i, col);
         }
@@ -58,14 +58,14 @@ struct MatN {
     }
 
     /// Set row from vector
-    void setRow(std::size_t row, const phynity::math::vectors::VecN<N, T>& v) {
+    void setRow(std::size_t row, const VecN<N, T>& v) {
         for (std::size_t j = 0; j < N; ++j) {
             (*this)(row, j) = v[j];
         }
     }
 
     /// Set column from vector
-    void setColumn(std::size_t col, const phynity::math::vectors::VecN<M, T>& v) {
+    void setColumn(std::size_t col, const VecN<M, T>& v) {
         for (std::size_t i = 0; i < M; ++i) {
             (*this)(i, col) = v[i];
         }
@@ -181,8 +181,8 @@ struct MatN {
     }
 
     /// Matrix-vector multiplication (VecN length N -> VecN length M)
-    phynity::math::vectors::VecN<M, T> operator*(const phynity::math::vectors::VecN<N, T>& v) const {
-        phynity::math::vectors::VecN<M, T> result;
+    VecN<M, T> operator*(const VecN<N, T>& v) const {
+        VecN<M, T> result;
         for (std::size_t i = 0; i < M; ++i) {
             T sum = T(0);
             for (std::size_t k = 0; k < N; ++k) {
@@ -356,7 +356,7 @@ inline MatN<M, N, T> operator*(T scalar, const MatN<M, N, T>& m) {
 
 /// Matrix * Vector multiplication
 template <std::size_t M, std::size_t N, typename T = float>
-inline phynity::math::vectors::VecN<M, T> operator*(const MatN<M, N, T>& m, const phynity::math::vectors::VecN<N, T>& v) {
+inline VecN<M, T> operator*(const MatN<M, N, T>& m, const VecN<N, T>& v) {
     return m * v;
 }
 

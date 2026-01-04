@@ -9,7 +9,7 @@
 
 namespace phynity::math::matrices {
 
-/// Runtime-sized matrix with dual-precision support and row-major storage
+using phynity::math::vectors::VecDynamic;
 template<typename T = float>
 struct MatDynamic {
     static_assert(std::is_floating_point_v<T>, "MatDynamic template parameter must be a floating-point type");
@@ -55,8 +55,8 @@ struct MatDynamic {
     }
 
     /// Get row as vector
-    phynity::math::vectors::VecDynamic<T> getRow(std::size_t row) const {
-        phynity::math::vectors::VecDynamic<T> result(cols);
+    VecDynamic<T> getRow(std::size_t row) const {
+        VecDynamic<T> result(cols);
         for (std::size_t j = 0; j < cols; ++j) {
             result[j] = (*this)(row, j);
         }
@@ -64,8 +64,8 @@ struct MatDynamic {
     }
 
     /// Get column as vector
-    phynity::math::vectors::VecDynamic<T> getColumn(std::size_t col) const {
-        phynity::math::vectors::VecDynamic<T> result(rows);
+    VecDynamic<T> getColumn(std::size_t col) const {
+        VecDynamic<T> result(rows);
         for (std::size_t i = 0; i < rows; ++i) {
             result[i] = (*this)(i, col);
         }
@@ -73,7 +73,7 @@ struct MatDynamic {
     }
 
     /// Set row from vector
-    void setRow(std::size_t row, const phynity::math::vectors::VecDynamic<T>& v) {
+    void setRow(std::size_t row, const VecDynamic<T>& v) {
         if (v.size() != cols) {
             throw std::invalid_argument("Vector size does not match number of columns");
         }
@@ -83,7 +83,7 @@ struct MatDynamic {
     }
 
     /// Set column from vector
-    void setColumn(std::size_t col, const phynity::math::vectors::VecDynamic<T>& v) {
+    void setColumn(std::size_t col, const VecDynamic<T>& v) {
         if (v.size() != rows) {
             throw std::invalid_argument("Vector size does not match number of rows");
         }
@@ -207,11 +207,11 @@ struct MatDynamic {
         return result;
     }
 
-    phynity::math::vectors::VecDynamic<T> operator*(const phynity::math::vectors::VecDynamic<T>& v) const {
+    VecDynamic<T> operator*(const VecDynamic<T>& v) const {
         if (cols != v.size()) {
             throw std::invalid_argument("Matrix-vector multiplication dimension mismatch");
         }
-        phynity::math::vectors::VecDynamic<T> result(rows);
+        VecDynamic<T> result(rows);
         for (std::size_t i = 0; i < rows; ++i) {
             T sum = T(0);
             for (std::size_t k = 0; k < cols; ++k) {

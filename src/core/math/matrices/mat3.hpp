@@ -8,7 +8,7 @@
 
 namespace phynity::math::matrices {
 
-/// 3×3 floating-point matrix for 3D transformations and rotations with dual-precision support.
+using phynity::math::vectors::Vec3;
 /// Storage is in row-major order: m[row][col]
 template<typename T = float>
 struct Mat3 {
@@ -37,7 +37,7 @@ struct Mat3 {
     }
 
     /// Column vector constructor (three column vectors)
-    Mat3(const phynity::math::vectors::Vec3<T>& col0, const phynity::math::vectors::Vec3<T>& col1, const phynity::math::vectors::Vec3<T>& col2) {
+    Mat3(const Vec3<T>& col0, const Vec3<T>& col1, const Vec3<T>& col2) {
         m[0][0] = col0.x; m[0][1] = col1.x; m[0][2] = col2.x;
         m[1][0] = col0.y; m[1][1] = col1.y; m[1][2] = col2.y;
         m[2][0] = col0.z; m[2][1] = col1.z; m[2][2] = col2.z;
@@ -99,8 +99,8 @@ struct Mat3 {
     }
 
     /// Matrix-vector multiplication
-    phynity::math::vectors::Vec3<T> operator*(const phynity::math::vectors::Vec3<T>& v) const {
-        return phynity::math::vectors::Vec3<T>(
+    Vec3<T> operator*(const Vec3<T>& v) const {
+        return Vec3<T>(
             m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
             m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
             m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z
@@ -202,24 +202,24 @@ struct Mat3 {
     }
 
     /// Get row as vector
-    phynity::math::vectors::Vec3<T> getRow(int row) const {
-        return phynity::math::vectors::Vec3<T>(m[row][0], m[row][1], m[row][2]);
+    Vec3<T> getRow(int row) const {
+        return Vec3<T>(m[row][0], m[row][1], m[row][2]);
     }
 
     /// Get column as vector
-    phynity::math::vectors::Vec3<T> getColumn(int col) const {
-        return phynity::math::vectors::Vec3<T>(m[0][col], m[1][col], m[2][col]);
+    Vec3<T> getColumn(int col) const {
+        return Vec3<T>(m[0][col], m[1][col], m[2][col]);
     }
 
     /// Set row from vector
-    void setRow(int row, const phynity::math::vectors::Vec3<T>& v) {
+    void setRow(int row, const Vec3<T>& v) {
         m[row][0] = v.x;
         m[row][1] = v.y;
         m[row][2] = v.z;
     }
 
     /// Set column from vector
-    void setColumn(int col, const phynity::math::vectors::Vec3<T>& v) {
+    void setColumn(int col, const Vec3<T>& v) {
         m[0][col] = v.x;
         m[1][col] = v.y;
         m[2][col] = v.z;
@@ -358,7 +358,7 @@ struct Mat3 {
     }
 
     /// Create rotation matrix around an arbitrary axis (angle in radians, axis must be normalized)
-    static Mat3 rotationAxis(const phynity::math::vectors::Vec3<T>& axis, T angleRadians) {
+    static Mat3 rotationAxis(const Vec3<T>& axis, T angleRadians) {
         T c = std::cos(angleRadians);
         T s = std::sin(angleRadians);
         T omc = T(1) - c;
@@ -401,8 +401,8 @@ inline Mat3<T> operator*(T scalar, const Mat3<T>& m) {
 
 /// Vector * Matrix multiplication (treats vector as row vector)
 template<typename T = float>
-inline phynity::math::vectors::Vec3<T> operator*(const phynity::math::vectors::Vec3<T>& v, const Mat3<T>& m) {
-    return phynity::math::vectors::Vec3<T>(
+inline Vec3<T> operator*(const Vec3<T>& v, const Mat3<T>& m) {
+    return Vec3<T>(
         v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0],
         v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1],
         v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2]
@@ -411,7 +411,7 @@ inline phynity::math::vectors::Vec3<T> operator*(const phynity::math::vectors::V
 
 /// Matrix * Vector multiplication (treats vector as column vector) - for Vec3
 template<typename T = float>
-inline phynity::math::vectors::Vec3<T> operator*(const Mat3<T>& m, const phynity::math::vectors::Vec3<T>& v) {
+inline Vec3<T> operator*(const Mat3<T>& m, const Vec3<T>& v) {
     return m * v;
 }
 

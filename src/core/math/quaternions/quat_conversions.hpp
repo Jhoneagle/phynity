@@ -10,7 +10,12 @@
 
 namespace phynity::math::quaternions {
 
-using namespace phynity::math::utilities;
+using phynity::math::utilities::math;
+using phynity::math::utilities::rotation;
+using phynity::math::utilities::hasNaN;
+using phynity::math::utilities::hasInf;
+using phynity::math::matrices::Mat3;
+using phynity::math::vectors::Vec3;
 
 /// ============================================================================
 /// QUATERNION TO ROTATION MATRIX (3×3)
@@ -34,7 +39,7 @@ using namespace phynity::math::utilities;
 /// @param q The quaternion to convert (should be unit quaternion)
 /// @return The corresponding 3×3 rotation matrix (row-major storage)
 template<typename T = float>
-inline phynity::math::matrices::Mat3<T> toRotationMatrix(const Quat<T>& q) {
+inline Mat3<T> toRotationMatrix(const Quat<T>& q) {
     Quat<T> qn = q.normalized();
 
     // Compute optimized terms to reduce floating-point operations
@@ -50,7 +55,7 @@ inline phynity::math::matrices::Mat3<T> toRotationMatrix(const Quat<T>& q) {
 
     // Construct the rotation matrix using the optimized form
     // Row-major storage: m[row][col]
-    return phynity::math::matrices::Mat3<T>(
+    return Mat3<T>(
         // Row 0
         T(1) - T(2) * (yy + zz), T(2) * (xy - wz), T(2) * (xz + wy),
         // Row 1
@@ -77,7 +82,7 @@ inline phynity::math::matrices::Mat3<T> toRotationMatrix(const Quat<T>& q) {
 /// @param m The 3×3 rotation matrix (row-major storage)
 /// @return The corresponding unit quaternion
 template<typename T = float>
-inline Quat<T> toQuaternion(const phynity::math::matrices::Mat3<T>& m) {
+inline Quat<T> toQuaternion(const Mat3<T>& m) {
     if (hasNaN(m) || hasInf(m)) {
         // Invalid matrix
         // REJECT
@@ -149,7 +154,7 @@ inline Quat<T> toQuaternion(const phynity::math::matrices::Mat3<T>& m) {
 }
 
 template<typename T = float>
-inline phynity::math::vectors::Vec3<T> toEulerAngles(const Quat<T>& q) {
+inline Vec3<T> toEulerAngles(const Quat<T>& q) {
     // Normalize quaternion to ensure stability
     Quat<T> normalizedQ = q.normalized();
 
@@ -163,7 +168,7 @@ inline phynity::math::vectors::Vec3<T> toEulerAngles(const Quat<T>& q) {
     // This represents the sine of pitch angle
     T singularity_test = 2*(w*y - z*x);
 
-    phynity::math::vectors::Vec3<T> euler;
+    Vec3<T> euler;
 
     if (singularity_test >= T(0.9999)) {
         euler.x = T(0);                      // roll = 0 (by convention)
@@ -185,7 +190,7 @@ inline phynity::math::vectors::Vec3<T> toEulerAngles(const Quat<T>& q) {
 }
 
 template<typename T = float>
-inline Quat<T> toQuaternion(const phynity::math::vectors::Vec3<T>& euler) {
+inline Quat<T> toQuaternion(const Vec3<T>& euler) {
     T roll  = euler.x;
     T pitch = euler.y;
     T yaw   = euler.z;
@@ -206,7 +211,7 @@ inline Quat<T> toQuaternion(const phynity::math::vectors::Vec3<T>& euler) {
 }
 
 template<typename T = float>
-inline void toAxisAngle(const Quat<T>& q, phynity::math::vectors::Vec3<T>& axis, T& angle) {
+inline void toAxisAngle(const Quat<T>& q, Vec3<T>& axis, T& angle) {
     Quat<T> qn = q.normalized();
     if (qn.w < T(0)) {
         qn = -qn;
@@ -226,7 +231,7 @@ inline void toAxisAngle(const Quat<T>& q, phynity::math::vectors::Vec3<T>& axis,
 
             axis.normalize();
         } else {
-            axis = phynity::math::vectors::Vec3<T>(T(1), T(0), T(0));
+            axis = Vec3<T>(T(1), T(0), T(0));
         }
     } else if (w < T(1)) {
         angle = T(2) * std::acos(w);
@@ -239,11 +244,11 @@ inline void toAxisAngle(const Quat<T>& q, phynity::math::vectors::Vec3<T>& axis,
 
             axis.normalize();
         } else {
-            axis = phynity::math::vectors::Vec3<T>(T(1), T(0), T(0));
+            axis = Vec3<T>(T(1), T(0), T(0));
         }
     } else {
         angle = T(0);
-        axis = phynity::math::vectors::Vec3<T>(T(1), T(0), T(0));
+        axis = Vec3<T>(T(1), T(0), T(0));
     }
 }
 

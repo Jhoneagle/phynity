@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <type_traits>
 
+using phynity::math::vectors::Vec3;
+
 namespace phynity::math::quaternions {
 
 /// Quaternion for 3D rotations without gimbal lock with dual-precision support.
@@ -27,8 +29,8 @@ struct Quat {
     /// Axis-angle constructor: creates rotation of angle θ around axis n̂
     /// @param axis Vector representing rotation axis
     /// @param angle Rotation angle in radians
-    Quat(const phynity::math::vectors::Vec3<T>& axis, T angle) {
-        phynity::math::vectors::Vec3<T> normAxis = axis.normalized();
+    Quat(const Vec3<T>& axis, T angle) {
+        Vec3<T> normAxis = axis.normalized();
         T halfAngle = angle * T(0.5);
         T sinHalf = std::sin(halfAngle);
 
@@ -201,21 +203,21 @@ struct Quat {
     /// Assumes this quaternion is normalized (or at least a valid rotation)
     /// @param v Vector to rotate
     /// @return Rotated vector
-    phynity::math::vectors::Vec3<T> rotateVector(const phynity::math::vectors::Vec3<T>& v) const {
+    Vec3<T> rotateVector(const Vec3<T>& v) const {
         // Convert vector to quaternion form: v_quat = (0, v.x, v.y, v.z)
         Quat vQuat(T(0), v.x, v.y, v.z);
         
         // Apply rotation: result = q * v_quat * q⁻¹
         Quat rotated = *this * vQuat * inverse();
         
-        return phynity::math::vectors::Vec3<T>(rotated.x, rotated.y, rotated.z);
+        return Vec3<T>(rotated.x, rotated.y, rotated.z);
     }
 
     /// Unrotate (inverse rotate) a 3D vector: v' = q⁻¹ * v * q
     /// This reverses the rotation applied by rotateVector()
     /// @param v Vector to unrotate
     /// @return Unrotated vector
-    phynity::math::vectors::Vec3<T> unrotateVector(const phynity::math::vectors::Vec3<T>& v) const {
+    Vec3<T> unrotateVector(const Vec3<T>& v) const {
         // Convert vector to quaternion form: v_quat = (0, v.x, v.y, v.z)
         Quat vQuat(T(0), v.x, v.y, v.z);
         
@@ -223,7 +225,7 @@ struct Quat {
         Quat inv = inverse();
         Quat rotated = inv * vQuat * *this;
         
-        return phynity::math::vectors::Vec3<T>(rotated.x, rotated.y, rotated.z);
+        return Vec3<T>(rotated.x, rotated.y, rotated.z);
     }
 };
 
