@@ -3,7 +3,7 @@
 #include <core/math/matrices/mat_n.hpp>
 #include <core/math/vectors/vec_n.hpp>
 #include <core/math/utilities/float_comparison.hpp>
-#include <core/math/utilities/validity_checks.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <array>
 #include <cstddef>
 #include <type_traits>

@@ -2,25 +2,15 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat2.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <cmath>
 #include <sstream>
 
 using phynity::math::matrices::Mat2f;
 using phynity::math::vectors::Vec2f;
 using phynity::math::utilities::mathf;
+using phynity::math::utilities::approx_equal;
 using Catch::Matchers::WithinAbs;
-
-// Helper function to check if two matrices are approximately equal
-bool mat2_approx_equal(const Mat2f& a, const Mat2f& b, float epsilon = 1e-4f) {
-    for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            if (std::abs(a.m[i][j] - b.m[i][j]) > epsilon) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 // ============================================================================
 // Constructors and Basic Properties
@@ -116,7 +106,7 @@ TEST_CASE("Mat2f: Negation", "[Mat2f][arithmetic]") {
 
     // Double negation
     Mat2f double_neg = -(-m);
-    REQUIRE(mat2_approx_equal(double_neg, m));
+    REQUIRE(approx_equal(double_neg, m));
 }
 TEST_CASE("Mat2f: Scalar multiplication", "[Mat2f][arithmetic]") {
     Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
@@ -342,27 +332,27 @@ TEST_CASE("Mat2f: Inverse", "[Mat2f][operations]") {
     SECTION("Identity inverse is identity") {
         Mat2f m = Mat2f::identity();
         Mat2f inv = m.inverse();
-        REQUIRE(mat2_approx_equal(inv, Mat2f::identity()));
+        REQUIRE(approx_equal(inv, Mat2f::identity()));
     }
 
     SECTION("General matrix inverse") {
         Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         Mat2f inv = m.inverse();
         Mat2f product = m * inv;
-        REQUIRE(mat2_approx_equal(product, Mat2f::identity(), 1e-3f));
+        REQUIRE(approx_equal(product, Mat2f::identity(), 1e-3f));
     }
 
     SECTION("Inverse of inverse returns original") {
         Mat2f m(2.0f, 3.0f, 1.0f, 4.0f);
         Mat2f inv = m.inverse();
         Mat2f inv_inv = inv.inverse();
-        REQUIRE(mat2_approx_equal(inv_inv, m, 1e-3f));
+        REQUIRE(approx_equal(inv_inv, m, 1e-3f));
     }
 
     SECTION("Singular matrix returns zero") {
         Mat2f m(1.0f, 2.0f, 2.0f, 4.0f); // Singular (det = 0)
         Mat2f inv = m.inverse();
-        REQUIRE(mat2_approx_equal(inv, Mat2f::zero()));
+        REQUIRE(approx_equal(inv, Mat2f::zero()));
     }
 }
 
@@ -370,7 +360,7 @@ TEST_CASE("Mat2f: Transpose", "[Mat2f][operations]") {
     SECTION("Transpose of identity is identity") {
         Mat2f m = Mat2f::identity();
         Mat2f t = m.transposed();
-        REQUIRE(mat2_approx_equal(t, Mat2f::identity()));
+        REQUIRE(approx_equal(t, Mat2f::identity()));
     }
 
     SECTION("Transpose swaps rows and columns") {
@@ -396,7 +386,7 @@ TEST_CASE("Mat2f: Transpose", "[Mat2f][operations]") {
     SECTION("Double transpose returns original") {
         Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         Mat2f tt = m.transposed().transposed();
-        REQUIRE(mat2_approx_equal(tt, m));
+        REQUIRE(approx_equal(tt, m));
     }
 }
 
@@ -582,13 +572,13 @@ TEST_CASE("Mat2f: Edge cases", "[Mat2f][edge]") {
         Mat2f zero = Mat2f::zero();
         Mat2f identity = Mat2f::identity();
         Mat2f result = zero + identity;
-        REQUIRE(mat2_approx_equal(result, identity));
+        REQUIRE(approx_equal(result, identity));
     }
 
     SECTION("Matrix multiplication by zero") {
         Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         Mat2f zero = Mat2f::zero();
         Mat2f result = m * zero;
-        REQUIRE(mat2_approx_equal(result, zero));
+        REQUIRE(approx_equal(result, zero));
     }
 }

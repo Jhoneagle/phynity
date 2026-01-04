@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat4.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <cmath>
 #include <sstream>
 
@@ -9,19 +10,8 @@ using phynity::math::matrices::Mat4f;
 using phynity::math::vectors::Vec3f;
 using phynity::math::vectors::Vec4f;
 using phynity::math::utilities::mathf;
+using phynity::math::utilities::approx_equal;
 using Catch::Matchers::WithinAbs;
-
-// Helper function to check if two matrices are approximately equal
-bool mat4_approx_equal(const Mat4f& a, const Mat4f& b, float epsilon = 1e-4f) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            if (std::abs(a.m[i][j] - b.m[i][j]) > epsilon) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 // ============================================================================
 // Constructors and Basic Properties
@@ -30,7 +20,7 @@ bool mat4_approx_equal(const Mat4f& a, const Mat4f& b, float epsilon = 1e-4f) {
 TEST_CASE("Mat4f: Constructors", "[Mat4f][constructor]") {
     SECTION("Default constructor creates identity matrix") {
         Mat4f m;
-        REQUIRE(mat4_approx_equal(m, Mat4f::identity()));
+        REQUIRE(approx_equal(m, Mat4f::identity()));
     }
 
     SECTION("Scalar constructor fills all elements") {
@@ -56,7 +46,7 @@ TEST_CASE("Mat4f: Constructors", "[Mat4f][constructor]") {
 TEST_CASE("Mat4f: Static factory methods", "[Mat4f][factory]") {
     SECTION("Identity matrix") {
         Mat4f m = Mat4f::identity();
-        REQUIRE(mat4_approx_equal(m, Mat4f::identity()));
+        REQUIRE(approx_equal(m, Mat4f::identity()));
     }
 
     SECTION("Zero matrix") {
@@ -113,7 +103,7 @@ TEST_CASE("Mat4f: Negation", "[Mat4f][arithmetic]") {
 
     // Double negation
     Mat4f double_neg = -(-m);
-    REQUIRE(mat4_approx_equal(double_neg, m));
+    REQUIRE(approx_equal(double_neg, m));
 }
 
 TEST_CASE("Mat4f: Matrix multiplication", "[Mat4f][arithmetic]") {
@@ -121,7 +111,7 @@ TEST_CASE("Mat4f: Matrix multiplication", "[Mat4f][arithmetic]") {
     Mat4f b = Mat4f::identity();
     Mat4f result = a * b;
 
-    REQUIRE(mat4_approx_equal(result, Mat4f::identity()));
+    REQUIRE(approx_equal(result, Mat4f::identity()));
 }
 
 // ============================================================================
@@ -141,7 +131,7 @@ TEST_CASE("Mat4f: Assignment operators", "[Mat4f][assignment]") {
     SECTION("Matrix multiplication assignment") {
         Mat4f b = Mat4f::scale(2.0f);
         a *= b;
-        REQUIRE(mat4_approx_equal(a, Mat4f::scale(2.0f)));
+        REQUIRE(approx_equal(a, Mat4f::scale(2.0f)));
     }
 }
 
@@ -221,28 +211,28 @@ TEST_CASE("Mat4f: Inverse", "[Mat4f][operations]") {
     SECTION("Identity inverse is identity") {
         Mat4f m = Mat4f::identity();
         Mat4f inv = m.inverse();
-        REQUIRE(mat4_approx_equal(inv, Mat4f::identity()));
+        REQUIRE(approx_equal(inv, Mat4f::identity()));
     }
 
     SECTION("Translation matrix inverse") {
         Mat4f m = Mat4f::translation(5.0f, 6.0f, 7.0f);
         Mat4f inv = m.inverse();
         Mat4f product = m * inv;
-        REQUIRE(mat4_approx_equal(product, Mat4f::identity(), 1e-3f));
+        REQUIRE(approx_equal(product, Mat4f::identity(), 1e-3f));
     }
 
     SECTION("Scale matrix inverse") {
         Mat4f m = Mat4f::scale(2.0f, 3.0f, 4.0f);
         Mat4f inv = m.inverse();
         Mat4f product = m * inv;
-        REQUIRE(mat4_approx_equal(product, Mat4f::identity(), 1e-3f));
+        REQUIRE(approx_equal(product, Mat4f::identity(), 1e-3f));
     }
 
     SECTION("Rotation matrix inverse (is transpose)") {
         Mat4f m = Mat4f::rotationZ(0.5f);
         Mat4f inv = m.inverse();
         Mat4f trans = m.transposed();
-        REQUIRE(mat4_approx_equal(inv, trans, 1e-3f));
+        REQUIRE(approx_equal(inv, trans, 1e-3f));
     }
 }
 
@@ -250,7 +240,7 @@ TEST_CASE("Mat4f: Transpose", "[Mat4f][operations]") {
     SECTION("Double transpose returns original") {
         Mat4f m = Mat4f::translation(1.0f, 2.0f, 3.0f);
         Mat4f tt = m.transposed().transposed();
-        REQUIRE(mat4_approx_equal(tt, m));
+        REQUIRE(approx_equal(tt, m));
     }
 
     SECTION("In-place transpose") {
@@ -603,13 +593,13 @@ TEST_CASE("Mat4f: Edge cases", "[Mat4f][edge]") {
     SECTION("Singular matrix returns zero inverse") {
         Mat4f m = Mat4f::zero();
         Mat4f inv = m.inverse();
-        REQUIRE(mat4_approx_equal(inv, Mat4f::zero()));
+        REQUIRE(approx_equal(inv, Mat4f::zero()));
     }
 
     SECTION("Identity matrix inverse is itself") {
         Mat4f identity = Mat4f::identity();
         Mat4f inv = identity.inverse();
-        REQUIRE(mat4_approx_equal(inv, identity));
+        REQUIRE(approx_equal(inv, identity));
     }
 
     SECTION("Matrix times inverse is identity") {
@@ -619,12 +609,12 @@ TEST_CASE("Mat4f: Edge cases", "[Mat4f][edge]") {
                0.0f, 0.0f, 0.0f, 5.0f);
         Mat4f inv = m.inverse();
         Mat4f result = m * inv;
-        REQUIRE(mat4_approx_equal(result, Mat4f::identity(), 1e-5f));
+        REQUIRE(approx_equal(result, Mat4f::identity(), 1e-5f));
     }
 
     SECTION("Transpose properties") {
         Mat4f m = Mat4f::identity();
         Mat4f t = m.transposed();
-        REQUIRE(mat4_approx_equal(t, m));
+        REQUIRE(approx_equal(t, m));
     }
 }

@@ -3,7 +3,7 @@
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/matrices/mat3.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/math/utilities/validity_checks.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <type_traits>

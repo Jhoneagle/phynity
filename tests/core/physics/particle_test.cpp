@@ -1,13 +1,11 @@
 #include <core/physics/particle.hpp>
+#include <core/math/utilities/float_comparison.hpp>
 #include <iostream>
 #include <cmath>
 
 using phynity::physics::Particle;
 using phynity::math::vectors::Vec3f;
-
-static bool near_equal(float a, float b, float eps = 1e-4f) {
-    return std::fabs(a - b) <= eps;
-}
+using phynity::math::utilities::equals;
 
 int main() {
     int failures = 0;
@@ -28,12 +26,12 @@ int main() {
     float expected_vy = g * dt;
     float expected_y = expected_vy * dt;
 
-    if (!near_equal(p.velocity.y, expected_vy)) {
+    if (!equals(p.velocity.y, expected_vy)) {
         std::cerr << "Particle velocity update failed: vy=" << p.velocity.y
                   << " expected=" << expected_vy << "\n";
         ++failures;
     }
-    if (!near_equal(p.position.y, expected_y)) {
+    if (!equals(p.position.y, expected_y)) {
         std::cerr << "Particle position update failed: y=" << p.position.y
                   << " expected=" << expected_y << "\n";
         ++failures;

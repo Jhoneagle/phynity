@@ -1,6 +1,6 @@
 # Linear Algebra
 
-This module contains linear algebra decompositions and solvers for constraint solving, least-squares fitting, and general linear system applications.
+Linear algebra decompositions and solvers for constraint solving, least-squares fitting, and general linear system applications.
 
 ## Implemented Components
 
@@ -40,6 +40,23 @@ This module contains linear algebra decompositions and solvers for constraint so
 - `inverse(A)` - Matrix inversion
 - `determinant(A)` - Determinant computation
 
+## Planned Components
+
+**Decompositions:**
+- SVD (Singular Value Decomposition) - for pseudoinverse, rank computation
+- Cholesky decomposition - for positive definite systems, covariance matrices
+
+**Utilities:**
+- Rank computation
+- Pseudoinverse (Moore-Penrose)
+- Eigenvalue/eigenvector decomposition
+- Condition number estimation
+
+**Algorithms:**
+- Iterative solvers (conjugate gradient, GMRES)
+- Sparse matrix operations
+- Matrix factorization caching
+
 ## Applications
 
 ### Physics Constraint Solving
@@ -50,10 +67,19 @@ This module contains linear algebra decompositions and solvers for constraint so
 - Fit curves/planes to data: minimize ||Ax - b||²
 - Normal equations: AᵀAx = Aᵀb
 
+### Principal Component Analysis
+- Covariance matrix decomposition for dimensionality reduction
+- Feature extraction from high-dimensional data
+
 ### Geometric Computations
 - Ray-polygon intersection
 - Plane fitting
 - Orthonormalization of basis vectors
+
+### Numerical Stability Checks
+- Condition number analysis
+- Singularity detection
+- Tolerance-based validation
 
 ### Numerical Methods
 - Discretized PDEs (heat equation, wave equation)
@@ -111,26 +137,3 @@ float det = determinant(A);
 ## Status
 
 ✅ Core implementation complete and tested
-
-
-
-
-
-OLD
-
-This module will contain linear algebra utilities and solvers.
-
-
-
-## Planned Components
-
-- **Decompositions:** QR, LU, SVD, Cholesky
-- **Solvers:** Linear system solving (Ax = b)
-- **Utilities:** Rank computation, pseudoinverse, eigenvalue decomposition
-- **Algorithms:** Gaussian elimination, back substitution
-
-
-- Constraint solving in physics
-- Least-squares fitting
-- Principal component analysis
-- Numerical stability checks

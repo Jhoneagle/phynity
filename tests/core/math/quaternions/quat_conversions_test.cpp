@@ -4,68 +4,32 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/matrices/mat3.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <cmath>
 
 using namespace phynity::math::quaternions;
 using phynity::math::matrices::Mat3f;
 using phynity::math::vectors::Vec3f;
 using phynity::math::utilities::mathf;
+using phynity::math::utilities::approx_equal;
+using phynity::math::utilities::approx_equal_rotation;
+using phynity::math::utilities::is_valid_rotation_matrix;
 using Catch::Matchers::WithinAbs;
 
 // ============================================================================
-// Helper Functions
+// Helper Functions for Euler angles
 // ============================================================================
 
-/// Compare two quaternions accounting for double-cover (q and -q are equivalent)
-bool quaternionsEqual(const Quatf& q1, const Quatf& q2, float tolerance = 1e-5f) {
-    // Check if they're the same
-    bool same = (std::abs(q1.w - q2.w) < tolerance) &&
-                (std::abs(q1.x - q2.x) < tolerance) &&
-                (std::abs(q1.y - q2.y) < tolerance) &&
-                (std::abs(q1.z - q2.z) < tolerance);
-    
-    // Check if they're negatives (double-cover)
-    bool opposite = (std::abs(q1.w + q2.w) < tolerance) &&
-                    (std::abs(q1.x + q2.x) < tolerance) &&
-                    (std::abs(q1.y + q2.y) < tolerance) &&
-                    (std::abs(q1.z + q2.z) < tolerance);
-    
-    return same || opposite;
+float normalizeAngle(float angle) {
+    while (angle > mathf::pi) angle -= 2.0f * mathf::pi;
+    while (angle < -mathf::pi) angle += 2.0f * mathf::pi;
+    return angle;
 }
 
-/// Verify that a matrix is a valid rotation matrix
-bool isValidRotationMatrix(const Mat3f& m, float tolerance = 1e-4f) {
-    // Check orthonormality: rows should be orthogonal
-    Vec3f row0 = m.getRow(0);
-    Vec3f row1 = m.getRow(1);
-    Vec3f row2 = m.getRow(2);
-    
-    if (std::abs(row0.dot(row1)) > tolerance) return false;
-    if (std::abs(row1.dot(row2)) > tolerance) return false;
-    if (std::abs(row2.dot(row0)) > tolerance) return false;
-    
-    // Check that rows are unit length
-    if (std::abs(row0.length() - 1.0f) > tolerance) return false;
-    if (std::abs(row1.length() - 1.0f) > tolerance) return false;
-    if (std::abs(row2.length() - 1.0f) > tolerance) return false;
-    
-    // Check determinant is +1 (not -1, which would be a reflection)
-    float det = m.determinant();
-    if (std::abs(det - 1.0f) > tolerance) return false;
-    
-    return true;
-}
-
-/// Compare two matrices element-wise
-bool matricesEqual(const Mat3f& m1, const Mat3f& m2, float tolerance = 1e-5f) {
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            if (std::abs(m1.m[i][j] - m2.m[i][j]) > tolerance) {
-                return false;
-            }
-        }
-    }
-    return true;
+bool approxEuler(const Vec3f& a, const Vec3f& b, float tolerance = 1e-5f) {
+    return std::abs(normalizeAngle(a.x - b.x)) < tolerance &&
+           std::abs(normalizeAngle(a.y - b.y)) < tolerance &&
+           std::abs(normalizeAngle(a.z - b.z)) < tolerance;
 }
 
 // ============================================================================
@@ -87,7 +51,7 @@ TEST_CASE("Conversion: Identity quaternion to identity matrix", "[conversion][qu
     REQUIRE_THAT(m.m[2][1], WithinAbs(0.0f, 1e-6f));
     REQUIRE_THAT(m.m[2][2], WithinAbs(1.0f, 1e-6f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 90° rotation around X-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -105,7 +69,7 @@ TEST_CASE("Conversion: 90° rotation around X-axis (quat to matrix)", "[conversi
     REQUIRE_THAT(rotated.y, WithinAbs(0.0f, 1e-5f));
     REQUIRE_THAT(rotated.z, WithinAbs(1.0f, 1e-5f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 90° rotation around Y-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -122,7 +86,7 @@ TEST_CASE("Conversion: 90° rotation around Y-axis (quat to matrix)", "[conversi
     REQUIRE_THAT(rotated.y, WithinAbs(0.0f, 1e-5f));
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-5f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 90° rotation around Z-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -139,7 +103,7 @@ TEST_CASE("Conversion: 90° rotation around Z-axis (quat to matrix)", "[conversi
     REQUIRE_THAT(rotated.y, WithinAbs(1.0f, 1e-5f));
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-5f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 180° rotation around X-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -156,7 +120,7 @@ TEST_CASE("Conversion: 180° rotation around X-axis (quat to matrix)", "[convers
     REQUIRE_THAT(rotatedY.y, WithinAbs(-1.0f, 1e-4f));
     REQUIRE_THAT(rotatedY.z, WithinAbs(0.0f, 1e-4f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 180° rotation around Y-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -173,7 +137,7 @@ TEST_CASE("Conversion: 180° rotation around Y-axis (quat to matrix)", "[convers
     REQUIRE_THAT(rotatedX.y, WithinAbs(0.0f, 1e-4f));
     REQUIRE_THAT(rotatedX.z, WithinAbs(0.0f, 1e-4f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: 180° rotation around Z-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -190,7 +154,7 @@ TEST_CASE("Conversion: 180° rotation around Z-axis (quat to matrix)", "[convers
     REQUIRE_THAT(rotatedX.y, WithinAbs(0.0f, 1e-4f));
     REQUIRE_THAT(rotatedX.z, WithinAbs(0.0f, 1e-4f));
     
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: Arbitrary rotation (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -202,7 +166,7 @@ TEST_CASE("Conversion: Arbitrary rotation (quat to matrix)", "[conversion][quat-
     Mat3f m = toRotationMatrix(q);
     
     // Verify it's a valid rotation matrix
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
     
     // Verify rotation consistency: rotating a vector with quat and matrix should match
     Vec3f testVec(3.0f, -2.0f, 5.0f);
@@ -221,7 +185,7 @@ TEST_CASE("Conversion: Non-unit quaternion handles normalization", "[conversion]
     Mat3f m = toRotationMatrix(q);
     
     // Should still produce valid rotation matrix (function normalizes internally)
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
 }
 
 TEST_CASE("Conversion: Very small rotation (quat to matrix)", "[conversion][quat-to-matrix]") {
@@ -233,11 +197,11 @@ TEST_CASE("Conversion: Very small rotation (quat to matrix)", "[conversion][quat
     Mat3f m = toRotationMatrix(q);
     
     // Should still produce valid rotation matrix
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
     
     // Should be very close to identity
     Mat3f identity;
-    REQUIRE(matricesEqual(m, identity, 1e-2f));
+    REQUIRE(approx_equal(m, identity, 1e-2f));
 }
 
 // ============================================================================
@@ -399,7 +363,7 @@ TEST_CASE("Round-trip: Quatf -> Matrix -> Quatf preserves rotation", "[conversio
         Mat3f m = toRotationMatrix(original);
         Quatf result = toQuaternion(m);
         
-        REQUIRE(quaternionsEqual(original, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(original, result, 1e-5f));
     }
     
     SECTION("90° around X") {
@@ -407,7 +371,7 @@ TEST_CASE("Round-trip: Quatf -> Matrix -> Quatf preserves rotation", "[conversio
         Mat3f m = toRotationMatrix(original);
         Quatf result = toQuaternion(m);
         
-        REQUIRE(quaternionsEqual(original, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(original, result, 1e-5f));
     }
     
     SECTION("45° around arbitrary axis") {
@@ -418,7 +382,7 @@ TEST_CASE("Round-trip: Quatf -> Matrix -> Quatf preserves rotation", "[conversio
         Mat3f m = toRotationMatrix(original);
         Quatf result = toQuaternion(m);
         
-        REQUIRE(quaternionsEqual(original, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(original, result, 1e-5f));
     }
     
     SECTION("Large angle rotation") {
@@ -426,7 +390,7 @@ TEST_CASE("Round-trip: Quatf -> Matrix -> Quatf preserves rotation", "[conversio
         Mat3f m = toRotationMatrix(original);
         Quatf result = toQuaternion(m);
         
-        REQUIRE(quaternionsEqual(original, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(original, result, 1e-5f));
     }
 }
 
@@ -439,7 +403,7 @@ TEST_CASE("Round-trip: Matrix -> Quatf -> Matrix preserves rotation", "[conversi
         Quatf q = toQuaternion(original);
         Mat3f result = toRotationMatrix(q);
         
-        REQUIRE(matricesEqual(original, result, 1e-5f));
+        REQUIRE(approx_equal(original, result, 1e-5f));
     }
     
     SECTION("180° around Z") {
@@ -450,7 +414,7 @@ TEST_CASE("Round-trip: Matrix -> Quatf -> Matrix preserves rotation", "[conversi
         Quatf q = toQuaternion(original);
         Mat3f result = toRotationMatrix(q);
         
-        REQUIRE(matricesEqual(original, result, 1e-4f));
+        REQUIRE(approx_equal(original, result, 1e-4f));
     }
 }
 
@@ -502,7 +466,7 @@ TEST_CASE("Stress test: Multiple conversions don't accumulate error", "[conversi
     
     // Should still produce valid rotation matrix
     Mat3f finalMatrix = toRotationMatrix(q);
-    REQUIRE(isValidRotationMatrix(finalMatrix));
+    REQUIRE(is_valid_rotation_matrix(finalMatrix));
 }
 
 TEST_CASE("Stress test: Very small angles", "[conversion][stress]") {
@@ -511,10 +475,10 @@ TEST_CASE("Stress test: Very small angles", "[conversion][stress]") {
     Quatf q(Vec3f(1.0f, 0.0f, 0.0f), angle);
     
     Mat3f m = toRotationMatrix(q);
-    REQUIRE(isValidRotationMatrix(m));
+    REQUIRE(is_valid_rotation_matrix(m));
     
     Quatf q2 = toQuaternion(m);
-    REQUIRE(quaternionsEqual(q, q2, 1e-5f));
+    REQUIRE(approx_equal_rotation(q, q2, 1e-5f));
 }
 
 TEST_CASE("Stress test: Near-180° rotations", "[conversion][stress]") {
@@ -524,28 +488,28 @@ TEST_CASE("Stress test: Near-180° rotations", "[conversion][stress]") {
     SECTION("Around X") {
         Quatf q(Vec3f(1.0f, 0.0f, 0.0f), angle);
         Mat3f m = toRotationMatrix(q);
-        REQUIRE(isValidRotationMatrix(m));
+        REQUIRE(is_valid_rotation_matrix(m));
         
         Quatf q2 = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, q2, 1e-4f));
+        REQUIRE(approx_equal_rotation(q, q2, 1e-4f));
     }
     
     SECTION("Around Y") {
         Quatf q(Vec3f(0.0f, 1.0f, 0.0f), angle);
         Mat3f m = toRotationMatrix(q);
-        REQUIRE(isValidRotationMatrix(m));
+        REQUIRE(is_valid_rotation_matrix(m));
         
         Quatf q2 = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, q2, 1e-4f));
+        REQUIRE(approx_equal_rotation(q, q2, 1e-4f));
     }
     
     SECTION("Around Z") {
         Quatf q(Vec3f(0.0f, 0.0f, 1.0f), angle);
         Mat3f m = toRotationMatrix(q);
-        REQUIRE(isValidRotationMatrix(m));
+        REQUIRE(is_valid_rotation_matrix(m));
         
         Quatf q2 = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, q2, 1e-4f));
+        REQUIRE(approx_equal_rotation(q, q2, 1e-4f));
     }
 }
 
@@ -557,7 +521,7 @@ TEST_CASE("Stress test: All Shepperd's method branches", "[conversion][stress]")
         Quatf q(Vec3f(1.0f, 0.0f, 0.0f), 0.5f);
         Mat3f m = toRotationMatrix(q);
         Quatf result = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(q, result, 1e-5f));
     }
     
     SECTION("X is largest component") {
@@ -565,7 +529,7 @@ TEST_CASE("Stress test: All Shepperd's method branches", "[conversion][stress]")
         Quatf q(Vec3f(1.0f, 0.0f, 0.0f), 3.0f);
         Mat3f m = toRotationMatrix(q);
         Quatf result = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(q, result, 1e-5f));
     }
     
     SECTION("Y is largest component") {
@@ -573,7 +537,7 @@ TEST_CASE("Stress test: All Shepperd's method branches", "[conversion][stress]")
         Quatf q(Vec3f(0.0f, 1.0f, 0.0f), 3.0f);
         Mat3f m = toRotationMatrix(q);
         Quatf result = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(q, result, 1e-5f));
     }
     
     SECTION("Z is largest component") {
@@ -581,27 +545,13 @@ TEST_CASE("Stress test: All Shepperd's method branches", "[conversion][stress]")
         Quatf q(Vec3f(0.0f, 0.0f, 1.0f), 3.0f);
         Mat3f m = toRotationMatrix(q);
         Quatf result = toQuaternion(m);
-        REQUIRE(quaternionsEqual(q, result, 1e-5f));
+        REQUIRE(approx_equal_rotation(q, result, 1e-5f));
     }
 }
 
 // ============================================================================
 // EULER ANGLES <-> QUATERNION CONVERSION TESTS
 // ============================================================================
-
-/// Helper to normalize angle to [-π, π] range
-float normalizeAngle(float angle) {
-    while (angle > mathf::pi) angle -= mathf::two_pi;
-    while (angle < -mathf::pi) angle += mathf::two_pi;
-    return angle;
-}
-
-/// Compare two Vec3f Euler angles considering angle wrapping
-bool approxEuler(const Vec3f& a, const Vec3f& b, float tolerance = 1e-5f) {
-    return std::abs(normalizeAngle(a.x - b.x)) < tolerance &&
-           std::abs(normalizeAngle(a.y - b.y)) < tolerance &&
-           std::abs(normalizeAngle(a.z - b.z)) < tolerance;
-}
 
 TEST_CASE("Conversion: Identity Euler to quaternion", "[conversion][euler-to-quat]") {
     Vec3f euler(0.0f, 0.0f, 0.0f);
@@ -748,7 +698,7 @@ TEST_CASE("Round-trip: Quatf -> Euler -> Quatf (identity)", "[conversion][quat-r
     Vec3f euler = toEulerAngles(original);
     Quatf recovered = toQuaternion(euler);
     
-    REQUIRE(quaternionsEqual(original, recovered));
+    REQUIRE(approx_equal_rotation(original, recovered));
 }
 
 TEST_CASE("Round-trip: Quatf -> Euler -> Quatf (simple rotations)", "[conversion][quat-round-trip]") {
@@ -761,7 +711,7 @@ TEST_CASE("Round-trip: Quatf -> Euler -> Quatf (simple rotations)", "[conversion
     for (const auto& original : testQuats) {
         Vec3f euler = toEulerAngles(original);
         Quatf recovered = toQuaternion(euler);
-        REQUIRE(quaternionsEqual(original, recovered));
+        REQUIRE(approx_equal_rotation(original, recovered));
     }
 }
 
@@ -778,7 +728,7 @@ TEST_CASE("Round-trip: Quatf -> Euler -> Quatf (simple normalized quaternions)",
         Quatf recovered = toQuaternion(euler);
         
         // Use tolerance to account for numerical precision in round-trip
-        REQUIRE(quaternionsEqual(original, recovered, 1e-3f));
+        REQUIRE(approx_equal_rotation(original, recovered, 1e-3f));
     }
 }
 
@@ -788,13 +738,13 @@ TEST_CASE("Round-trip: Quatf -> Euler -> Quatf (near gimbal lock)", "[conversion
     Quatf q1 = toQuaternion(euler1);
     Vec3f recovered1 = toEulerAngles(q1);
     Quatf q1_back = toQuaternion(recovered1);
-    REQUIRE(quaternionsEqual(q1, q1_back, 1e-4f));
+    REQUIRE(approx_equal_rotation(q1, q1_back, 1e-4f));
     
     Vec3f euler2(10.0f * mathf::deg_to_rad, -89.0f * mathf::deg_to_rad, 20.0f * mathf::deg_to_rad);
     Quatf q2 = toQuaternion(euler2);
     Vec3f recovered2 = toEulerAngles(q2);
     Quatf q2_back = toQuaternion(recovered2);
-    REQUIRE(quaternionsEqual(q2, q2_back, 1e-4f));
+    REQUIRE(approx_equal_rotation(q2, q2_back, 1e-4f));
 }
 
 TEST_CASE("Stress: Random Euler angles round-trip", "[conversion][euler-round-trip][stress]") {
@@ -823,8 +773,8 @@ TEST_CASE("Stress: Euler conversion is deterministic", "[conversion][euler-round
     Quatf q2 = toQuaternion(euler);
     Quatf q3 = toQuaternion(euler);
     
-    REQUIRE(quaternionsEqual(q1, q2));
-    REQUIRE(quaternionsEqual(q2, q3));
+    REQUIRE(approx_equal_rotation(q1, q2));
+    REQUIRE(approx_equal_rotation(q2, q3));
     
     Vec3f e1 = toEulerAngles(q1);
     Vec3f e2 = toEulerAngles(q1);
@@ -855,7 +805,7 @@ TEST_CASE("Edge case: Large Euler angles (angle wrapping)", "[conversion][euler-
     
     // Recovered should be in normalized range but represent same rotation
     Quatf q_recovered = toQuaternion(recovered);
-    REQUIRE(quaternionsEqual(q, q_recovered));
+    REQUIRE(approx_equal_rotation(q, q_recovered));
 }
 
 TEST_CASE("Consistency: Euler -> Quatf matches expected quaternion", "[conversion][euler-to-quat][validation]") {

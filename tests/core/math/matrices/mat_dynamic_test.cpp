@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat_dynamic.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <cmath>
 #include <vector>
 #include <stdexcept>
@@ -8,17 +9,8 @@
 
 using phynity::math::matrices::MatDynamicf;
 using phynity::math::vectors::VecDynamicf;
+using phynity::math::utilities::approx_equal;
 using Catch::Matchers::WithinAbs;
-
-bool matdyn_approx_equal(const MatDynamicf& a, const MatDynamicf& b, float eps = 1e-5f) {
-    if (a.rows != b.rows || a.cols != b.cols) return false;
-    for (std::size_t i = 0; i < a.rows; ++i) {
-        for (std::size_t j = 0; j < a.cols; ++j) {
-            if (std::abs(a(i, j) - b(i, j)) > eps) return false;
-        }
-    }
-    return true;
-}
 
 TEST_CASE("MatDynamicf: constructors", "[MatDynamicf][constructor]") {
     SECTION("Zero by default") {
@@ -101,7 +93,7 @@ TEST_CASE("MatDynamicf: arithmetic", "[MatDynamicf][arithmetic]") {
         c -= a;
         c *= 3.0f;
         c /= 3.0f;
-        REQUIRE(matdyn_approx_equal(c, a));
+        REQUIRE(approx_equal(c, a));
     }
 
     SECTION("Negation") {
@@ -219,7 +211,7 @@ TEST_CASE("MatDynamicf: matrix multiplication", "[MatDynamicf][multiply]") {
     expected(1, 0) = 139.0f;
     expected(1, 1) = 154.0f;
 
-    REQUIRE(matdyn_approx_equal(result, expected));
+    REQUIRE(approx_equal(result, expected));
 }
 
 TEST_CASE("MatDynamicf: matrix-vector multiplication", "[MatDynamicf][vector]") {

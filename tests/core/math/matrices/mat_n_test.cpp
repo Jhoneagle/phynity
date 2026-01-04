@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat_n.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <array>
 #include <cmath>
 #include <sstream>
@@ -8,24 +9,12 @@
 using Catch::Matchers::WithinAbs;
 using phynity::math::vectors::VecN;
 using phynity::math::matrices::MatN;
-
-// Helper for approximate equality on MatN
-template <std::size_t M, std::size_t N>
-bool matn_approx_equal(const MatN<M, N, float>& a, const MatN<M, N, float>& b, float eps = 1e-5f) {
-    for (std::size_t i = 0; i < M; ++i) {
-        for (std::size_t j = 0; j < N; ++j) {
-            if (std::abs(a(i, j) - b(i, j)) > eps) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
+using phynity::math::utilities::approx_equal;
 
 TEST_CASE("MatN: constructors", "[MatN][constructor]") {
     SECTION("Default square is zero") {
         MatN<3, 3> m;
-        REQUIRE(matn_approx_equal(m, MatN<3, 3>::zero()));
+        REQUIRE(approx_equal(m, MatN<3, 3>::zero()));
     }
 
     SECTION("Default non-square is zero") {
@@ -57,7 +46,7 @@ TEST_CASE("MatN: factories", "[MatN][factory]") {
     MatN<3, 3> eye = MatN<3, 3>::identity();
     MatN<3, 3> zero = MatN<3, 3>::zero();
 
-    REQUIRE(matn_approx_equal(eye, MatN<3, 3>::identity()));
+    REQUIRE(approx_equal(eye, MatN<3, 3>::identity()));
     for (std::size_t i = 0; i < 3; ++i) {
         for (std::size_t j = 0; j < 3; ++j) {
             REQUIRE_THAT(zero(i, j), WithinAbs(0.0f, 1e-6f));
@@ -96,7 +85,7 @@ TEST_CASE("MatN: arithmetic", "[MatN][arithmetic]") {
         c -= a;
         c *= 3.0f;
         c /= 3.0f;
-        REQUIRE(matn_approx_equal(c, a));
+        REQUIRE(approx_equal(c, a));
     }
 
     SECTION("Negation") {
@@ -176,7 +165,7 @@ TEST_CASE("MatN: matrix multiplication", "[MatN][multiply]") {
     MatN<2, 2> expected(std::array<float, 4>{58, 64, 139, 154});
 
     MatN<2, 2> result = a * b;
-    REQUIRE(matn_approx_equal(result, expected));
+    REQUIRE(approx_equal(result, expected));
 }
 
 TEST_CASE("MatN: determinant and inverse (small N)", "[MatN][determinant][inverse]") {
@@ -206,13 +195,13 @@ TEST_CASE("MatN: determinant and inverse (small N)", "[MatN][determinant][invers
         MatN<2, 2> m(std::array<float, 4>{4, 7, 2, 6});
         MatN<2, 2> inv = m.inverse();
         MatN<2, 2> product = m * inv;
-        REQUIRE(matn_approx_equal(product, MatN<2, 2>::identity(), 1e-3f));
+        REQUIRE(approx_equal(product, MatN<2, 2>::identity(), 1e-3f));
     }
 
     SECTION("Singular returns zero") {
         MatN<2, 2> m(std::array<float, 4>{1, 2, 2, 4});
         MatN<2, 2> inv = m.inverse();
-        REQUIRE(matn_approx_equal(inv, MatN<2, 2>::zero(), 1e-6f));
+        REQUIRE(approx_equal(inv, MatN<2, 2>::zero(), 1e-6f));
     }
 }
 

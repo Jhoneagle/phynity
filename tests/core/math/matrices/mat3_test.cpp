@@ -2,25 +2,15 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat3.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <cmath>
 #include <sstream>
 
 using phynity::math::matrices::Mat3f;
 using phynity::math::vectors::Vec3f;
 using phynity::math::utilities::mathf;
+using phynity::math::utilities::approx_equal;
 using Catch::Matchers::WithinAbs;
-
-// Helper function to check if two matrices are approximately equal
-bool mat3_approx_equal(const Mat3f& a, const Mat3f& b, float epsilon = 1e-4f) {
-    for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-            if (std::abs(a.m[i][j] - b.m[i][j]) > epsilon) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 // ============================================================================
 // Constructors and Basic Properties
@@ -72,7 +62,7 @@ TEST_CASE("Mat3f: Constructors", "[Mat3f][constructor]") {
 TEST_CASE("Mat3f: Static factory methods", "[Mat3f][factory]") {
     SECTION("Identity matrix") {
         Mat3f m = Mat3f::identity();
-        REQUIRE(mat3_approx_equal(m, Mat3f::identity()));
+        REQUIRE(approx_equal(m, Mat3f::identity()));
     }
 
     SECTION("Zero matrix") {
@@ -147,7 +137,7 @@ TEST_CASE("Mat3f: Negation", "[Mat3f][arithmetic]") {
 
     // Double negation
     Mat3f double_neg = -(-m);
-    REQUIRE(mat3_approx_equal(double_neg, m));
+    REQUIRE(approx_equal(double_neg, m));
 }
 
 TEST_CASE("Mat3f: Matrix multiplication", "[Mat3f][arithmetic]") {
@@ -329,20 +319,20 @@ TEST_CASE("Mat3f: Inverse", "[Mat3f][operations]") {
     SECTION("Identity inverse is identity") {
         Mat3f m = Mat3f::identity();
         Mat3f inv = m.inverse();
-        REQUIRE(mat3_approx_equal(inv, Mat3f::identity()));
+        REQUIRE(approx_equal(inv, Mat3f::identity()));
     }
 
     SECTION("Matrix times its inverse equals identity") {
         Mat3f m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 2.0f, 1.0f, 8.0f);
         Mat3f inv = m.inverse();
         Mat3f product = m * inv;
-        REQUIRE(mat3_approx_equal(product, Mat3f::identity(), 1e-3f));
+        REQUIRE(approx_equal(product, Mat3f::identity(), 1e-3f));
     }
 
     SECTION("Singular matrix returns zero") {
         Mat3f m(1.0f, 2.0f, 3.0f, 2.0f, 4.0f, 6.0f, 3.0f, 6.0f, 9.0f);
         Mat3f inv = m.inverse();
-        REQUIRE(mat3_approx_equal(inv, Mat3f::zero()));
+        REQUIRE(approx_equal(inv, Mat3f::zero()));
     }
 }
 
@@ -350,7 +340,7 @@ TEST_CASE("Mat3f: Transpose", "[Mat3f][operations]") {
     SECTION("Transpose of identity is identity") {
         Mat3f m = Mat3f::identity();
         Mat3f t = m.transposed();
-        REQUIRE(mat3_approx_equal(t, Mat3f::identity()));
+        REQUIRE(approx_equal(t, Mat3f::identity()));
     }
 
     SECTION("Transpose swaps rows and columns") {
@@ -365,7 +355,7 @@ TEST_CASE("Mat3f: Transpose", "[Mat3f][operations]") {
     SECTION("Double transpose returns original") {
         Mat3f m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
         Mat3f tt = m.transposed().transposed();
-        REQUIRE(mat3_approx_equal(tt, m));
+        REQUIRE(approx_equal(tt, m));
     }
 }
 
@@ -563,12 +553,12 @@ TEST_CASE("Mat3f: Edge cases", "[Mat3f][edge]") {
         Mat3f identity = Mat3f::identity();
         Mat3f m(2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f);
         Mat3f result = m * identity;
-        REQUIRE(mat3_approx_equal(result, m));
+        REQUIRE(approx_equal(result, m));
     }
 
     SECTION("Transpose of transpose returns original") {
         Mat3f m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
         Mat3f result = m.transposed().transposed();
-        REQUIRE(mat3_approx_equal(result, m));
+        REQUIRE(approx_equal(result, m));
     }
 }

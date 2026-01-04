@@ -3,6 +3,7 @@
 #include <core/math/linear_algebra/lu_decomposition.hpp>
 #include <core/math/linear_algebra/qr_decomposition.hpp>
 #include <core/math/linear_algebra/solver.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
 #include <array>
 #include <cmath>
 
@@ -16,28 +17,7 @@ using phynity::math::linear_algebra::determinant;
 using phynity::math::linear_algebra::SolveMethod;
 using phynity::math::matrices::MatN;
 using phynity::math::vectors::VecN;
-
-// Helper for approximate matrix equality
-bool matn_approx_equal(const MatN<3, 3, float>& a, const MatN<3, 3, float>& b, float eps = 1e-4f) {
-    for (std::size_t i = 0; i < 3; ++i) {
-        for (std::size_t j = 0; j < 3; ++j) {
-            if (std::abs(a(i, j) - b(i, j)) > eps) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-// Helper for approximate vector equality
-bool vecn_approx_equal(const VecN<3, float>& a, const VecN<3, float>& b, float eps = 1e-4f) {
-    for (std::size_t i = 0; i < 3; ++i) {
-        if (std::abs(a[i] - b[i]) > eps) {
-            return false;
-        }
-    }
-    return true;
-}
+using phynity::math::utilities::approx_equal;
 
 TEST_CASE("LU Decomposition: 2x2 matrix", "[linear_algebra][lu]") {
     // A = [[4, 3], [6, 3]]
@@ -86,8 +66,8 @@ TEST_CASE("LU Decomposition: 3x3 identity", "[linear_algebra][lu]") {
     MatN<3, 3, float> U = lu.getU();
 
     // For identity: L should be I and U should be I
-    REQUIRE(matn_approx_equal(L, MatN<3, 3, float>::identity(), 1e-6f));
-    REQUIRE(matn_approx_equal(U, MatN<3, 3, float>::identity(), 1e-6f));
+    REQUIRE(approx_equal(L, MatN<3, 3, float>::identity(), 1e-6f));
+    REQUIRE(approx_equal(U, MatN<3, 3, float>::identity(), 1e-6f));
 }
 
 TEST_CASE("LU Decomposition: diagonal matrix", "[linear_algebra][lu]") {
@@ -142,7 +122,7 @@ TEST_CASE("Linear System Solving: Ax=b with LU", "[linear_algebra][solve]") {
 
     // Verify: A*x ≈ b
     VecN<3, float> computed_b = A * x;
-    REQUIRE(vecn_approx_equal(computed_b, b, 1e-3f));
+    REQUIRE(approx_equal(computed_b, b, 1e-3f));
 }
 
 TEST_CASE("Linear System Solving: identity system", "[linear_algebra][solve]") {
@@ -152,7 +132,7 @@ TEST_CASE("Linear System Solving: identity system", "[linear_algebra][solve]") {
     VecN<3, float> x = solve(I, b, SolveMethod::LU);
 
     // Solution should be b itself
-    REQUIRE(vecn_approx_equal(x, b, 1e-6f));
+    REQUIRE(approx_equal(x, b, 1e-6f));
 }
 
 TEST_CASE("Matrix Inverse", "[linear_algebra][inverse]") {
@@ -168,7 +148,7 @@ TEST_CASE("Matrix Inverse", "[linear_algebra][inverse]") {
     MatN<3, 3, float> product = A * A_inv;
     MatN<3, 3, float> I = MatN<3, 3, float>::identity();
 
-    REQUIRE(matn_approx_equal(product, I, 1e-3f));
+    REQUIRE(approx_equal(product, I, 1e-3f));
 }
 
 TEST_CASE("Matrix Inverse: singular matrix", "[linear_algebra][inverse]") {
@@ -182,7 +162,7 @@ TEST_CASE("Matrix Inverse: singular matrix", "[linear_algebra][inverse]") {
     MatN<3, 3, float> zero = MatN<3, 3, float>::zero();
 
     // Inverse of singular should be zero
-    REQUIRE(matn_approx_equal(inv, zero, 1e-6f));
+    REQUIRE(approx_equal(inv, zero, 1e-6f));
 }
 
 TEST_CASE("Determinant Computation", "[linear_algebra][determinant]") {
@@ -221,7 +201,7 @@ TEST_CASE("QR Decomposition: 3x3 matrix", "[linear_algebra][qr]") {
     MatN<3, 3, float> should_be_I = QT * qr.Q;
     MatN<3, 3, float> I = MatN<3, 3, float>::identity();
 
-    REQUIRE(matn_approx_equal(should_be_I, I, 1e-4f));
+    REQUIRE(approx_equal(should_be_I, I, 1e-4f));
 }
 
 TEST_CASE("QR Decomposition: Reconstruction", "[linear_algebra][qr]") {
@@ -235,7 +215,7 @@ TEST_CASE("QR Decomposition: Reconstruction", "[linear_algebra][qr]") {
 
     // Q*R should approximate A
     MatN<3, 3, float> reconstructed = qr.Q * qr.R;
-    REQUIRE(matn_approx_equal(reconstructed, A, 1e-4f));
+    REQUIRE(approx_equal(reconstructed, A, 1e-4f));
 }
 
 TEST_CASE("Linear System Solving: QR vs LU", "[linear_algebra][solve]") {
@@ -251,7 +231,7 @@ TEST_CASE("Linear System Solving: QR vs LU", "[linear_algebra][solve]") {
     VecN<3, float> x_qr = solve(A, b, SolveMethod::QR);
 
     // Both methods should give same solution
-    REQUIRE(vecn_approx_equal(x_lu, x_qr, 1e-3f));
+    REQUIRE(approx_equal(x_lu, x_qr, 1e-3f));
 }
 
 TEST_CASE("ill-conditioned system", "[linear_algebra][solve]") {
@@ -272,7 +252,7 @@ TEST_CASE("ill-conditioned system", "[linear_algebra][solve]") {
     // Hilbert matrices are notoriously ill-conditioned
     // With single precision float, even QR struggles with 3x3 Hilbert
     // Using relaxed tolerance appropriate for float precision
-    REQUIRE(vecn_approx_equal(x_qr, x_true, 0.1f));
+    REQUIRE(approx_equal(x_qr, x_true, 0.1f));
 }
 
 TEST_CASE("Constraint solving scenario", "[linear_algebra][physics]") {
@@ -290,5 +270,5 @@ TEST_CASE("Constraint solving scenario", "[linear_algebra][physics]") {
     VecN<3, float> lambda = solve(JT, b, SolveMethod::LU);
 
     // Solution should match b for identity matrix
-    REQUIRE(vecn_approx_equal(lambda, b, 1e-6f));
+    REQUIRE(approx_equal(lambda, b, 1e-6f));
 }
