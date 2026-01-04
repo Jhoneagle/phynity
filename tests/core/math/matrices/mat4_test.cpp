@@ -1,17 +1,14 @@
-#define _USE_MATH_DEFINES
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat4.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <sstream>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 using phynity::math::matrices::Mat4;
 using phynity::math::vectors::Vec3;
 using phynity::math::vectors::Vec4;
+using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 // Helper function to check if two matrices are approximately equal
@@ -456,7 +453,7 @@ TEST_CASE("Mat4: Scale matrix", "[Mat4][transform]") {
 
 TEST_CASE("Mat4: Rotation matrices", "[Mat4][transform]") {
     SECTION("Rotation X by 90 degrees") {
-        Mat4 m = Mat4::rotationX(static_cast<float>(M_PI) / 2.0f);
+        Mat4 m = Mat4::rotationX(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(0.0f, 1.0f, 0.0f);
         Vec3 result = m * v;
 
@@ -466,7 +463,7 @@ TEST_CASE("Mat4: Rotation matrices", "[Mat4][transform]") {
     }
 
     SECTION("Rotation Y by 90 degrees") {
-        Mat4 m = Mat4::rotationY(static_cast<float>(M_PI) / 2.0f);
+        Mat4 m = Mat4::rotationY(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(1.0f, 0.0f, 0.0f);
         Vec3 result = m * v;
 
@@ -476,7 +473,7 @@ TEST_CASE("Mat4: Rotation matrices", "[Mat4][transform]") {
     }
 
     SECTION("Rotation Z by 90 degrees") {
-        Mat4 m = Mat4::rotationZ(static_cast<float>(M_PI) / 2.0f);
+        Mat4 m = Mat4::rotationZ(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(1.0f, 0.0f, 0.0f);
         Vec3 result = m * v;
 
@@ -487,7 +484,7 @@ TEST_CASE("Mat4: Rotation matrices", "[Mat4][transform]") {
 
     SECTION("Rotation around arbitrary axis") {
         Vec3 axis(1.0f, 0.0f, 0.0f);
-        Mat4 m = Mat4::rotationAxis(axis, static_cast<float>(M_PI) / 2.0f);
+        Mat4 m = Mat4::rotationAxis(axis, static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(0.0f, 1.0f, 0.0f);
         Vec3 result = m * v;
 
@@ -513,7 +510,7 @@ TEST_CASE("Mat4: Rotation matrices", "[Mat4][transform]") {
 
 TEST_CASE("Mat4: Perspective projection", "[Mat4][projection]") {
     SECTION("Perspective matrix creation") {
-        Mat4 m = Mat4::perspective(static_cast<float>(M_PI) / 4.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+        Mat4 m = Mat4::perspective(static_cast<float>(mathf::pi) / 4.0f, 16.0f / 9.0f, 0.1f, 100.0f);
         REQUIRE_THAT(m.m[3][2], WithinAbs(-1.0f, 1e-6f));
         REQUIRE_THAT(m.m[3][3], WithinAbs(0.0f, 1e-6f));
     }

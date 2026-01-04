@@ -1,16 +1,13 @@
-#define _USE_MATH_DEFINES
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat2.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <sstream>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 using phynity::math::matrices::Mat2;
 using phynity::math::vectors::Vec2;
+using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 // Helper function to check if two matrices are approximately equal
@@ -470,7 +467,7 @@ TEST_CASE("Mat2: Row and column accessors", "[Mat2][access][rowcol]") {
 
 TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
     SECTION("90 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(M_PI) / 2.0f);
+        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 2.0f);
         Vec2 v(1.0f, 0.0f);
         Vec2 rotated = rot * v;
         
@@ -479,7 +476,7 @@ TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
     }
 
     SECTION("45 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(M_PI) / 4.0f);
+        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 4.0f);
         float expected = std::sqrt(2.0f) / 2.0f;
         
         REQUIRE_THAT(rot.m[0][0], WithinAbs(expected, 1e-5f));
@@ -489,7 +486,7 @@ TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
     }
 
     SECTION("180 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(M_PI));
+        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi));
         Vec2 v(1.0f, 0.0f);
         Vec2 rotated = rot * v;
         
@@ -498,7 +495,7 @@ TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
     }
 
     SECTION("Rotation matrix has determinant 1") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(M_PI) / 3.0f);
+        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 3.0f);
         REQUIRE_THAT(rot.determinant(), WithinAbs(1.0f, 1e-5f));
     }
 }

@@ -3,15 +3,13 @@
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/matrices/mat3.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 using namespace phynity::math::quaternions;
 using namespace phynity::math::matrices;
 using namespace phynity::math::vectors;
+using namespace phynity::math::utilities;
 using Catch::Matchers::WithinAbs;
 
 // ============================================================================
@@ -95,7 +93,7 @@ TEST_CASE("Conversion: Identity quaternion to identity matrix", "[conversion][qu
 TEST_CASE("Conversion: 90° rotation around X-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     // 90° around X: q = (cos(45°), sin(45°), 0, 0)
     Vec3 axis(1.0f, 0.0f, 0.0f);
-    Quat q(axis, static_cast<float>(M_PI / 2.0));
+    Quat q(axis, static_cast<float>(mathf::pi / 2.0));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -112,7 +110,7 @@ TEST_CASE("Conversion: 90° rotation around X-axis (quat to matrix)", "[conversi
 
 TEST_CASE("Conversion: 90° rotation around Y-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    Quat q(axis, static_cast<float>(M_PI / 2.0));
+    Quat q(axis, static_cast<float>(mathf::pi / 2.0));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -129,7 +127,7 @@ TEST_CASE("Conversion: 90° rotation around Y-axis (quat to matrix)", "[conversi
 
 TEST_CASE("Conversion: 90° rotation around Z-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     Vec3 axis(0.0f, 0.0f, 1.0f);
-    Quat q(axis, static_cast<float>(M_PI / 2.0));
+    Quat q(axis, static_cast<float>(mathf::pi / 2.0));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -146,7 +144,7 @@ TEST_CASE("Conversion: 90° rotation around Z-axis (quat to matrix)", "[conversi
 
 TEST_CASE("Conversion: 180° rotation around X-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     Vec3 axis(1.0f, 0.0f, 0.0f);
-    Quat q(axis, static_cast<float>(M_PI));
+    Quat q(axis, static_cast<float>(mathf::pi));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -163,7 +161,7 @@ TEST_CASE("Conversion: 180° rotation around X-axis (quat to matrix)", "[convers
 
 TEST_CASE("Conversion: 180° rotation around Y-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    Quat q(axis, static_cast<float>(M_PI));
+    Quat q(axis, static_cast<float>(mathf::pi));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -180,7 +178,7 @@ TEST_CASE("Conversion: 180° rotation around Y-axis (quat to matrix)", "[convers
 
 TEST_CASE("Conversion: 180° rotation around Z-axis (quat to matrix)", "[conversion][quat-to-matrix]") {
     Vec3 axis(0.0f, 0.0f, 1.0f);
-    Quat q(axis, static_cast<float>(M_PI));
+    Quat q(axis, static_cast<float>(mathf::pi));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -199,7 +197,7 @@ TEST_CASE("Conversion: Arbitrary rotation (quat to matrix)", "[conversion][quat-
     // 45° around axis (1, 1, 1) normalized
     Vec3 axis(1.0f, 1.0f, 1.0f);
     axis = axis.normalized();
-    Quat q(axis, static_cast<float>(M_PI / 4.0));
+    Quat q(axis, static_cast<float>(mathf::pi / 4.0));
     
     Mat3 m = toRotationMatrix(q);
     
@@ -229,7 +227,7 @@ TEST_CASE("Conversion: Non-unit quaternion handles normalization", "[conversion]
 TEST_CASE("Conversion: Very small rotation (quat to matrix)", "[conversion][quat-to-matrix]") {
     // Very small angle (0.1 degrees)
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    float angle = 0.1f * static_cast<float>(M_PI) / 180.0f;
+    float angle = 0.1f * static_cast<float>(mathf::pi) / 180.0f;
     Quat q(axis, angle);
     
     Mat3 m = toRotationMatrix(q);
@@ -269,8 +267,8 @@ TEST_CASE("Conversion: 90° rotation matrix around X-axis to quaternion", "[conv
     Quat q = toQuaternion(m);
     
     // Expected quaternion for 90° around X: (cos(45°), sin(45°), 0, 0)
-    float expected_w = std::cos(static_cast<float>(M_PI / 4.0));
-    float expected_x = std::sin(static_cast<float>(M_PI / 4.0));
+    float expected_w = std::cos(static_cast<float>(mathf::pi / 4.0));
+    float expected_x = std::sin(static_cast<float>(mathf::pi / 4.0));
     
     REQUIRE_THAT(std::abs(q.w), WithinAbs(expected_w, 1e-5f));
     REQUIRE_THAT(std::abs(q.x), WithinAbs(expected_x, 1e-5f));
@@ -288,8 +286,8 @@ TEST_CASE("Conversion: 90° rotation matrix around Y-axis to quaternion", "[conv
     
     Quat q = toQuaternion(m);
     
-    float expected_w = std::cos(static_cast<float>(M_PI / 4.0));
-    float expected_y = std::sin(static_cast<float>(M_PI / 4.0));
+    float expected_w = std::cos(static_cast<float>(mathf::pi / 4.0));
+    float expected_y = std::sin(static_cast<float>(mathf::pi / 4.0));
     
     REQUIRE_THAT(std::abs(q.w), WithinAbs(expected_w, 1e-5f));
     REQUIRE_THAT(std::abs(q.x), WithinAbs(0.0f, 1e-5f));
@@ -307,8 +305,8 @@ TEST_CASE("Conversion: 90° rotation matrix around Z-axis to quaternion", "[conv
     
     Quat q = toQuaternion(m);
     
-    float expected_w = std::cos(static_cast<float>(M_PI / 4.0));
-    float expected_z = std::sin(static_cast<float>(M_PI / 4.0));
+    float expected_w = std::cos(static_cast<float>(mathf::pi / 4.0));
+    float expected_z = std::sin(static_cast<float>(mathf::pi / 4.0));
     
     REQUIRE_THAT(std::abs(q.w), WithinAbs(expected_w, 1e-5f));
     REQUIRE_THAT(std::abs(q.x), WithinAbs(0.0f, 1e-5f));
@@ -405,7 +403,7 @@ TEST_CASE("Round-trip: Quat -> Matrix -> Quat preserves rotation", "[conversion]
     }
     
     SECTION("90° around X") {
-        Quat original(Vec3(1.0f, 0.0f, 0.0f), static_cast<float>(M_PI / 2.0));
+        Quat original(Vec3(1.0f, 0.0f, 0.0f), static_cast<float>(mathf::pi / 2.0));
         Mat3 m = toRotationMatrix(original);
         Quat result = toQuaternion(m);
         
@@ -415,7 +413,7 @@ TEST_CASE("Round-trip: Quat -> Matrix -> Quat preserves rotation", "[conversion]
     SECTION("45° around arbitrary axis") {
         Vec3 axis(1.0f, 2.0f, 3.0f);
         axis = axis.normalized();
-        Quat original(axis, static_cast<float>(M_PI / 4.0));
+        Quat original(axis, static_cast<float>(mathf::pi / 4.0));
         
         Mat3 m = toRotationMatrix(original);
         Quat result = toQuaternion(m);
@@ -490,7 +488,7 @@ TEST_CASE("Round-trip: Vector rotation consistency", "[conversion][round-trip]")
 // ============================================================================
 
 TEST_CASE("Stress test: Multiple conversions don't accumulate error", "[conversion][stress]") {
-    Quat q(Vec3(1.0f, 1.0f, 1.0f).normalized(), static_cast<float>(M_PI / 6.0));
+    Quat q(Vec3(1.0f, 1.0f, 1.0f).normalized(), static_cast<float>(mathf::pi / 6.0));
     
     // Convert back and forth multiple times
     for (int i = 0; i < 10; ++i) {
@@ -509,7 +507,7 @@ TEST_CASE("Stress test: Multiple conversions don't accumulate error", "[conversi
 
 TEST_CASE("Stress test: Very small angles", "[conversion][stress]") {
     // 0.01 degrees
-    float angle = 0.01f * static_cast<float>(M_PI) / 180.0f;
+    float angle = 0.01f * static_cast<float>(mathf::pi) / 180.0f;
     Quat q(Vec3(1.0f, 0.0f, 0.0f), angle);
     
     Mat3 m = toRotationMatrix(q);
@@ -521,7 +519,7 @@ TEST_CASE("Stress test: Very small angles", "[conversion][stress]") {
 
 TEST_CASE("Stress test: Near-180° rotations", "[conversion][stress]") {
     // 179.9 degrees
-    float angle = 179.9f * static_cast<float>(M_PI) / 180.0f;
+    float angle = 179.9f * static_cast<float>(mathf::pi) / 180.0f;
     
     SECTION("Around X") {
         Quat q(Vec3(1.0f, 0.0f, 0.0f), angle);
@@ -892,7 +890,7 @@ TEST_CASE("Conversion: Identity quaternion to axis-angle", "[conversion][quat-to
 
 TEST_CASE("Conversion: 90° rotation around X-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(1.0f, 0.0f, 0.0f);
-    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    float expectedAngle = static_cast<float>(mathf::pi / 2.0);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -914,7 +912,7 @@ TEST_CASE("Conversion: 90° rotation around X-axis (quat to axis-angle)", "[conv
 
 TEST_CASE("Conversion: 90° rotation around Y-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(0.0f, 1.0f, 0.0f);
-    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    float expectedAngle = static_cast<float>(mathf::pi / 2.0);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -936,7 +934,7 @@ TEST_CASE("Conversion: 90° rotation around Y-axis (quat to axis-angle)", "[conv
 
 TEST_CASE("Conversion: 90° rotation around Z-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(0.0f, 0.0f, 1.0f);
-    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    float expectedAngle = static_cast<float>(mathf::pi / 2.0);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -958,7 +956,7 @@ TEST_CASE("Conversion: 90° rotation around Z-axis (quat to axis-angle)", "[conv
 
 TEST_CASE("Conversion: 180° rotation around X-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(1.0f, 0.0f, 0.0f);
-    float expectedAngle = static_cast<float>(M_PI);
+    float expectedAngle = static_cast<float>(mathf::pi);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -980,7 +978,7 @@ TEST_CASE("Conversion: 180° rotation around X-axis (quat to axis-angle)", "[con
 
 TEST_CASE("Conversion: 180° rotation around Y-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(0.0f, 1.0f, 0.0f);
-    float expectedAngle = static_cast<float>(M_PI);
+    float expectedAngle = static_cast<float>(mathf::pi);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -1002,7 +1000,7 @@ TEST_CASE("Conversion: 180° rotation around Y-axis (quat to axis-angle)", "[con
 
 TEST_CASE("Conversion: 180° rotation around Z-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
     Vec3 expectedAxis(0.0f, 0.0f, 1.0f);
-    float expectedAngle = static_cast<float>(M_PI);
+    float expectedAngle = static_cast<float>(mathf::pi);
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -1026,7 +1024,7 @@ TEST_CASE("Conversion: Arbitrary rotation (quat to axis-angle)", "[conversion][q
     // 60° around axis (1, 1, 1) normalized
     Vec3 expectedAxis(1.0f, 1.0f, 1.0f);
     expectedAxis = expectedAxis.normalized();
-    float expectedAngle = static_cast<float>(M_PI / 3.0);  // 60°
+    float expectedAngle = static_cast<float>(mathf::pi / 3.0);  // 60°
     
     Quat q(expectedAxis, expectedAngle);
     Vec3 axis;
@@ -1067,7 +1065,7 @@ TEST_CASE("Conversion: Very small rotation (quat to axis-angle)", "[conversion][
 TEST_CASE("Conversion: Non-unit quaternion handles normalization (axis-angle)", "[conversion][quat-to-axis-angle]") {
     // Create a quaternion and scale it (making it non-unit)
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    float angle = static_cast<float>(M_PI / 4.0);  // 45°
+    float angle = static_cast<float>(mathf::pi / 4.0);  // 45°
     Quat q(axis, angle);
     
     // Scale quaternion (make it non-unit)
@@ -1088,7 +1086,7 @@ TEST_CASE("Conversion: Non-unit quaternion handles normalization (axis-angle)", 
 TEST_CASE("Round-trip: Axis-Angle -> Quat -> Axis-Angle preserves rotation", "[conversion][round-trip][axis-angle]") {
     SECTION("90° around X") {
         Vec3 originalAxis(1.0f, 0.0f, 0.0f);
-        float originalAngle = static_cast<float>(M_PI / 2.0);
+        float originalAngle = static_cast<float>(mathf::pi / 2.0);
         
         Quat q(originalAxis, originalAngle);
         
@@ -1105,7 +1103,7 @@ TEST_CASE("Round-trip: Axis-Angle -> Quat -> Axis-Angle preserves rotation", "[c
     SECTION("45° around diagonal axis") {
         Vec3 originalAxis(1.0f, 1.0f, 1.0f);
         originalAxis = originalAxis.normalized();
-        float originalAngle = static_cast<float>(M_PI / 4.0);
+        float originalAngle = static_cast<float>(mathf::pi / 4.0);
         
         Quat q(originalAxis, originalAngle);
         
@@ -1121,7 +1119,7 @@ TEST_CASE("Round-trip: Axis-Angle -> Quat -> Axis-Angle preserves rotation", "[c
     
     SECTION("180° rotation") {
         Vec3 originalAxis(0.0f, 1.0f, 0.0f);
-        float originalAngle = static_cast<float>(M_PI);
+        float originalAngle = static_cast<float>(mathf::pi);
         
         Quat q(originalAxis, originalAngle);
         

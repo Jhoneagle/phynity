@@ -1,12 +1,4 @@
 # Core unit tests without external frameworks.
 
-add_subdirectory(vectors)
-add_subdirectory(matrices)
-add_subdirectory(quaternions)
-
-add_executable(particle_test particle_test.cpp)
-phynity_target_defaults(particle_test)
-phynity_apply_warnings(particle_test)
-phynity_apply_sanitizers(particle_test)
-target_link_libraries(particle_test PRIVATE phynity::core)
-add_test(NAME core.particle COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:particle_test>)
+add_subdirectory("math")
+add_subdirectory("physics")

@@ -1,14 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/quaternions/quat.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 using namespace phynity::math::quaternions;
 using namespace phynity::math::vectors;
+using namespace phynity::math::utilities;
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRelMatcher;
 
@@ -35,7 +33,7 @@ TEST_CASE("Quat: Component constructor", "[Quat][constructor]") {
 TEST_CASE("Quat: Axis-angle constructor", "[Quat][constructor]") {
     SECTION("90° rotation around Z-axis") {
         Vec3 axis(0.0f, 0.0f, 1.0f);
-        float angle = static_cast<float>(M_PI / 2.0);  // 90 degrees
+        float angle = static_cast<float>(mathf::pi / 2.0);  // 90 degrees
         Quat q(axis, angle);
 
         float expectedW = std::cos(angle / 2.0f);
@@ -49,7 +47,7 @@ TEST_CASE("Quat: Axis-angle constructor", "[Quat][constructor]") {
 
     SECTION("180° rotation around X-axis") {
         Vec3 axis(1.0f, 0.0f, 0.0f);
-        float angle = static_cast<float>(M_PI);
+        float angle = static_cast<float>(mathf::pi);
         Quat q(axis, angle);
 
         REQUIRE_THAT(q.w, WithinAbs(0.0f, 1e-6f));
@@ -331,7 +329,7 @@ TEST_CASE("Quat: Conjugate of conjugate is original", "[Quat][conjugate]") {
 }
 
 TEST_CASE("Quat: Inverse", "[Quat][inverse]") {
-    Quat q = Quat(Vec3(0.0f, 0.0f, 1.0f), static_cast<float>(M_PI / 2.0)).normalized();
+    Quat q = Quat(Vec3(0.0f, 0.0f, 1.0f), static_cast<float>(mathf::pi / 2.0)).normalized();
     Quat inv = q.inverse();
 
     // q * q⁻¹ should be identity
@@ -345,7 +343,7 @@ TEST_CASE("Quat: Inverse", "[Quat][inverse]") {
 
 TEST_CASE("Quat: Inverse of unit quaternion is conjugate", "[Quat][inverse]") {
     // Create a unit quaternion
-    Quat q = Quat(Vec3(1.0f, 0.0f, 0.0f), static_cast<float>(M_PI / 4.0f)).normalized();
+    Quat q = Quat(Vec3(1.0f, 0.0f, 0.0f), static_cast<float>(mathf::pi / 4.0f)).normalized();
     Quat inv = q.inverse();
     Quat conj = q.conjugate();
 
@@ -411,7 +409,7 @@ TEST_CASE("Quat: Rotate vector by identity", "[Quat][rotation]") {
 TEST_CASE("Quat: 90° rotation around X-axis", "[Quat][rotation]") {
     // 90° rotation around X-axis: (1, 0, 0)
     Vec3 axis(1.0f, 0.0f, 0.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI / 2.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
 
     // Rotate unit vector along Y-axis (0, 1, 0)
     // Should result in (0, 0, 1)
@@ -426,7 +424,7 @@ TEST_CASE("Quat: 90° rotation around X-axis", "[Quat][rotation]") {
 TEST_CASE("Quat: 90° rotation around Y-axis", "[Quat][rotation]") {
     // 90° rotation around Y-axis: (0, 1, 0)
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI / 2.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
 
     // Rotate unit vector along Z-axis (0, 0, 1)
     // Should result in (1, 0, 0)
@@ -441,7 +439,7 @@ TEST_CASE("Quat: 90° rotation around Y-axis", "[Quat][rotation]") {
 TEST_CASE("Quat: 90° rotation around Z-axis", "[Quat][rotation]") {
     // 90° rotation around Z-axis: (0, 0, 1)
     Vec3 axis(0.0f, 0.0f, 1.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI / 2.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
 
     // Rotate unit vector along X-axis (1, 0, 0)
     // Should result in (0, 1, 0)
@@ -456,7 +454,7 @@ TEST_CASE("Quat: 90° rotation around Z-axis", "[Quat][rotation]") {
 TEST_CASE("Quat: 180° rotation around axis", "[Quat][rotation]") {
     // 180° rotation around Z-axis: (0, 0, 1)
     Vec3 axis(0.0f, 0.0f, 1.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi)).normalized();
 
     Vec3 v(1.0f, 0.0f, 0.0f);
     Vec3 rotated = q.rotateVector(v);
@@ -471,7 +469,7 @@ TEST_CASE("Quat: 180° rotation around axis", "[Quat][rotation]") {
 TEST_CASE("Quat: Rotate then unrotate returns original", "[Quat][rotation]") {
     Vec3 axis(1.0f, 2.0f, 3.0f);
     axis = axis.normalized();
-    Quat q = Quat(axis, static_cast<float>(M_PI / 3.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 3.0)).normalized();
 
     Vec3 original(4.5f, -2.3f, 7.1f);
     Vec3 rotated = q.rotateVector(original);
@@ -484,7 +482,7 @@ TEST_CASE("Quat: Rotate then unrotate returns original", "[Quat][rotation]") {
 
 TEST_CASE("Quat: Unrotate reverses rotate", "[Quat][rotation]") {
     Vec3 axis(0.707f, 0.707f, 0.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI / 4.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 4.0)).normalized();
 
     Vec3 v(1.0f, 2.0f, 3.0f);
     Vec3 backward = q.unrotateVector(v);
@@ -501,7 +499,7 @@ TEST_CASE("Quat: Unrotate reverses rotate", "[Quat][rotation]") {
 TEST_CASE("Quat: Vector magnitude preserved under rotation", "[Quat][rotation]") {
     Vec3 axis(1.0f, 0.0f, 1.0f);
     axis = axis.normalized();
-    Quat q = Quat(axis, static_cast<float>(M_PI / 6.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 6.0)).normalized();
 
     Vec3 v(3.0f, 4.0f, 5.0f);
     float originalMag = v.length();
@@ -515,10 +513,10 @@ TEST_CASE("Quat: Vector magnitude preserved under rotation", "[Quat][rotation]")
 TEST_CASE("Quat: Composition of rotations via quaternion multiplication", "[Quat][rotation]") {
     // Create two rotations
     Vec3 axis1(1.0f, 0.0f, 0.0f);
-    Quat q1 = Quat(axis1, static_cast<float>(M_PI / 4.0)).normalized();
+    Quat q1 = Quat(axis1, static_cast<float>(mathf::pi / 4.0)).normalized();
 
     Vec3 axis2(0.0f, 1.0f, 0.0f);
-    Quat q2 = Quat(axis2, static_cast<float>(M_PI / 4.0)).normalized();
+    Quat q2 = Quat(axis2, static_cast<float>(mathf::pi / 4.0)).normalized();
 
     // Compose rotations
     Quat qComposed = q2 * q1;
@@ -540,7 +538,7 @@ TEST_CASE("Quat: Composition of rotations via quaternion multiplication", "[Quat
 TEST_CASE("Quat: Full rotation (360°) returns to original", "[Quat][rotation]") {
     Vec3 axis(1.0f, 2.0f, 3.0f);
     axis = axis.normalized();
-    Quat q = Quat(axis, static_cast<float>(2.0 * M_PI)).normalized();
+    Quat q = Quat(axis, static_cast<float>(2.0 * mathf::pi)).normalized();
 
     Vec3 v(5.0f, -3.0f, 2.0f);
     Vec3 rotated = q.rotateVector(v);
@@ -553,7 +551,7 @@ TEST_CASE("Quat: Full rotation (360°) returns to original", "[Quat][rotation]")
 
 TEST_CASE("Quat: Rotating orthogonal vectors", "[Quat][rotation]") {
     Vec3 axis(0.0f, 1.0f, 0.0f);
-    Quat q = Quat(axis, static_cast<float>(M_PI / 2.0)).normalized();
+    Quat q = Quat(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
 
     Vec3 v1(1.0f, 0.0f, 0.0f);
     Vec3 v2(0.0f, 0.0f, 1.0f);

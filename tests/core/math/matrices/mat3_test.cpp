@@ -1,16 +1,13 @@
-#define _USE_MATH_DEFINES
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/matrices/mat3.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <sstream>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 using phynity::math::matrices::Mat3;
 using phynity::math::vectors::Vec3;
+using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 // Helper function to check if two matrices are approximately equal
@@ -442,7 +439,7 @@ TEST_CASE("Mat3: Row and column accessors", "[Mat3][access][rowcol]") {
 
 TEST_CASE("Mat3: Rotation matrices", "[Mat3][transform]") {
     SECTION("Rotation X axis by 90 degrees") {
-        Mat3 rot = Mat3::rotationX(static_cast<float>(M_PI) / 2.0f);
+        Mat3 rot = Mat3::rotationX(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(0.0f, 1.0f, 0.0f);
         Vec3 rotated = rot * v;
         
@@ -452,7 +449,7 @@ TEST_CASE("Mat3: Rotation matrices", "[Mat3][transform]") {
     }
 
     SECTION("Rotation Y axis by 90 degrees") {
-        Mat3 rot = Mat3::rotationY(static_cast<float>(M_PI) / 2.0f);
+        Mat3 rot = Mat3::rotationY(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(1.0f, 0.0f, 0.0f);
         Vec3 rotated = rot * v;
         
@@ -462,7 +459,7 @@ TEST_CASE("Mat3: Rotation matrices", "[Mat3][transform]") {
     }
 
     SECTION("Rotation Z axis by 90 degrees") {
-        Mat3 rot = Mat3::rotationZ(static_cast<float>(M_PI) / 2.0f);
+        Mat3 rot = Mat3::rotationZ(static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(1.0f, 0.0f, 0.0f);
         Vec3 rotated = rot * v;
         
@@ -473,7 +470,7 @@ TEST_CASE("Mat3: Rotation matrices", "[Mat3][transform]") {
 
     SECTION("Rotation around arbitrary axis") {
         Vec3 axis(1.0f, 0.0f, 0.0f);
-        Mat3 rot = Mat3::rotationAxis(axis, static_cast<float>(M_PI) / 2.0f);
+        Mat3 rot = Mat3::rotationAxis(axis, static_cast<float>(mathf::pi) / 2.0f);
         Vec3 v(0.0f, 1.0f, 0.0f);
         Vec3 rotated = rot * v;
         
