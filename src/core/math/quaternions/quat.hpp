@@ -4,32 +4,33 @@
 #include <cmath>
 #include <ostream>
 #include <algorithm>
+#include <type_traits>
 
 namespace phynity::math::quaternions {
 
-using phynity::math::vectors::Vec3;
-
-/// Quaternion for 3D rotations without gimbal lock.
+/// Quaternion for 3D rotations without gimbal lock with dual-precision support.
 /// Represents rotation as q = w + xi + yj + zk where (x, y, z) is the vector part
 /// and w is the scalar part.
 /// For a rotation of angle θ around axis n̂: q = (cos(θ/2), sin(θ/2) * n̂)
+template<typename T = float>
 struct Quat {
-    float w, x, y, z;
+    static_assert(std::is_floating_point_v<T>, "Quat template parameter must be a floating-point type");
+    T w, x, y, z;
 
     /// Default constructor: identity quaternion (no rotation)
-    Quat() : w(1.0f), x(0.0f), y(0.0f), z(0.0f) {}
+    Quat() : w(T(1)), x(T(0)), y(T(0)), z(T(0)) {}
 
     /// Component constructor
-    explicit Quat(float w, float x, float y, float z)
+    explicit Quat(T w, T x, T y, T z)
         : w(w), x(x), y(y), z(z) {}
 
     /// Axis-angle constructor: creates rotation of angle θ around axis n̂
     /// @param axis Vector representing rotation axis
     /// @param angle Rotation angle in radians
-    Quat(const Vec3& axis, float angle) {
-        Vec3 normAxis = axis.normalized();
-        float halfAngle = angle * 0.5f;
-        float sinHalf = std::sin(halfAngle);
+    Quat(const phynity::math::vectors::Vec3<T>& axis, T angle) {
+        phynity::math::vectors::Vec3<T> normAxis = axis.normalized();
+        T halfAngle = angle * T(0.5);
+        T sinHalf = std::sin(halfAngle);
 
         w = std::cos(halfAngle);
         x = normAxis.x * sinHalf;
@@ -62,13 +63,13 @@ struct Quat {
     }
 
     /// Scalar multiplication
-    Quat operator*(float scalar) const {
+    Quat operator*(T scalar) const {
         return Quat(w * scalar, x * scalar, y * scalar, z * scalar);
     }
 
     /// Scalar division
-    Quat operator/(float scalar) const {
-        float inv = 1.0f / scalar;
+    Quat operator/(T scalar) const {
+        T inv = T(1) / scalar;
         return Quat(w * inv, x * inv, y * inv, z * inv);
     }
 
@@ -102,7 +103,7 @@ struct Quat {
         return *this;
     }
 
-    Quat& operator*=(float scalar) {
+    Quat& operator*=(T scalar) {
         w *= scalar;
         x *= scalar;
         y *= scalar;
@@ -110,8 +111,8 @@ struct Quat {
         return *this;
     }
 
-    Quat& operator/=(float scalar) {
-        float inv = 1.0f / scalar;
+    Quat& operator/=(T scalar) {
+        T inv = T(1) / scalar;
         w *= inv;
         x *= inv;
         y *= inv;
@@ -136,35 +137,35 @@ struct Quat {
     // ========================================================================
 
     /// Squared magnitude: ||q||² = w² + x² + y² + z²
-    float magnitudeSquared() const {
+    T magnitudeSquared() const {
         return w * w + x * x + y * y + z * z;
     }
 
     /// Magnitude (norm): ||q|| = √(w² + x² + y² + z²)
-    float magnitude() const {
+    T magnitude() const {
         return std::sqrt(magnitudeSquared());
     }
 
     /// Alias for magnitude()
-    float norm() const {
+    T norm() const {
         return magnitude();
     }
 
     /// Returns normalized quaternion without modifying this
     Quat normalized() const {
-        float mag = magnitude();
-        if (mag < 1e-6f) {
-            return Quat(1.0f, 0.0f, 0.0f, 0.0f);  // Return identity if near-zero
+        T mag = magnitude();
+        if (mag < T(1e-6)) {
+            return Quat(T(1), T(0), T(0), T(0));  // Return identity if near-zero
         }
         return *this / mag;
     }
 
     /// Normalize this quaternion in-place
     Quat& normalize() {
-        float mag = magnitude();
-        if (mag < 1e-6f) {
-            w = 1.0f;
-            x = y = z = 0.0f;
+        T mag = magnitude();
+        if (mag < T(1e-6)) {
+            w = T(1);
+            x = y = z = T(0);
             return *this;
         }
         *this /= mag;
@@ -185,9 +186,9 @@ struct Quat {
     /// For unit quaternions: q⁻¹ = q*
     /// Undoes the rotation
     Quat inverse() const {
-        float magSq = magnitudeSquared();
-        if (magSq < 1e-12f) {
-            return Quat(1.0f, 0.0f, 0.0f, 0.0f);  // Return identity if degenerate
+        T magSq = magnitudeSquared();
+        if (magSq < T(1e-12)) {
+            return Quat(T(1), T(0), T(0), T(0));  // Return identity if degenerate
         }
         return conjugate() / magSq;
     }
@@ -200,29 +201,29 @@ struct Quat {
     /// Assumes this quaternion is normalized (or at least a valid rotation)
     /// @param v Vector to rotate
     /// @return Rotated vector
-    Vec3 rotateVector(const Vec3& v) const {
+    phynity::math::vectors::Vec3<T> rotateVector(const phynity::math::vectors::Vec3<T>& v) const {
         // Convert vector to quaternion form: v_quat = (0, v.x, v.y, v.z)
-        Quat vQuat(0.0f, v.x, v.y, v.z);
+        Quat vQuat(T(0), v.x, v.y, v.z);
         
         // Apply rotation: result = q * v_quat * q⁻¹
         Quat rotated = *this * vQuat * inverse();
         
-        return Vec3(rotated.x, rotated.y, rotated.z);
+        return phynity::math::vectors::Vec3<T>(rotated.x, rotated.y, rotated.z);
     }
 
     /// Unrotate (inverse rotate) a 3D vector: v' = q⁻¹ * v * q
     /// This reverses the rotation applied by rotateVector()
     /// @param v Vector to unrotate
     /// @return Unrotated vector
-    Vec3 unrotateVector(const Vec3& v) const {
+    phynity::math::vectors::Vec3<T> unrotateVector(const phynity::math::vectors::Vec3<T>& v) const {
         // Convert vector to quaternion form: v_quat = (0, v.x, v.y, v.z)
-        Quat vQuat(0.0f, v.x, v.y, v.z);
+        Quat vQuat(T(0), v.x, v.y, v.z);
         
         // Apply inverse rotation: result = q⁻¹ * v_quat * q
         Quat inv = inverse();
         Quat rotated = inv * vQuat * *this;
         
-        return Vec3(rotated.x, rotated.y, rotated.z);
+        return phynity::math::vectors::Vec3<T>(rotated.x, rotated.y, rotated.z);
     }
 };
 
@@ -231,19 +232,26 @@ struct Quat {
 // ============================================================================
 
 /// Scalar * Quaternion
-inline Quat operator*(float scalar, const Quat& q) {
+template<typename T = float>
+inline Quat<T> operator*(T scalar, const Quat<T>& q) {
     return q * scalar;
 }
 
 /// Dot product: q1 · q2 = w1*w2 + x1*x2 + y1*y2 + z1*z2
-inline float dot(const Quat& q1, const Quat& q2) {
+template<typename T = float>
+inline T dot(const Quat<T>& q1, const Quat<T>& q2) {
     return q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
 }
 
 /// Stream output operator
-inline std::ostream& operator<<(std::ostream& os, const Quat& q) {
+template<typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const Quat<T>& q) {
     os << "Quat(" << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
     return os;
 }
+
+// Type aliases
+using Quatf = Quat<float>;
+using Quatd = Quat<double>;
 
 }  // namespace phynity::math::quaternions

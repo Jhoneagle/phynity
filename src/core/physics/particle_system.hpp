@@ -12,7 +12,7 @@ public:
     ParticleSystem() = default;
 
     /// Spawn a new particle at position with initial velocity.
-    void spawn(const Vec3& position, const Vec3& velocity, float mass = 1.0f, float lifetime = -1.0f) {
+    void spawn(const Vec3f& position, const Vec3f& velocity, float mass = 1.0f, float lifetime = -1.0f) {
         particles_.emplace_back();
         Particle& p = particles_.back();
         p.position = position;
@@ -22,7 +22,7 @@ public:
     }
 
     /// Apply gravity to all particles.
-    void applyGravity(const Vec3& gravity) {
+    void applyGravity(const Vec3f& gravity) {
         for (auto& p : particles_) {
             if (p.isAlive()) {
                 p.applyForce(gravity * p.mass);

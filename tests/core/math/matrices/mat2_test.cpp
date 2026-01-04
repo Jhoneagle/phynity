@@ -5,13 +5,13 @@
 #include <cmath>
 #include <sstream>
 
-using phynity::math::matrices::Mat2;
-using phynity::math::vectors::Vec2;
+using phynity::math::matrices::Mat2f;
+using phynity::math::vectors::Vec2f;
 using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 // Helper function to check if two matrices are approximately equal
-bool mat2_approx_equal(const Mat2& a, const Mat2& b, float epsilon = 1e-4f) {
+bool mat2_approx_equal(const Mat2f& a, const Mat2f& b, float epsilon = 1e-4f) {
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 2; ++j) {
             if (std::abs(a.m[i][j] - b.m[i][j]) > epsilon) {
@@ -26,9 +26,9 @@ bool mat2_approx_equal(const Mat2& a, const Mat2& b, float epsilon = 1e-4f) {
 // Constructors and Basic Properties
 // ============================================================================
 
-TEST_CASE("Mat2: Constructors", "[Mat2][constructor]") {
+TEST_CASE("Mat2f: Constructors", "[Mat2f][constructor]") {
     SECTION("Default constructor creates identity matrix") {
-        Mat2 m;
+        Mat2f m;
         REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(0.0f, 1e-6f));
@@ -36,7 +36,7 @@ TEST_CASE("Mat2: Constructors", "[Mat2][constructor]") {
     }
 
     SECTION("Scalar constructor fills all elements") {
-        Mat2 m(5.0f);
+        Mat2f m(5.0f);
         REQUIRE_THAT(m.m[0][0], WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(5.0f, 1e-6f));
@@ -44,7 +44,7 @@ TEST_CASE("Mat2: Constructors", "[Mat2][constructor]") {
     }
 
     SECTION("Element-wise constructor") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(3.0f, 1e-6f));
@@ -52,9 +52,9 @@ TEST_CASE("Mat2: Constructors", "[Mat2][constructor]") {
     }
 
     SECTION("Column vector constructor") {
-        Vec2 col0(1.0f, 3.0f);
-        Vec2 col1(2.0f, 4.0f);
-        Mat2 m(col0, col1);
+        Vec2f col0(1.0f, 3.0f);
+        Vec2f col1(2.0f, 4.0f);
+        Mat2f m(col0, col1);
         REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(3.0f, 1e-6f));
@@ -62,9 +62,9 @@ TEST_CASE("Mat2: Constructors", "[Mat2][constructor]") {
     }
 }
 
-TEST_CASE("Mat2: Static factory methods", "[Mat2][factory]") {
+TEST_CASE("Mat2f: Static factory methods", "[Mat2f][factory]") {
     SECTION("Identity matrix") {
-        Mat2 m = Mat2::identity();
+        Mat2f m = Mat2f::identity();
         REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(0.0f, 1e-6f));
@@ -72,7 +72,7 @@ TEST_CASE("Mat2: Static factory methods", "[Mat2][factory]") {
     }
 
     SECTION("Zero matrix") {
-        Mat2 m = Mat2::zero();
+        Mat2f m = Mat2f::zero();
         REQUIRE_THAT(m.m[0][0], WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(m.m[1][0], WithinAbs(0.0f, 1e-6f));
@@ -84,10 +84,10 @@ TEST_CASE("Mat2: Static factory methods", "[Mat2][factory]") {
 // Arithmetic Operators
 // ============================================================================
 
-TEST_CASE("Mat2: Addition", "[Mat2][arithmetic]") {
-    Mat2 a(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 b(5.0f, 6.0f, 7.0f, 8.0f);
-    Mat2 c = a + b;
+TEST_CASE("Mat2f: Addition", "[Mat2f][arithmetic]") {
+    Mat2f a(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f b(5.0f, 6.0f, 7.0f, 8.0f);
+    Mat2f c = a + b;
 
     REQUIRE_THAT(c.m[0][0], WithinAbs(6.0f, 1e-6f));
     REQUIRE_THAT(c.m[0][1], WithinAbs(8.0f, 1e-6f));
@@ -95,19 +95,19 @@ TEST_CASE("Mat2: Addition", "[Mat2][arithmetic]") {
     REQUIRE_THAT(c.m[1][1], WithinAbs(12.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Subtraction", "[Mat2][arithmetic]") {
-    Mat2 a(5.0f, 6.0f, 7.0f, 8.0f);
-    Mat2 b(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 c = a - b;
+TEST_CASE("Mat2f: Subtraction", "[Mat2f][arithmetic]") {
+    Mat2f a(5.0f, 6.0f, 7.0f, 8.0f);
+    Mat2f b(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f c = a - b;
 
     REQUIRE_THAT(c.m[0][0], WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(c.m[0][1], WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(c.m[1][0], WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(c.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
-TEST_CASE("Mat2: Negation", "[Mat2][arithmetic]") {
-    Mat2 m(1.0f, -2.0f, 3.0f, -4.0f);
-    Mat2 result = -m;
+TEST_CASE("Mat2f: Negation", "[Mat2f][arithmetic]") {
+    Mat2f m(1.0f, -2.0f, 3.0f, -4.0f);
+    Mat2f result = -m;
 
     REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
     REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
@@ -115,14 +115,14 @@ TEST_CASE("Mat2: Negation", "[Mat2][arithmetic]") {
     REQUIRE_THAT(result.m[1][1], WithinAbs(4.0f, 1e-6f));
 
     // Double negation
-    Mat2 double_neg = -(-m);
+    Mat2f double_neg = -(-m);
     REQUIRE(mat2_approx_equal(double_neg, m));
 }
-TEST_CASE("Mat2: Scalar multiplication", "[Mat2][arithmetic]") {
-    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Scalar multiplication", "[Mat2f][arithmetic]") {
+    Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
     
     SECTION("Matrix * scalar") {
-        Mat2 result = m * 2.0f;
+        Mat2f result = m * 2.0f;
         REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.m[0][1], WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(result.m[1][0], WithinAbs(6.0f, 1e-6f));
@@ -130,7 +130,7 @@ TEST_CASE("Mat2: Scalar multiplication", "[Mat2][arithmetic]") {
     }
 
     SECTION("Scalar * matrix") {
-        Mat2 result = 2.0f * m;
+        Mat2f result = 2.0f * m;
         REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.m[0][1], WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(result.m[1][0], WithinAbs(6.0f, 1e-6f));
@@ -138,9 +138,9 @@ TEST_CASE("Mat2: Scalar multiplication", "[Mat2][arithmetic]") {
     }
 }
 
-TEST_CASE("Mat2: Scalar division", "[Mat2][arithmetic]") {
-    Mat2 m(2.0f, 4.0f, 6.0f, 8.0f);
-    Mat2 result = m / 2.0f;
+TEST_CASE("Mat2f: Scalar division", "[Mat2f][arithmetic]") {
+    Mat2f m(2.0f, 4.0f, 6.0f, 8.0f);
+    Mat2f result = m / 2.0f;
 
     REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
     REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
@@ -148,10 +148,10 @@ TEST_CASE("Mat2: Scalar division", "[Mat2][arithmetic]") {
     REQUIRE_THAT(result.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Matrix multiplication", "[Mat2][arithmetic]") {
-    Mat2 m1(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 m2(5.0f, 6.0f, 7.0f, 8.0f);
-    Mat2 result = m1 * m2;
+TEST_CASE("Mat2f: Matrix multiplication", "[Mat2f][arithmetic]") {
+    Mat2f m1(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f m2(5.0f, 6.0f, 7.0f, 8.0f);
+    Mat2f result = m1 * m2;
 
     // [1*5 + 2*7, 1*6 + 2*8] = [19, 22]
     // [3*5 + 4*7, 3*6 + 4*8] = [43, 50]
@@ -165,9 +165,9 @@ TEST_CASE("Mat2: Matrix multiplication", "[Mat2][arithmetic]") {
 // Assignment Operators
 // ============================================================================
 
-TEST_CASE("Mat2: Addition assignment", "[Mat2][assignment]") {
-    Mat2 a(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 b(5.0f, 6.0f, 7.0f, 8.0f);
+TEST_CASE("Mat2f: Addition assignment", "[Mat2f][assignment]") {
+    Mat2f a(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f b(5.0f, 6.0f, 7.0f, 8.0f);
     a += b;
 
     REQUIRE_THAT(a.m[0][0], WithinAbs(6.0f, 1e-6f));
@@ -176,9 +176,9 @@ TEST_CASE("Mat2: Addition assignment", "[Mat2][assignment]") {
     REQUIRE_THAT(a.m[1][1], WithinAbs(12.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Subtraction assignment", "[Mat2][assignment]") {
-    Mat2 a(5.0f, 6.0f, 7.0f, 8.0f);
-    Mat2 b(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Subtraction assignment", "[Mat2f][assignment]") {
+    Mat2f a(5.0f, 6.0f, 7.0f, 8.0f);
+    Mat2f b(1.0f, 2.0f, 3.0f, 4.0f);
     a -= b;
 
     REQUIRE_THAT(a.m[0][0], WithinAbs(4.0f, 1e-6f));
@@ -187,8 +187,8 @@ TEST_CASE("Mat2: Subtraction assignment", "[Mat2][assignment]") {
     REQUIRE_THAT(a.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Scalar multiplication assignment", "[Mat2][assignment]") {
-    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Scalar multiplication assignment", "[Mat2f][assignment]") {
+    Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
     m *= 2.0f;
 
     REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
@@ -197,8 +197,8 @@ TEST_CASE("Mat2: Scalar multiplication assignment", "[Mat2][assignment]") {
     REQUIRE_THAT(m.m[1][1], WithinAbs(8.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Scalar division assignment", "[Mat2][assignment]") {
-    Mat2 m(2.0f, 4.0f, 6.0f, 8.0f);
+TEST_CASE("Mat2f: Scalar division assignment", "[Mat2f][assignment]") {
+    Mat2f m(2.0f, 4.0f, 6.0f, 8.0f);
     m /= 2.0f;
 
     REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
@@ -207,9 +207,9 @@ TEST_CASE("Mat2: Scalar division assignment", "[Mat2][assignment]") {
     REQUIRE_THAT(m.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Matrix multiplication assignment", "[Mat2][assignment]") {
-    Mat2 m1(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 m2(5.0f, 6.0f, 7.0f, 8.0f);
+TEST_CASE("Mat2f: Matrix multiplication assignment", "[Mat2f][assignment]") {
+    Mat2f m1(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f m2(5.0f, 6.0f, 7.0f, 8.0f);
     m1 *= m2;
 
     REQUIRE_THAT(m1.m[0][0], WithinAbs(19.0f, 1e-6f));
@@ -222,19 +222,19 @@ TEST_CASE("Mat2: Matrix multiplication assignment", "[Mat2][assignment]") {
 // Comparison Operators
 // ============================================================================
 
-TEST_CASE("Mat2: Equality comparison", "[Mat2][comparison]") {
-    Mat2 a(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 b(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 c(5.0f, 6.0f, 7.0f, 8.0f);
+TEST_CASE("Mat2f: Equality comparison", "[Mat2f][comparison]") {
+    Mat2f a(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f b(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f c(5.0f, 6.0f, 7.0f, 8.0f);
 
     REQUIRE(a == b);
     REQUIRE_FALSE(a == c);
 }
 
-TEST_CASE("Mat2: Inequality comparison", "[Mat2][comparison]") {
-    Mat2 a(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 b(5.0f, 6.0f, 7.0f, 8.0f);
-    Mat2 c(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Inequality comparison", "[Mat2f][comparison]") {
+    Mat2f a(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f b(5.0f, 6.0f, 7.0f, 8.0f);
+    Mat2f c(1.0f, 2.0f, 3.0f, 4.0f);
 
     REQUIRE(a != b);
     REQUIRE_FALSE(a != c);
@@ -244,11 +244,11 @@ TEST_CASE("Mat2: Inequality comparison", "[Mat2][comparison]") {
 // Matrix-Vector Operations
 // ============================================================================
 
-TEST_CASE("Mat2: Matrix-vector multiplication", "[Mat2][vector]") {
+TEST_CASE("Mat2f: Matrix-vector multiplication", "[Mat2f][vector]") {
     SECTION("Matrix * vector (column vector)") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Vec2 v(5.0f, 6.0f);
-        Vec2 result = m * v;
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Vec2f v(5.0f, 6.0f);
+        Vec2f result = m * v;
 
         // [1*5 + 2*6] = [17]
         // [3*5 + 4*6] = [39]
@@ -257,9 +257,9 @@ TEST_CASE("Mat2: Matrix-vector multiplication", "[Mat2][vector]") {
     }
 
     SECTION("Vector * matrix (row vector)") {
-        Vec2 v(5.0f, 6.0f);
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Vec2 result = v * m;
+        Vec2f v(5.0f, 6.0f);
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Vec2f result = v * m;
 
         // [5*1 + 6*3, 5*2 + 6*4] = [23, 34]
         REQUIRE_THAT(result.x, WithinAbs(23.0f, 1e-6f));
@@ -271,11 +271,11 @@ TEST_CASE("Mat2: Matrix-vector multiplication", "[Mat2][vector]") {
 // Approximate Equality
 // ============================================================================
 
-TEST_CASE("Mat2: Approximate equality", "[Mat2][comparison]") {
-    Mat2 m1(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 m2(1.0f, 2.0f, 3.0f, 4.0f);
-    Mat2 m3(1.00001f, 2.00001f, 3.00001f, 4.00001f);
-    Mat2 m4(1.1f, 2.1f, 3.1f, 4.1f);
+TEST_CASE("Mat2f: Approximate equality", "[Mat2f][comparison]") {
+    Mat2f m1(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f m2(1.0f, 2.0f, 3.0f, 4.0f);
+    Mat2f m3(1.00001f, 2.00001f, 3.00001f, 4.00001f);
+    Mat2f m4(1.1f, 2.1f, 3.1f, 4.1f);
 
     REQUIRE(m1.approxEqual(m2));
     REQUIRE(m1.approxEqual(m3, 1e-4f));
@@ -283,9 +283,9 @@ TEST_CASE("Mat2: Approximate equality", "[Mat2][comparison]") {
     REQUIRE(m1.approxEqual(m4, 0.2f));
 }
 
-TEST_CASE("Mat2: Absolute value", "[Mat2][operations]") {
-    Mat2 m(-1.0f, 2.0f, -3.0f, 4.0f);
-    Mat2 result = m.abs();
+TEST_CASE("Mat2f: Absolute value", "[Mat2f][operations]") {
+    Mat2f m(-1.0f, 2.0f, -3.0f, 4.0f);
+    Mat2f result = m.abs();
 
     REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
     REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
@@ -293,12 +293,12 @@ TEST_CASE("Mat2: Absolute value", "[Mat2][operations]") {
     REQUIRE_THAT(result.m[1][1], WithinAbs(4.0f, 1e-6f));
 }
 
-TEST_CASE("Mat2: Component-wise operations", "[Mat2][arithmetic]") {
-    Mat2 m1(2.0f, 4.0f, 6.0f, 8.0f);
-    Mat2 m2(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Component-wise operations", "[Mat2f][arithmetic]") {
+    Mat2f m1(2.0f, 4.0f, 6.0f, 8.0f);
+    Mat2f m2(1.0f, 2.0f, 3.0f, 4.0f);
 
     SECTION("Component-wise multiplication") {
-        Mat2 m = m1;
+        Mat2f m = m1;
         m.mulComponentWise(m2);
         REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(8.0f, 1e-6f));
@@ -307,7 +307,7 @@ TEST_CASE("Mat2: Component-wise operations", "[Mat2][arithmetic]") {
     }
 
     SECTION("Component-wise division") {
-        Mat2 m = m1;
+        Mat2f m = m1;
         m.divComponentWise(m2);
         REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
@@ -320,62 +320,62 @@ TEST_CASE("Mat2: Component-wise operations", "[Mat2][arithmetic]") {
 // Matrix Operations
 // ============================================================================
 
-TEST_CASE("Mat2: Determinant", "[Mat2][operations]") {
+TEST_CASE("Mat2f: Determinant", "[Mat2f][operations]") {
     SECTION("Identity has determinant 1") {
-        Mat2 m = Mat2::identity();
+        Mat2f m = Mat2f::identity();
         REQUIRE_THAT(m.determinant(), WithinAbs(1.0f, 1e-6f));
     }
 
     SECTION("General matrix determinant") {
-        Mat2 m(3.0f, 8.0f, 4.0f, 6.0f);
+        Mat2f m(3.0f, 8.0f, 4.0f, 6.0f);
         // det = 3*6 - 8*4 = 18 - 32 = -14
         REQUIRE_THAT(m.determinant(), WithinAbs(-14.0f, 1e-6f));
     }
 
     SECTION("Zero matrix has determinant 0") {
-        Mat2 m = Mat2::zero();
+        Mat2f m = Mat2f::zero();
         REQUIRE_THAT(m.determinant(), WithinAbs(0.0f, 1e-6f));
     }
 }
 
-TEST_CASE("Mat2: Inverse", "[Mat2][operations]") {
+TEST_CASE("Mat2f: Inverse", "[Mat2f][operations]") {
     SECTION("Identity inverse is identity") {
-        Mat2 m = Mat2::identity();
-        Mat2 inv = m.inverse();
-        REQUIRE(mat2_approx_equal(inv, Mat2::identity()));
+        Mat2f m = Mat2f::identity();
+        Mat2f inv = m.inverse();
+        REQUIRE(mat2_approx_equal(inv, Mat2f::identity()));
     }
 
     SECTION("General matrix inverse") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Mat2 inv = m.inverse();
-        Mat2 product = m * inv;
-        REQUIRE(mat2_approx_equal(product, Mat2::identity(), 1e-3f));
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f inv = m.inverse();
+        Mat2f product = m * inv;
+        REQUIRE(mat2_approx_equal(product, Mat2f::identity(), 1e-3f));
     }
 
     SECTION("Inverse of inverse returns original") {
-        Mat2 m(2.0f, 3.0f, 1.0f, 4.0f);
-        Mat2 inv = m.inverse();
-        Mat2 inv_inv = inv.inverse();
+        Mat2f m(2.0f, 3.0f, 1.0f, 4.0f);
+        Mat2f inv = m.inverse();
+        Mat2f inv_inv = inv.inverse();
         REQUIRE(mat2_approx_equal(inv_inv, m, 1e-3f));
     }
 
     SECTION("Singular matrix returns zero") {
-        Mat2 m(1.0f, 2.0f, 2.0f, 4.0f); // Singular (det = 0)
-        Mat2 inv = m.inverse();
-        REQUIRE(mat2_approx_equal(inv, Mat2::zero()));
+        Mat2f m(1.0f, 2.0f, 2.0f, 4.0f); // Singular (det = 0)
+        Mat2f inv = m.inverse();
+        REQUIRE(mat2_approx_equal(inv, Mat2f::zero()));
     }
 }
 
-TEST_CASE("Mat2: Transpose", "[Mat2][operations]") {
+TEST_CASE("Mat2f: Transpose", "[Mat2f][operations]") {
     SECTION("Transpose of identity is identity") {
-        Mat2 m = Mat2::identity();
-        Mat2 t = m.transposed();
-        REQUIRE(mat2_approx_equal(t, Mat2::identity()));
+        Mat2f m = Mat2f::identity();
+        Mat2f t = m.transposed();
+        REQUIRE(mat2_approx_equal(t, Mat2f::identity()));
     }
 
     SECTION("Transpose swaps rows and columns") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Mat2 t = m.transposed();
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f t = m.transposed();
         
         REQUIRE_THAT(t.m[0][0], WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(t.m[0][1], WithinAbs(3.0f, 1e-6f));
@@ -384,7 +384,7 @@ TEST_CASE("Mat2: Transpose", "[Mat2][operations]") {
     }
 
     SECTION("In-place transpose") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         m.transpose();
         
         REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
@@ -394,25 +394,25 @@ TEST_CASE("Mat2: Transpose", "[Mat2][operations]") {
     }
 
     SECTION("Double transpose returns original") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Mat2 tt = m.transposed().transposed();
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f tt = m.transposed().transposed();
         REQUIRE(mat2_approx_equal(tt, m));
     }
 }
 
-TEST_CASE("Mat2: Trace", "[Mat2][operations]") {
+TEST_CASE("Mat2f: Trace", "[Mat2f][operations]") {
     SECTION("Trace of identity is 2") {
-        Mat2 m = Mat2::identity();
+        Mat2f m = Mat2f::identity();
         REQUIRE_THAT(m.trace(), WithinAbs(2.0f, 1e-6f));
     }
 
     SECTION("Trace is sum of diagonal") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
         REQUIRE_THAT(m.trace(), WithinAbs(5.0f, 1e-6f));
     }
 
     SECTION("Trace of zero is 0") {
-        Mat2 m = Mat2::zero();
+        Mat2f m = Mat2f::zero();
         REQUIRE_THAT(m.trace(), WithinAbs(0.0f, 1e-6f));
     }
 }
@@ -421,8 +421,8 @@ TEST_CASE("Mat2: Trace", "[Mat2][operations]") {
 // Element Access
 // ============================================================================
 
-TEST_CASE("Mat2: Element access", "[Mat2][access]") {
-    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Element access", "[Mat2f][access]") {
+    Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
 
     SECTION("Read access") {
         REQUIRE_THAT(m(0, 0), WithinAbs(1.0f, 1e-6f));
@@ -439,23 +439,23 @@ TEST_CASE("Mat2: Element access", "[Mat2][access]") {
     }
 }
 
-TEST_CASE("Mat2: Row and column accessors", "[Mat2][access][rowcol]") {
-    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Row and column accessors", "[Mat2f][access][rowcol]") {
+    Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
 
-    Vec2 row0 = m.getRow(0);
+    Vec2f row0 = m.getRow(0);
     REQUIRE_THAT(row0.x, WithinAbs(1.0f, 1e-6f));
     REQUIRE_THAT(row0.y, WithinAbs(2.0f, 1e-6f));
 
-    Vec2 col1 = m.getColumn(1);
+    Vec2f col1 = m.getColumn(1);
     REQUIRE_THAT(col1.x, WithinAbs(2.0f, 1e-6f));
     REQUIRE_THAT(col1.y, WithinAbs(4.0f, 1e-6f));
 
-    Vec2 newRow(9.0f, 8.0f);
+    Vec2f newRow(9.0f, 8.0f);
     m.setRow(1, newRow);
     REQUIRE_THAT(m.m[1][0], WithinAbs(9.0f, 1e-6f));
     REQUIRE_THAT(m.m[1][1], WithinAbs(8.0f, 1e-6f));
 
-    Vec2 newCol(5.0f, 6.0f);
+    Vec2f newCol(5.0f, 6.0f);
     m.setColumn(0, newCol);
     REQUIRE_THAT(m.m[0][0], WithinAbs(5.0f, 1e-6f));
     REQUIRE_THAT(m.m[1][0], WithinAbs(6.0f, 1e-6f));
@@ -465,18 +465,18 @@ TEST_CASE("Mat2: Row and column accessors", "[Mat2][access][rowcol]") {
 // Transformation Matrices
 // ============================================================================
 
-TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
+TEST_CASE("Mat2f: Rotation matrix", "[Mat2f][transform]") {
     SECTION("90 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 2.0f);
-        Vec2 v(1.0f, 0.0f);
-        Vec2 rotated = rot * v;
+        Mat2f rot = Mat2f::rotation(static_cast<float>(mathf::pi) / 2.0f);
+        Vec2f v(1.0f, 0.0f);
+        Vec2f rotated = rot * v;
         
         REQUIRE_THAT(rotated.x, WithinAbs(0.0f, 1e-5f));
         REQUIRE_THAT(rotated.y, WithinAbs(1.0f, 1e-5f));
     }
 
     SECTION("45 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 4.0f);
+        Mat2f rot = Mat2f::rotation(static_cast<float>(mathf::pi) / 4.0f);
         float expected = std::sqrt(2.0f) / 2.0f;
         
         REQUIRE_THAT(rot.m[0][0], WithinAbs(expected, 1e-5f));
@@ -486,41 +486,41 @@ TEST_CASE("Mat2: Rotation matrix", "[Mat2][transform]") {
     }
 
     SECTION("180 degree rotation") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi));
-        Vec2 v(1.0f, 0.0f);
-        Vec2 rotated = rot * v;
+        Mat2f rot = Mat2f::rotation(static_cast<float>(mathf::pi));
+        Vec2f v(1.0f, 0.0f);
+        Vec2f rotated = rot * v;
         
         REQUIRE_THAT(rotated.x, WithinAbs(-1.0f, 1e-5f));
         REQUIRE_THAT(rotated.y, WithinAbs(0.0f, 1e-5f));
     }
 
     SECTION("Rotation matrix has determinant 1") {
-        Mat2 rot = Mat2::rotation(static_cast<float>(mathf::pi) / 3.0f);
+        Mat2f rot = Mat2f::rotation(static_cast<float>(mathf::pi) / 3.0f);
         REQUIRE_THAT(rot.determinant(), WithinAbs(1.0f, 1e-5f));
     }
 }
 
-TEST_CASE("Mat2: Scale matrix", "[Mat2][transform]") {
+TEST_CASE("Mat2f: Scale matrix", "[Mat2f][transform]") {
     SECTION("Non-uniform scale") {
-        Mat2 scale = Mat2::scale(2.0f, 3.0f);
-        Vec2 v(1.0f, 1.0f);
-        Vec2 scaled = scale * v;
+        Mat2f scale = Mat2f::scale(2.0f, 3.0f);
+        Vec2f v(1.0f, 1.0f);
+        Vec2f scaled = scale * v;
         
         REQUIRE_THAT(scaled.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(scaled.y, WithinAbs(3.0f, 1e-6f));
     }
 
     SECTION("Uniform scale") {
-        Mat2 scale = Mat2::scale(5.0f);
-        Vec2 v(2.0f, 3.0f);
-        Vec2 scaled = scale * v;
+        Mat2f scale = Mat2f::scale(5.0f);
+        Vec2f v(2.0f, 3.0f);
+        Vec2f scaled = scale * v;
         
         REQUIRE_THAT(scaled.x, WithinAbs(10.0f, 1e-6f));
         REQUIRE_THAT(scaled.y, WithinAbs(15.0f, 1e-6f));
     }
 
     SECTION("Scale matrix structure") {
-        Mat2 scale = Mat2::scale(2.0f, 3.0f);
+        Mat2f scale = Mat2f::scale(2.0f, 3.0f);
         
         REQUIRE_THAT(scale.m[0][0], WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(scale.m[0][1], WithinAbs(0.0f, 1e-6f));
@@ -529,7 +529,7 @@ TEST_CASE("Mat2: Scale matrix", "[Mat2][transform]") {
     }
 
     SECTION("Scale determinant equals product") {
-        Mat2 scale = Mat2::scale(2.0f, 3.0f);
+        Mat2f scale = Mat2f::scale(2.0f, 3.0f);
         REQUIRE_THAT(scale.determinant(), WithinAbs(6.0f, 1e-6f));
     }
 }
@@ -538,8 +538,8 @@ TEST_CASE("Mat2: Scale matrix", "[Mat2][transform]") {
 // Stream Output
 // ============================================================================
 
-TEST_CASE("Mat2: Stream output", "[Mat2][stream]") {
-    Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
+TEST_CASE("Mat2f: Stream output", "[Mat2f][stream]") {
+    Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
     std::ostringstream oss;
     oss << m;
     // Verify output contains matrix elements (exact format may vary)
@@ -554,41 +554,41 @@ TEST_CASE("Mat2: Stream output", "[Mat2][stream]") {
 // Edge Cases
 // ============================================================================
 
-TEST_CASE("Mat2: Edge cases", "[Mat2][edge]") {
+TEST_CASE("Mat2f: Edge cases", "[Mat2f][edge]") {
     SECTION("Division by zero scalar") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Mat2 result = m / 0.0f;
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f result = m / 0.0f;
         REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
     }
 
     SECTION("Operations with very large numbers") {
-        Mat2 m(1e20f, 1e20f, 1e20f, 1e20f);
-        Mat2 sum = m + m;
+        Mat2f m(1e20f, 1e20f, 1e20f, 1e20f);
+        Mat2f sum = m + m;
         REQUIRE(sum.m[0][0] > 1e20f);
     }
 
     SECTION("Operations with very small numbers") {
-        Mat2 m(1e-20f, 1e-20f, 1e-20f, 1e-20f);
-        Mat2 product = m * 2.0f;
+        Mat2f m(1e-20f, 1e-20f, 1e-20f, 1e-20f);
+        Mat2f product = m * 2.0f;
         REQUIRE(product.m[0][0] > 0.0f);
     }
 
     SECTION("Singular matrix determinant is zero") {
-        Mat2 m(1.0f, 2.0f, 2.0f, 4.0f);
+        Mat2f m(1.0f, 2.0f, 2.0f, 4.0f);
         REQUIRE_THAT(m.determinant(), WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Zero matrix operations") {
-        Mat2 zero = Mat2::zero();
-        Mat2 identity = Mat2::identity();
-        Mat2 result = zero + identity;
+        Mat2f zero = Mat2f::zero();
+        Mat2f identity = Mat2f::identity();
+        Mat2f result = zero + identity;
         REQUIRE(mat2_approx_equal(result, identity));
     }
 
     SECTION("Matrix multiplication by zero") {
-        Mat2 m(1.0f, 2.0f, 3.0f, 4.0f);
-        Mat2 zero = Mat2::zero();
-        Mat2 result = m * zero;
+        Mat2f m(1.0f, 2.0f, 3.0f, 4.0f);
+        Mat2f zero = Mat2f::zero();
+        Mat2f result = m * zero;
         REQUIRE(mat2_approx_equal(result, zero));
     }
 }

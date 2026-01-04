@@ -5,22 +5,23 @@
 #include <stdexcept>
 #include <vector>
 #include <ostream>
+#include <type_traits>
 
 namespace phynity::math::matrices {
 
-using phynity::math::vectors::VecDynamic;
-
-/// Runtime-sized matrix with row-major storage
+/// Runtime-sized matrix with dual-precision support and row-major storage
+template<typename T = float>
 struct MatDynamic {
+    static_assert(std::is_floating_point_v<T>, "MatDynamic template parameter must be a floating-point type");
     std::size_t rows{0};
     std::size_t cols{0};
-    std::vector<float> data{};
+    std::vector<T> data{};
 
     MatDynamic() = default;
 
-    MatDynamic(std::size_t r, std::size_t c) : rows(r), cols(c), data(r * c, 0.0f) {}
+    MatDynamic(std::size_t r, std::size_t c) : rows(r), cols(c), data(r * c, T(0)) {}
 
-    MatDynamic(std::size_t r, std::size_t c, float scalar)
+    MatDynamic(std::size_t r, std::size_t c, T scalar)
         : rows(r), cols(c), data(r * c, scalar) {}
 
     /// Query methods
@@ -54,8 +55,8 @@ struct MatDynamic {
     }
 
     /// Get row as vector
-    VecDynamic getRow(std::size_t row) const {
-        VecDynamic result(cols);
+    phynity::math::vectors::VecDynamic<T> getRow(std::size_t row) const {
+        phynity::math::vectors::VecDynamic<T> result(cols);
         for (std::size_t j = 0; j < cols; ++j) {
             result[j] = (*this)(row, j);
         }
@@ -63,8 +64,8 @@ struct MatDynamic {
     }
 
     /// Get column as vector
-    VecDynamic getColumn(std::size_t col) const {
-        VecDynamic result(rows);
+    phynity::math::vectors::VecDynamic<T> getColumn(std::size_t col) const {
+        phynity::math::vectors::VecDynamic<T> result(rows);
         for (std::size_t i = 0; i < rows; ++i) {
             result[i] = (*this)(i, col);
         }
@@ -72,7 +73,7 @@ struct MatDynamic {
     }
 
     /// Set row from vector
-    void setRow(std::size_t row, const VecDynamic& v) {
+    void setRow(std::size_t row, const phynity::math::vectors::VecDynamic<T>& v) {
         if (v.size() != cols) {
             throw std::invalid_argument("Vector size does not match number of columns");
         }
@@ -82,7 +83,7 @@ struct MatDynamic {
     }
 
     /// Set column from vector
-    void setColumn(std::size_t col, const VecDynamic& v) {
+    void setColumn(std::size_t col, const phynity::math::vectors::VecDynamic<T>& v) {
         if (v.size() != rows) {
             throw std::invalid_argument("Vector size does not match number of rows");
         }
@@ -125,7 +126,7 @@ struct MatDynamic {
         return result;
     }
 
-    MatDynamic operator*(float scalar) const {
+    MatDynamic operator*(T scalar) const {
         MatDynamic result(rows, cols);
         for (std::size_t i = 0; i < data.size(); ++i) {
             result.data[i] = data[i] * scalar;
@@ -133,7 +134,7 @@ struct MatDynamic {
         return result;
     }
 
-    MatDynamic operator/(float scalar) const {
+    MatDynamic operator/(T scalar) const {
         MatDynamic result(rows, cols);
         for (std::size_t i = 0; i < data.size(); ++i) {
             result.data[i] = data[i] / scalar;
@@ -157,14 +158,14 @@ struct MatDynamic {
         return *this;
     }
 
-    MatDynamic& operator*=(float scalar) {
+    MatDynamic& operator*=(T scalar) {
         for (float& value : data) {
             value *= scalar;
         }
         return *this;
     }
 
-    MatDynamic& operator/=(float scalar) {
+    MatDynamic& operator/=(T scalar) {
         for (float& value : data) {
             value /= scalar;
         }
@@ -196,7 +197,7 @@ struct MatDynamic {
         MatDynamic result(rows, other.cols);
         for (std::size_t i = 0; i < rows; ++i) {
             for (std::size_t j = 0; j < other.cols; ++j) {
-                float sum = 0.0f;
+                T sum = T(0);
                 for (std::size_t k = 0; k < cols; ++k) {
                     sum += (*this)(i, k) * other(k, j);
                 }
@@ -206,13 +207,13 @@ struct MatDynamic {
         return result;
     }
 
-    VecDynamic operator*(const VecDynamic& v) const {
+    phynity::math::vectors::VecDynamic<T> operator*(const phynity::math::vectors::VecDynamic<T>& v) const {
         if (cols != v.size()) {
             throw std::invalid_argument("Matrix-vector multiplication dimension mismatch");
         }
-        VecDynamic result(rows);
+        phynity::math::vectors::VecDynamic<T> result(rows);
         for (std::size_t i = 0; i < rows; ++i) {
-            float sum = 0.0f;
+            T sum = T(0);
             for (std::size_t k = 0; k < cols; ++k) {
                 sum += (*this)(i, k) * v[k];
             }
@@ -237,7 +238,7 @@ struct MatDynamic {
     }
 
     /// Approximate equality with epsilon tolerance
-    bool approxEqual(const MatDynamic& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const MatDynamic& other, T epsilon = T(1e-5)) const {
         if (rows != other.rows || cols != other.cols) {
             return false;
         }
@@ -265,7 +266,7 @@ struct MatDynamic {
     static MatDynamic identity(std::size_t n) {
         MatDynamic result(n, n);
         for (std::size_t i = 0; i < n; ++i) {
-            result(i, i) = 1.0f;
+            result(i, i) = T(1);
         }
         return result;
     }
@@ -278,12 +279,14 @@ private:
     }
 };
 
-inline MatDynamic operator*(float scalar, const MatDynamic& m) {
+template<typename T = float>
+inline MatDynamic<T> operator*(T scalar, const MatDynamic<T>& m) {
     return m * scalar;
 }
 
 /// Stream output
-inline std::ostream& operator<<(std::ostream& os, const MatDynamic& m) {
+template<typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const MatDynamic<T>& m) {
     os << "[";
     for (std::size_t i = 0; i < m.rows; ++i) {
         if (i > 0) os << ", ";
@@ -297,5 +300,9 @@ inline std::ostream& operator<<(std::ostream& os, const MatDynamic& m) {
     os << "]";
     return os;
 }
+
+// Type aliases
+using MatDynamicf = MatDynamic<float>;
+using MatDynamicd = MatDynamic<double>;
 
 }  // namespace phynity::math::matrices

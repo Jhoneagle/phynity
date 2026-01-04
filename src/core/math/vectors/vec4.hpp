@@ -3,20 +3,24 @@
 #include <cmath>
 #include <ostream>
 #include <algorithm>
+#include <type_traits>
 
 namespace phynity::math::vectors {
 
-/// Four-component floating-point vector.
+/// Four-component vector template for any floating-point type.
+template <typename T = float>
 struct Vec4 {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-    float w = 0.0f;
+    static_assert(std::is_floating_point_v<T>, "Vec4 requires a floating-point type");
+    
+    T x = T(0);
+    T y = T(0);
+    T z = T(0);
+    T w = T(0);
 
     // Constructors
     Vec4() = default;
-    explicit Vec4(float v) : x(v), y(v), z(v), w(v) {}
-    Vec4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
+    explicit Vec4(T v) : x(v), y(v), z(v), w(v) {}
+    Vec4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
 
     // Operators
     Vec4 operator+(const Vec4& other) const {
@@ -27,11 +31,11 @@ struct Vec4 {
         return Vec4(x - other.x, y - other.y, z - other.z, w - other.w);
     }
 
-    Vec4 operator*(float scalar) const {
+    Vec4 operator*(T scalar) const {
         return Vec4(x * scalar, y * scalar, z * scalar, w * scalar);
     }
 
-    Vec4 operator/(float scalar) const {
+    Vec4 operator/(T scalar) const {
         return Vec4(x / scalar, y / scalar, z / scalar, w / scalar);
     }
 
@@ -51,7 +55,7 @@ struct Vec4 {
         return *this;
     }
 
-    Vec4& operator*=(float scalar) {
+    Vec4& operator*=(T scalar) {
         x *= scalar;
         y *= scalar;
         z *= scalar;
@@ -75,7 +79,7 @@ struct Vec4 {
         return *this;
     }
 
-    Vec4& operator/=(float scalar) {
+    Vec4& operator/=(T scalar) {
         x /= scalar;
         y /= scalar;
         z /= scalar;
@@ -103,72 +107,72 @@ struct Vec4 {
         return !(*this == other);
     }
 
-    float& operator[](int i) {
+    T& operator[](int i) {
         return (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
     }
 
-    const float& operator[](int i) const {
+    const T& operator[](int i) const {
         return (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
     }
 
-    float dot(const Vec4& other) const {
+    T dot(const Vec4& other) const {
         return x * other.x + y * other.y + z * other.z + w * other.w;
     }
 
-    float squaredLength() const {
+    T squaredLength() const {
         return dot(*this);
     }
 
-    float length() const {
+    T length() const {
         return std::sqrt(squaredLength());
     }
 
     Vec4 normalized() const {
-        float len = length();
-        return len > 0.0f ? *this / len : Vec4(0.0f);
+        T len = length();
+        return len > T(0) ? *this / len : Vec4(T(0));
     }
 
     Vec4& normalize() {
-        float len = length();
-        if (len > 0.0f) {
+        T len = length();
+        if (len > T(0)) {
             *this /= len;
         }
         return *this;
     }
 
-    float distance(const Vec4& other) const {
+    T distance(const Vec4& other) const {
         return (*this - other).length();
     }
 
-    float squaredDistance(const Vec4& other) const {
+    T squaredDistance(const Vec4& other) const {
         return (*this - other).squaredLength();
     }
 
-    float angle(const Vec4& other) const {
-        float denom = length() * other.length();
-        if (denom < 1e-6f) return 0.0f;
-        float cosTheta = dot(other) / denom;
-        cosTheta = cosTheta < -1.0f ? -1.0f : (cosTheta > 1.0f ? 1.0f : cosTheta);
+    T angle(const Vec4& other) const {
+        T denom = length() * other.length();
+        if (denom < T(1e-6)) return T(0);
+        T cosTheta = dot(other) / denom;
+        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
         return std::acos(cosTheta);
     }
 
-    Vec4 clamped(float maxLength) const {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec4 clamped(T maxLength) const {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq <= maxLenSq) return *this;
         return *this * (maxLength / std::sqrt(lenSq));
     }
 
-    Vec4& clamp(float maxLength) {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec4& clamp(T maxLength) {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq > maxLenSq) {
             *this *= (maxLength / std::sqrt(lenSq));
         }
         return *this;
     }
 
-    Vec4 lerp(const Vec4& other, float t) const {
+    Vec4 lerp(const Vec4& other, T t) const {
         return *this + (other - *this) * t;
     }
 
@@ -201,15 +205,15 @@ struct Vec4 {
     }
 
     bool isZero() const {
-        return x == 0.0f && y == 0.0f && z == 0.0f && w == 0.0f;
+        return x == T(0) && y == T(0) && z == T(0) && w == T(0);
     }
 
     bool isNormalized() const {
-        float lenSq = squaredLength();
-        return std::abs(lenSq - 1.0f) < 1e-5f;
+        T lenSq = squaredLength();
+        return std::abs(lenSq - T(1)) < T(1e-5);
     }
 
-    bool approxEqual(const Vec4& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const Vec4& other, T epsilon = T(1e-5)) const {
         return std::abs(x - other.x) < epsilon && 
                std::abs(y - other.y) < epsilon && 
                std::abs(z - other.z) < epsilon && 
@@ -221,21 +225,27 @@ struct Vec4 {
     }
 
     // Static utility vectors
-    static Vec4 zero() { return Vec4(0.0f, 0.0f, 0.0f, 0.0f); }
-    static Vec4 one() { return Vec4(1.0f, 1.0f, 1.0f, 1.0f); }
-    static Vec4 unitX() { return Vec4(1.0f, 0.0f, 0.0f, 0.0f); }
-    static Vec4 unitY() { return Vec4(0.0f, 1.0f, 0.0f, 0.0f); }
-    static Vec4 unitZ() { return Vec4(0.0f, 0.0f, 1.0f, 0.0f); }
-    static Vec4 unitW() { return Vec4(0.0f, 0.0f, 0.0f, 1.0f); }
+    static Vec4 zero() { return Vec4(T(0), T(0), T(0), T(0)); }
+    static Vec4 one() { return Vec4(T(1), T(1), T(1), T(1)); }
+    static Vec4 unitX() { return Vec4(T(1), T(0), T(0), T(0)); }
+    static Vec4 unitY() { return Vec4(T(0), T(1), T(0), T(0)); }
+    static Vec4 unitZ() { return Vec4(T(0), T(0), T(1), T(0)); }
+    static Vec4 unitW() { return Vec4(T(0), T(0), T(0), T(1)); }
 };
 
-inline Vec4 operator*(float scalar, const Vec4& v) {
+template <typename T = float>
+inline Vec4<T> operator*(T scalar, const Vec4<T>& v) {
     return v * scalar;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Vec4& v) {
+template <typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const Vec4<T>& v) {
     os << "(" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
     return os;
 }
+
+// Type aliases for convenience
+using Vec4f = Vec4<float>;
+using Vec4d = Vec4<double>;
 
 }  // namespace phynity::math::vectors

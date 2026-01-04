@@ -4,28 +4,28 @@
 #include <cmath>
 #include <sstream>
 
-using phynity::math::vectors::Vec2;
+using phynity::math::vectors::Vec2f;
 using Catch::Matchers::WithinAbs;
 
 // ============================================================================
 // Constructors and Basic Properties
 // ============================================================================
 
-TEST_CASE("Vec2: Constructors", "[Vec2][constructor]") {
+TEST_CASE("Vec2f: Constructors", "[Vec2f][constructor]") {
     SECTION("Default constructor initializes to zero") {
-        Vec2 v;
+        Vec2f v;
         REQUIRE_THAT(v.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Scalar constructor") {
-        Vec2 v(5.0f);
+        Vec2f v(5.0f);
         REQUIRE_THAT(v.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(5.0f, 1e-6f));
     }
 
     SECTION("Component constructor") {
-        Vec2 v(3.0f, 4.0f);
+        Vec2f v(3.0f, 4.0f);
         REQUIRE_THAT(v.x, WithinAbs(3.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(4.0f, 1e-6f));
     }
@@ -35,69 +35,69 @@ TEST_CASE("Vec2: Constructors", "[Vec2][constructor]") {
 // Arithmetic Operators
 // ============================================================================
 
-TEST_CASE("Vec2: Addition", "[Vec2][arithmetic]") {
-    Vec2 a(1.0f, 2.0f);
-    Vec2 b(3.0f, 4.0f);
-    Vec2 c = a + b;
+TEST_CASE("Vec2f: Addition", "[Vec2f][arithmetic]") {
+    Vec2f a(1.0f, 2.0f);
+    Vec2f b(3.0f, 4.0f);
+    Vec2f c = a + b;
 
     REQUIRE_THAT(c.x, WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(c.y, WithinAbs(6.0f, 1e-6f));
 }
 
-TEST_CASE("Vec2: Subtraction", "[Vec2][arithmetic]") {
-    Vec2 a(5.0f, 7.0f);
-    Vec2 b(2.0f, 3.0f);
-    Vec2 c = a - b;
+TEST_CASE("Vec2f: Subtraction", "[Vec2f][arithmetic]") {
+    Vec2f a(5.0f, 7.0f);
+    Vec2f b(2.0f, 3.0f);
+    Vec2f c = a - b;
 
     REQUIRE_THAT(c.x, WithinAbs(3.0f, 1e-6f));
     REQUIRE_THAT(c.y, WithinAbs(4.0f, 1e-6f));
 }
 
-TEST_CASE("Vec2: Scalar multiplication", "[Vec2][arithmetic]") {
-    Vec2 v(2.0f, 3.0f);
+TEST_CASE("Vec2f: Scalar multiplication", "[Vec2f][arithmetic]") {
+    Vec2f v(2.0f, 3.0f);
     
     SECTION("Vector * scalar") {
-        Vec2 result = v * 2.0f;
+        Vec2f result = v * 2.0f;
         REQUIRE_THAT(result.x, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(6.0f, 1e-6f));
     }
 
     SECTION("Scalar * vector") {
-        Vec2 result = 2.0f * v;
+        Vec2f result = 2.0f * v;
         REQUIRE_THAT(result.x, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(6.0f, 1e-6f));
     }
 }
 
-TEST_CASE("Vec2: Scalar division", "[Vec2][arithmetic]") {
-    Vec2 v(4.0f, 6.0f);
-    Vec2 result = v / 2.0f;
+TEST_CASE("Vec2f: Scalar division", "[Vec2f][arithmetic]") {
+    Vec2f v(4.0f, 6.0f);
+    Vec2f result = v / 2.0f;
 
     REQUIRE_THAT(result.x, WithinAbs(2.0f, 1e-6f));
     REQUIRE_THAT(result.y, WithinAbs(3.0f, 1e-6f));
 }
 
-TEST_CASE("Vec2: Component-wise multiplication", "[Vec2][arithmetic]") {
-    Vec2 a(2.0f, 3.0f);
-    Vec2 b(4.0f, 5.0f);
-    Vec2 result = a * b;
+TEST_CASE("Vec2f: Component-wise multiplication", "[Vec2f][arithmetic]") {
+    Vec2f a(2.0f, 3.0f);
+    Vec2f b(4.0f, 5.0f);
+    Vec2f result = a * b;
 
     REQUIRE_THAT(result.x, WithinAbs(8.0f, 1e-6f));
     REQUIRE_THAT(result.y, WithinAbs(15.0f, 1e-6f));
 }
 
-TEST_CASE("Vec2: Component-wise division", "[Vec2][arithmetic]") {
-    Vec2 a(8.0f, 15.0f);
-    Vec2 b(2.0f, 3.0f);
-    Vec2 result = a / b;
+TEST_CASE("Vec2f: Component-wise division", "[Vec2f][arithmetic]") {
+    Vec2f a(8.0f, 15.0f);
+    Vec2f b(2.0f, 3.0f);
+    Vec2f result = a / b;
 
     REQUIRE_THAT(result.x, WithinAbs(4.0f, 1e-6f));
     REQUIRE_THAT(result.y, WithinAbs(5.0f, 1e-6f));
 }
 
-TEST_CASE("Vec2: Negation", "[Vec2][arithmetic]") {
-    Vec2 v(3.0f, -4.0f);
-    Vec2 result = -v;
+TEST_CASE("Vec2f: Negation", "[Vec2f][arithmetic]") {
+    Vec2f v(3.0f, -4.0f);
+    Vec2f result = -v;
 
     REQUIRE_THAT(result.x, WithinAbs(-3.0f, 1e-6f));
     REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
@@ -107,17 +107,17 @@ TEST_CASE("Vec2: Negation", "[Vec2][arithmetic]") {
 // Assignment Operators
 // ============================================================================
 
-TEST_CASE("Vec2: Assignment operators", "[Vec2][assignment]") {
-    Vec2 v(1.0f, 2.0f);
+TEST_CASE("Vec2f: Assignment operators", "[Vec2f][assignment]") {
+    Vec2f v(1.0f, 2.0f);
 
     SECTION("Addition assignment") {
-        v += Vec2(3.0f, 4.0f);
+        v += Vec2f(3.0f, 4.0f);
         REQUIRE_THAT(v.x, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(6.0f, 1e-6f));
     }
 
     SECTION("Subtraction assignment") {
-        v -= Vec2(1.0f, 1.0f);
+        v -= Vec2f(1.0f, 1.0f);
         REQUIRE_THAT(v.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
     }
@@ -135,13 +135,13 @@ TEST_CASE("Vec2: Assignment operators", "[Vec2][assignment]") {
     }
 
     SECTION("Component-wise multiplication assignment") {
-        v *= Vec2(2.0f, 3.0f);
+        v *= Vec2f(2.0f, 3.0f);
         REQUIRE_THAT(v.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(6.0f, 1e-6f));
     }
 
     SECTION("Component-wise division assignment") {
-        v /= Vec2(2.0f, 2.0f);
+        v /= Vec2f(2.0f, 2.0f);
         REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
     }
@@ -151,10 +151,10 @@ TEST_CASE("Vec2: Assignment operators", "[Vec2][assignment]") {
 // Comparison Operators
 // ============================================================================
 
-TEST_CASE("Vec2: Comparison operators", "[Vec2][comparison]") {
-    Vec2 a(1.0f, 2.0f);
-    Vec2 b(1.0f, 2.0f);
-    Vec2 c(2.0f, 3.0f);
+TEST_CASE("Vec2f: Comparison operators", "[Vec2f][comparison]") {
+    Vec2f a(1.0f, 2.0f);
+    Vec2f b(1.0f, 2.0f);
+    Vec2f c(2.0f, 3.0f);
 
     REQUIRE(a == b);
     REQUIRE(a != c);
@@ -166,8 +166,8 @@ TEST_CASE("Vec2: Comparison operators", "[Vec2][comparison]") {
 // Index Access
 // ============================================================================
 
-TEST_CASE("Vec2: Index access", "[Vec2][access]") {
-    Vec2 v(5.0f, 10.0f);
+TEST_CASE("Vec2f: Index access", "[Vec2f][access]") {
+    Vec2f v(5.0f, 10.0f);
 
     SECTION("Read access") {
         REQUIRE_THAT(v[0], WithinAbs(5.0f, 1e-6f));
@@ -186,48 +186,48 @@ TEST_CASE("Vec2: Index access", "[Vec2][access]") {
 // Vector Operations: Magnitude and Normalization
 // ============================================================================
 
-TEST_CASE("Vec2: Length operations", "[Vec2][magnitude]") {
+TEST_CASE("Vec2f: Length operations", "[Vec2f][magnitude]") {
     SECTION("3-4-5 triangle") {
-        Vec2 v(3.0f, 4.0f);
+        Vec2f v(3.0f, 4.0f);
         REQUIRE_THAT(v.squaredLength(), WithinAbs(25.0f, 1e-6f));
         REQUIRE_THAT(v.length(), WithinAbs(5.0f, 1e-6f));
     }
 
     SECTION("Zero vector") {
-        Vec2 v(0.0f, 0.0f);
+        Vec2f v(0.0f, 0.0f);
         REQUIRE_THAT(v.length(), WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.squaredLength(), WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Unit vector") {
-        Vec2 v(1.0f, 0.0f);
+        Vec2f v(1.0f, 0.0f);
         REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-6f));
     }
 }
 
-TEST_CASE("Vec2: Normalization", "[Vec2][normalization]") {
+TEST_CASE("Vec2f: Normalization", "[Vec2f][normalization]") {
     SECTION("Normal vector becomes unit") {
-        Vec2 v(3.0f, 4.0f);
-        Vec2 n = v.normalized();
+        Vec2f v(3.0f, 4.0f);
+        Vec2f n = v.normalized();
         REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
     }
 
     SECTION("Direction is preserved") {
-        Vec2 v(2.0f, 0.0f);
-        Vec2 n = v.normalized();
+        Vec2f v(2.0f, 0.0f);
+        Vec2f n = v.normalized();
         REQUIRE_THAT(n.x, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(n.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Zero vector normalization") {
-        Vec2 v(0.0f, 0.0f);
-        Vec2 n = v.normalized();
+        Vec2f v(0.0f, 0.0f);
+        Vec2f n = v.normalized();
         REQUIRE_THAT(n.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(n.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("In-place normalize") {
-        Vec2 v(3.0f, 4.0f);
+        Vec2f v(3.0f, 4.0f);
         v.normalize();
         REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-5f));
     }
@@ -237,21 +237,21 @@ TEST_CASE("Vec2: Normalization", "[Vec2][normalization]") {
 // Dot Product
 // ============================================================================
 
-TEST_CASE("Vec2: Dot product", "[Vec2][dot]") {
+TEST_CASE("Vec2f: Dot product", "[Vec2f][dot]") {
     SECTION("Orthogonal vectors") {
-        Vec2 a(1.0f, 0.0f);
-        Vec2 b(0.0f, 1.0f);
+        Vec2f a(1.0f, 0.0f);
+        Vec2f b(0.0f, 1.0f);
         REQUIRE_THAT(a.dot(b), WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Parallel vectors") {
-        Vec2 a(2.0f, 3.0f);
-        Vec2 b(4.0f, 6.0f);
+        Vec2f a(2.0f, 3.0f);
+        Vec2f b(4.0f, 6.0f);
         REQUIRE_THAT(a.dot(b), WithinAbs(26.0f, 1e-6f));
     }
 
     SECTION("Same vector (squared length)") {
-        Vec2 v(3.0f, 4.0f);
+        Vec2f v(3.0f, 4.0f);
         REQUIRE_THAT(v.dot(v), WithinAbs(25.0f, 1e-6f));
     }
 }
@@ -260,22 +260,22 @@ TEST_CASE("Vec2: Dot product", "[Vec2][dot]") {
 // Distance
 // ============================================================================
 
-TEST_CASE("Vec2: Distance", "[Vec2][distance]") {
+TEST_CASE("Vec2f: Distance", "[Vec2f][distance]") {
     SECTION("3-4-5 triangle") {
-        Vec2 a(0.0f, 0.0f);
-        Vec2 b(3.0f, 4.0f);
+        Vec2f a(0.0f, 0.0f);
+        Vec2f b(3.0f, 4.0f);
         REQUIRE_THAT(a.distance(b), WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(b.distance(a), WithinAbs(5.0f, 1e-6f));
     }
 
     SECTION("Same point") {
-        Vec2 a(5.0f, 5.0f);
+        Vec2f a(5.0f, 5.0f);
         REQUIRE_THAT(a.distance(a), WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Squared distance") {
-        Vec2 a(0.0f, 0.0f);
-        Vec2 b(3.0f, 4.0f);
+        Vec2f a(0.0f, 0.0f);
+        Vec2f b(3.0f, 4.0f);
         REQUIRE_THAT(a.squaredDistance(b), WithinAbs(25.0f, 1e-6f));
     }
 }
@@ -284,28 +284,28 @@ TEST_CASE("Vec2: Distance", "[Vec2][distance]") {
 // Angle Between Vectors
 // ============================================================================
 
-TEST_CASE("Vec2: Angle between vectors", "[Vec2][angle]") {
+TEST_CASE("Vec2f: Angle between vectors", "[Vec2f][angle]") {
     SECTION("Same direction (angle = 0)") {
-        Vec2 a(1.0f, 0.0f);
-        Vec2 b(2.0f, 0.0f);
+        Vec2f a(1.0f, 0.0f);
+        Vec2f b(2.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(0.0f, 1e-5f));
     }
 
     SECTION("Perpendicular (angle = π/2)") {
-        Vec2 a(1.0f, 0.0f);
-        Vec2 b(0.0f, 1.0f);
+        Vec2f a(1.0f, 0.0f);
+        Vec2f b(0.0f, 1.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f / 2.0f, 1e-4f));
     }
 
     SECTION("Opposite direction (angle = π)") {
-        Vec2 a(1.0f, 0.0f);
-        Vec2 b(-1.0f, 0.0f);
+        Vec2f a(1.0f, 0.0f);
+        Vec2f b(-1.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f, 1e-4f));
     }
 
     SECTION("Zero vector handling") {
-        Vec2 a(0.0f, 0.0f);
-        Vec2 b(1.0f, 0.0f);
+        Vec2f a(0.0f, 0.0f);
+        Vec2f b(1.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(0.0f, 1e-6f));
     }
 }
@@ -314,24 +314,24 @@ TEST_CASE("Vec2: Angle between vectors", "[Vec2][angle]") {
 // Clamping
 // ============================================================================
 
-TEST_CASE("Vec2: Clamping", "[Vec2][clamp]") {
+TEST_CASE("Vec2f: Clamping", "[Vec2f][clamp]") {
     SECTION("Vector within limit") {
-        Vec2 v(2.0f, 3.0f);
-        Vec2 clamped = v.clamped(10.0f);
+        Vec2f v(2.0f, 3.0f);
+        Vec2f clamped = v.clamped(10.0f);
         REQUIRE_THAT(clamped.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(clamped.y, WithinAbs(3.0f, 1e-6f));
     }
 
     SECTION("Vector exceeds limit") {
-        Vec2 v(3.0f, 4.0f);  // length = 5
-        Vec2 clamped = v.clamped(2.0f);
+        Vec2f v(3.0f, 4.0f);  // length = 5
+        Vec2f clamped = v.clamped(2.0f);
         REQUIRE_THAT(clamped.length(), WithinAbs(2.0f, 1e-5f));
         // Direction should be preserved
         REQUIRE_THAT(clamped[0] / v[0], WithinAbs(clamped[1] / v[1], 1e-5f));
     }
 
     SECTION("In-place clamping") {
-        Vec2 v(3.0f, 4.0f);
+        Vec2f v(3.0f, 4.0f);
         v.clamp(2.0f);
         REQUIRE_THAT(v.length(), WithinAbs(2.0f, 1e-5f));
     }
@@ -341,24 +341,24 @@ TEST_CASE("Vec2: Clamping", "[Vec2][clamp]") {
 // Linear Interpolation
 // ============================================================================
 
-TEST_CASE("Vec2: Linear interpolation (lerp)", "[Vec2][lerp]") {
-    Vec2 a(0.0f, 0.0f);
-    Vec2 b(10.0f, 20.0f);
+TEST_CASE("Vec2f: Linear interpolation (lerp)", "[Vec2f][lerp]") {
+    Vec2f a(0.0f, 0.0f);
+    Vec2f b(10.0f, 20.0f);
 
     SECTION("t = 0") {
-        Vec2 result = a.lerp(b, 0.0f);
+        Vec2f result = a.lerp(b, 0.0f);
         REQUIRE_THAT(result.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("t = 1") {
-        Vec2 result = a.lerp(b, 1.0f);
+        Vec2f result = a.lerp(b, 1.0f);
         REQUIRE_THAT(result.x, WithinAbs(10.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(20.0f, 1e-6f));
     }
 
     SECTION("t = 0.5 (midpoint)") {
-        Vec2 result = a.lerp(b, 0.5f);
+        Vec2f result = a.lerp(b, 0.5f);
         REQUIRE_THAT(result.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(10.0f, 1e-6f));
     }
@@ -368,27 +368,27 @@ TEST_CASE("Vec2: Linear interpolation (lerp)", "[Vec2][lerp]") {
 // Projection
 // ============================================================================
 
-TEST_CASE("Vec2: Projection", "[Vec2][project]") {
+TEST_CASE("Vec2f: Projection", "[Vec2f][project]") {
     SECTION("Project onto parallel vector") {
-        Vec2 v(4.0f, 0.0f);
-        Vec2 onto(2.0f, 0.0f);
-        Vec2 proj = v.project(onto);
+        Vec2f v(4.0f, 0.0f);
+        Vec2f onto(2.0f, 0.0f);
+        Vec2f proj = v.project(onto);
         REQUIRE_THAT(proj.x, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(proj.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Project onto perpendicular vector") {
-        Vec2 v(1.0f, 0.0f);
-        Vec2 onto(0.0f, 2.0f);
-        Vec2 proj = v.project(onto);
+        Vec2f v(1.0f, 0.0f);
+        Vec2f onto(0.0f, 2.0f);
+        Vec2f proj = v.project(onto);
         REQUIRE_THAT(proj.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(proj.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Project onto zero vector") {
-        Vec2 v(1.0f, 2.0f);
-        Vec2 onto(0.0f, 0.0f);
-        Vec2 proj = v.project(onto);
+        Vec2f v(1.0f, 2.0f);
+        Vec2f onto(0.0f, 0.0f);
+        Vec2f proj = v.project(onto);
         REQUIRE_THAT(proj.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(proj.y, WithinAbs(0.0f, 1e-6f));
     }
@@ -398,19 +398,19 @@ TEST_CASE("Vec2: Projection", "[Vec2][project]") {
 // Reflection
 // ============================================================================
 
-TEST_CASE("Vec2: Reflection", "[Vec2][reflect]") {
+TEST_CASE("Vec2f: Reflection", "[Vec2f][reflect]") {
     SECTION("Reflect off horizontal") {
-        Vec2 v(1.0f, 1.0f);
-        Vec2 normal(0.0f, 1.0f);  // Pointing up
-        Vec2 reflected = v.reflect(normal);
+        Vec2f v(1.0f, 1.0f);
+        Vec2f normal(0.0f, 1.0f);  // Pointing up
+        Vec2f reflected = v.reflect(normal);
         REQUIRE_THAT(reflected.x, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(reflected.y, WithinAbs(-1.0f, 1e-6f));
     }
 
     SECTION("Reflect off vertical") {
-        Vec2 v(1.0f, 1.0f);
-        Vec2 normal(1.0f, 0.0f);  // Pointing right
-        Vec2 reflected = v.reflect(normal);
+        Vec2f v(1.0f, 1.0f);
+        Vec2f normal(1.0f, 0.0f);  // Pointing right
+        Vec2f reflected = v.reflect(normal);
         REQUIRE_THAT(reflected.x, WithinAbs(-1.0f, 1e-6f));
         REQUIRE_THAT(reflected.y, WithinAbs(1.0f, 1e-6f));
     }
@@ -420,24 +420,24 @@ TEST_CASE("Vec2: Reflection", "[Vec2][reflect]") {
 // Perpendicular (2D rotation)
 // ============================================================================
 
-TEST_CASE("Vec2: Perpendicular", "[Vec2][perpendicular]") {
+TEST_CASE("Vec2f: Perpendicular", "[Vec2f][perpendicular]") {
     SECTION("Right vector becomes up") {
-        Vec2 v(1.0f, 0.0f);
-        Vec2 perp = v.perpendicular();
+        Vec2f v(1.0f, 0.0f);
+        Vec2f perp = v.perpendicular();
         REQUIRE_THAT(perp.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(perp.y, WithinAbs(1.0f, 1e-6f));
     }
 
     SECTION("Up vector becomes left") {
-        Vec2 v(0.0f, 1.0f);
-        Vec2 perp = v.perpendicular();
+        Vec2f v(0.0f, 1.0f);
+        Vec2f perp = v.perpendicular();
         REQUIRE_THAT(perp.x, WithinAbs(-1.0f, 1e-6f));
         REQUIRE_THAT(perp.y, WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Perpendicular is perpendicular (dot = 0)") {
-        Vec2 v(3.0f, 4.0f);
-        Vec2 perp = v.perpendicular();
+        Vec2f v(3.0f, 4.0f);
+        Vec2f perp = v.perpendicular();
         REQUIRE_THAT(v.dot(perp), WithinAbs(0.0f, 1e-4f));
     }
 }
@@ -446,18 +446,18 @@ TEST_CASE("Vec2: Perpendicular", "[Vec2][perpendicular]") {
 // Min/Max
 // ============================================================================
 
-TEST_CASE("Vec2: Min/Max component-wise", "[Vec2][minmax]") {
-    Vec2 a(2.0f, 8.0f);
-    Vec2 b(5.0f, 3.0f);
+TEST_CASE("Vec2f: Min/Max component-wise", "[Vec2f][minmax]") {
+    Vec2f a(2.0f, 8.0f);
+    Vec2f b(5.0f, 3.0f);
 
     SECTION("Min") {
-        Vec2 result = a.min(b);
+        Vec2f result = a.min(b);
         REQUIRE_THAT(result.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(3.0f, 1e-6f));
     }
 
     SECTION("Max") {
-        Vec2 result = a.max(b);
+        Vec2f result = a.max(b);
         REQUIRE_THAT(result.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(8.0f, 1e-6f));
     }
@@ -467,29 +467,29 @@ TEST_CASE("Vec2: Min/Max component-wise", "[Vec2][minmax]") {
 // Queries
 // ============================================================================
 
-TEST_CASE("Vec2: Query functions", "[Vec2][query]") {
+TEST_CASE("Vec2f: Query functions", "[Vec2f][query]") {
     SECTION("isZero") {
-        REQUIRE(Vec2(0.0f, 0.0f).isZero());
-        REQUIRE(!Vec2(0.001f, 0.0f).isZero());
+        REQUIRE(Vec2f(0.0f, 0.0f).isZero());
+        REQUIRE(!Vec2f(0.001f, 0.0f).isZero());
     }
 
     SECTION("isNormalized") {
-        REQUIRE(Vec2(1.0f, 0.0f).isNormalized());
-        REQUIRE(Vec2(0.0f, 1.0f).isNormalized());
-        REQUIRE(!Vec2(2.0f, 0.0f).isNormalized());
+        REQUIRE(Vec2f(1.0f, 0.0f).isNormalized());
+        REQUIRE(Vec2f(0.0f, 1.0f).isNormalized());
+        REQUIRE(!Vec2f(2.0f, 0.0f).isNormalized());
     }
 
     SECTION("approxEqual") {
-        Vec2 a(1.0f, 2.0f);
-        Vec2 b(1.00001f, 2.00001f);
-        Vec2 c(1.1f, 2.0f);
+        Vec2f a(1.0f, 2.0f);
+        Vec2f b(1.00001f, 2.00001f);
+        Vec2f c(1.1f, 2.0f);
         REQUIRE(a.approxEqual(b, 1e-4f));
         REQUIRE(!a.approxEqual(c, 1e-4f));
     }
 
     SECTION("abs") {
-        Vec2 v(-3.0f, 4.0f);
-        Vec2 result = v.abs();
+        Vec2f v(-3.0f, 4.0f);
+        Vec2f result = v.abs();
         REQUIRE_THAT(result.x, WithinAbs(3.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
     }
@@ -499,32 +499,32 @@ TEST_CASE("Vec2: Query functions", "[Vec2][query]") {
 // Edge Cases
 // ============================================================================
 
-TEST_CASE("Vec2: Edge cases", "[Vec2][edge]") {
+TEST_CASE("Vec2f: Edge cases", "[Vec2f][edge]") {
     SECTION("Division by zero scalar") {
-        Vec2 v(1.0f, 2.0f);
-        Vec2 result = v / 0.0f;
+        Vec2f v(1.0f, 2.0f);
+        Vec2f result = v / 0.0f;
         // Result should be infinity or NaN, just verify it doesn't crash
         REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
     }
 
     SECTION("Normalization of very small vector") {
-        Vec2 v(1e-20f, 1e-20f);
-        Vec2 n = v.normalized();
+        Vec2f v(1e-20f, 1e-20f);
+        Vec2f n = v.normalized();
         // Normalized vector should still have length 1 (or handle underflow gracefully)
         // With very small inputs, normalized() still produces a unit vector
         REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
     }
 
     SECTION("Operations on very large numbers") {
-        Vec2 v(1e20f, 1e20f);
+        Vec2f v(1e20f, 1e20f);
         float len = v.length();
         REQUIRE(len > 1e20f);
     }
 
     SECTION("Component-wise division by zero vector") {
-        Vec2 a(1.0f, 2.0f);
-        Vec2 b(0.0f, 0.0f);
-        Vec2 result = a / b;
+        Vec2f a(1.0f, 2.0f);
+        Vec2f b(0.0f, 0.0f);
+        Vec2f result = a / b;
         REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
     }
 }
@@ -533,17 +533,17 @@ TEST_CASE("Vec2: Edge cases", "[Vec2][edge]") {
 // Static Utility Vectors
 // ============================================================================
 
-TEST_CASE("Vec2: Static utility vectors", "[Vec2][static]") {
-    REQUIRE(Vec2::zero() == Vec2(0.0f, 0.0f));
-    REQUIRE(Vec2::one() == Vec2(1.0f, 1.0f));
-    REQUIRE(Vec2::up() == Vec2(0.0f, 1.0f));
-    REQUIRE(Vec2::down() == Vec2(0.0f, -1.0f));
-    REQUIRE(Vec2::right() == Vec2(1.0f, 0.0f));
-    REQUIRE(Vec2::left() == Vec2(-1.0f, 0.0f));
+TEST_CASE("Vec2f: Static utility vectors", "[Vec2f][static]") {
+    REQUIRE(Vec2f::zero() == Vec2f(0.0f, 0.0f));
+    REQUIRE(Vec2f::one() == Vec2f(1.0f, 1.0f));
+    REQUIRE(Vec2f::up() == Vec2f(0.0f, 1.0f));
+    REQUIRE(Vec2f::down() == Vec2f(0.0f, -1.0f));
+    REQUIRE(Vec2f::right() == Vec2f(1.0f, 0.0f));
+    REQUIRE(Vec2f::left() == Vec2f(-1.0f, 0.0f));
 }
 
-TEST_CASE("Vec2: Stream output", "[Vec2][stream]") {
-    Vec2 v(1.5f, 2.5f);
+TEST_CASE("Vec2f: Stream output", "[Vec2f][stream]") {
+    Vec2f v(1.5f, 2.5f);
     std::ostringstream oss;
     oss << v;
     REQUIRE(oss.str() == "(1.5, 2.5)");

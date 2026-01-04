@@ -7,7 +7,8 @@ namespace phynity::math::utilities {
 
 using phynity::math::matrices::Mat3;
 
-inline static bool hasNaN(const Mat3& m) {
+template<typename T = float>
+inline static bool hasNaN(const Mat3<T>& m) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             if (std::isnan(m.m[i][j])) {
@@ -19,7 +20,8 @@ inline static bool hasNaN(const Mat3& m) {
     return false;
 }
 
-inline static bool hasInf(const Mat3& m) {
+template<typename T = float>
+inline static bool hasInf(const Mat3<T>& m) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             if (std::isinf(m.m[i][j])) {

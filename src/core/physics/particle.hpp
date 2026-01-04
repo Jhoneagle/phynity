@@ -8,9 +8,9 @@ using namespace phynity::math::vectors;
 
 /// Represents a single particle in the simulation.
 struct Particle {
-    Vec3 position;      ///< Current position
-    Vec3 velocity;      ///< Current velocity
-    Vec3 acceleration;  ///< Current acceleration (computed each step)
+    Vec3f position;      ///< Current position
+    Vec3f velocity;      ///< Current velocity
+    Vec3f acceleration;  ///< Current acceleration (computed each step)
     float mass = 1.0f;  ///< Mass (inverse used for forces)
     float lifetime = 0.0f;  ///< Remaining lifetime (0 = infinite)
 
@@ -25,11 +25,11 @@ struct Particle {
         }
         
         // Reset acceleration for next frame (forces re-applied per step)
-        acceleration = Vec3(0.0f);
+        acceleration = Vec3f(0.0f);
     }
 
     /// Applies a force scaled by inverse mass.
-    void applyForce(const Vec3& force) {
+    void applyForce(const Vec3f& force) {
         acceleration += force * (1.0f / mass);
     }
 

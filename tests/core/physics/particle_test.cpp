@@ -3,7 +3,7 @@
 #include <cmath>
 
 using phynity::physics::Particle;
-using phynity::math::vectors::Vec3;
+using phynity::math::vectors::Vec3f;
 
 static bool near_equal(float a, float b, float eps = 1e-4f) {
     return std::fabs(a - b) <= eps;
@@ -13,13 +13,13 @@ int main() {
     int failures = 0;
 
     Particle p;
-    p.position = Vec3(0.0f, 0.0f, 0.0f);
-    p.velocity = Vec3(0.0f, 0.0f, 0.0f);
+    p.position = Vec3f(0.0f, 0.0f, 0.0f);
+    p.velocity = Vec3f(0.0f, 0.0f, 0.0f);
     p.mass = 1.0f;
 
     // Apply gravity force F = m * g; with m=1, just g
     const float g = -9.81f;
-    p.applyForce(Vec3(0.0f, g, 0.0f));
+    p.applyForce(Vec3f(0.0f, g, 0.0f));
 
     const float dt = 1.0f / 60.0f; // 60 FPS
     p.integrate(dt);

@@ -181,7 +181,7 @@ TEST_CASE("Float Comparison: Zero check", "[utilities][float_comparison]") {
 // ================================================================
 
 TEST_CASE("Geometry: Sphere point containment", "[utilities][geometry]") {
-    Sphere<float> sphere(0.0f, 0.0f, 0.0f, 1.0f);
+    Spheref sphere(0.0f, 0.0f, 0.0f, 1.0f);
     
     REQUIRE(point_in_sphere(Vec3<float>(0.0f, 0.0f, 0.0f), sphere));
     REQUIRE(point_in_sphere(Vec3<float>(0.5f, 0.0f, 0.0f), sphere));
@@ -190,16 +190,16 @@ TEST_CASE("Geometry: Sphere point containment", "[utilities][geometry]") {
 }
 
 TEST_CASE("Geometry: Sphere-sphere intersection", "[utilities][geometry]") {
-    Sphere<float> s1(0.0f, 0.0f, 0.0f, 1.0f);
-    Sphere<float> s2(1.5f, 0.0f, 0.0f, 1.0f);
-    Sphere<float> s3(3.0f, 0.0f, 0.0f, 1.0f);
+    Spheref s1(0.0f, 0.0f, 0.0f, 1.0f);
+    Spheref s2(1.5f, 0.0f, 0.0f, 1.0f);
+    Spheref s3(3.0f, 0.0f, 0.0f, 1.0f);
     
     REQUIRE(sphere_sphere_intersection(s1, s2));  // Intersect
     REQUIRE_FALSE(sphere_sphere_intersection(s1, s3));  // Too far
 }
 
 TEST_CASE("Geometry: AABB point containment", "[utilities][geometry]") {
-    AABB<float> aabb(Vec3<float>(0.0f, 0.0f, 0.0f), Vec3<float>(1.0f, 1.0f, 1.0f));
+    AABBf aabb(Vec3<float>(0.0f, 0.0f, 0.0f), Vec3<float>(1.0f, 1.0f, 1.0f));
     
     REQUIRE(point_in_aabb(Vec3<float>(0.5f, 0.5f, 0.5f), aabb));
     REQUIRE(point_in_aabb(Vec3<float>(0.0f, 0.0f, 0.0f), aabb));
@@ -207,9 +207,9 @@ TEST_CASE("Geometry: AABB point containment", "[utilities][geometry]") {
 }
 
 TEST_CASE("Geometry: AABB-AABB intersection", "[utilities][geometry]") {
-    AABB<float> aabb1(Vec3<float>(0.0f, 0.0f, 0.0f), Vec3<float>(1.0f, 1.0f, 1.0f));
-    AABB<float> aabb2(Vec3<float>(0.5f, 0.5f, 0.5f), Vec3<float>(1.5f, 1.5f, 1.5f));
-    AABB<float> aabb3(Vec3<float>(2.0f, 2.0f, 2.0f), Vec3<float>(3.0f, 3.0f, 3.0f));
+    AABBf aabb1(Vec3<float>(0.0f, 0.0f, 0.0f), Vec3<float>(1.0f, 1.0f, 1.0f));
+    AABBf aabb2(Vec3<float>(0.5f, 0.5f, 0.5f), Vec3<float>(1.5f, 1.5f, 1.5f));
+    AABBf aabb3(Vec3<float>(2.0f, 2.0f, 2.0f), Vec3<float>(3.0f, 3.0f, 3.0f));
     
     REQUIRE(aabb_aabb_intersection(aabb1, aabb2));
     REQUIRE_FALSE(aabb_aabb_intersection(aabb1, aabb3));
@@ -217,7 +217,7 @@ TEST_CASE("Geometry: AABB-AABB intersection", "[utilities][geometry]") {
 
 TEST_CASE("Geometry: Ray-plane intersection", "[utilities][geometry]") {
     // Plane at z=1, facing +z
-    Plane<float> plane(0.0f, 0.0f, 1.0f, -1.0f);
+    Planef plane(0.0f, 0.0f, 1.0f, -1.0f);
     
     // Ray from origin going +z
     Vec3<float> ray_origin(0.0f, 0.0f, 0.0f);

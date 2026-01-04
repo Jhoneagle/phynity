@@ -3,18 +3,22 @@
 #include <cmath>
 #include <ostream>
 #include <algorithm>
+#include <type_traits>
 
 namespace phynity::math::vectors {
 
-/// Two-component floating-point vector.
+/// Two-component vector template for any floating-point type.
+template <typename T = float>
 struct Vec2 {
-    float x = 0.0f;
-    float y = 0.0f;
+    static_assert(std::is_floating_point_v<T>, "Vec2 requires a floating-point type");
+    
+    T x = T(0);
+    T y = T(0);
 
     // Constructors
     Vec2() = default;
-    explicit Vec2(float v) : x(v), y(v) {}
-    Vec2(float x_, float y_) : x(x_), y(y_) {}
+    explicit Vec2(T v) : x(v), y(v) {}
+    Vec2(T x_, T y_) : x(x_), y(y_) {}
 
     // Operators
     Vec2 operator+(const Vec2& other) const {
@@ -25,11 +29,11 @@ struct Vec2 {
         return Vec2(x - other.x, y - other.y);
     }
 
-    Vec2 operator*(float scalar) const {
+    Vec2 operator*(T scalar) const {
         return Vec2(x * scalar, y * scalar);
     }
 
-    Vec2 operator/(float scalar) const {
+    Vec2 operator/(T scalar) const {
         return Vec2(x / scalar, y / scalar);
     }
 
@@ -47,7 +51,7 @@ struct Vec2 {
         return *this;
     }
 
-    Vec2& operator*=(float scalar) {
+    Vec2& operator*=(T scalar) {
         x *= scalar;
         y *= scalar;
         return *this;
@@ -65,7 +69,7 @@ struct Vec2 {
         return *this;
     }
 
-    Vec2& operator/=(float scalar) {
+    Vec2& operator/=(T scalar) {
         x /= scalar;
         y /= scalar;
         return *this;
@@ -89,29 +93,29 @@ struct Vec2 {
         return !(*this == other);
     }
 
-    float& operator[](int i) {
+    T& operator[](int i) {
         return (i == 0) ? x : y;
     }
 
-    const float& operator[](int i) const {
+    const T& operator[](int i) const {
         return (i == 0) ? x : y;
     }
 
-    float dot(const Vec2& other) const {
+    T dot(const Vec2& other) const {
         return x * other.x + y * other.y;
     }
 
-    float squaredLength() const {
+    T squaredLength() const {
         return dot(*this);
     }
 
-    float length() const {
+    T length() const {
         return std::sqrt(squaredLength());
     }
 
     Vec2 normalized() const {
-        float len = length();
-        return len > 0.0f ? *this / len : Vec2(0.0f);
+        T len = length();
+        return len > T(0) ? *this / len : Vec2(T(0));
     }
 
     Vec2& normalize() {
@@ -122,51 +126,51 @@ struct Vec2 {
         return *this;
     }
 
-    float distance(const Vec2& other) const {
+    T distance(const Vec2& other) const {
         return (*this - other).length();
     }
 
-    float squaredDistance(const Vec2& other) const {
+    T squaredDistance(const Vec2& other) const {
         return (*this - other).squaredLength();
     }
 
-    float angle(const Vec2& other) const {
-        float denom = length() * other.length();
-        if (denom < 1e-6f) return 0.0f;
-        float cosTheta = dot(other) / denom;
-        cosTheta = cosTheta < -1.0f ? -1.0f : (cosTheta > 1.0f ? 1.0f : cosTheta);
+    T angle(const Vec2& other) const {
+        T denom = length() * other.length();
+        if (denom < T(1e-6)) return T(0);
+        T cosTheta = dot(other) / denom;
+        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
         return std::acos(cosTheta);
     }
 
-    Vec2 clamped(float maxLength) const {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec2 clamped(T maxLength) const {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq <= maxLenSq) return *this;
         return *this * (maxLength / std::sqrt(lenSq));
     }
 
-    Vec2& clamp(float maxLength) {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec2& clamp(T maxLength) {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq > maxLenSq) {
             *this *= (maxLength / std::sqrt(lenSq));
         }
         return *this;
     }
 
-    Vec2 lerp(const Vec2& other, float t) const {
+    Vec2 lerp(const Vec2& other, T t) const {
         return *this + (other - *this) * t;
     }
 
     Vec2 project(const Vec2& onto) const {
-        float ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < 1e-6f) return Vec2(0.0f);
+        T ontoLenSq = onto.squaredLength();
+        if (ontoLenSq < T(1e-6)) return Vec2(T(0));
         return onto * (dot(onto) / ontoLenSq);
     }
 
     // 2D reflection (reflect across a line defined by normal)
     Vec2 reflect(const Vec2& normal) const {
-        return *this - normal * (2.0f * dot(normal));
+        return *this - normal * (T(2) * dot(normal));
     }
 
     // 2D perpendicular (rotate 90 degrees)
@@ -189,15 +193,15 @@ struct Vec2 {
     }
 
     bool isZero() const {
-        return x == 0.0f && y == 0.0f;
+        return x == T(0) && y == T(0);
     }
 
     bool isNormalized() const {
-        float lenSq = squaredLength();
-        return std::abs(lenSq - 1.0f) < 1e-5f;
+        T lenSq = squaredLength();
+        return std::abs(lenSq - T(1)) < T(1e-5);
     }
 
-    bool approxEqual(const Vec2& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const Vec2& other, T epsilon = T(1e-5)) const {
         return std::abs(x - other.x) < epsilon && std::abs(y - other.y) < epsilon;
     }
 
@@ -214,13 +218,19 @@ struct Vec2 {
     static Vec2 left() { return Vec2(-1.0f, 0.0f); }
 };
 
-inline Vec2 operator*(float scalar, const Vec2& v) {
+template <typename T = float>
+inline Vec2<T> operator*(T scalar, const Vec2<T>& v) {
     return v * scalar;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Vec2& v) {
+template <typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const Vec2<T>& v) {
     os << "(" << v.x << ", " << v.y << ")";
     return os;
 }
+
+// Type aliases for convenience
+using Vec2f = Vec2<float>;
+using Vec2d = Vec2<double>;
 
 }  // namespace phynity::math::vectors

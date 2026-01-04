@@ -2,30 +2,14 @@
 
 #include <cmath>
 #include <type_traits>
+#include <core/math/vectors/vec3.hpp>
 #include "constants.hpp"
+#include "float_comparison.hpp"
 
 namespace phynity::math::utilities {
 
-    // ================================================================
-    // Vector utilities (basic types for geometry)
-    // ================================================================
-
-    template <typename T>
-    struct Vec3 {
-        static_assert(std::is_floating_point_v<T>);
-        T x, y, z;
-        
-        constexpr Vec3() noexcept : x(0), y(0), z(0) {}
-        constexpr Vec3(T x_, T y_, T z_) noexcept : x(x_), y(y_), z(z_) {}
-        
-        constexpr T length_squared() const noexcept {
-            return x * x + y * y + z * z;
-        }
-        
-        T length() const noexcept {
-            return std::sqrt(length_squared());
-        }
-    };
+    // Use the actual Vec3 from the vectors module
+    using phynity::math::vectors::Vec3;
 
     // ================================================================
     // Plane representation: Ax + By + Cz + D = 0
@@ -232,5 +216,21 @@ namespace phynity::math::utilities {
             clamp(point.z, aabb.min.z, aabb.max.z)
         );
     }
+
+    // ================================================================
+    // Type aliases for common use
+    // ================================================================
+
+    // Planes
+    using Planef = Plane<float>;
+    using Planed = Plane<double>;
+
+    // Spheres
+    using Spheref = Sphere<float>;
+    using Sphered = Sphere<double>;
+
+    // AABBs
+    using AABBf = AABB<float>;
+    using AABBd = AABB<double>;
 
 } // namespace phynity::math::utilities

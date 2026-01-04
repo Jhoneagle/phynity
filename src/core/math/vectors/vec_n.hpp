@@ -4,18 +4,20 @@
 #include <ostream>
 #include <algorithm>
 #include <array>
+#include <type_traits>
 
 namespace phynity::math::vectors {
 
-/// Fixed-length floating-point vector with compile-time size.
-template<std::size_t N>
+/// Fixed-length floating-point vector with compile-time size and precision.
+template<std::size_t N, typename T = float>
 struct VecN {
-    std::array<float, N> data{};
+    static_assert(std::is_floating_point_v<T>, "VecN template parameter must be a floating-point type");
+    std::array<T, N> data{};
 
     // Constructors
     VecN() = default;
     
-    explicit VecN(float v) {
+    explicit VecN(T v) {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] = v;
         }
@@ -38,7 +40,7 @@ struct VecN {
         return result;
     }
 
-    VecN operator*(float scalar) const {
+    VecN operator*(T scalar) const {
         VecN result;
         for (std::size_t i = 0; i < N; ++i) {
             result.data[i] = data[i] * scalar;
@@ -46,7 +48,7 @@ struct VecN {
         return result;
     }
 
-    VecN operator/(float scalar) const {
+    VecN operator/(T scalar) const {
         VecN result;
         for (std::size_t i = 0; i < N; ++i) {
             result.data[i] = data[i] / scalar;
@@ -84,7 +86,7 @@ struct VecN {
         return *this;
     }
 
-    VecN& operator*=(float scalar) {
+    VecN& operator*=(T scalar) {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] *= scalar;
         }
@@ -98,7 +100,7 @@ struct VecN {
         return *this;
     }
 
-    VecN& operator/=(float scalar) {
+    VecN& operator/=(T scalar) {
         for (std::size_t i = 0; i < N; ++i) {
             data[i] /= scalar;
         }
@@ -131,87 +133,87 @@ struct VecN {
         return !(*this == other);
     }
 
-    float& operator[](std::size_t i) {
+    T& operator[](std::size_t i) {
         return data[i];
     }
 
-    const float& operator[](std::size_t i) const {
+    const T& operator[](std::size_t i) const {
         return data[i];
     }
 
-    float dot(const VecN& other) const {
-        float result = 0.0f;
+    T dot(const VecN& other) const {
+        T result = T(0);
         for (std::size_t i = 0; i < N; ++i) {
             result += data[i] * other.data[i];
         }
         return result;
     }
 
-    float squaredLength() const {
+    T squaredLength() const {
         return dot(*this);
     }
 
-    float length() const {
+    T length() const {
         return std::sqrt(squaredLength());
     }
 
     VecN normalized() const {
-        float len = length();
-        return len > 0.0f ? *this / len : VecN(0.0f);
+        T len = length();
+        return len > T(0) ? *this / len : VecN(T(0));
     }
 
     VecN& normalize() {
-        float len = length();
-        if (len > 0.0f) {
+        T len = length();
+        if (len > T(0)) {
             *this /= len;
         }
         return *this;
     }
 
-    float distance(const VecN& other) const {
+    T distance(const VecN& other) const {
         return (*this - other).length();
     }
 
-    float squaredDistance(const VecN& other) const {
+    T squaredDistance(const VecN& other) const {
         return (*this - other).squaredLength();
     }
 
-    float angle(const VecN& other) const {
-        float denom = length() * other.length();
-        if (denom < 1e-6f) return 0.0f;
-        float cosTheta = dot(other) / denom;
-        cosTheta = cosTheta < -1.0f ? -1.0f : (cosTheta > 1.0f ? 1.0f : cosTheta);
+    T angle(const VecN& other) const {
+        T denom = length() * other.length();
+        if (denom < T(1e-6)) return T(0);
+        T cosTheta = dot(other) / denom;
+        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
         return std::acos(cosTheta);
     }
 
-    VecN clamped(float maxLength) const {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    VecN clamped(T maxLength) const {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq <= maxLenSq) return *this;
         return *this * (maxLength / std::sqrt(lenSq));
     }
 
-    VecN& clamp(float maxLength) {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    VecN& clamp(T maxLength) {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq > maxLenSq) {
             *this *= (maxLength / std::sqrt(lenSq));
         }
         return *this;
     }
 
-    VecN lerp(const VecN& other, float t) const {
+    VecN lerp(const VecN& other, T t) const {
         return *this + (other - *this) * t;
     }
 
     VecN project(const VecN& onto) const {
-        float ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < 1e-6f) return VecN(0.0f);
+        T ontoLenSq = onto.squaredLength();
+        if (ontoLenSq < T(1e-6)) return VecN(T(0));
         return onto * (dot(onto) / ontoLenSq);
     }
 
     VecN reflect(const VecN& normal) const {
-        return *this - normal * (2.0f * dot(normal));
+        return *this - normal * (T(2) * dot(normal));
     }
 
     VecN min(const VecN& other) const {
@@ -232,17 +234,17 @@ struct VecN {
 
     bool isZero() const {
         for (std::size_t i = 0; i < N; ++i) {
-            if (data[i] != 0.0f) return false;
+            if (data[i] != T(0)) return false;
         }
         return true;
     }
 
     bool isNormalized() const {
-        float lenSq = squaredLength();
-        return std::abs(lenSq - 1.0f) < 1e-5f;
+        T lenSq = squaredLength();
+        return std::abs(lenSq - T(1)) < T(1e-5);
     }
 
-    bool approxEqual(const VecN& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const VecN& other, T epsilon = T(1e-5)) const {
         for (std::size_t i = 0; i < N; ++i) {
             if (std::abs(data[i] - other.data[i]) >= epsilon) return false;
         }
@@ -264,14 +266,14 @@ struct VecN {
 };
 
 // Scalar multiplication from left
-template<std::size_t N>
-inline VecN<N> operator*(float scalar, const VecN<N>& v) {
+template<std::size_t N, typename T = float>
+inline VecN<N, T> operator*(T scalar, const VecN<N, T>& v) {
     return v * scalar;
 }
 
 // Stream output
-template<std::size_t N>
-inline std::ostream& operator<<(std::ostream& os, const VecN<N>& v) {
+template<std::size_t N, typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const VecN<N, T>& v) {
     os << "(";
     for (std::size_t i = 0; i < N; ++i) {
         if (i > 0) os << ", ";
@@ -282,8 +284,13 @@ inline std::ostream& operator<<(std::ostream& os, const VecN<N>& v) {
 }
 
 // Useful type aliases
-using Vec6 = VecN<6>;
-using Vec8 = VecN<8>;
-using Vec16 = VecN<16>;
+using Vec6f = VecN<6, float>;
+using Vec6d = VecN<6, double>;
+
+using Vec8f = VecN<8, float>;
+using Vec8d = VecN<8, double>;
+
+using Vec16f = VecN<16, float>;
+using Vec16d = VecN<16, double>;
 
 }  // namespace phynity::math::vectors

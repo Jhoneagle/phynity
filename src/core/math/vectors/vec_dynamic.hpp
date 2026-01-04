@@ -5,21 +5,24 @@
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
+#include <type_traits>
 
 namespace phynity::math::vectors {
 
-/// Runtime-sized floating-point vector with dynamic dimensions.
+/// Runtime-sized floating-point vector with dynamic dimensions and precision.
+template<typename T = float>
 class VecDynamic {
+    static_assert(std::is_floating_point_v<T>, "VecDynamic template parameter must be a floating-point type");
 private:
-    std::vector<float> data;
+    std::vector<T> data;
 
 public:
     // Constructors
     VecDynamic() = default;
 
-    explicit VecDynamic(std::size_t size) : data(size, 0.0f) {}
+    explicit VecDynamic(std::size_t size) : data(size, T(0)) {}
 
-    VecDynamic(std::size_t size, float v) : data(size, v) {}
+    VecDynamic(std::size_t size, T v) : data(size, v) {}
 
     template<typename Iter>
     VecDynamic(Iter begin, Iter end) : data(begin, end) {}
@@ -33,20 +36,20 @@ public:
         return data.empty();
     }
 
-    float& operator[](std::size_t i) {
+    T& operator[](std::size_t i) {
         return data[i];
     }
 
-    const float& operator[](std::size_t i) const {
+    const T& operator[](std::size_t i) const {
         return data[i];
     }
 
-    float& at(std::size_t i) {
+    T& at(std::size_t i) {
         if (i >= size()) throw std::out_of_range("VecDynamic index out of range");
         return data[i];
     }
 
-    const float& at(std::size_t i) const {
+    const T& at(std::size_t i) const {
         if (i >= size()) throw std::out_of_range("VecDynamic index out of range");
         return data[i];
     }
@@ -70,7 +73,7 @@ public:
         return result;
     }
 
-    VecDynamic operator*(float scalar) const {
+    VecDynamic operator*(T scalar) const {
         VecDynamic result(size());
         for (std::size_t i = 0; i < size(); ++i) {
             result.data[i] = data[i] * scalar;
@@ -78,7 +81,7 @@ public:
         return result;
     }
 
-    VecDynamic operator/(float scalar) const {
+    VecDynamic operator/(T scalar) const {
         VecDynamic result(size());
         for (std::size_t i = 0; i < size(); ++i) {
             result.data[i] = data[i] / scalar;
@@ -120,7 +123,7 @@ public:
         return *this;
     }
 
-    VecDynamic& operator*=(float scalar) {
+    VecDynamic& operator*=(T scalar) {
         for (std::size_t i = 0; i < size(); ++i) {
             data[i] *= scalar;
         }
@@ -135,7 +138,7 @@ public:
         return *this;
     }
 
-    VecDynamic& operator/=(float scalar) {
+    VecDynamic& operator/=(T scalar) {
         for (std::size_t i = 0; i < size(); ++i) {
             data[i] /= scalar;
         }
@@ -171,80 +174,80 @@ public:
     }
 
     // Vector operations
-    float dot(const VecDynamic& other) const {
+    T dot(const VecDynamic& other) const {
         if (size() != other.size()) throw std::invalid_argument("Vector sizes do not match");
-        float result = 0.0f;
+        T result = T(0);
         for (std::size_t i = 0; i < size(); ++i) {
             result += data[i] * other.data[i];
         }
         return result;
     }
 
-    float squaredLength() const {
+    T squaredLength() const {
         return dot(*this);
     }
 
-    float length() const {
+    T length() const {
         return std::sqrt(squaredLength());
     }
 
     VecDynamic normalized() const {
-        float len = length();
-        return len > 0.0f ? *this / len : VecDynamic(size(), 0.0f);
+        T len = length();
+        return len > T(0) ? *this / len : VecDynamic(size(), T(0));
     }
 
     VecDynamic& normalize() {
-        float len = length();
-        if (len > 0.0f) {
+        T len = length();
+        if (len > T(0)) {
             *this /= len;
         }
         return *this;
     }
 
-    float distance(const VecDynamic& other) const {
+    T distance(const VecDynamic& other) const {
         return (*this - other).length();
     }
 
-    float squaredDistance(const VecDynamic& other) const {
+    T squaredDistance(const VecDynamic& other) const {
         return (*this - other).squaredLength();
     }
 
-    float angle(const VecDynamic& other) const {
-        float denom = length() * other.length();
-        if (denom < 1e-6f) return 0.0f;
-        float cosTheta = dot(other) / denom;
-        cosTheta = cosTheta < -1.0f ? -1.0f : (cosTheta > 1.0f ? 1.0f : cosTheta);
+    T angle(const VecDynamic& other) const {
+        T denom = length() * other.length();
+        if (denom < T(1e-6)) return T(0);
+        T cosTheta = dot(other) / denom;
+        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
         return std::acos(cosTheta);
     }
 
-    VecDynamic clamped(float maxLength) const {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    VecDynamic clamped(T maxLength) const {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq <= maxLenSq) return *this;
         return *this * (maxLength / std::sqrt(lenSq));
     }
 
-    VecDynamic& clamp(float maxLength) {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    VecDynamic& clamp(T maxLength) {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq > maxLenSq) {
             *this *= (maxLength / std::sqrt(lenSq));
         }
         return *this;
     }
 
-    VecDynamic lerp(const VecDynamic& other, float t) const {
+    VecDynamic lerp(const VecDynamic& other, T t) const {
         return *this + (other - *this) * t;
     }
 
     VecDynamic project(const VecDynamic& onto) const {
-        float ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < 1e-6f) return VecDynamic(size(), 0.0f);
+        T ontoLenSq = onto.squaredLength();
+        if (ontoLenSq < T(1e-6)) return VecDynamic(size(), T(0));
         return onto * (dot(onto) / ontoLenSq);
     }
 
     VecDynamic reflect(const VecDynamic& normal) const {
-        return *this - normal * (2.0f * dot(normal));
+        return *this - normal * (T(2) * dot(normal));
     }
 
     VecDynamic min(const VecDynamic& other) const {
@@ -267,17 +270,17 @@ public:
 
     bool isZero() const {
         for (std::size_t i = 0; i < size(); ++i) {
-            if (data[i] != 0.0f) return false;
+            if (data[i] != T(0)) return false;
         }
         return true;
     }
 
     bool isNormalized() const {
-        float lenSq = squaredLength();
-        return std::abs(lenSq - 1.0f) < 1e-5f;
+        T lenSq = squaredLength();
+        return std::abs(lenSq - T(1)) < T(1e-5);
     }
 
-    bool approxEqual(const VecDynamic& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const VecDynamic& other, T epsilon = T(1e-5)) const {
         if (size() != other.size()) return false;
         for (std::size_t i = 0; i < size(); ++i) {
             if (std::abs(data[i] - other.data[i]) >= epsilon) return false;
@@ -295,21 +298,23 @@ public:
 
     // Resize
     void resize(std::size_t newSize) {
-        data.resize(newSize, 0.0f);
+        data.resize(newSize, T(0));
     }
 
-    void resize(std::size_t newSize, float value) {
+    void resize(std::size_t newSize, T value) {
         data.resize(newSize, value);
     }
 };
 
 // Scalar multiplication from left
-inline VecDynamic operator*(float scalar, const VecDynamic& v) {
+template<typename T = float>
+inline VecDynamic<T> operator*(T scalar, const VecDynamic<T>& v) {
     return v * scalar;
 }
 
 // Stream output
-inline std::ostream& operator<<(std::ostream& os, const VecDynamic& v) {
+template<typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const VecDynamic<T>& v) {
     os << "(";
     for (std::size_t i = 0; i < v.size(); ++i) {
         if (i > 0) os << ", ";
@@ -318,5 +323,9 @@ inline std::ostream& operator<<(std::ostream& os, const VecDynamic& v) {
     os << ")";
     return os;
 }
+
+// Type aliases
+using VecDynamicf = VecDynamic<float>;
+using VecDynamicd = VecDynamic<double>;
 
 }  // namespace phynity::math::vectors

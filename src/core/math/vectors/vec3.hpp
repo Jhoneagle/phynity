@@ -3,19 +3,23 @@
 #include <cmath>
 #include <ostream>
 #include <algorithm>
+#include <type_traits>
 
 namespace phynity::math::vectors {
 
-/// Three-component floating-point vector.
+/// Three-component vector template for any floating-point type.
+template <typename T = float>
 struct Vec3 {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
+    static_assert(std::is_floating_point_v<T>, "Vec3 requires a floating-point type");
+    
+    T x = T(0);
+    T y = T(0);
+    T z = T(0);
 
     // Constructors
     Vec3() = default;
-    explicit Vec3(float v) : x(v), y(v), z(v) {}
-    Vec3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+    explicit Vec3(T v) : x(v), y(v), z(v) {}
+    Vec3(T x_, T y_, T z_) : x(x_), y(y_), z(z_) {}
 
     // Operators
     Vec3 operator+(const Vec3& other) const {
@@ -26,11 +30,11 @@ struct Vec3 {
         return Vec3(x - other.x, y - other.y, z - other.z);
     }
 
-    Vec3 operator*(float scalar) const {
+    Vec3 operator*(T scalar) const {
         return Vec3(x * scalar, y * scalar, z * scalar);
     }
 
-    Vec3 operator/(float scalar) const {
+    Vec3 operator/(T scalar) const {
         return Vec3(x / scalar, y / scalar, z / scalar);
     }
 
@@ -49,7 +53,7 @@ struct Vec3 {
         return *this;
     }
 
-    Vec3& operator*=(float scalar) {
+    Vec3& operator*=(T scalar) {
         x *= scalar;
         y *= scalar;
         z *= scalar;
@@ -70,7 +74,7 @@ struct Vec3 {
         return *this;
     }
 
-    Vec3& operator/=(float scalar) {
+    Vec3& operator/=(T scalar) {
         x /= scalar;
         y /= scalar;
         z /= scalar;
@@ -96,34 +100,34 @@ struct Vec3 {
         return !(*this == other);
     }
 
-    float& operator[](int i) {
+    T& operator[](int i) {
         return (i == 0) ? x : (i == 1) ? y : z;
     }
 
-    const float& operator[](int i) const {
+    const T& operator[](int i) const {
         return (i == 0) ? x : (i == 1) ? y : z;
     }
 
-    float dot(const Vec3& other) const {
+    T dot(const Vec3& other) const {
         return x * other.x + y * other.y + z * other.z;
     }
 
-    float squaredLength() const {
+    T squaredLength() const {
         return dot(*this);
     }
 
-    float length() const {
+    T length() const {
         return std::sqrt(squaredLength());
     }
 
     Vec3 normalized() const {
-        float len = length();
-        return len > 0.0f ? *this / len : Vec3(0.0f);
+        T len = length();
+        return len > T(0) ? *this / len : Vec3(T(0));
     }
 
     Vec3& normalize() {
-        float len = length();
-        if (len > 0.0f) {
+        T len = length();
+        if (len > T(0)) {
             *this /= len;
         }
         return *this;
@@ -137,58 +141,58 @@ struct Vec3 {
         );
     }
 
-    float distance(const Vec3& other) const {
+    T distance(const Vec3& other) const {
         return (*this - other).length();
     }
 
-    float squaredDistance(const Vec3& other) const {
+    T squaredDistance(const Vec3& other) const {
         return (*this - other).squaredLength();
     }
 
-    float angle(const Vec3& other) const {
-        float denom = length() * other.length();
-        if (denom < 1e-6f) return 0.0f;  // Handle zero-length vectors
-        float cosTheta = dot(other) / denom;
+    T angle(const Vec3& other) const {
+        T denom = length() * other.length();
+        if (denom < T(1e-6)) return T(0);  // Handle zero-length vectors
+        T cosTheta = dot(other) / denom;
         // Clamp to [-1, 1] to handle floating point errors
-        cosTheta = cosTheta < -1.0f ? -1.0f : (cosTheta > 1.0f ? 1.0f : cosTheta);
+        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
         return std::acos(cosTheta);
     }
 
-    Vec3 clamped(float maxLength) const {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec3 clamped(T maxLength) const {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq <= maxLenSq) return *this;
         return *this * (maxLength / std::sqrt(lenSq));
     }
 
-    Vec3& clamp(float maxLength) {
-        float lenSq = squaredLength();
-        float maxLenSq = maxLength * maxLength;
+    Vec3& clamp(T maxLength) {
+        T lenSq = squaredLength();
+        T maxLenSq = maxLength * maxLength;
         if (lenSq > maxLenSq) {
             *this *= (maxLength / std::sqrt(lenSq));
         }
         return *this;
     }
 
-    Vec3 lerp(const Vec3& other, float t) const {
+    Vec3 lerp(const Vec3& other, T t) const {
         return *this + (other - *this) * t;
     }
 
     Vec3 project(const Vec3& onto) const {
-        float ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < 1e-6f) return Vec3(0.0f);
+        T ontoLenSq = onto.squaredLength();
+        if (ontoLenSq < T(1e-6)) return Vec3(T(0));
         return onto * (dot(onto) / ontoLenSq);
     }
 
     Vec3 reflect(const Vec3& normal) const {
-        return *this - normal * (2.0f * dot(normal));
+        return *this - normal * (T(2) * dot(normal));
     }
 
     Vec3 perpendicular() const {
         // Choose axis with smallest absolute component to avoid parallel vectors
         Vec3 axis = (std::abs(x) < std::abs(y) && std::abs(x) < std::abs(z)) 
-                    ? Vec3(1.0f, 0.0f, 0.0f)
-                    : (std::abs(y) < std::abs(z) ? Vec3(0.0f, 1.0f, 0.0f) : Vec3(0.0f, 0.0f, 1.0f));
+                    ? Vec3(T(1), T(0), T(0))
+                    : (std::abs(y) < std::abs(z) ? Vec3(T(0), T(1), T(0)) : Vec3(T(0), T(0), T(1)));
         return cross(axis).normalized();
     }
 
@@ -209,15 +213,15 @@ struct Vec3 {
     }
 
     bool isZero() const {
-        return x == 0.0f && y == 0.0f && z == 0.0f;
+        return x == T(0) && y == T(0) && z == T(0);
     }
 
     bool isNormalized() const {
-        float lenSq = squaredLength();
-        return std::abs(lenSq - 1.0f) < 1e-5f;
+        T lenSq = squaredLength();
+        return std::abs(lenSq - T(1)) < T(1e-5);
     }
 
-    bool approxEqual(const Vec3& other, float epsilon = 1e-5f) const {
+    bool approxEqual(const Vec3& other, T epsilon = T(1e-5)) const {
         return std::abs(x - other.x) < epsilon && 
                std::abs(y - other.y) < epsilon && 
                std::abs(z - other.z) < epsilon;
@@ -228,23 +232,29 @@ struct Vec3 {
     }
 
     // Static utility vectors
-    static Vec3 zero() { return Vec3(0.0f, 0.0f, 0.0f); }
-    static Vec3 one() { return Vec3(1.0f, 1.0f, 1.0f); }
-    static Vec3 up() { return Vec3(0.0f, 1.0f, 0.0f); }
-    static Vec3 down() { return Vec3(0.0f, -1.0f, 0.0f); }
-    static Vec3 right() { return Vec3(1.0f, 0.0f, 0.0f); }
-    static Vec3 left() { return Vec3(-1.0f, 0.0f, 0.0f); }
-    static Vec3 forward() { return Vec3(0.0f, 0.0f, 1.0f); }
-    static Vec3 back() { return Vec3(0.0f, 0.0f, -1.0f); }
+    static Vec3 zero() { return Vec3(T(0), T(0), T(0)); }
+    static Vec3 one() { return Vec3(T(1), T(1), T(1)); }
+    static Vec3 up() { return Vec3(T(0), T(1), T(0)); }
+    static Vec3 down() { return Vec3(T(0), T(-1), T(0)); }
+    static Vec3 right() { return Vec3(T(1), T(0), T(0)); }
+    static Vec3 left() { return Vec3(T(-1), T(0), T(0)); }
+    static Vec3 forward() { return Vec3(T(0), T(0), T(1)); }
+    static Vec3 back() { return Vec3(T(0), T(0), T(-1)); }
 };
 
-inline Vec3 operator*(float scalar, const Vec3& v) {
+template <typename T = float>
+inline Vec3<T> operator*(T scalar, const Vec3<T>& v) {
     return v * scalar;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Vec3& v) {
+template <typename T = float>
+inline std::ostream& operator<<(std::ostream& os, const Vec3<T>& v) {
     os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
     return os;
 }
+
+// Type aliases for convenience
+using Vec3f = Vec3<float>;
+using Vec3d = Vec3<double>;
 
 }  // namespace phynity::math::vectors
