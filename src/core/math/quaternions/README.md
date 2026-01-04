@@ -6,6 +6,7 @@ This module provides quaternion implementations for efficient 3D rotations in th
 
 - **Quat** (`quat.hpp`) - Quaternion for representing 3D rotations without gimbal lock
 - **Conversions** (`quat_conversions.hpp`) - Conversion utilities between quaternions and other rotation representations
+- **Interpolation** (`quat_interpolation.hpp`) - Quaternion interpolation functions for smooth rotation transitions
 
 ## Status
 
@@ -27,5 +28,10 @@ This module provides quaternion implementations for efficient 3D rotations in th
 - Conjugate and inverse
 - Vector rotation (`rotateVector`, `unrotateVector`)
 
+### ✅ Interpolation
+- **NLERP** (Normalized Linear Interpolation) - Fast approximation for smooth rotation interpolation
+  - Automatic shortest-path selection
+  - Suitable for physics state blending and real-time applications
+
 ### ❌ Pending Implementation
-- **Interpolation** (slerp, nlerp) - Planned for smooth rotation interpolation
+- **SLERP** (Spherical Linear Interpolation) - Planned for constant angular velocity interpolation
