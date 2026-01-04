@@ -32,6 +32,8 @@ This module provides quaternion implementations for efficient 3D rotations in th
 - **NLERP** (Normalized Linear Interpolation) - Fast approximation for smooth rotation interpolation
   - Automatic shortest-path selection
   - Suitable for physics state blending and real-time applications
-
-### ❌ Pending Implementation
-- **SLERP** (Spherical Linear Interpolation) - Planned for constant angular velocity interpolation
+- **SLERP** (Spherical Linear Interpolation) - Constant angular velocity interpolation
+  - Geometrically correct spherical interpolation
+  - Automatic fallback to NLERP for small angles (numerical stability)
+  - Ideal for high-quality animations and cinematics
+- **Utility functions**: `angleBetween()`, `shortestPath()`

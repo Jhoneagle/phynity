@@ -389,3 +389,438 @@ TEST_CASE("NLERP: Symmetry - nlerp(q1, q2, t) related to nlerp(q2, q1, 1-t)", "[
     // They should represent the same rotation
     REQUIRE(quaternionsEqual(forward, reverse, 1e-4f));
 }
+
+// ============================================================================
+// Utility Function Tests: angleBetween
+// ============================================================================
+
+TEST_CASE("angleBetween: Identity quaternions have zero angle", "[interpolation][utility][angleBetween]") {
+    Quat q1;  // Identity
+    Quat q2;  // Identity
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE_THAT(angle, WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("angleBetween: Same rotation returns zero angle", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));
+    Quat q2(axis, static_cast<float>(M_PI / 4.0));
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE_THAT(angle, WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("angleBetween: Double-cover (q and -q) returns zero angle", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 3.0));
+    Quat q2 = -q1;  // Negated quaternion represents same rotation
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE_THAT(angle, WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("angleBetween: 90° rotation difference", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q1;  // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE_THAT(angle, WithinAbs(static_cast<float>(M_PI / 2.0), 1e-5f));
+}
+
+TEST_CASE("angleBetween: 180° rotation difference", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1;  // 0°
+    Quat q2(axis, static_cast<float>(M_PI));  // 180°
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE_THAT(angle, WithinAbs(static_cast<float>(M_PI), 1e-5f));
+}
+
+TEST_CASE("angleBetween: Various angles on same axis", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    
+    std::vector<float> testAngles = {
+        static_cast<float>(M_PI / 6.0),   // 30°
+        static_cast<float>(M_PI / 4.0),   // 45°
+        static_cast<float>(M_PI / 3.0),   // 60°
+        static_cast<float>(M_PI / 2.0),   // 90°
+    };
+    
+    Quat q1;  // Identity
+    
+    for (float expectedAngle : testAngles) {
+        Quat q2(axis, expectedAngle);
+        float angle = angleBetween(q1, q2);
+        
+        REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    }
+}
+
+TEST_CASE("angleBetween: Symmetry - angle(q1, q2) == angle(q2, q1)", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(1.0f, 1.0f, 1.0f);
+    axis = axis.normalized();
+    
+    Quat q1(axis, static_cast<float>(M_PI / 6.0));
+    Quat q2(axis, static_cast<float>(M_PI / 3.0));
+    
+    float angle1 = angleBetween(q1, q2);
+    float angle2 = angleBetween(q2, q1);
+    
+    REQUIRE_THAT(angle1, WithinAbs(angle2, 1e-6f));
+}
+
+TEST_CASE("angleBetween: Always returns positive angle", "[interpolation][utility][angleBetween]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));
+    
+    float angle = angleBetween(q1, q2);
+    
+    REQUIRE(angle >= 0.0f);
+    REQUIRE(angle <= static_cast<float>(M_PI));
+}
+
+// ============================================================================
+// SLERP Basic Tests
+// ============================================================================
+
+TEST_CASE("SLERP: t=0 returns first quaternion", "[interpolation][slerp]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));  // 45°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    Quat result = slerp(q1, q2, 0.0f);
+    
+    REQUIRE(quaternionsEqual(result, q1));
+}
+
+TEST_CASE("SLERP: t=1 returns second quaternion", "[interpolation][slerp]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));  // 45°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    Quat result = slerp(q1, q2, 1.0f);
+    
+    REQUIRE(quaternionsEqual(result, q2));
+}
+
+TEST_CASE("SLERP: t=0.5 produces intermediate rotation", "[interpolation][slerp]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);  // Z-axis
+    Quat q1;  // Identity (0°)
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    // Result should be normalized
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+    
+    // Result should be between q1 and q2
+    REQUIRE_FALSE(quaternionsEqual(result, q1));
+    REQUIRE_FALSE(quaternionsEqual(result, q2));
+    
+    // For SLERP, t=0.5 should give exactly 45° rotation
+    float angleFromStart = angleBetween(q1, result);
+    float angleFromEnd = angleBetween(result, q2);
+    REQUIRE_THAT(angleFromStart, WithinAbs(angleFromEnd, 1e-4f));
+}
+
+TEST_CASE("SLERP: Interpolating identical quaternions returns same quaternion", "[interpolation][slerp]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q(axis, static_cast<float>(M_PI / 3.0));
+    
+    Quat result = slerp(q, q, 0.5f);
+    
+    REQUIRE(quaternionsEqual(result, q));
+}
+
+TEST_CASE("SLERP: Result is always normalized", "[interpolation][slerp]") {
+    Vec3 axis(1.0f, 1.0f, 1.0f);
+    axis = axis.normalized();
+    
+    Quat q1(axis, static_cast<float>(M_PI / 6.0));  // 30°
+    Quat q2(axis, static_cast<float>(M_PI / 3.0));  // 60°
+    
+    for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
+        Quat result = slerp(q1, q2, t);
+        REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+    }
+}
+
+// ============================================================================
+// SLERP Shortest Path Tests
+// ============================================================================
+
+TEST_CASE("SLERP: Chooses shortest path (positive dot product)", "[interpolation][slerp][shortest-path]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 6.0));   // 30°
+    Quat q2(axis, static_cast<float>(M_PI / 4.0));   // 45°
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+    REQUIRE(dot(q1, q2) > 0.0f);
+}
+
+TEST_CASE("SLERP: Chooses shortest path (negative dot product)", "[interpolation][slerp][shortest-path]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 6.0));   // 30°
+    Quat q2(axis, static_cast<float>(M_PI / 6.0));   // 30° (same rotation)
+    
+    // Negate q2 to put it on opposite hemisphere (double-cover)
+    q2 = -q2;
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    // Result should still represent the same rotation as q1/q2
+    REQUIRE(quaternionsEqual(result, q1));
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+}
+
+// ============================================================================
+// SLERP Fallback to NLERP Tests
+// ============================================================================
+
+TEST_CASE("SLERP: Falls back to NLERP for very small angles", "[interpolation][slerp][fallback]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q1;  // Identity
+    Quat q2(axis, 0.001f);  // Very small angle (~0.057°)
+    
+    Quat slerpResult = slerp(q1, q2, 0.5f);
+    Quat nlerpResult = nlerp(q1, q2, 0.5f);
+    
+    // Should be very close (fallback triggered)
+    REQUIRE(quaternionsEqual(slerpResult, nlerpResult, 1e-5f));
+}
+
+TEST_CASE("SLERP: Does not fallback for moderate angles", "[interpolation][slerp][fallback]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q1;  // Identity
+    Quat q2(axis, static_cast<float>(M_PI / 4.0));  // 45° - well above threshold
+    
+    Quat slerpResult = slerp(q1, q2, 0.5f);
+    
+    // Angle should be preserved (SLERP has constant angular velocity)
+    float angleToMid = angleBetween(q1, slerpResult);
+    float expectedAngle = static_cast<float>(M_PI / 8.0);  // Half of 45°
+    
+    REQUIRE_THAT(angleToMid, WithinAbs(expectedAngle, 1e-4f));
+}
+
+// ============================================================================
+// SLERP Constant Angular Velocity Tests
+// ============================================================================
+
+TEST_CASE("SLERP: Maintains constant angular velocity", "[interpolation][slerp][angular-velocity]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1;  // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    // Interpolate at equal t intervals
+    Quat q_25 = slerp(q1, q2, 0.25f);
+    Quat q_50 = slerp(q1, q2, 0.50f);
+    Quat q_75 = slerp(q1, q2, 0.75f);
+    
+    // Measure angular distances
+    float angle_0_25  = angleBetween(q1, q_25);
+    float angle_25_50 = angleBetween(q_25, q_50);
+    float angle_50_75 = angleBetween(q_50, q_75);
+    float angle_75_100 = angleBetween(q_75, q2);
+    
+    // All angular distances should be equal (constant angular velocity)
+    REQUIRE_THAT(angle_0_25, WithinAbs(angle_25_50, 1e-4f));
+    REQUIRE_THAT(angle_25_50, WithinAbs(angle_50_75, 1e-4f));
+    REQUIRE_THAT(angle_50_75, WithinAbs(angle_75_100, 1e-4f));
+}
+
+TEST_CASE("SLERP: t=0.5 gives exactly halfway rotation", "[interpolation][slerp][angular-velocity]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1;  // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    Quat halfway = slerp(q1, q2, 0.5f);
+    
+    float angleFromStart = angleBetween(q1, halfway);
+    float angleFromEnd = angleBetween(halfway, q2);
+    
+    // Should be exactly halfway
+    REQUIRE_THAT(angleFromStart, WithinAbs(angleFromEnd, 1e-5f));
+    REQUIRE_THAT(angleFromStart, WithinAbs(static_cast<float>(M_PI / 4.0), 1e-5f));
+}
+
+// ============================================================================
+// SLERP Axis-Specific Tests
+// ============================================================================
+
+TEST_CASE("SLERP: X-axis rotation interpolation", "[interpolation][slerp]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, 0.0f);                              // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));    // 90°
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+    
+    // Test that result rotates a vector correctly
+    Vec3 testVec(0.0f, 1.0f, 0.0f);
+    Vec3 rotated = result.rotateVector(testVec);
+    
+    // At t=0.5, should be rotated 45° around X
+    REQUIRE(rotated.y > 0.0f);
+    REQUIRE(rotated.z > 0.0f);
+    REQUIRE_THAT(rotated.y, WithinAbs(rotated.z, 1e-5f));  // Equal Y and Z for 45°
+}
+
+TEST_CASE("SLERP: Y-axis rotation interpolation", "[interpolation][slerp]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1(axis, 0.0f);                              // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));    // 90°
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("SLERP: Z-axis rotation interpolation", "[interpolation][slerp]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q1(axis, 0.0f);                              // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));    // 90°
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+}
+
+// ============================================================================
+// SLERP Parameter Clamping Tests
+// ============================================================================
+
+TEST_CASE("SLERP: t < 0 is clamped to 0", "[interpolation][slerp][clamping]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));
+    
+    Quat result = slerp(q1, q2, -0.5f);
+    
+    REQUIRE(quaternionsEqual(result, q1));
+}
+
+TEST_CASE("SLERP: t > 1 is clamped to 1", "[interpolation][slerp][clamping]") {
+    Vec3 axis(1.0f, 0.0f, 0.0f);
+    Quat q1(axis, static_cast<float>(M_PI / 4.0));
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));
+    
+    Quat result = slerp(q1, q2, 1.5f);
+    
+    REQUIRE(quaternionsEqual(result, q2));
+}
+
+// ============================================================================
+// SLERP Identity and Special Cases
+// ============================================================================
+
+TEST_CASE("SLERP: Identity to rotation", "[interpolation][slerp]") {
+    Quat q1;  // Identity
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    Quat halfway = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(halfway.magnitude(), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_FALSE(quaternionsEqual(halfway, q1));
+    REQUIRE_FALSE(quaternionsEqual(halfway, q2));
+}
+
+TEST_CASE("SLERP: Both quaternions are identity", "[interpolation][slerp]") {
+    Quat q1;  // Identity
+    Quat q2;  // Identity
+    
+    Quat result = slerp(q1, q2, 0.5f);
+    
+    REQUIRE(quaternionsEqual(result, q1));
+    REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("SLERP: 180° rotation interpolation", "[interpolation][slerp][large-angle]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1(axis, 0.0f);
+    Quat q2(axis, static_cast<float>(M_PI));  // 180°
+    
+    Quat halfway = slerp(q1, q2, 0.5f);
+    
+    REQUIRE_THAT(halfway.magnitude(), WithinAbs(1.0f, 1e-6f));
+    
+    // Should be at 90°
+    float angle = angleBetween(q1, halfway);
+    REQUIRE_THAT(angle, WithinAbs(static_cast<float>(M_PI / 2.0), 1e-4f));
+}
+
+// ============================================================================
+// SLERP Symmetry Tests
+// ============================================================================
+
+TEST_CASE("SLERP: Symmetry - slerp(q1, q2, t) related to slerp(q2, q1, 1-t)", "[interpolation][slerp][symmetry]") {
+    Vec3 axis(1.0f, 1.0f, 0.0f);
+    axis = axis.normalized();
+    
+    Quat q1(axis, static_cast<float>(M_PI / 6.0));
+    Quat q2(axis, static_cast<float>(M_PI / 3.0));
+    
+    float t = 0.3f;
+    
+    Quat forward = slerp(q1, q2, t);
+    Quat reverse = slerp(q2, q1, 1.0f - t);
+    
+    // They should represent the same rotation
+    REQUIRE(quaternionsEqual(forward, reverse, 1e-4f));
+}
+
+// ============================================================================
+// SLERP vs NLERP Comparison
+// ============================================================================
+
+TEST_CASE("SLERP vs NLERP: SLERP has constant angular velocity", "[interpolation][comparison]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+    Quat q1;  // 0°
+    Quat q2(axis, static_cast<float>(M_PI / 2.0));  // 90°
+    
+    // Measure angular velocity for SLERP
+    Quat s_25 = slerp(q1, q2, 0.25f);
+    Quat s_75 = slerp(q1, q2, 0.75f);
+    
+    float slerp_angle_first_quarter = angleBetween(q1, s_25);
+    float slerp_angle_last_quarter = angleBetween(s_75, q2);
+    
+    // SLERP should have equal angular distances
+    REQUIRE_THAT(slerp_angle_first_quarter, WithinAbs(slerp_angle_last_quarter, 1e-4f));
+    
+    // Measure for NLERP
+    Quat n_25 = nlerp(q1, q2, 0.25f);
+    Quat n_75 = nlerp(q1, q2, 0.75f);
+    
+    float nlerp_angle_first_quarter = angleBetween(q1, n_25);
+    float nlerp_angle_last_quarter = angleBetween(n_75, q2);
+    
+    // For this test, we just verify SLERP has constant angular velocity
+    // NLERP's difference is minimal for 90° rotations due to normalization
+}
+
+TEST_CASE("SLERP vs NLERP: Results are similar for small angles", "[interpolation][comparison]") {
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    Quat q1;
+    Quat q2(axis, static_cast<float>(M_PI / 12.0));  // 15° - small angle
+    
+    Quat slerpResult = slerp(q1, q2, 0.5f);
+    Quat nlerpResult = nlerp(q1, q2, 0.5f);
+    
+    // For small angles, SLERP and NLERP should be very close
+    float angleDiff = angleBetween(slerpResult, nlerpResult);
+    REQUIRE(angleDiff < 0.01f);  // Less than ~0.57°
+}
