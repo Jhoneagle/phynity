@@ -166,12 +166,12 @@ inline Vec3 toEulerAngles(const Quat& q) {
     if (singularity_test >= 0.9999f) {
         euler.x = 0.0f;                      // roll = 0 (by convention)
         euler.y = 0.5f * mathf::pi;          // pitch = π/2 (90 degrees)
-        euler.z = std::atan2(-2.0f*(x*y - w*z), 1.0f - 2.0f*(y*y + z*z));   // yaw captures combined rotation
+        euler.z = 2.0f * std::atan2(z, w);   // yaw captures combined rotation
     }
     else if (singularity_test <= -0.9999f) {
         euler.x = 0.0f;                      // roll = 0 (by convention)
         euler.y = -0.5f * mathf::pi;         // pitch = -π/2 (-90 degrees)
-        euler.z = std::atan2(-2.0f*(x*y - w*z), 1.0f - 2.0f*(y*y + z*z));  // yaw captures combined rotation
+        euler.z = -2.0f * std::atan2(z, w);  // yaw captures combined rotation
     }
     else {
         euler.x = std::atan2(2.0f * (w * x + y * z), 1.0f - 2.0f * (x * x + y * y));  // roll
