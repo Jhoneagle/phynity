@@ -776,9 +776,6 @@ TEST_CASE("Round-trip: Quat -> Euler -> Quat (simple normalized quaternions)", "
     };
     
     for (auto original : testQuats) {
-        // Ensure quaternions are normalized
-        original = original.normalized();
-        
         Vec3 euler = toEulerAngles(original);
         Quat recovered = toQuaternion(euler);
         
