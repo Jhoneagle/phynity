@@ -1,0 +1,6 @@
+add_executable(linear_algebra_test linear_algebra_test.cpp)
+phynity_target_defaults(linear_algebra_test)
+phynity_apply_warnings(linear_algebra_test)
+phynity_apply_sanitizers(linear_algebra_test)
+target_link_libraries(linear_algebra_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.linear_algebra COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:linear_algebra_test>)

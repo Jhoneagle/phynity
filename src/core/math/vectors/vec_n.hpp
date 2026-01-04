@@ -23,6 +23,8 @@ struct VecN {
         }
     }
 
+    VecN(const std::array<T, N>& arr) : data(arr) {}
+
     // Operators
     VecN operator+(const VecN& other) const {
         VecN result;
