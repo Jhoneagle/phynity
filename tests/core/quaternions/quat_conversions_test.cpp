@@ -872,3 +872,285 @@ TEST_CASE("Consistency: Euler -> Quat matches expected quaternion", "[conversion
     REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-6f));
 }
 
+// ============================================================================
+// Quaternion to Axis-Angle Tests
+// ============================================================================
+
+TEST_CASE("Conversion: Identity quaternion to axis-angle", "[conversion][quat-to-axis-angle]") {
+    Quat q;  // Identity: (1, 0, 0, 0)
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Should produce zero angle
+    REQUIRE_THAT(angle, WithinAbs(0.0f, 1e-6f));
+    
+    // Axis is arbitrary but should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 90° rotation around X-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(1.0f, 0.0f, 0.0f);
+    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis
+    REQUIRE_THAT(axis.x, WithinAbs(expectedAxis.x, 1e-5f));
+    REQUIRE_THAT(axis.y, WithinAbs(expectedAxis.y, 1e-5f));
+    REQUIRE_THAT(axis.z, WithinAbs(expectedAxis.z, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 90° rotation around Y-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(0.0f, 1.0f, 0.0f);
+    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis
+    REQUIRE_THAT(axis.x, WithinAbs(expectedAxis.x, 1e-5f));
+    REQUIRE_THAT(axis.y, WithinAbs(expectedAxis.y, 1e-5f));
+    REQUIRE_THAT(axis.z, WithinAbs(expectedAxis.z, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 90° rotation around Z-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(0.0f, 0.0f, 1.0f);
+    float expectedAngle = static_cast<float>(M_PI / 2.0);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis
+    REQUIRE_THAT(axis.x, WithinAbs(expectedAxis.x, 1e-5f));
+    REQUIRE_THAT(axis.y, WithinAbs(expectedAxis.y, 1e-5f));
+    REQUIRE_THAT(axis.z, WithinAbs(expectedAxis.z, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 180° rotation around X-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(1.0f, 0.0f, 0.0f);
+    float expectedAngle = static_cast<float>(M_PI);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle (should be π)
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis (may be negated due to quaternion double-cover)
+    REQUIRE_THAT(std::abs(axis.x), WithinAbs(1.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.y), WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.z), WithinAbs(0.0f, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 180° rotation around Y-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(0.0f, 1.0f, 0.0f);
+    float expectedAngle = static_cast<float>(M_PI);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle (should be π)
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis (may be negated due to quaternion double-cover)
+    REQUIRE_THAT(std::abs(axis.x), WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.y), WithinAbs(1.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.z), WithinAbs(0.0f, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: 180° rotation around Z-axis (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    Vec3 expectedAxis(0.0f, 0.0f, 1.0f);
+    float expectedAngle = static_cast<float>(M_PI);
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle (should be π)
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis (may be negated due to quaternion double-cover)
+    REQUIRE_THAT(std::abs(axis.x), WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.y), WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(std::abs(axis.z), WithinAbs(1.0f, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: Arbitrary rotation (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    // 60° around axis (1, 1, 1) normalized
+    Vec3 expectedAxis(1.0f, 1.0f, 1.0f);
+    expectedAxis = expectedAxis.normalized();
+    float expectedAngle = static_cast<float>(M_PI / 3.0);  // 60°
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // Check angle
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-5f));
+    
+    // Check axis
+    REQUIRE_THAT(axis.x, WithinAbs(expectedAxis.x, 1e-5f));
+    REQUIRE_THAT(axis.y, WithinAbs(expectedAxis.y, 1e-5f));
+    REQUIRE_THAT(axis.z, WithinAbs(expectedAxis.z, 1e-5f));
+    
+    // Axis should be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-6f));
+}
+
+TEST_CASE("Conversion: Very small rotation (quat to axis-angle)", "[conversion][quat-to-axis-angle]") {
+    // Very small rotation: 0.001 radians around X-axis
+    Vec3 expectedAxis(1.0f, 0.0f, 0.0f);
+    float expectedAngle = 0.001f;
+    
+    Quat q(expectedAxis, expectedAngle);
+    Vec3 axis;
+    float angle;
+    
+    toAxisAngle(q, axis, angle);
+    
+    // For very small angles, numerical precision may vary but should be close
+    REQUIRE_THAT(angle, WithinAbs(expectedAngle, 1e-4f));
+
+    // Axis should still be unit vector
+    REQUIRE_THAT(axis.length(), WithinAbs(1.0f, 1e-5f));
+}
+
+TEST_CASE("Conversion: Non-unit quaternion handles normalization (axis-angle)", "[conversion][quat-to-axis-angle]") {
+    // Create a quaternion and scale it (making it non-unit)
+    Vec3 axis(0.0f, 1.0f, 0.0f);
+    float angle = static_cast<float>(M_PI / 4.0);  // 45°
+    Quat q(axis, angle);
+    
+    // Scale quaternion (make it non-unit)
+    Quat nonUnitQ = q * 2.0f;
+    
+    Vec3 recoveredAxis;
+    float recoveredAngle;
+    
+    toAxisAngle(nonUnitQ, recoveredAxis, recoveredAngle);
+    
+    // Should normalize internally and produce correct result
+    REQUIRE_THAT(recoveredAngle, WithinAbs(angle, 1e-5f));
+    REQUIRE_THAT(recoveredAxis.x, WithinAbs(axis.x, 1e-5f));
+    REQUIRE_THAT(recoveredAxis.y, WithinAbs(axis.y, 1e-5f));
+    REQUIRE_THAT(recoveredAxis.z, WithinAbs(axis.z, 1e-5f));
+}
+
+TEST_CASE("Round-trip: Axis-Angle -> Quat -> Axis-Angle preserves rotation", "[conversion][round-trip][axis-angle]") {
+    SECTION("90° around X") {
+        Vec3 originalAxis(1.0f, 0.0f, 0.0f);
+        float originalAngle = static_cast<float>(M_PI / 2.0);
+        
+        Quat q(originalAxis, originalAngle);
+        
+        Vec3 recoveredAxis;
+        float recoveredAngle;
+        toAxisAngle(q, recoveredAxis, recoveredAngle);
+        
+        REQUIRE_THAT(recoveredAngle, WithinAbs(originalAngle, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.x, WithinAbs(originalAxis.x, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.y, WithinAbs(originalAxis.y, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.z, WithinAbs(originalAxis.z, 1e-5f));
+    }
+    
+    SECTION("45° around diagonal axis") {
+        Vec3 originalAxis(1.0f, 1.0f, 1.0f);
+        originalAxis = originalAxis.normalized();
+        float originalAngle = static_cast<float>(M_PI / 4.0);
+        
+        Quat q(originalAxis, originalAngle);
+        
+        Vec3 recoveredAxis;
+        float recoveredAngle;
+        toAxisAngle(q, recoveredAxis, recoveredAngle);
+        
+        REQUIRE_THAT(recoveredAngle, WithinAbs(originalAngle, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.x, WithinAbs(originalAxis.x, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.y, WithinAbs(originalAxis.y, 1e-5f));
+        REQUIRE_THAT(recoveredAxis.z, WithinAbs(originalAxis.z, 1e-5f));
+    }
+    
+    SECTION("180° rotation") {
+        Vec3 originalAxis(0.0f, 1.0f, 0.0f);
+        float originalAngle = static_cast<float>(M_PI);
+        
+        Quat q(originalAxis, originalAngle);
+        
+        Vec3 recoveredAxis;
+        float recoveredAngle;
+        toAxisAngle(q, recoveredAxis, recoveredAngle);
+        
+        REQUIRE_THAT(recoveredAngle, WithinAbs(originalAngle, 1e-5f));
+        // For 180°, axis may be negated (both represent same rotation)
+        float axisDot = recoveredAxis.dot(originalAxis);
+        REQUIRE_THAT(std::abs(axisDot), WithinAbs(1.0f, 1e-5f));
+    }
+}
+
+TEST_CASE("Angle range: toAxisAngle always returns angle in [0, π]", "[conversion][quat-to-axis-angle][validation]") {
+    Vec3 axis(0.0f, 0.0f, 1.0f);
+
+    // Test various angles, including those outside [0, π]
+    for (int i = -720; i <= 720; i += 45) {
+        float inputAngle = static_cast<float>(i) * mathf::deg_to_rad;
+        Quat q(axis, inputAngle);
+        
+        Vec3 recoveredAxis;
+        float recoveredAngle;
+        toAxisAngle(q, recoveredAxis, recoveredAngle);
+        
+        // Angle should always be in [0, π]
+        REQUIRE(recoveredAngle >= 0.0f);
+        REQUIRE(recoveredAngle <= mathf::pi + 1e-5f);
+    }
+}
+

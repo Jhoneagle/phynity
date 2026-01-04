@@ -202,4 +202,45 @@ inline Quat toQuaternion(const Vec3& euler) {
     );
 }
 
+inline void toAxisAngle(const Quat& q, Vec3& axis, float& angle) {
+    Quat qn = q.normalized();
+    if (qn.w < 0.0f) {
+        qn = -qn;
+    }
+    
+    float w = std::clamp(qn.w, 0.0f, 1.0f);
+    
+    if (w < 0.0001f) {
+        angle = mathf::pi;
+        float mag = std::sqrt(qn.x * qn.x + 
+                             qn.y * qn.y + 
+                             qn.z * qn.z);
+        if (mag > 1e-6f) {
+            axis.x = qn.x / mag;
+            axis.y = qn.y / mag;
+            axis.z = qn.z / mag;
+
+            axis.normalize();
+        } else {
+            axis = Vec3(1.0f, 0.0f, 0.0f);
+        }
+    } else if (w < 1.0f) {
+        angle = 2.0f * std::acos(w);
+        float s = std::sqrt(1.0f - w * w);
+
+        if (s > 1e-6f) {
+            axis.x = qn.x / s;
+            axis.y = qn.y / s;
+            axis.z = qn.z / s;
+
+            axis.normalize();
+        } else {
+            axis = Vec3(1.0f, 0.0f, 0.0f);
+        }
+    } else {
+        angle = 0.0f;
+        axis = Vec3(1.0f, 0.0f, 0.0f);
+    }
+}
+
 }  // namespace phynity::math::quaternions
