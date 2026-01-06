@@ -1,0 +1,13 @@
+add_executable(finite_differences_test finite_differences_test.cpp)
+phynity_target_defaults(finite_differences_test)
+phynity_apply_warnings(finite_differences_test)
+phynity_apply_sanitizers(finite_differences_test)
+target_link_libraries(finite_differences_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.calculus.finite_differences COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:finite_differences_test>)
+
+add_executable(integrators_test integrators_test.cpp)
+phynity_target_defaults(integrators_test)
+phynity_apply_warnings(integrators_test)
+phynity_apply_sanitizers(integrators_test)
+target_link_libraries(integrators_test PRIVATE phynity::core Catch2::Catch2WithMain)
+add_test(NAME core.calculus.integrators COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:integrators_test>)
