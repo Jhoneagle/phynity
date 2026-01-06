@@ -29,6 +29,34 @@ Numerical differentiation and integration methods for physics simulations.
 - All methods support configurable timesteps
 - Acceleration callback interface for flexible force functions
 
+### ✅ Curve Fitting (`curve_fitting.hpp`)
+- **Polynomial fitting** - Least-squares fitting of arbitrary degree polynomials
+- **Polynomial evaluation** - Horner's method for efficient evaluation
+- **Derivative computation** - Analytical derivatives of fitted polynomials
+- **Data-based derivative estimation** - Smoothed derivatives from noisy data using local polynomial fitting
+
+**Key features:**
+- Arbitrary polynomial degree (not limited to fixed compile-time templates)
+- Dynamic matrix support for flexible data sizes
+- Gaussian elimination solver for normal equations
+
+### ✅ Integration Test Harness (`integration_test_harness.hpp`)
+- **Reference problems** - Analytical solutions for validation:
+  - Free fall under constant gravity
+  - Harmonic oscillator (spring-mass system)
+  - Pendulum motion (small angle approximation)
+  - Projectile motion
+- **Validation metrics**:
+  - Energy conservation error analysis
+  - Position accuracy measurement
+  - RMS position error calculation
+  - Convergence rate analysis
+
+**Key features:**
+- Easy-to-use problem definitions with analytical solutions
+- Automatic error metrics for testing integrators
+- Convergence rate analysis tools for benchmarking integrator order
+
 ## Integration Methods Comparison
 
 | Method | Accuracy | Stability | Energy Conservation | Speed | Use Case |
@@ -95,10 +123,11 @@ bool valid = validate_derivative(f, f_prime, x, 1e-4f, 1e-3f);
 
 ## Planned Enhancements
 
-- Curve fitting and derivative estimation from data
-- Adaptive timestep methods (RKF45, others)
-- Constraint handling in integration
-- Specialized solvers for stiff systems
+- Adaptive timestep methods (RKF45, Dormand-Prince)
+- Constraint handling in integration (Lagrange multipliers)
+- Implicit integrators for stiff systems
+- Multi-step methods (Adams-Bashforth, BDF)
+- Error estimation and adaptive stepping- Specialized solvers for stiff systems
 - Batch integration for multiple particles
 
 ## Status

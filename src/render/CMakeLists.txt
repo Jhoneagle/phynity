@@ -2,7 +2,7 @@ add_library(phynity_render INTERFACE)
 add_library(phynity::render ALIAS phynity_render)
 
 target_include_directories(phynity_render INTERFACE
-	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/src/render
 )
 
 target_link_libraries(phynity_render INTERFACE phynity::core)

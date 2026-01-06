@@ -1,0 +1,36 @@
+# Matrix tests
+
+add_executable(mat2_test mat2_test.cpp)
+phynity_target_defaults(mat2_test)
+phynity_apply_warnings(mat2_test)
+phynity_apply_sanitizers(mat2_test)
+target_link_libraries(mat2_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.matrices.mat2 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat2_test>)
+
+add_executable(mat3_test mat3_test.cpp)
+phynity_target_defaults(mat3_test)
+phynity_apply_warnings(mat3_test)
+phynity_apply_sanitizers(mat3_test)
+target_link_libraries(mat3_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.matrices.mat3 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat3_test>)
+
+add_executable(mat4_test mat4_test.cpp)
+phynity_target_defaults(mat4_test)
+phynity_apply_warnings(mat4_test)
+phynity_apply_sanitizers(mat4_test)
+target_link_libraries(mat4_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.matrices.mat4 COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat4_test>)
+
+add_executable(mat_n_test mat_n_test.cpp)
+phynity_target_defaults(mat_n_test)
+phynity_apply_warnings(mat_n_test)
+phynity_apply_sanitizers(mat_n_test)
+target_link_libraries(mat_n_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.matrices.matn COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat_n_test>)
+
+add_executable(mat_dynamic_test mat_dynamic_test.cpp)
+phynity_target_defaults(mat_dynamic_test)
+phynity_apply_warnings(mat_dynamic_test)
+phynity_apply_sanitizers(mat_dynamic_test)
+target_link_libraries(mat_dynamic_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.matrices.mat_dynamic COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:mat_dynamic_test>)

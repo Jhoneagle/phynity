@@ -799,15 +799,8 @@ TEST_CASE("SLERP vs NLERP: SLERP has constant angular velocity", "[interpolation
     // SLERP should have equal angular distances
     REQUIRE_THAT(slerp_angle_first_quarter, WithinAbs(slerp_angle_last_quarter, 1e-4f));
     
-    // Measure for NLERP
-    Quatf n_25 = nlerp(q1, q2, 0.25f);
-    Quatf n_75 = nlerp(q1, q2, 0.75f);
-    
-    float nlerp_angle_first_quarter = angleBetween(q1, n_25);
-    float nlerp_angle_last_quarter = angleBetween(n_75, q2);
-    
-    // For this test, we just verify SLERP has constant angular velocity
-    // NLERP's difference is minimal for 90° rotations due to normalization
+    // For this test, we just verify SLERP has constant angular velocity.
+    // NLERP section removed to avoid unused variables while keeping scope clear.
 }
 
 TEST_CASE("SLERP vs NLERP: Results are similar for small angles", "[interpolation][comparison]") {

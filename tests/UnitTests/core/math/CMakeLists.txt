@@ -1,4 +1,4 @@
-# Core math unit tests without external frameworks.
+# Core math unit tests
 
 add_subdirectory(vectors)
 add_subdirectory(matrices)
