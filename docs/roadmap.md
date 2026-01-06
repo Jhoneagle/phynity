@@ -3,8 +3,8 @@
 This roadmap is organized by time horizon and anchored to the current architecture: `core` owns math/physics and determinism, `platform` owns timing and threading, `render` is optional visualization, and `app` is orchestration. Items marked (S) are short-term deliverables, (M) mid-term, and (L) long-term.
 
 ## Near Term (0–3 months)
-- Core math bedrock (S): vectors/matrices/quaternions, linear algebra routines, trig helpers, numerical stability checks, small-angle approximations.
-- Calculus utilities (S): forward/central differences, simple integrators (Euler, semi-implicit), curve fitting for derivatives; integration harness for regression tests.
+- Core math bedrock (S): vectors/matrices/quaternions, linear algebra routines, trig helpers, numerical stability checks, small-angle approximations.✅
+- Calculus utilities (S): forward/central differences, simple integrators (Euler, semi-implicit), curve fitting for derivatives; integration harness for regression tests.✅
 - Particle simulation v2 (S): variable timestep support with determinism guardrails, basic gravity/drag fields, per-particle material presets.
 - Parallel core bootstrap (S): minimal job system, work-stealing queues, thread-safe arenas; deterministic scheduling mode for tests.
 - Collision scaffolding (S): broadphase spatial grid, narrowphase for spheres/AABBs, contact manifold data structures.
