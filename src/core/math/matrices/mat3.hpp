@@ -13,7 +13,6 @@ using phynity::math::vectors::Vec3;
 template<typename T = float>
 struct Mat3 {
     static_assert(std::is_floating_point_v<T>, "Mat3 template parameter must be a floating-point type");
-    T m[3][3] = {{T(1), T(0), T(0)}, {T(0), T(1), T(0)}, {T(0), T(0), T(1)}};
 
     // Constructors
     Mat3() = default;
@@ -193,11 +192,11 @@ struct Mat3 {
         return !(*this == other);
     }
 
-    float& operator()(int row, int col) {
+    T& operator()(int row, int col) {
         return m[row][col];
     }
 
-    const float& operator()(int row, int col) const {
+    const T& operator()(int row, int col) const {
         return m[row][col];
     }
 
@@ -236,7 +235,7 @@ struct Mat3 {
     Mat3 inverse() const {
         T det = determinant();
         if (std::abs(det) < T(1e-6)) {
-            return Mat3(0.0f);  // Singular matrix, return zero
+            return Mat3(T(0));  // Singular matrix, return zero
         }
 
         // Compute cofactor matrix
@@ -391,6 +390,18 @@ struct Mat3 {
     static Mat3 scale(T s) {
         return scale(s, s, s);
     }
+
+    // Raw pointer to first element (row-major)
+    T* dataPtr() {
+        return &m[0][0];
+    }
+
+    const T* dataPtr() const {
+        return &m[0][0];
+    }
+
+private:
+    T m[3][3] = {{T(1), T(0), T(0)}, {T(0), T(1), T(0)}, {T(0), T(0), T(1)}};
 };
 
 /// Scalar * Matrix multiplication
@@ -403,9 +414,9 @@ inline Mat3<T> operator*(T scalar, const Mat3<T>& m) {
 template<typename T = float>
 inline Vec3<T> operator*(const Vec3<T>& v, const Mat3<T>& m) {
     return Vec3<T>(
-        v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0],
-        v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1],
-        v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2]
+        v.x * m(0, 0) + v.y * m(1, 0) + v.z * m(2, 0),
+        v.x * m(0, 1) + v.y * m(1, 1) + v.z * m(2, 1),
+        v.x * m(0, 2) + v.y * m(1, 2) + v.z * m(2, 2)
     );
 }
 
@@ -417,9 +428,9 @@ inline Vec3<T> operator*(const Mat3<T>& m, const Vec3<T>& v) {
 
 template<typename T = float>
 inline std::ostream& operator<<(std::ostream& os, const Mat3<T>& m) {
-    os << "[(" << m.m[0][0] << ", " << m.m[0][1] << ", " << m.m[0][2] << "), "
-       << "(" << m.m[1][0] << ", " << m.m[1][1] << ", " << m.m[1][2] << "), "
-       << "(" << m.m[2][0] << ", " << m.m[2][1] << ", " << m.m[2][2] << ")]";
+    os << "[(" << m(0, 0) << ", " << m(0, 1) << ", " << m(0, 2) << "), "
+       << "(" << m(1, 0) << ", " << m(1, 1) << ", " << m(1, 2) << "), "
+       << "(" << m(2, 0) << ", " << m(2, 1) << ", " << m(2, 2) << ")]";
     return os;
 }
 

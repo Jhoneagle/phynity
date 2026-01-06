@@ -15,7 +15,6 @@ using phynity::math::vectors::VecN;
 template <std::size_t M, std::size_t N, typename T = float>
 struct MatN {
     static_assert(std::is_floating_point_v<T>, "MatN template parameter must be a floating-point type");
-    std::array<T, M * N> data{};  // default zero-initialized
 
     // Constructors
     MatN() {
@@ -28,14 +27,14 @@ struct MatN {
     }
 
     /// Initialize from contiguous array (row-major)
-    explicit MatN(const std::array<float, M * N>& values) : data(values) {}
+    explicit MatN(const std::array<T, M * N>& values) : data(values) {}
 
     /// Element access (row, col)
-    float& operator()(std::size_t row, std::size_t col) {
+    T& operator()(std::size_t row, std::size_t col) {
         return data[row * N + col];
     }
 
-    const float& operator()(std::size_t row, std::size_t col) const {
+    const T& operator()(std::size_t row, std::size_t col) const {
         return data[row * N + col];
     }
 
@@ -269,10 +268,10 @@ struct MatN {
     MatN cofactor() const {
         static_assert(M == N, "cofactor() requires square matrix");
         static_assert(M <= 4, "cofactor() only implemented for N<=4");
-        MatN result(0.0f);
+        MatN result(T(0));
         for (std::size_t i = 0; i < M; ++i) {
             for (std::size_t j = 0; j < N; ++j) {
-                T sign = ((i + j) % 2 == 0) ? 1.0f : -1.0f;
+                T sign = ((i + j) % 2 == 0) ? T(1) : T(-1);
                 result(i, j) = sign * minor(i, j);
             }
         }
@@ -292,7 +291,7 @@ struct MatN {
         static_assert(M <= 4, "inverse() only implemented for N<=4");
         T det = determinant();
         if (std::abs(det) < T(1e-6)) {
-            return MatN(0.0f);
+            return MatN(T(0));
         }
         MatN cof = cofactor();
         MatN adj = cof.transposed();
@@ -301,7 +300,7 @@ struct MatN {
 
     /// Create zero matrix
     static MatN zero() {
-        return MatN(0.0f);
+        return MatN(T(0));
     }
 
     /// Create identity matrix (only when square)
@@ -314,7 +313,18 @@ struct MatN {
         return result;
     }
 
+    // Raw pointer to first element (row-major)
+    T* dataPtr() {
+        return data.data();
+    }
+
+    const T* dataPtr() const {
+        return data.data();
+    }
+
 private:
+    std::array<T, M * N> data{};  // default zero-initialized
+
     template <std::size_t Size>
     static T determinant_impl(const MatN<Size, Size>& mtx) {
         if constexpr (Size == 1) {

@@ -139,23 +139,33 @@ struct Quat {
     // ========================================================================
 
     /// Squared magnitude: ||q||² = w² + x² + y² + z²
-    T magnitudeSquared() const {
+    T squaredLength() const {
         return w * w + x * x + y * y + z * z;
     }
 
     /// Magnitude (norm): ||q|| = √(w² + x² + y² + z²)
-    T magnitude() const {
-        return std::sqrt(magnitudeSquared());
+    T length() const {
+        return std::sqrt(squaredLength());
     }
 
-    /// Alias for magnitude()
+    /// Alias for length()
+    T magnitude() const {
+        return length();
+    }
+
+    /// Alias for squaredLength()
+    T magnitudeSquared() const {
+        return squaredLength();
+    }
+
+    /// Alias for length() - compatibility
     T norm() const {
-        return magnitude();
+        return length();
     }
 
     /// Returns normalized quaternion without modifying this
     Quat normalized() const {
-        T mag = magnitude();
+        T mag = length();
         if (mag < T(1e-6)) {
             return Quat(T(1), T(0), T(0), T(0));  // Return identity if near-zero
         }
@@ -164,7 +174,7 @@ struct Quat {
 
     /// Normalize this quaternion in-place
     Quat& normalize() {
-        T mag = magnitude();
+        T mag = length();
         if (mag < T(1e-6)) {
             w = T(1);
             x = y = z = T(0);
@@ -188,7 +198,7 @@ struct Quat {
     /// For unit quaternions: q⁻¹ = q*
     /// Undoes the rotation
     Quat inverse() const {
-        T magSq = magnitudeSquared();
+        T magSq = squaredLength();
         if (magSq < T(1e-12)) {
             return Quat(T(1), T(0), T(0), T(0));  // Return identity if degenerate
         }

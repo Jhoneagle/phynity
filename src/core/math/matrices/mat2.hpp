@@ -15,7 +15,6 @@ using phynity::math::vectors::Vec2;
 template<typename T = float>
 struct Mat2 {
     static_assert(std::is_floating_point_v<T>, "Mat2 template parameter must be a floating-point type");
-    T m[2][2] = {{T(1), T(0)}, {T(0), T(1)}};
 
     // Constructors
     Mat2() = default;
@@ -145,11 +144,11 @@ struct Mat2 {
         return !(*this == other);
     }
 
-    float& operator()(int row, int col) {
+    T& operator()(int row, int col) {
         return m[row][col];
     }
 
-    const float& operator()(int row, int col) const {
+    const T& operator()(int row, int col) const {
         return m[row][col];
     }
 
@@ -265,6 +264,18 @@ struct Mat2 {
     static Mat2 scale(T s) {
         return scale(s, s);
     }
+
+    // Raw pointer to first element (row-major)
+    T* dataPtr() {
+        return &m[0][0];
+    }
+
+    const T* dataPtr() const {
+        return &m[0][0];
+    }
+
+private:
+    T m[2][2] = {{T(1), T(0)}, {T(0), T(1)}};
 };
 
 /// Scalar * Matrix multiplication
@@ -277,15 +288,15 @@ inline Mat2<T> operator*(T scalar, const Mat2<T>& m) {
 template<typename T = float>
 inline Vec2<T> operator*(const Vec2<T>& v, const Mat2<T>& m) {
     return Vec2<T>(
-        v.x * m.m[0][0] + v.y * m.m[1][0],
-        v.x * m.m[0][1] + v.y * m.m[1][1]
+        v.x * m(0, 0) + v.y * m(1, 0),
+        v.x * m(0, 1) + v.y * m(1, 1)
     );
 }
 
 template<typename T = float>
 inline std::ostream& operator<<(std::ostream& os, const Mat2<T>& m) {
-    os << "[(" << m.m[0][0] << ", " << m.m[0][1] << "), "
-       << "(" << m.m[1][0] << ", " << m.m[1][1] << ")]";
+    os << "[(" << m(0, 0) << ", " << m(0, 1) << "), "
+       << "(" << m(1, 0) << ", " << m(1, 1) << ")]";
     return os;
 }
 

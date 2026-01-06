@@ -41,15 +41,15 @@ TEST_CASE("Conversion: Identity quaternion to identity matrix", "[conversion][qu
     Mat3f m = toRotationMatrix(q);
     
     // Should produce identity matrix
-    REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
-    REQUIRE_THAT(m.m[0][1], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[0][2], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[1][0], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[1][1], WithinAbs(1.0f, 1e-6f));
-    REQUIRE_THAT(m.m[1][2], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[2][0], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[2][1], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(m.m[2][2], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 1), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 2), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(1, 0), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(1, 1), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(m(1, 2), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(2, 0), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(2, 1), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(m(2, 2), WithinAbs(1.0f, 1e-6f));
     
     REQUIRE(is_valid_rotation_matrix(m));
 }

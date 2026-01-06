@@ -163,7 +163,7 @@ inline Quat<T> slerp(const Quat<T>& q1, const Quat<T>& q2, T t) {
     T sinTheta = std::sin(theta);
     
     // Compute interpolation weights
-    T w1 = std::sin((1.0f - t) * theta) / sinTheta;
+    T w1 = std::sin((T(1) - t) * theta) / sinTheta;
     T w2 = std::sin(t * theta) / sinTheta;
     
     // Perform spherical interpolation

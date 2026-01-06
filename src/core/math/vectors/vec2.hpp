@@ -119,8 +119,8 @@ struct Vec2 {
     }
 
     Vec2& normalize() {
-        float len = length();
-        if (len > 0.0f) {
+        T len = length();
+        if (len > T(0)) {
             *this /= len;
         }
         return *this;
@@ -210,12 +210,12 @@ struct Vec2 {
     }
 
     // Static utility vectors
-    static Vec2 zero() { return Vec2(0.0f, 0.0f); }
-    static Vec2 one() { return Vec2(1.0f, 1.0f); }
-    static Vec2 up() { return Vec2(0.0f, 1.0f); }
-    static Vec2 down() { return Vec2(0.0f, -1.0f); }
-    static Vec2 right() { return Vec2(1.0f, 0.0f); }
-    static Vec2 left() { return Vec2(-1.0f, 0.0f); }
+    static Vec2 zero() { return Vec2(T(0), T(0)); }
+    static Vec2 one() { return Vec2(T(1), T(1)); }
+    static Vec2 up() { return Vec2(T(0), T(1)); }
+    static Vec2 down() { return Vec2(T(0), T(-1)); }
+    static Vec2 right() { return Vec2(T(1), T(0)); }
+    static Vec2 left() { return Vec2(T(-1), T(0)); }
 };
 
 template <typename T = float>

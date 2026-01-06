@@ -37,7 +37,7 @@ template<typename T = float>
 inline bool hasNaN(const Mat3<T>& m) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
-            if (std::isnan(m.m[i][j])) {
+            if (std::isnan(m(i, j))) {
                 return true;
             }
         }
@@ -49,7 +49,7 @@ template<typename T = float>
 inline bool hasInf(const Mat3<T>& m) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
-            if (std::isinf(m.m[i][j])) {
+            if (std::isinf(m(i, j))) {
                 return true;
             }
         }
@@ -113,7 +113,7 @@ template<typename T>
 inline bool approx_equal(const Mat2<T>& a, const Mat2<T>& b, T tolerance = epsilon<T>()) {
     for (int i = 0; i < 2; ++i) {
         for (int j = 0; j < 2; ++j) {
-            if (!equals(a.m[i][j], b.m[i][j], tolerance)) {
+            if (!equals(a(i, j), b(i, j), tolerance)) {
                 return false;
             }
         }
@@ -125,7 +125,7 @@ template<typename T>
 inline bool approx_equal(const Mat3<T>& a, const Mat3<T>& b, T tolerance = epsilon<T>()) {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
-            if (!equals(a.m[i][j], b.m[i][j], tolerance)) {
+            if (!equals(a(i, j), b(i, j), tolerance)) {
                 return false;
             }
         }
@@ -137,7 +137,7 @@ template<typename T>
 inline bool approx_equal(const Mat4<T>& a, const Mat4<T>& b, T tolerance = epsilon<T>()) {
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
-            if (!equals(a.m[i][j], b.m[i][j], tolerance)) {
+            if (!equals(a(i, j), b(i, j), tolerance)) {
                 return false;
             }
         }

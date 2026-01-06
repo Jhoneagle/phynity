@@ -27,7 +27,7 @@ TEST_CASE("Mat4f: Constructors", "[Mat4f][constructor]") {
         Mat4f m(5.0f);
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                REQUIRE_THAT(m.m[i][j], WithinAbs(5.0f, 1e-6f));
+                REQUIRE_THAT(m(i, j), WithinAbs(5.0f, 1e-6f));
             }
         }
     }
@@ -37,9 +37,9 @@ TEST_CASE("Mat4f: Constructors", "[Mat4f][constructor]") {
                0.0f, 1.0f, 0.0f, 2.0f,
                0.0f, 0.0f, 1.0f, 3.0f,
                0.0f, 0.0f, 0.0f, 1.0f);
-        REQUIRE_THAT(m.m[0][3], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][3], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][3], WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 3), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 3), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 3), WithinAbs(3.0f, 1e-6f));
     }
 }
 
@@ -53,7 +53,7 @@ TEST_CASE("Mat4f: Static factory methods", "[Mat4f][factory]") {
         Mat4f m = Mat4f::zero();
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-                REQUIRE_THAT(m.m[i][j], WithinAbs(0.0f, 1e-6f));
+                REQUIRE_THAT(m(i, j), WithinAbs(0.0f, 1e-6f));
             }
         }
     }
@@ -68,10 +68,10 @@ TEST_CASE("Mat4f: Matrix addition and subtraction", "[Mat4f][arithmetic]") {
     Mat4f b = Mat4f::identity();
     Mat4f c = a + b;
 
-    REQUIRE_THAT(c.m[0][0], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(c.m[1][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(c.m[2][2], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(c.m[3][3], WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(c(0, 0), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(c(1, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(c(2, 2), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(c(3, 3), WithinAbs(2.0f, 1e-6f));
 }
 
 TEST_CASE("Mat4f: Scalar multiplication", "[Mat4f][arithmetic]") {
@@ -79,27 +79,27 @@ TEST_CASE("Mat4f: Scalar multiplication", "[Mat4f][arithmetic]") {
     
     SECTION("Matrix * scalar") {
         Mat4f result = m * 2.0f;
-        REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(result.m[3][3], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(3, 3), WithinAbs(2.0f, 1e-6f));
     }
 
     SECTION("Scalar * matrix") {
         Mat4f result = 2.0f * m;
-        REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(result.m[3][3], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(3, 3), WithinAbs(2.0f, 1e-6f));
     }
 }
 
 TEST_CASE("Mat4f: Negation", "[Mat4f][arithmetic]") {
     Mat4f m = Mat4f::identity();
-    m.m[0][1] = -2.0f;
-    m.m[3][3] = 5.0f;
+    m(0, 1) = -2.0f;
+    m(3, 3) = 5.0f;
     
     Mat4f result = -m;
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
-    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(result.m[3][3], WithinAbs(-5.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(-1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(3, 3), WithinAbs(-5.0f, 1e-6f));
 
     // Double negation
     Mat4f double_neg = -(-m);
@@ -124,8 +124,8 @@ TEST_CASE("Mat4f: Assignment operators", "[Mat4f][assignment]") {
 
     SECTION("Scalar multiplication assignment") {
         a *= 2.0f;
-        REQUIRE_THAT(a.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(a.m[3][3], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(a(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(a(3, 3), WithinAbs(2.0f, 1e-6f));
     }
 
     SECTION("Matrix multiplication assignment") {
@@ -249,8 +249,8 @@ TEST_CASE("Mat4f: Transpose", "[Mat4f][operations]") {
                9.0f, 10.0f, 11.0f, 12.0f,
                13.0f, 14.0f, 15.0f, 16.0f);
         m.transpose();
-        REQUIRE_THAT(m.m[0][1], WithinAbs(5.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(5.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(2.0f, 1e-6f));
     }
 }
 
@@ -305,20 +305,20 @@ TEST_CASE("Mat4f: Row and column accessors", "[Mat4f][access][rowcol]") {
 
     Vec4f newRow(16.0f, 15.0f, 14.0f, 13.0f);
     m.setRow(0, newRow);
-    REQUIRE_THAT(m.m[0][0], WithinAbs(16.0f, 1e-6f));
-    REQUIRE_THAT(m.m[0][3], WithinAbs(13.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 0), WithinAbs(16.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 3), WithinAbs(13.0f, 1e-6f));
 
     Vec4f newCol(1.0f, 2.0f, 3.0f, 4.0f);
     m.setColumn(2, newCol);
-    REQUIRE_THAT(m.m[1][2], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(m.m[3][2], WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(m(1, 2), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(m(3, 2), WithinAbs(4.0f, 1e-6f));
 }
 
 TEST_CASE("Mat4f: Approximate equality", "[Mat4f][comparison]") {
     Mat4f m1 = Mat4f::identity();
     Mat4f m2 = Mat4f::identity();
     Mat4f m3 = Mat4f::identity();
-    m3.m[2][2] = 1.000001f;
+    m3(2, 2) = 1.000001f;
     Mat4f m4 = Mat4f::translation(1.0f, 2.0f, 3.0f);
 
     REQUIRE(m1.approxEqual(m2));
@@ -329,42 +329,42 @@ TEST_CASE("Mat4f: Approximate equality", "[Mat4f][comparison]") {
 
 TEST_CASE("Mat4f: Absolute value", "[Mat4f][operations]") {
     Mat4f m = Mat4f::identity();
-    m.m[0][3] = -5.0f;
-    m.m[1][2] = -3.0f;
-    m.m[2][1] = -2.0f;
-    m.m[3][0] = -1.0f;
+    m(0, 3) = -5.0f;
+    m(1, 2) = -3.0f;
+    m(2, 1) = -2.0f;
+    m(3, 0) = -1.0f;
 
     Mat4f result = m.abs();
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
-    REQUIRE_THAT(result.m[0][3], WithinAbs(5.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][2], WithinAbs(3.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(result.m[3][0], WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 3), WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 2), WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(3, 0), WithinAbs(1.0f, 1e-6f));
 }
 
 TEST_CASE("Mat4f: Component-wise operations", "[Mat4f][arithmetic]") {
     Mat4f m1 = Mat4f::identity();
-    m1.m[0][0] = 4.0f; m1.m[1][1] = 6.0f; m1.m[2][2] = 8.0f; m1.m[3][3] = 10.0f;
+    m1(0, 0) = 4.0f; m1(1, 1) = 6.0f; m1(2, 2) = 8.0f; m1(3, 3) = 10.0f;
     Mat4f m2 = Mat4f::identity();
-    m2.m[0][0] = 2.0f; m2.m[1][1] = 3.0f; m2.m[2][2] = 4.0f; m2.m[3][3] = 5.0f;
+    m2(0, 0) = 2.0f; m2(1, 1) = 3.0f; m2(2, 2) = 4.0f; m2(3, 3) = 5.0f;
 
     SECTION("Component-wise multiplication") {
         Mat4f m = m1;
         m.mulComponentWise(m2);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(8.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(18.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(32.0f, 1e-6f));
-        REQUIRE_THAT(m.m[3][3], WithinAbs(50.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(32.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 3), WithinAbs(50.0f, 1e-6f));
     }
 
     SECTION("Component-wise division") {
         Mat4f m = m1;
         m.divComponentWise(m2);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[3][3], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 3), WithinAbs(2.0f, 1e-6f));
     }
 }
 
@@ -396,10 +396,10 @@ TEST_CASE("Mat4f: Translation matrix", "[Mat4f][transform]") {
 
     SECTION("Translation matrix structure") {
         Mat4f m = Mat4f::translation(1.0f, 2.0f, 3.0f);
-        REQUIRE_THAT(m.m[0][3], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][3], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][3], WithinAbs(3.0f, 1e-6f));
-        REQUIRE_THAT(m.m[3][3], WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 3), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 3), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 3), WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 3), WithinAbs(1.0f, 1e-6f));
     }
 }
 
@@ -431,9 +431,9 @@ TEST_CASE("Mat4f: Scale matrix", "[Mat4f][transform]") {
     SECTION("Scale with Vec3") {
         Vec3f s(2.0f, 3.0f, 4.0f);
         Mat4f m = Mat4f::scale(s);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(3.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(4.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(4.0f, 1e-6f));
     }
 }
 
@@ -501,15 +501,15 @@ TEST_CASE("Mat4f: Rotation matrices", "[Mat4f][transform]") {
 TEST_CASE("Mat4f: Perspective projection", "[Mat4f][projection]") {
     SECTION("Perspective matrix creation") {
         Mat4f m = Mat4f::perspective(static_cast<float>(mathf::pi) / 4.0f, 16.0f / 9.0f, 0.1f, 100.0f);
-        REQUIRE_THAT(m.m[3][2], WithinAbs(-1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[3][3], WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 2), WithinAbs(-1.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 3), WithinAbs(0.0f, 1e-6f));
     }
 }
 
 TEST_CASE("Mat4f: Orthographic projection", "[Mat4f][projection]") {
     SECTION("Orthographic matrix creation") {
         Mat4f m = Mat4f::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 100.0f);
-        REQUIRE_THAT(m.m[3][3], WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(3, 3), WithinAbs(1.0f, 1e-6f));
     }
 }
 
@@ -575,13 +575,13 @@ TEST_CASE("Mat4f: Edge cases", "[Mat4f][edge]") {
     SECTION("Division by zero scalar") {
         Mat4f m = Mat4f::identity();
         Mat4f result = m / 0.0f;
-        REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
+        REQUIRE((std::isinf(result(0, 0)) || std::isnan(result(0, 0))));
     }
 
     SECTION("Operations with very large numbers") {
         Mat4f m(1e20f);
         Mat4f sum = m + m;
-        REQUIRE(sum.m[2][2] > 1e20f);
+        REQUIRE(sum(2, 2) > 1e20f);
     }
 
     SECTION("Operations with very small numbers") {

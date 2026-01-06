@@ -111,7 +111,7 @@ inline Quat<T> toQuaternion(const Mat3<T>& m) {
     }
 
     // Compute the trace
-    T trace = m.m[0][0] + m.m[1][1] + m.m[2][2];
+    T trace = m(0, 0) + m(1, 1) + m(2, 2);
 
     Quat<T> q;
 
@@ -120,33 +120,33 @@ inline Quat<T> toQuaternion(const Mat3<T>& m) {
         // Use w as the base component
         q.w = T(0.5) * std::sqrt(T(1) + trace);
         T s = T(0.25) / q.w;
-        q.x = (m.m[2][1] - m.m[1][2]) * s;
-        q.y = (m.m[0][2] - m.m[2][0]) * s;
-        q.z = (m.m[1][0] - m.m[0][1]) * s;
-    } else if ((m.m[0][0] > m.m[1][1]) && (m.m[0][0] > m.m[2][2])) {
+        q.x = (m(2, 1) - m(1, 2)) * s;
+        q.y = (m(0, 2) - m(2, 0)) * s;
+        q.z = (m(1, 0) - m(0, 1)) * s;
+    } else if ((m(0, 0) > m(1, 1)) && (m(0, 0) > m(2, 2))) {
         // CASE 2: m[0][0] is the largest diagonal element
         // Use x as the base component
-        q.x = T(0.5) * std::sqrt(T(1) + m.m[0][0] - m.m[1][1] - m.m[2][2]);
+        q.x = T(0.5) * std::sqrt(T(1) + m(0, 0) - m(1, 1) - m(2, 2));
         T s = T(0.25) / q.x;
-        q.w = (m.m[2][1] - m.m[1][2]) * s;
-        q.y = (m.m[0][1] + m.m[1][0]) * s;
-        q.z = (m.m[0][2] + m.m[2][0]) * s;
-    } else if (m.m[1][1] > m.m[2][2]) {
+        q.w = (m(2, 1) - m(1, 2)) * s;
+        q.y = (m(0, 1) + m(1, 0)) * s;
+        q.z = (m(0, 2) + m(2, 0)) * s;
+    } else if (m(1, 1) > m(2, 2)) {
         // CASE 3: m[1][1] is the largest diagonal element
         // Use y as the base component
-        q.y = T(0.5) * std::sqrt(T(1) + m.m[1][1] - m.m[0][0] - m.m[2][2]);
+        q.y = T(0.5) * std::sqrt(T(1) + m(1, 1) - m(0, 0) - m(2, 2));
         T s = T(0.25) / q.y;
-        q.w = (m.m[0][2] - m.m[2][0]) * s;
-        q.x = (m.m[0][1] + m.m[1][0]) * s;
-        q.z = (m.m[1][2] + m.m[2][1]) * s;
+        q.w = (m(0, 2) - m(2, 0)) * s;
+        q.x = (m(0, 1) + m(1, 0)) * s;
+        q.z = (m(1, 2) + m(2, 1)) * s;
     } else {
         // CASE 4: m[2][2] is the largest diagonal element (or all equal)
         // Use z as the base component
-        q.z = T(0.5) * std::sqrt(T(1) + m.m[2][2] - m.m[0][0] - m.m[1][1]);
+        q.z = T(0.5) * std::sqrt(T(1) + m(2, 2) - m(0, 0) - m(1, 1));
         T s = T(0.25) / q.z;
-        q.w = (m.m[1][0] - m.m[0][1]) * s;
-        q.x = (m.m[0][2] + m.m[2][0]) * s;
-        q.y = (m.m[1][2] + m.m[2][1]) * s;
+        q.w = (m(1, 0) - m(0, 1)) * s;
+        q.x = (m(0, 2) + m(2, 0)) * s;
+        q.y = (m(1, 2) + m(2, 1)) * s;
     }
 
     // Ensure result is normalized (should be unit quaternion already)

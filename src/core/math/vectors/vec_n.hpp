@@ -12,7 +12,6 @@ namespace phynity::math::vectors {
 template<std::size_t N, typename T = float>
 struct VecN {
     static_assert(std::is_floating_point_v<T>, "VecN template parameter must be a floating-point type");
-    std::array<T, N> data{};
 
     // Constructors
     VecN() = default;
@@ -261,10 +260,22 @@ struct VecN {
         return result;
     }
 
+    // Access raw storage (std::array-like API)
+    T* dataPtr() {
+        return data.data();
+    }
+
+    const T* dataPtr() const {
+        return data.data();
+    }
+
     // Get size
     static constexpr std::size_t size() {
         return N;
     }
+
+private:
+    std::array<T, N> data{};
 };
 
 // Scalar multiplication from left
@@ -279,7 +290,7 @@ inline std::ostream& operator<<(std::ostream& os, const VecN<N, T>& v) {
     os << "(";
     for (std::size_t i = 0; i < N; ++i) {
         if (i > 0) os << ", ";
-        os << v.data[i];
+        os << v[i];
     }
     os << ")";
     return os;

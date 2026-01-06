@@ -19,22 +19,22 @@ using Catch::Matchers::WithinAbs;
 TEST_CASE("Mat3f: Constructors", "[Mat3f][constructor]") {
     SECTION("Default constructor creates identity matrix") {
         Mat3f m;
-        REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[0][1], WithinAbs(0.0f, 1e-6f));
-        REQUIRE_THAT(m.m[0][2], WithinAbs(0.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][0], WithinAbs(0.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][2], WithinAbs(0.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][0], WithinAbs(0.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][1], WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 2), WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 0), WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 2), WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 0), WithinAbs(0.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 1), WithinAbs(0.0f, 1e-6f));
     }
 
     SECTION("Scalar constructor fills all elements") {
         Mat3f m(5.0f);
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                REQUIRE_THAT(m.m[i][j], WithinAbs(5.0f, 1e-6f));
+                REQUIRE_THAT(m(i, j), WithinAbs(5.0f, 1e-6f));
             }
         }
     }
@@ -43,9 +43,9 @@ TEST_CASE("Mat3f: Constructors", "[Mat3f][constructor]") {
         Mat3f m(1.0f, 2.0f, 3.0f,
                4.0f, 5.0f, 6.0f,
                7.0f, 8.0f, 9.0f);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(5.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(9.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(5.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(9.0f, 1e-6f));
     }
 
     SECTION("Column vector constructor") {
@@ -53,9 +53,9 @@ TEST_CASE("Mat3f: Constructors", "[Mat3f][constructor]") {
         Vec3f col1(2.0f, 5.0f, 8.0f);
         Vec3f col2(3.0f, 6.0f, 9.0f);
         Mat3f m(col0, col1, col2);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(5.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(9.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(5.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(9.0f, 1e-6f));
     }
 }
 
@@ -69,7 +69,7 @@ TEST_CASE("Mat3f: Static factory methods", "[Mat3f][factory]") {
         Mat3f m = Mat3f::zero();
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                REQUIRE_THAT(m.m[i][j], WithinAbs(0.0f, 1e-6f));
+                REQUIRE_THAT(m(i, j), WithinAbs(0.0f, 1e-6f));
             }
         }
     }
@@ -84,9 +84,9 @@ TEST_CASE("Mat3f: Addition", "[Mat3f][arithmetic]") {
     Mat3f b(9.0f, 8.0f, 7.0f, 6.0f, 5.0f, 4.0f, 3.0f, 2.0f, 1.0f);
     Mat3f c = a + b;
 
-    REQUIRE_THAT(c.m[0][0], WithinAbs(10.0f, 1e-6f));
-    REQUIRE_THAT(c.m[1][1], WithinAbs(10.0f, 1e-6f));
-    REQUIRE_THAT(c.m[2][2], WithinAbs(10.0f, 1e-6f));
+    REQUIRE_THAT(c(0, 0), WithinAbs(10.0f, 1e-6f));
+    REQUIRE_THAT(c(1, 1), WithinAbs(10.0f, 1e-6f));
+    REQUIRE_THAT(c(2, 2), WithinAbs(10.0f, 1e-6f));
 }
 
 TEST_CASE("Mat3f: Subtraction", "[Mat3f][arithmetic]") {
@@ -94,9 +94,9 @@ TEST_CASE("Mat3f: Subtraction", "[Mat3f][arithmetic]") {
     Mat3f b(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
     Mat3f c = a - b;
 
-    REQUIRE_THAT(c.m[0][0], WithinAbs(8.0f, 1e-6f));
-    REQUIRE_THAT(c.m[1][1], WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(c.m[2][2], WithinAbs(-8.0f, 1e-6f));
+    REQUIRE_THAT(c(0, 0), WithinAbs(8.0f, 1e-6f));
+    REQUIRE_THAT(c(1, 1), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(c(2, 2), WithinAbs(-8.0f, 1e-6f));
 }
 
 TEST_CASE("Mat3f: Scalar multiplication", "[Mat3f][arithmetic]") {
@@ -104,16 +104,16 @@ TEST_CASE("Mat3f: Scalar multiplication", "[Mat3f][arithmetic]") {
     
     SECTION("Matrix * scalar") {
         Mat3f result = m * 2.0f;
-        REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(result.m[1][1], WithinAbs(10.0f, 1e-6f));
-        REQUIRE_THAT(result.m[2][2], WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(1, 1), WithinAbs(10.0f, 1e-6f));
+        REQUIRE_THAT(result(2, 2), WithinAbs(18.0f, 1e-6f));
     }
 
     SECTION("Scalar * matrix") {
         Mat3f result = 2.0f * m;
-        REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(result.m[1][1], WithinAbs(10.0f, 1e-6f));
-        REQUIRE_THAT(result.m[2][2], WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(result(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(result(1, 1), WithinAbs(10.0f, 1e-6f));
+        REQUIRE_THAT(result(2, 2), WithinAbs(18.0f, 1e-6f));
     }
 }
 
@@ -121,19 +121,19 @@ TEST_CASE("Mat3f: Scalar division", "[Mat3f][arithmetic]") {
     Mat3f m(2.0f, 4.0f, 6.0f, 8.0f, 10.0f, 12.0f, 14.0f, 16.0f, 18.0f);
     Mat3f result = m / 2.0f;
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][1], WithinAbs(5.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][2], WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 1), WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 2), WithinAbs(9.0f, 1e-6f));
 }
 
 TEST_CASE("Mat3f: Negation", "[Mat3f][arithmetic]") {
     Mat3f m(1.0f, -2.0f, 3.0f, -4.0f, 5.0f, -6.0f, 7.0f, -8.0f, 9.0f);
     Mat3f result = -m;
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(-1.0f, 1e-6f));
-    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][0], WithinAbs(4.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][2], WithinAbs(-9.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(-1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 0), WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 2), WithinAbs(-9.0f, 1e-6f));
 
     // Double negation
     Mat3f double_neg = -(-m);
@@ -145,9 +145,9 @@ TEST_CASE("Mat3f: Matrix multiplication", "[Mat3f][arithmetic]") {
     Mat3f b(2.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 0.0f, 4.0f);
     Mat3f result = a * b;
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][1], WithinAbs(6.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][2], WithinAbs(12.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 1), WithinAbs(6.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 2), WithinAbs(12.0f, 1e-6f));
 }
 
 // ============================================================================
@@ -160,29 +160,29 @@ TEST_CASE("Mat3f: Assignment operators", "[Mat3f][assignment]") {
 
     SECTION("Addition assignment") {
         a += m;
-        REQUIRE_THAT(a.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(a.m[1][1], WithinAbs(10.0f, 1e-6f));
+        REQUIRE_THAT(a(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(a(1, 1), WithinAbs(10.0f, 1e-6f));
     }
 
     SECTION("Subtraction assignment") {
         a -= m;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                REQUIRE_THAT(a.m[i][j], WithinAbs(0.0f, 1e-6f));
+                REQUIRE_THAT(a(i, j), WithinAbs(0.0f, 1e-6f));
             }
         }
     }
 
     SECTION("Scalar multiplication assignment") {
         a *= 2.0f;
-        REQUIRE_THAT(a.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(a.m[1][1], WithinAbs(10.0f, 1e-6f));
+        REQUIRE_THAT(a(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(a(1, 1), WithinAbs(10.0f, 1e-6f));
     }
 
     SECTION("Scalar division assignment") {
         a /= 2.0f;
-        REQUIRE_THAT(a.m[0][0], WithinAbs(0.5f, 1e-6f));
-        REQUIRE_THAT(a.m[1][1], WithinAbs(2.5f, 1e-6f));
+        REQUIRE_THAT(a(0, 0), WithinAbs(0.5f, 1e-6f));
+        REQUIRE_THAT(a(1, 1), WithinAbs(2.5f, 1e-6f));
     }
 }
 
@@ -262,9 +262,9 @@ TEST_CASE("Mat3f: Approximate equality", "[Mat3f][comparison]") {
     Mat3f m1 = Mat3f::identity();
     Mat3f m2 = Mat3f::identity();
     Mat3f m3 = Mat3f::identity();
-    m3.m[0][0] = 1.00001f;
+    m3(0, 0) = 1.00001f;
     Mat3f m4 = Mat3f::identity();
-    m4.m[0][0] = 2.0f;
+    m4(0, 0) = 2.0f;
 
     REQUIRE(m1.approxEqual(m2));
     REQUIRE(m1.approxEqual(m3, 1e-4f));
@@ -274,21 +274,21 @@ TEST_CASE("Mat3f: Approximate equality", "[Mat3f][comparison]") {
 
 TEST_CASE("Mat3f: Absolute value", "[Mat3f][operations]") {
     Mat3f m;
-    m.m[0][0] = -1.0f; m.m[0][1] = 2.0f;  m.m[0][2] = -3.0f;
-    m.m[1][0] = 4.0f;  m.m[1][1] = -5.0f; m.m[1][2] = 6.0f;
-    m.m[2][0] = -7.0f; m.m[2][1] = 8.0f;  m.m[2][2] = -9.0f;
+    m(0, 0) = -1.0f; m(0, 1) = 2.0f;  m(0, 2) = -3.0f;
+    m(1, 0) = 4.0f;  m(1, 1) = -5.0f; m(1, 2) = 6.0f;
+    m(2, 0) = -7.0f; m(2, 1) = 8.0f;  m(2, 2) = -9.0f;
 
     Mat3f result = m.abs();
 
-    REQUIRE_THAT(result.m[0][0], WithinAbs(1.0f, 1e-6f));
-    REQUIRE_THAT(result.m[0][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(result.m[0][2], WithinAbs(3.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][0], WithinAbs(4.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][1], WithinAbs(5.0f, 1e-6f));
-    REQUIRE_THAT(result.m[1][2], WithinAbs(6.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][0], WithinAbs(7.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][1], WithinAbs(8.0f, 1e-6f));
-    REQUIRE_THAT(result.m[2][2], WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 0), WithinAbs(1.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(result(0, 2), WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 0), WithinAbs(4.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 1), WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(result(1, 2), WithinAbs(6.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 0), WithinAbs(7.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 1), WithinAbs(8.0f, 1e-6f));
+    REQUIRE_THAT(result(2, 2), WithinAbs(9.0f, 1e-6f));
 }
 
 TEST_CASE("Mat3f: Component-wise operations", "[Mat3f][arithmetic]") {
@@ -298,20 +298,20 @@ TEST_CASE("Mat3f: Component-wise operations", "[Mat3f][arithmetic]") {
     SECTION("Component-wise multiplication") {
         Mat3f m = m1;
         m.mulComponentWise(m2);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[0][1], WithinAbs(8.0f, 1e-6f));
-        REQUIRE_THAT(m.m[0][2], WithinAbs(18.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(50.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(162.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(8.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 2), WithinAbs(18.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(50.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(162.0f, 1e-6f));
     }
 
     SECTION("Component-wise division") {
         Mat3f m = m1;
         m.divComponentWise(m2);
-        REQUIRE_THAT(m.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[0][1], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(m.m[2][2], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(0, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(1, 1), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(m(2, 2), WithinAbs(2.0f, 1e-6f));
     }
 }
 
@@ -347,9 +347,9 @@ TEST_CASE("Mat3f: Transpose", "[Mat3f][operations]") {
         Mat3f m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
         Mat3f t = m.transposed();
         
-        REQUIRE_THAT(t.m[0][0], WithinAbs(1.0f, 1e-6f));
-        REQUIRE_THAT(t.m[0][1], WithinAbs(4.0f, 1e-6f));
-        REQUIRE_THAT(t.m[1][0], WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(t(0, 0), WithinAbs(1.0f, 1e-6f));
+        REQUIRE_THAT(t(0, 1), WithinAbs(4.0f, 1e-6f));
+        REQUIRE_THAT(t(1, 0), WithinAbs(2.0f, 1e-6f));
     }
 
     SECTION("Double transpose returns original") {
@@ -414,13 +414,13 @@ TEST_CASE("Mat3f: Row and column accessors", "[Mat3f][access][rowcol]") {
 
     Vec3f newRow(9.0f, 8.0f, 7.0f);
     m.setRow(0, newRow);
-    REQUIRE_THAT(m.m[0][0], WithinAbs(9.0f, 1e-6f));
-    REQUIRE_THAT(m.m[0][2], WithinAbs(7.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 0), WithinAbs(9.0f, 1e-6f));
+    REQUIRE_THAT(m(0, 2), WithinAbs(7.0f, 1e-6f));
 
     Vec3f newCol(1.0f, 2.0f, 3.0f);
     m.setColumn(1, newCol);
-    REQUIRE_THAT(m.m[1][1], WithinAbs(2.0f, 1e-6f));
-    REQUIRE_THAT(m.m[2][1], WithinAbs(3.0f, 1e-6f));
+    REQUIRE_THAT(m(1, 1), WithinAbs(2.0f, 1e-6f));
+    REQUIRE_THAT(m(2, 1), WithinAbs(3.0f, 1e-6f));
 }
 
 // ============================================================================
@@ -508,9 +508,9 @@ TEST_CASE("Mat3f: Scale matrix", "[Mat3f][transform]") {
     SECTION("Scale matrix structure") {
         Mat3f scale = Mat3f::scale(2.0f, 3.0f, 4.0f);
         
-        REQUIRE_THAT(scale.m[0][0], WithinAbs(2.0f, 1e-6f));
-        REQUIRE_THAT(scale.m[1][1], WithinAbs(3.0f, 1e-6f));
-        REQUIRE_THAT(scale.m[2][2], WithinAbs(4.0f, 1e-6f));
+        REQUIRE_THAT(scale(0, 0), WithinAbs(2.0f, 1e-6f));
+        REQUIRE_THAT(scale(1, 1), WithinAbs(3.0f, 1e-6f));
+        REQUIRE_THAT(scale(2, 2), WithinAbs(4.0f, 1e-6f));
     }
 
     SECTION("Scale determinant equals product") {
@@ -527,19 +527,19 @@ TEST_CASE("Mat3f: Edge cases", "[Mat3f][edge]") {
     SECTION("Division by zero scalar") {
         Mat3f m(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f);
         Mat3f result = m / 0.0f;
-        REQUIRE((std::isinf(result.m[0][0]) || std::isnan(result.m[0][0])));
+        REQUIRE((std::isinf(result(0, 0)) || std::isnan(result(0, 0))));
     }
 
     SECTION("Operations with very large numbers") {
         Mat3f m(1e20f);
         Mat3f sum = m + m;
-        REQUIRE(sum.m[0][0] > 1e20f);
+        REQUIRE(sum(0, 0) > 1e20f);
     }
 
     SECTION("Operations with very small numbers") {
         Mat3f m(1e-20f);
         Mat3f product = m * 2.0f;
-        REQUIRE(product.m[1][1] > 0.0f);
+        REQUIRE(product(1, 1) > 0.0f);
     }
 
     SECTION("Singular matrix determinant is zero") {

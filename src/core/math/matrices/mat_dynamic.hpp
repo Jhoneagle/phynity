@@ -13,9 +13,6 @@ using phynity::math::vectors::VecDynamic;
 template<typename T = float>
 struct MatDynamic {
     static_assert(std::is_floating_point_v<T>, "MatDynamic template parameter must be a floating-point type");
-    std::size_t rows{0};
-    std::size_t cols{0};
-    std::vector<T> data{};
 
     MatDynamic() = default;
 
@@ -31,23 +28,23 @@ struct MatDynamic {
     bool isEmpty() const { return data.empty(); }
 
     /// Element access (row, col)
-    float& operator()(std::size_t row, std::size_t col) {
+    T& operator()(std::size_t row, std::size_t col) {
         return data[row * cols + col];
     }
 
-    const float& operator()(std::size_t row, std::size_t col) const {
+    const T& operator()(std::size_t row, std::size_t col) const {
         return data[row * cols + col];
     }
 
     /// Bounds-checked element access
-    float& at(std::size_t row, std::size_t col) {
+    T& at(std::size_t row, std::size_t col) {
         if (row >= rows || col >= cols) {
             throw std::out_of_range("MatDynamic index out of range");
         }
         return (*this)(row, col);
     }
 
-    const float& at(std::size_t row, std::size_t col) const {
+    const T& at(std::size_t row, std::size_t col) const {
         if (row >= rows || col >= cols) {
             throw std::out_of_range("MatDynamic index out of range");
         }
@@ -159,14 +156,14 @@ struct MatDynamic {
     }
 
     MatDynamic& operator*=(T scalar) {
-        for (float& value : data) {
+        for (T& value : data) {
             value *= scalar;
         }
         return *this;
     }
 
     MatDynamic& operator/=(T scalar) {
-        for (float& value : data) {
+        for (T& value : data) {
             value /= scalar;
         }
         return *this;
@@ -271,6 +268,20 @@ struct MatDynamic {
         return result;
     }
 
+    // Raw pointer to first element (row-major)
+    T* dataPtr() {
+        return data.data();
+    }
+
+    const T* dataPtr() const {
+        return data.data();
+    }
+
+private:
+    std::size_t rows{0};
+    std::size_t cols{0};
+    std::vector<T> data{};
+
 private:
     void validate_same_shape(const MatDynamic& other, const char* op) const {
         if (rows != other.rows || cols != other.cols) {
@@ -288,10 +299,10 @@ inline MatDynamic<T> operator*(T scalar, const MatDynamic<T>& m) {
 template<typename T = float>
 inline std::ostream& operator<<(std::ostream& os, const MatDynamic<T>& m) {
     os << "[";
-    for (std::size_t i = 0; i < m.rows; ++i) {
+    for (std::size_t i = 0; i < m.numRows(); ++i) {
         if (i > 0) os << ", ";
         os << "(";
-        for (std::size_t j = 0; j < m.cols; ++j) {
+        for (std::size_t j = 0; j < m.numCols(); ++j) {
             if (j > 0) os << ", ";
             os << m(i, j);
         }

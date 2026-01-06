@@ -177,13 +177,13 @@ struct Vec4 {
     }
 
     Vec4 project(const Vec4& onto) const {
-        float ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < 1e-6f) return Vec4(0.0f);
+        T ontoLenSq = onto.squaredLength();
+        if (ontoLenSq < T(1e-6)) return Vec4(T(0));
         return onto * (dot(onto) / ontoLenSq);
     }
 
     Vec4 reflect(const Vec4& normal) const {
-        return *this - normal * (2.0f * dot(normal));
+        return *this - normal * (T(2) * dot(normal));
     }
 
     Vec4 min(const Vec4& other) const {

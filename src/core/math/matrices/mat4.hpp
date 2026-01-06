@@ -15,10 +15,6 @@ using phynity::math::vectors::Vec4;
 template<typename T = float>
 struct Mat4 {
     static_assert(std::is_floating_point_v<T>, "Mat4 template parameter must be a floating-point type");
-    T m[4][4] = {{T(1), T(0), T(0), T(0)},
-                 {T(0), T(1), T(0), T(0)},
-                 {T(0), T(0), T(1), T(0)},
-                 {T(0), T(0), T(0), T(1)}};
 
     // Constructors
     Mat4() = default;
@@ -210,11 +206,11 @@ struct Mat4 {
         return !(*this == other);
     }
 
-    float& operator()(int row, int col) {
+    T& operator()(int row, int col) {
         return m[row][col];
     }
 
-    const float& operator()(int row, int col) const {
+    const T& operator()(int row, int col) const {
         return m[row][col];
     }
 
@@ -270,7 +266,7 @@ struct Mat4 {
     Mat4 inverse() const {
         T det = determinant();
         if (std::abs(det) < T(1e-6)) {
-            return Mat4(0.0f);  // Singular matrix
+            return Mat4(T(0));  // Singular matrix
         }
 
         Mat4 cof;
@@ -473,7 +469,7 @@ struct Mat4 {
 
     /// Create perspective projection matrix (matches test expectations; w component in last row)
     static Mat4 perspective(T fovy, T aspect, T near, T far) {
-        T f = T(1) / std::tan(fovy * 0.5f);
+        T f = T(1) / std::tan(fovy * T(0.5));
         T nf = T(1) / (near - far);
 
         return Mat4(
@@ -497,6 +493,21 @@ struct Mat4 {
             tx,                     ty,                   tz,                   T(1)
         );
     }
+
+    // Raw pointer to first element (row-major)
+    T* dataPtr() {
+        return &m[0][0];
+    }
+
+    const T* dataPtr() const {
+        return &m[0][0];
+    }
+
+private:
+    T m[4][4] = {{T(1), T(0), T(0), T(0)},
+                 {T(0), T(1), T(0), T(0)},
+                 {T(0), T(0), T(1), T(0)},
+                 {T(0), T(0), T(0), T(1)}};
 };
 
 /// Scalar * Matrix multiplication
@@ -509,10 +520,10 @@ inline Mat4<T> operator*(T scalar, const Mat4<T>& m) {
 template<typename T = float>
 inline Vec4<T> operator*(const Vec4<T>& v, const Mat4<T>& m) {
     return Vec4<T>(
-        v.x * m.m[0][0] + v.y * m.m[1][0] + v.z * m.m[2][0] + v.w * m.m[3][0],
-        v.x * m.m[0][1] + v.y * m.m[1][1] + v.z * m.m[2][1] + v.w * m.m[3][1],
-        v.x * m.m[0][2] + v.y * m.m[1][2] + v.z * m.m[2][2] + v.w * m.m[3][2],
-        v.x * m.m[0][3] + v.y * m.m[1][3] + v.z * m.m[2][3] + v.w * m.m[3][3]
+        v.x * m(0, 0) + v.y * m(1, 0) + v.z * m(2, 0) + v.w * m(3, 0),
+        v.x * m(0, 1) + v.y * m(1, 1) + v.z * m(2, 1) + v.w * m(3, 1),
+        v.x * m(0, 2) + v.y * m(1, 2) + v.z * m(2, 2) + v.w * m(3, 2),
+        v.x * m(0, 3) + v.y * m(1, 3) + v.z * m(2, 3) + v.w * m(3, 3)
     );
 }
 
@@ -532,7 +543,7 @@ template<typename T = float>
 inline std::ostream& operator<<(std::ostream& os, const Mat4<T>& m) {
     os << "[\n";
     for (int i = 0; i < 4; ++i) {
-        os << "  (" << m.m[i][0] << ", " << m.m[i][1] << ", " << m.m[i][2] << ", " << m.m[i][3] << ")\n";
+        os << "  (" << m(i, 0) << ", " << m(i, 1) << ", " << m(i, 2) << ", " << m(i, 3) << ")\n";
     }
     os << "]";
     return os;
