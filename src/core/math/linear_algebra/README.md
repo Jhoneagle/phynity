@@ -4,6 +4,32 @@ Linear algebra decompositions and solvers for constraint solving, least-squares 
 
 ## Implemented Components
 
+### ✅ Cholesky Decomposition (`cholesky_decomposition.hpp`)
+- **Doolittle's variant** for symmetric positive-definite (SPD) matrices
+- Lower triangular matrix L with A = L*L^T
+- Efficient O(N³/3) computation (2x faster than LU for SPD systems)
+- Positive-definiteness validation
+- Determinant and inverse computation optimized for SPD matrices
+
+**Key features:**
+- Half the computational cost and memory of general decompositions
+- Numerically stable without pivoting (for SPD matrices)
+- Perfect for covariance matrices and constraint Hessians
+- Fast O(N²) solve using forward/back substitution
+
+### ✅ SVD (Singular Value Decomposition) (`svd_decomposition.hpp`)
+- **One-sided Jacobi iteration** for robust computation on small matrices
+- Orthogonal matrices U and V with orthonormal columns
+- Singular values sorted in descending order
+- Numerical rank detection and condition number computation
+- Moore-Penrose pseudoinverse computation
+
+**Key features:**
+- Optimal accuracy for well-conditioned and ill-conditioned matrices
+- Handles rank-deficient systems gracefully
+- Orthogonality verified to machine precision
+- Condition number tracks system conditioning
+
 ### ✅ LU Decomposition (`lu_decomposition.hpp`)
 - **Doolittle's method** with partial pivoting for numerical stability
 - Combined storage of L and U matrices with permutation vector
@@ -29,30 +55,36 @@ Linear algebra decompositions and solvers for constraint solving, least-squares 
 - Singularity detection
 
 ### ✅ Linear System Solver (`solver.hpp`)
-- **Solve Ax=b**: Choose between LU and QR methods
-- **Matrix inverse**: A⁻¹ computed via LU decomposition
-- **Determinant**: Computed efficiently from LU factors
-- Method selection for different numerical properties
+- **Solve Ax=b**: Choose between LU, QR, or Cholesky methods
+- **Solve SPD systems**: Optimized `solve_spd()` for symmetric positive-definite
+- **Least-squares solve**: Minimize ||Ax - b||² using SVD
+- **Matrix inverse**: A⁻¹ computed via LU or Cholesky (for SPD)
+- **Pseudoinverse**: Moore-Penrose A⁺ computed via SVD
+- **Determinant**: Efficient computation via LU or Cholesky (for SPD)
+- **Matrix rank**: Numerical rank detection via SVD
+- **Condition number**: κ(A) from SVD singular values
 
 **Methods:**
 - `solve(A, b, SolveMethod::LU)` - Fast, general purpose
 - `solve(A, b, SolveMethod::QR)` - Stable for ill-conditioned systems
-- `inverse(A)` - Matrix inversion
-- `determinant(A)` - Determinant computation
+- `solve_spd(A, b)` - Optimized Cholesky for SPD matrices
+- `least_squares_solve(A, b)` - Least-squares via SVD
+- `inverse(A)` - Matrix inversion via LU
+- `inverse_spd(A)` - Optimized inversion for SPD via Cholesky
+- `pseudo_inverse(A)` - Moore-Penrose pseudoinverse
+- `determinant(A)` - General determinant via LU
+- `determinant_spd(A)` - Optimized determinant for SPD via Cholesky
+- `matrix_rank(A, tolerance)` - Numerical rank via SVD
+- `condition_number(A)` - Condition number κ(A) via SVD
 
 ## Planned Components
 
 **Decompositions:**
-- SVD (Singular Value Decomposition) - for pseudoinverse, rank computation
 - Cholesky decomposition - for positive definite systems, covariance matrices
+- Eigenvalue/eigenvector decomposition - principal stresses, natural frequencies
 
 **Utilities:**
-- Rank computation
-- Pseudoinverse (Moore-Penrose)
-- Eigenvalue/eigenvector decomposition
-- Condition number estimation
-
-**Algorithms:**
+- Iterative refinement for improved accuracy
 - Iterative solvers (conjugate gradient, GMRES)
 - Sparse matrix operations
 - Matrix factorization caching
@@ -88,6 +120,20 @@ Linear algebra decompositions and solvers for constraint solving, least-squares 
 
 ## Numerical Properties
 
+### Cholesky Decomposition
+- **Time complexity**: O(N³/3) - ~2x faster than LU for SPD systems
+- **Space complexity**: O(N²)
+- **Stability**: Excellent for SPD matrices (no pivoting needed)
+- **When to use**: Covariance matrices, constraint Hessians, positive-definite systems
+- **Notes**: Most efficient for physics applications, fails gracefully for non-SPD
+
+### SVD (Singular Value Decomposition)
+- **Time complexity**: O(N³) one-sided Jacobi method
+- **Space complexity**: O(N²)
+- **Stability**: Excellent for both well-conditioned and ill-conditioned systems
+- **When to use**: Computing pseudoinverse, rank, condition number, least-squares, SVD-based analyses
+- **Notes**: More robust than LU/QR for singular or near-singular systems
+
 ### LU Decomposition
 - **Time complexity**: O(N³)
 - **Space complexity**: O(N²)
@@ -104,36 +150,61 @@ Linear algebra decompositions and solvers for constraint solving, least-squares 
 
 ```cpp
 #include <core/math/linear_algebra/solver.hpp>
+#include <core/math/linear_algebra/cholesky_decomposition.hpp>
+#include <core/math/linear_algebra/svd_decomposition.hpp>
 
 using phynity::math::linear_algebra::solve;
+using phynity::math::linear_algebra::solve_spd;
+using phynity::math::linear_algebra::least_squares_solve;
+using phynity::math::linear_algebra::CholeskyDecomposition;
+using phynity::math::linear_algebra::SVDDecomposition;
 using phynity::math::matrices::MatN;
 using phynity::math::vectors::VecN;
 
-// Solve 3x3 system: Ax = b
+// General 3x3 system: Ax = b
 MatN<3, 3, float> A = /* ... */;
 VecN<3, float> b = /* ... */;
 
 // Fast solve using LU decomposition
 VecN<3, float> x = solve(A, b, SolveMethod::LU);
 
-// Stable solve for ill-conditioned systems
-VecN<3, float> x_stable = solve(A, b, SolveMethod::QR);
+// SPD system - optimized 2x faster using Cholesky
+MatN<3, 3, float> A_spd = /* symmetric positive-definite ... */;
+VecN<3, float> x_spd = solve_spd(A_spd, b);
 
-// Compute inverse
-MatN<3, 3, float> A_inv = inverse(A);
+// Least-squares solve: minimize ||Ax - b||²
+VecN<3, float> x_ls = least_squares_solve(A, b);
 
-// Compute determinant
-float det = determinant(A);
+// Cholesky decomposition for SPD analysis
+CholeskyDecomposition<3, float> chol(A_spd);
+if (chol.is_positive_definite) {
+    // Reconstruction: A_spd ≈ L * L^T
+    MatN<3, 3, float> reconstructed = chol.reconstruct();
+    
+    // Optimized determinant
+    float det = determinant_spd(A_spd);
+    
+    // Optimized inverse
+    MatN<3, 3, float> A_inv = inverse_spd(A_spd);
+}
+
+// SVD-based analysis
+SVDDecomposition<3, float> svd(A);
+int rank = svd.rank;
+float condition_num = svd.condition_number;
 ```
 
 ## Planned Enhancements
 
-- **SVD** (Singular Value Decomposition) for rank computation and pseudoinverse
-- **Cholesky decomposition** for symmetric positive-definite systems (common in physics)
-- **Sparse matrix solvers** for large systems with many zeros
-- **Iterative refinement** for improved accuracy
 - **Eigenvalue/eigenvector** computation for principal stresses and frequencies
+- **Iterative refinement** for improved accuracy of ill-conditioned systems
+- **Sparse matrix solvers** for large systems with many zeros
+- **Krylov subspace methods** (Conjugate Gradient, GMRES) for large-scale problems
 
 ## Status
 
-✅ Core implementation complete and tested
+✅ Cholesky decomposition complete with comprehensive tests
+✅ SVD implementation complete with comprehensive tests
+✅ Core decompositions (LU, QR, SVD, Cholesky) complete and tested
+⏳ Eigenvalue/eigenvector computation (mid-term)
+⏳ Iterative solvers (long-term)
