@@ -256,6 +256,12 @@ TEST_CASE("Mat3f: Determinant", "[Mat3f][operations]") {
         // det = 1*2 - 2*(-2) + 3*(-3) = 2 + 4 - 9 = -3
         REQUIRE_THAT(det, WithinAbs(-3.0f, 1e-6f));
     }
+
+    SECTION("3x3 determinant with non-trivial result") {
+        Mat3f m(1.0f, 2.0f, 3.0f, 0.0f, 1.0f, 4.0f, 5.0f, 6.0f, 0.0f);
+        // det = 1*(0-24) - 2*(0-20) + 3*(0-5) = -24 + 40 - 15 = 1
+        REQUIRE_THAT(m.determinant(), WithinAbs(1.0f, 1e-3f));
+    }
 }
 
 TEST_CASE("Mat3f: Approximate equality", "[Mat3f][comparison]") {
@@ -333,6 +339,13 @@ TEST_CASE("Mat3f: Inverse", "[Mat3f][operations]") {
         Mat3f m(1.0f, 2.0f, 3.0f, 2.0f, 4.0f, 6.0f, 3.0f, 6.0f, 9.0f);
         Mat3f inv = m.inverse();
         REQUIRE(approx_equal(inv, Mat3f::zero()));
+    }
+
+    SECTION("3x3 inverse from linear algebra test") {
+        Mat3f m(1.0f, 2.0f, 3.0f, 0.0f, 1.0f, 4.0f, 5.0f, 6.0f, 0.0f);
+        Mat3f inv = m.inverse();
+        Mat3f product = m * inv;
+        REQUIRE(approx_equal(product, Mat3f::identity(), 1e-3f));
     }
 }
 
