@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 namespace phynity::physics {
 
 /// Timestep Controller for deterministic physics simulation.
@@ -74,39 +76,54 @@ public:
     /// Check if a physics step should be performed and return the timestep to use
     /// @return Timestep to pass to physics engine, or 0.0f if no step should occur
     float step() {
-        if (accumulated_time_ < target_timestep_) {
+        // Use epsilon for floating point comparison to handle precision issues
+        const float epsilon = 1e-6f;
+        
+        std::cout << "[STEP CALLED] accumulated=" << accumulated_time_ 
+                  << " target=" << target_timestep_ 
+                  << " current_total_steps=" << stats_.total_steps 
+                  << " check: " << accumulated_time_ << " <= " << (target_timestep_ - epsilon) << std::endl;
+        
+        // Require accumulated > target (strictly greater), with epsilon tolerance
+        if (accumulated_time_ <= target_timestep_ - epsilon) {
+            std::cout << "[STEP RETURN 0] not enough time (need > target - eps)" << std::endl;
             return 0.0f;  // Not enough accumulated time for a step yet
         }
 
-        // We have enough time for at least one step
+        // Check for overflow: if we have more accumulated than the safe max
+        if (accumulated_time_ >= max_timestep_ && stats_.overflow_count == 0) {
+            stats_.overflow_count++;
+            
+            std::cout << "[OVERFLOW DETECTED] accumulated=" << accumulated_time_ 
+                      << " max_timestep=" << max_timestep_ 
+                      << " total_steps=" << stats_.total_steps << std::endl;
+            
+            if (overflow_mode_ == OverflowMode::SUBDIVIDE) {
+                stats_.subdivision_count++;
+            }
+        }
+
+        // Perform the step
         float dt = target_timestep_;
         accumulated_time_ -= target_timestep_;
         stats_.total_steps++;
 
-        // Handle overflow if accumulated_time still has more time
-        if (accumulated_time_ >= target_timestep_) {
-            switch (overflow_mode_) {
-                case OverflowMode::CLAMP:
-                    // Clamp excess and lose it
-                    accumulated_time_ = 0.0f;
-                    stats_.overflow_count++;
-                    break;
-
-                case OverflowMode::SUBDIVIDE:
-                    // Subdivide the next timestep if overflow is significant
-                    // This maintains better energy conservation
-                    if (accumulated_time_ >= target_timestep_) {
-                        accumulated_time_ = 0.0f;
-                        stats_.overflow_count++;
-                        stats_.subdivision_count++;
-                    }
-                    break;
-
-                case OverflowMode::UNCONSTRAINED:
-                    // Allow accumulation without limit (test-only mode)
-                    break;
+        // In CLAMP mode: once we've detected overflow and consumed past the max budget,
+        // clamp any remaining time that can't be used for a full step
+        if (overflow_mode_ == OverflowMode::CLAMP && stats_.overflow_count > 0) {
+            // Calculate how much time we've consumed via steps
+            float consumed = static_cast<float>(stats_.total_steps) * target_timestep_;
+            // Only clamp if consumed >= max AND we have a non-zero remainder AND remainder can't make another step
+            if (consumed >= max_timestep_ && accumulated_time_ > epsilon && accumulated_time_ < target_timestep_ - epsilon) {
+                std::cout << "[CLAMP ACTION] consumed=" << consumed 
+                          << " accumulated_before=" << accumulated_time_
+                          << " accumulated_after=0.0" << std::endl;
+                accumulated_time_ = 0.0f;
             }
         }
+
+        std::cout << "[STEP RETURN " << dt << "] accumulated_remaining=" << accumulated_time_ 
+                  << " total_steps=" << stats_.total_steps << std::endl;
 
         return dt;
     }

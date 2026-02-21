@@ -26,7 +26,7 @@ public:
     // ========================================================================
     
     Material material{};           ///< Material properties (mass, restitution, etc.)
-    float lifetime = 0.0f;         ///< Remaining lifetime (-1 or 0 = infinite, > 0 = finite)
+    float lifetime = -1.0f;        ///< Remaining lifetime (< 0 = infinite, 0 = dead, > 0 = finite)
     bool active = true;            ///< Active flag for pooling/recycling
 
     // ========================================================================
@@ -93,6 +93,8 @@ public:
         // Update lifetime if finite
         if (lifetime > 0.0f) {
             lifetime -= dt;
+            // Clamp to 0 when expired to distinguish from infinite lifetime
+            if (lifetime < 0.0f) lifetime = 0.0f;
         }
 
         // Clear forces for next frame (will be re-applied by force fields)
@@ -105,10 +107,11 @@ public:
     // ========================================================================
 
     /// Returns true if particle is still alive
-    /// Particles with lifetime <= 0 are always alive
-    /// Particles with lifetime > 0 are alive if lifetime > 0
+    /// Particles with lifetime < 0 are infinite (always alive)
+    /// Particles with lifetime > 0 are alive and counting down
+    /// Particles with lifetime <= 0 (for positive lifetimes) are dead
     bool is_alive() const {
-        return lifetime <= 0.0f || lifetime > 0.0f;
+        return lifetime < 0.0f || lifetime > 0.0f;
     }
 
     /// Set finite lifetime for this particle

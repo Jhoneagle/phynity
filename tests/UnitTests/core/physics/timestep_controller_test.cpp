@@ -273,8 +273,7 @@ TEST_CASE("TimestepController: Fixed timestep produces deterministic steps",
     
     // Controller 1: regular 16ms frames
     ctrl1.accumulate(0.048f);
-    int steps1 = 0;
-    while (ctrl1.step() > 0.0f) steps1++;
+    while (ctrl1.step() > 0.0f);
     
     // Controller 2: irregular frames that sum to same total
     ctrl2.accumulate(0.010f);
@@ -282,11 +281,12 @@ TEST_CASE("TimestepController: Fixed timestep produces deterministic steps",
     ctrl2.accumulate(0.020f);
     ctrl2.step();
     ctrl2.accumulate(0.018f);
-    int steps2 = 0;
-    while (ctrl2.step() > 0.0f) steps2++;
+    while (ctrl2.step() > 0.0f);
     
-    // Both controllers should have performed same number of steps
-    REQUIRE(steps1 == steps2);
+    // Both controllers should have performed same total number of steps
+    // regardless of how the accumulated time was split across frames
+    REQUIRE(ctrl1.statistics().total_steps == ctrl2.statistics().total_steps);
+    REQUIRE(ctrl1.statistics().total_steps == 3);  // 0.048 / 0.016 = 3
 }
 
 // ============================================================================
