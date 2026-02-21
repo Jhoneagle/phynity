@@ -1,4 +1,11 @@
-# Core physics unit tests without external frameworks.
+# Core physics unit tests
+
+add_executable(material_test material_test.cpp)
+phynity_target_defaults(material_test)
+phynity_apply_warnings(material_test)
+phynity_apply_sanitizers(material_test)
+target_link_libraries(material_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.physics.material COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:material_test>)
 
 add_executable(particle_test particle_test.cpp)
 phynity_target_defaults(particle_test)
