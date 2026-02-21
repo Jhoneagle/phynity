@@ -8,6 +8,9 @@ set -euo pipefail
 #   CLEAN=true to remove build/<preset> before configuring
 #   RECONFIGURE=true forces reconfigure (cmake --preset still configures if needed)
 
+# Limit vcpkg parallelism to avoid file system contention
+export VCPKG_MAX_CONCURRENCY=4
+
 preset="${1:-debug}"
 sanitizers="${PHYNITY_SANITIZERS:-auto}"
 os="$(uname -s || echo unknown)"

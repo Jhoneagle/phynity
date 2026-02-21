@@ -7,6 +7,9 @@ rem Env overrides:
 rem   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
 rem   CLEAN=true to remove build\<preset> before configuring
 
+rem Limit vcpkg parallelism to avoid file system contention
+set VCPKG_MAX_CONCURRENCY=4
+
 set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 
