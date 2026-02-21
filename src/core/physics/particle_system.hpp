@@ -17,15 +17,15 @@ public:
         Particle& p = particles_.back();
         p.position = position;
         p.velocity = velocity;
-        p.mass = mass;
+        p.material.mass = mass;
         p.lifetime = lifetime;
     }
 
     /// Apply gravity to all particles.
     void applyGravity(const Vec3f& gravity) {
         for (auto& p : particles_) {
-            if (p.isAlive()) {
-                p.applyForce(gravity * p.mass);
+            if (p.is_alive()) {
+                p.apply_force(gravity * p.material.mass);
             }
         }
     }
@@ -33,7 +33,7 @@ public:
     /// Step the simulation by dt seconds.
     void step(float dt) {
         for (auto& p : particles_) {
-            if (p.isAlive()) {
+            if (p.is_alive()) {
                 p.integrate(dt);
             }
         }
@@ -41,7 +41,7 @@ public:
         // Remove dead particles
         particles_.erase(
             std::remove_if(particles_.begin(), particles_.end(),
-                          [](const Particle& p) { return !p.isAlive(); }),
+                          [](const Particle& p) { return !p.is_alive(); }),
             particles_.end()
         );
     }
