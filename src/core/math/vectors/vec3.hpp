@@ -17,32 +17,32 @@ struct Vec3 {
     T z = T(0);
 
     // Constructors
-    Vec3() = default;
-    explicit Vec3(T v) : x(v), y(v), z(v) {}
-    Vec3(T x_, T y_, T z_) : x(x_), y(y_), z(z_) {}
+    constexpr Vec3() = default;
+    explicit constexpr Vec3(T v) : x(v), y(v), z(v) {}
+    constexpr Vec3(T x_, T y_, T z_) : x(x_), y(y_), z(z_) {}
 
     // Operators
-    Vec3 operator+(const Vec3& other) const {
+    constexpr Vec3 operator+(const Vec3& other) const {
         return Vec3(x + other.x, y + other.y, z + other.z);
     }
 
-    Vec3 operator-(const Vec3& other) const {
+    constexpr Vec3 operator-(const Vec3& other) const {
         return Vec3(x - other.x, y - other.y, z - other.z);
     }
 
-    Vec3 operator*(T scalar) const {
+    constexpr Vec3 operator*(T scalar) const {
         return Vec3(x * scalar, y * scalar, z * scalar);
     }
 
-    Vec3 operator/(T scalar) const {
+    constexpr Vec3 operator/(T scalar) const {
         return Vec3(x / scalar, y / scalar, z / scalar);
     }
 
-    Vec3 operator*(const Vec3& other) const {
+    constexpr Vec3 operator*(const Vec3& other) const {
         return Vec3(x * other.x, y * other.y, z * other.z);
     }
 
-    Vec3 operator/(const Vec3& other) const {
+    constexpr Vec3 operator/(const Vec3& other) const {
         return Vec3(x / other.x, y / other.y, z / other.z);
     }
 
@@ -88,23 +88,23 @@ struct Vec3 {
         return *this;
     }
 
-    Vec3 operator-() const {
+    constexpr Vec3 operator-() const {
         return Vec3(-x, -y, -z);
     }
 
-    bool operator==(const Vec3& other) const {
+    constexpr bool operator==(const Vec3& other) const {
         return x == other.x && y == other.y && z == other.z;
     }
 
-    bool operator!=(const Vec3& other) const {
+    constexpr bool operator!=(const Vec3& other) const {
         return !(*this == other);
     }
 
-    T& operator[](int i) {
+    constexpr T& operator[](int i) {
         return (i == 0) ? x : (i == 1) ? y : z;
     }
 
-    const T& operator[](int i) const {
+    constexpr const T& operator[](int i) const {
         return (i == 0) ? x : (i == 1) ? y : z;
     }
 

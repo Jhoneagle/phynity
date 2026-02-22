@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/calculus/integrators.hpp>
 #include <core/math/utilities/comparison_utils.hpp>
+#include <core/physics/physics_constants.hpp>
 #include <cmath>
 #include <array>
 
@@ -16,6 +17,7 @@ using phynity::math::calculus::integrate;
 using phynity::math::calculus::IntegratorMethod;
 using phynity::math::vectors::VecN;
 using phynity::math::utilities::approx_equal;
+using phynity::physics::constants::EARTH_GRAVITY;
 
 TEST_CASE("Integrators: Constant velocity motion", "[calculus][integrators]") {
     // No acceleration, constant velocity - all methods should be exact
@@ -49,7 +51,7 @@ TEST_CASE("Integrators: Constant acceleration (free fall)", "[calculus][integrat
     // x''(t) = -g, x(0) = h, x'(0) = 0
     // Exact: x(t) = h - (g/2)t², v(t) = -gt
     
-    float g = 9.81f;  // gravity
+    float g = EARTH_GRAVITY;  // gravity
     float h = 100.0f; // initial height
     
     auto gravity = [g]([[maybe_unused]] const VecN<1, float>& pos, [[maybe_unused]] const VecN<1, float>& vel, [[maybe_unused]] float t) {
@@ -143,7 +145,7 @@ TEST_CASE("Integrators: Harmonic oscillator - energy conservation", "[calculus][
 TEST_CASE("Integrators: 3D motion - gravity", "[calculus][integrators]") {
     // Projectile motion under gravity
     auto gravity_3d = []([[maybe_unused]] const VecN<3, float>& pos, [[maybe_unused]] const VecN<3, float>& vel, [[maybe_unused]] float t) {
-        return VecN<3, float>(std::array<float, 3>{0.0f, -9.81f, 0.0f});
+        return VecN<3, float>(std::array<float, 3>{0.0f, -EARTH_GRAVITY, 0.0f});
     };
     
     // Initial: position (0,10,0), velocity (10, 10, 0)
@@ -166,7 +168,7 @@ TEST_CASE("Integrators: 3D motion - gravity", "[calculus][integrators]") {
     }
     
     SECTION("Vertical velocity matches theory") {
-        float expected_vy = 10.0f - 9.81f * simulation_time;
+        float expected_vy = 10.0f - EARTH_GRAVITY * simulation_time;
         REQUIRE_THAT(state.velocity[1], WithinAbs(expected_vy, 0.2f));
     }
     
@@ -210,7 +212,7 @@ TEST_CASE("Integrators: Timestep effects", "[calculus][integrators]") {
 
 TEST_CASE("Integrators: Unified interface", "[calculus][integrators]") {
     auto gravity = []([[maybe_unused]] const VecN<1, float>& pos, [[maybe_unused]] const VecN<1, float>& vel, [[maybe_unused]] float t) {
-        return VecN<1, float>(-9.81f);
+        return VecN<1, float>(-EARTH_GRAVITY);
     };
     
     SECTION("Forward Euler via unified interface") {

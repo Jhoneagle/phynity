@@ -1,10 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec4.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <sstream>
 
 using phynity::math::vectors::Vec4f;
+using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 TEST_CASE("Vec4f: Constructors", "[Vec4f][constructor]") {
@@ -181,7 +183,7 @@ TEST_CASE("Vec4f: Distance and angle", "[Vec4f][operations]") {
     SECTION("Angle") {
         Vec4f a(1.0f, 0.0f, 0.0f, 0.0f);
         Vec4f b(0.0f, 1.0f, 0.0f, 0.0f);
-        REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f / 2.0f, 1e-4f));
+        REQUIRE_THAT(a.angle(b), WithinAbs(mathf::half_pi, 1e-4f));
     }
 }
 

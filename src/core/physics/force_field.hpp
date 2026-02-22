@@ -1,11 +1,14 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/physics_constants.hpp>
+#include <core/math/utilities/float_comparison.hpp>
 #include <memory>
 
 namespace phynity::physics {
 
 using phynity::math::vectors::Vec3f;
+using namespace phynity::physics::constants;
 
 /// ============================================================================
 /// Abstract Force Field Base Class
@@ -40,8 +43,8 @@ private:
 
 public:
     /// Constructor with gravitational acceleration vector.
-    /// @param gravity Acceleration due to gravity (e.g., Vec3f(0, -9.81, 0) for Earth)
-    constexpr explicit GravityField(const Vec3f& gravity = Vec3f(0.0f, -9.81f, 0.0f))
+    /// @param gravity Acceleration due to gravity (default: Earth gravity, 9.80665 m/s²)
+    constexpr explicit GravityField(const Vec3f& gravity = EARTH_GRAVITY_VECTOR)
         : gravity_(gravity)
     {
     }
@@ -119,8 +122,9 @@ public:
 
     /// Apply quadratic drag: F = -drag_coefficient * |velocity| * velocity
     Vec3f apply(const Vec3f& /*position*/, const Vec3f& velocity, float /*mass*/) const override {
+        using phynity::math::utilities::is_zero;
         float speed = velocity.length();
-        if (speed < 1e-6f) {
+        if (is_zero(speed, VELOCITY_EPSILON)) {
             return Vec3f(0.0f);
         }
         return velocity * (-drag_coefficient_ * speed);

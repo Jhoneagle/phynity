@@ -38,7 +38,7 @@ public:
     }
     
     const char* description() const override {
-        return "Particles falling under Earth gravity (9.81 m/s²)";
+        return "Particles falling under Earth gravity (EARTH_GRAVITY m/s²)";
     }
     
     void setup(PhysicsContext& context) override;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/math/calculus/integrators.hpp>
+#include <core/physics/physics_constants.hpp>
 #include <cmath>
 #include <limits>
 
@@ -20,7 +21,7 @@ namespace phynity::math::calculus {
 template<typename T>
 struct FreeFallProblem {
     T height = T(100);  // Initial height (m)
-    T gravity = T(9.81);  // Gravitational acceleration (m/s²)
+    T gravity = T(phynity::physics::constants::EARTH_GRAVITY);  // Gravitational acceleration (m/s²)
     
     /**
      * @brief Analytical position at time t
@@ -119,7 +120,7 @@ struct HarmonicOscillatorProblem {
 template<typename T>
 struct PendulumProblem {
     T length = T(1);        // Pendulum length (m)
-    T gravity = T(9.81);    // Gravitational acceleration (m/s²)
+    T gravity = T(phynity::physics::constants::EARTH_GRAVITY);    // Gravitational acceleration (m/s²)
     T mass = T(1);          // Mass (kg)
     T amplitude = T(0.1);   // Angle amplitude (radians, small angle approximation)
     T phase = T(0);         // Phase offset

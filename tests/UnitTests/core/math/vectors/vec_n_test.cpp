@@ -1,11 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec_n.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <sstream>
 #include <cmath>
 
 using Catch::Matchers::WithinAbs;
 using phynity::math::vectors::VecN;
+using phynity::math::utilities::mathf;
 
 TEST_CASE("VecN: Constructors", "[VecN][constructor]") {
     SECTION("Default constructor") {
@@ -192,7 +194,7 @@ TEST_CASE("VecN: Utility operations", "[VecN][utility]") {
         a[0] = 1.0f;
         VecN<3> b;
         b[1] = 1.0f;
-        REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f / 2.0f, 1e-4f));
+        REQUIRE_THAT(a.angle(b), WithinAbs(mathf::half_pi, 1e-4f));
     }
 
     SECTION("Lerp") {

@@ -17,10 +17,10 @@ struct Mat4 {
     static_assert(std::is_floating_point_v<T>, "Mat4 template parameter must be a floating-point type");
 
     // Constructors
-    Mat4() = default;
+    constexpr Mat4() = default;
 
     /// Fill constructor - creates matrix with all elements set to scalar
-    explicit Mat4(T scalar) {
+    explicit constexpr Mat4(T scalar) {
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 m[i][j] = scalar;
@@ -29,7 +29,7 @@ struct Mat4 {
     }
 
     /// Element-wise constructor (16 floats)
-    Mat4(T m00, T m01, T m02, T m03,
+    constexpr Mat4(T m00, T m01, T m02, T m03,
          T m10, T m11, T m12, T m13,
          T m20, T m21, T m22, T m23,
          T m30, T m31, T m32, T m33) {
@@ -40,7 +40,7 @@ struct Mat4 {
     }
 
     /// Column vector constructor (four column vectors)
-    Mat4(const Vec4<T>& col0, const Vec4<T>& col1, const Vec4<T>& col2, const Vec4<T>& col3) {
+    constexpr Mat4(const Vec4<T>& col0, const Vec4<T>& col1, const Vec4<T>& col2, const Vec4<T>& col3) {
         m[0][0] = col0.x; m[0][1] = col1.x; m[0][2] = col2.x; m[0][3] = col3.x;
         m[1][0] = col0.y; m[1][1] = col1.y; m[1][2] = col2.y; m[1][3] = col3.y;
         m[2][0] = col0.z; m[2][1] = col1.z; m[2][2] = col2.z; m[2][3] = col3.z;
@@ -48,7 +48,7 @@ struct Mat4 {
     }
 
     // Operators
-    Mat4 operator+(const Mat4& other) const {
+    constexpr Mat4 operator+(const Mat4& other) const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -58,7 +58,7 @@ struct Mat4 {
         return result;
     }
 
-    Mat4 operator-(const Mat4& other) const {
+    constexpr Mat4 operator-(const Mat4& other) const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -68,7 +68,7 @@ struct Mat4 {
         return result;
     }
 
-    Mat4 operator*(T scalar) const {
+    constexpr Mat4 operator*(T scalar) const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -78,7 +78,7 @@ struct Mat4 {
         return result;
     }
 
-    Mat4 operator/(T scalar) const {
+    constexpr Mat4 operator/(T scalar) const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -89,7 +89,7 @@ struct Mat4 {
     }
 
     /// Matrix multiplication
-    Mat4 operator*(const Mat4& other) const {
+    constexpr Mat4 operator*(const Mat4& other) const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -103,7 +103,7 @@ struct Mat4 {
     }
 
     /// Matrix-vector multiplication (column vector)
-    Vec4<T> operator*(const Vec4<T>& v) const {
+    constexpr Vec4<T> operator*(const Vec4<T>& v) const {
         return Vec4<T>(
             m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w,
             m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w,
@@ -113,7 +113,7 @@ struct Mat4 {
     }
 
     /// Matrix-vector multiplication with Vec3 (treats as Vec4 with w=1)
-    Vec3<T> operator*(const Vec3<T>& v) const {
+    constexpr Vec3<T> operator*(const Vec3<T>& v) const {
         T x = m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3];
         T y = m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3];
         T z = m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3];
@@ -129,7 +129,7 @@ struct Mat4 {
         return *this;
     }
 
-    Mat4 operator-() const {
+    constexpr Mat4 operator-() const {
         Mat4 result;
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -191,7 +191,7 @@ struct Mat4 {
         return *this;
     }
 
-    bool operator==(const Mat4& other) const {
+    constexpr bool operator==(const Mat4& other) const {
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 if (m[i][j] != other.m[i][j]) {
@@ -202,7 +202,7 @@ struct Mat4 {
         return true;
     }
 
-    bool operator!=(const Mat4& other) const {
+    constexpr bool operator!=(const Mat4& other) const {
         return !(*this == other);
     }
 

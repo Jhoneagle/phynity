@@ -16,32 +16,32 @@ struct Vec2 {
     T y = T(0);
 
     // Constructors
-    Vec2() = default;
-    explicit Vec2(T v) : x(v), y(v) {}
-    Vec2(T x_, T y_) : x(x_), y(y_) {}
+    constexpr Vec2() = default;
+    explicit constexpr Vec2(T v) : x(v), y(v) {}
+    constexpr Vec2(T x_, T y_) : x(x_), y(y_) {}
 
     // Operators
-    Vec2 operator+(const Vec2& other) const {
+    constexpr Vec2 operator+(const Vec2& other) const {
         return Vec2(x + other.x, y + other.y);
     }
 
-    Vec2 operator-(const Vec2& other) const {
+    constexpr Vec2 operator-(const Vec2& other) const {
         return Vec2(x - other.x, y - other.y);
     }
 
-    Vec2 operator*(T scalar) const {
+    constexpr Vec2 operator*(T scalar) const {
         return Vec2(x * scalar, y * scalar);
     }
 
-    Vec2 operator/(T scalar) const {
+    constexpr Vec2 operator/(T scalar) const {
         return Vec2(x / scalar, y / scalar);
     }
 
-    Vec2 operator*(const Vec2& other) const {
+    constexpr Vec2 operator*(const Vec2& other) const {
         return Vec2(x * other.x, y * other.y);
     }
 
-    Vec2 operator/(const Vec2& other) const {
+    constexpr Vec2 operator/(const Vec2& other) const {
         return Vec2(x / other.x, y / other.y);
     }
 
@@ -81,15 +81,15 @@ struct Vec2 {
         return *this;
     }
 
-    Vec2 operator-() const {
+    constexpr Vec2 operator-() const {
         return Vec2(-x, -y);
     }
 
-    bool operator==(const Vec2& other) const {
+    constexpr bool operator==(const Vec2& other) const {
         return x == other.x && y == other.y;
     }
 
-    bool operator!=(const Vec2& other) const {
+    constexpr bool operator!=(const Vec2& other) const {
         return !(*this == other);
     }
 

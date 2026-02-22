@@ -139,4 +139,28 @@ namespace phynity::math::utilities {
         return max_val - abs(repeated - max_val);
     }
 
+    // ================================================================
+    // Series and sequences
+    // ================================================================
+
+    /**
+     * Compute the sum of a geometric series: r + r² + r³ + ... + r^n
+     * Used in physics for damping decay calculations and discrete integration.
+     * 
+     * @param ratio The common ratio (r) of the geometric series
+     * @param terms Number of terms to sum
+     * @return Sum of the geometric series
+     */
+    template <typename T>
+    inline T geometric_series_sum(T ratio, int terms) noexcept {
+        static_assert(std::is_floating_point_v<T>);
+        T sum = T(0);
+        T term = ratio;
+        for (int i = 0; i < terms; ++i) {
+            sum += term;
+            term *= ratio;
+        }
+        return sum;
+    }
+
 } // namespace phynity::math::utilities

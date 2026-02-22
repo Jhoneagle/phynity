@@ -2,11 +2,15 @@
 
 #include <core/physics/particle.hpp>
 #include <core/physics/force_field.hpp>
+#include <core/physics/physics_constants.hpp>
+#include <core/math/utilities/float_comparison.hpp>
 #include <algorithm>
 #include <memory>
 #include <vector>
 
 namespace phynity::physics {
+
+using namespace phynity::physics::constants;
 
 /// Manages a collection of particles and force fields, providing simulation stepping.
 /// Integrates Material system, ForceField system, and provides energy/momentum diagnostics.
@@ -256,7 +260,8 @@ private:
                 float dist = delta.length();
                 float min_dist = a.radius + b.radius;
 
-                if (dist <= 1e-6f || dist > min_dist) {
+                using phynity::math::utilities::is_zero;
+                if (is_zero(dist, COLLISION_EPSILON) || dist > min_dist) {
                     continue;
                 }
 

@@ -4,6 +4,7 @@
 #include <core/physics/timestep_controller.hpp>
 #include <core/physics/material.hpp>
 #include <core/physics/force_field.hpp>
+#include <core/physics/physics_constants.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <memory>
 
@@ -15,6 +16,7 @@ using phynity::physics::Material;
 using phynity::physics::ForceField;
 using phynity::physics::GravityField;
 using phynity::physics::DragField;
+using phynity::physics::constants::EARTH_GRAVITY;
 using phynity::math::vectors::Vec3f;
 
 /// Application-level physics context manager.
@@ -27,7 +29,7 @@ public:
         float target_fps = 60.0f;           ///< Target frames per second
         float max_timestep = 1.0f / 30.0f;  ///< Maximum time per physics step
         bool use_determinism = true;        ///< Enable deterministic mode
-        Vec3f gravity = Vec3f(0.0f, -9.81f, 0.0f);  ///< Gravitational acceleration
+        Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f);  ///< Gravitational acceleration
         float air_drag = 0.0f;              ///< Air drag coefficient
         
         /// Default constructor initializes all fields to defaults above

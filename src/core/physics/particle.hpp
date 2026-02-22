@@ -84,8 +84,7 @@ public:
         velocity += acceleration * dt;
 
         // Apply velocity damping (material effect)
-        float damping_factor = 1.0f - material.linear_damping * dt;
-        damping_factor = damping_factor > 0.0f ? damping_factor : 0.0f;
+        float damping_factor = std::max(0.0f, 1.0f - material.linear_damping * dt);
         velocity = velocity * damping_factor;
 
         // Update position from velocity

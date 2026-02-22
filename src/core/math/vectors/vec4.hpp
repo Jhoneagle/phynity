@@ -18,32 +18,32 @@ struct Vec4 {
     T w = T(0);
 
     // Constructors
-    Vec4() = default;
-    explicit Vec4(T v) : x(v), y(v), z(v), w(v) {}
-    Vec4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
+    constexpr Vec4() = default;
+    explicit constexpr Vec4(T v) : x(v), y(v), z(v), w(v) {}
+    constexpr Vec4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
 
     // Operators
-    Vec4 operator+(const Vec4& other) const {
+    constexpr Vec4 operator+(const Vec4& other) const {
         return Vec4(x + other.x, y + other.y, z + other.z, w + other.w);
     }
 
-    Vec4 operator-(const Vec4& other) const {
+    constexpr Vec4 operator-(const Vec4& other) const {
         return Vec4(x - other.x, y - other.y, z - other.z, w - other.w);
     }
 
-    Vec4 operator*(T scalar) const {
+    constexpr Vec4 operator*(T scalar) const {
         return Vec4(x * scalar, y * scalar, z * scalar, w * scalar);
     }
 
-    Vec4 operator/(T scalar) const {
+    constexpr Vec4 operator/(T scalar) const {
         return Vec4(x / scalar, y / scalar, z / scalar, w / scalar);
     }
 
-    Vec4 operator*(const Vec4& other) const {
+    constexpr Vec4 operator*(const Vec4& other) const {
         return Vec4(x * other.x, y * other.y, z * other.z, w * other.w);
     }
 
-    Vec4 operator/(const Vec4& other) const {
+    constexpr Vec4 operator/(const Vec4& other) const {
         return Vec4(x / other.x, y / other.y, z / other.z, w / other.w);
     }
 
@@ -95,15 +95,15 @@ struct Vec4 {
         return *this;
     }
 
-    Vec4 operator-() const {
+    constexpr Vec4 operator-() const {
         return Vec4(-x, -y, -z, -w);
     }
 
-    bool operator==(const Vec4& other) const {
+    constexpr bool operator==(const Vec4& other) const {
         return x == other.x && y == other.y && z == other.z && w == other.w;
     }
 
-    bool operator!=(const Vec4& other) const {
+    constexpr bool operator!=(const Vec4& other) const {
         return !(*this == other);
     }
 

@@ -73,8 +73,10 @@ Numerical differentiation and integration methods for physics simulations.
 ```cpp
 #include <core/math/calculus/finite_differences.hpp>
 #include <core/math/calculus/integrators.hpp>
+#include <core/physics/physics_constants.hpp>
 
 using namespace phynity::math::calculus;
+using phynity::physics::constants::EARTH_GRAVITY;
 
 // Example 1: Compute numerical derivative
 auto f = [](float x) { return x * x + 2 * x + 1; };
@@ -86,7 +88,7 @@ float analytical_deriv = f_prime(x);                      // = 8.0
 
 // Example 2: Integrate particle under gravity
 auto gravity = [](const Vec3<float>& pos, const Vec3<float>& vel, float t) {
-    return Vec3<float>(0, -9.81f, 0);  // Constant downward acceleration
+    return Vec3<float>(0, -EARTH_GRAVITY, 0);  // Constant downward acceleration
 };
 
 IntegrationState<3, float> particle;

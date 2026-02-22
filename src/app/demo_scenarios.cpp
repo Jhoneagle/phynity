@@ -1,7 +1,10 @@
 #include "demo_scenarios.hpp"
+#include <core/physics/physics_constants.hpp>
 #include <cmath>
 
 namespace phynity::app::scenarios {
+
+using namespace phynity::physics::constants;
 
 namespace {
 using phynity::physics::Material;
@@ -13,7 +16,7 @@ Material make_no_damping_material(float mass, float restitution = 0.8f) {
 
 void GravityWell::setup(PhysicsContext& context) {
     context.clear_particles();
-    context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
     context.set_drag(0.0f);
     
     // Spawn particles at different positions, all falling
@@ -24,7 +27,7 @@ void GravityWell::setup(PhysicsContext& context) {
 
 void ParticleSpread::setup(PhysicsContext& context) {
     context.clear_particles();
-    context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
     context.set_drag(0.0f);
     
     // Spawn particles with various initial velocities
@@ -37,7 +40,7 @@ void ParticleSpread::setup(PhysicsContext& context) {
 
 void DragInteraction::setup(PhysicsContext& context) {
     context.clear_particles();
-    context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
     context.set_drag(0.1f);  // Moderate air resistance
     
     // Spawn particles with high initial velocity that will slow down
@@ -48,12 +51,12 @@ void DragInteraction::setup(PhysicsContext& context) {
 
 void ProjectileMotion::setup(PhysicsContext& context) {
     context.clear_particles();
-    context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
     context.set_drag(0.0f);
     
     // Classic projectile: 45-degree angle for maximum range
     const float speed = 10.0f;
-    const float angle_rad = 3.14159265f / 4.0f;  // 45 degrees in radians
+    const float angle_rad = PI / 4.0f;  // 45 degrees in radians
     
     context.spawn_particle(
         Vec3f(0.0f, 0.0f, 0.0f),
@@ -137,7 +140,7 @@ void ZeroGravity::setup(PhysicsContext& context) {
 
 void HighDrag::setup(PhysicsContext& context) {
     context.clear_particles();
-    context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
     context.set_drag(0.5f);  // High drag coefficient
     
     // Spawn particles with initial velocity in a viscous medium

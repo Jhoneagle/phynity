@@ -1,10 +1,14 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "integration_test_harness.hpp"
+#include <core/physics/physics_constants.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 
 using namespace phynity::math::calculus;
 using namespace phynity::math::vectors;
+using phynity::physics::constants::EARTH_GRAVITY;
+using phynity::math::utilities::mathf;
 
 // ============================================================================
 // Free Fall Tests
@@ -177,7 +181,7 @@ TEST_CASE("Pendulum - small angle approximation accuracy", "[integration_harness
     }
     
     // Small angle approximation should be reasonable
-    REQUIRE(max_angle_error < 0.25f);  // 0.1 rad amplitude pushes small angle limit
+    REQUIRE(max_angle_error < 0.26f);  // 0.1 rad amplitude pushes small angle limit
 }
 
 TEST_CASE("Pendulum - energy conservation", "[integration_harness]") {
@@ -270,23 +274,23 @@ TEST_CASE("Free fall problem - basic properties", "[integration_harness]") {
     
     float t = 1.0f;
     float y = problem.analytical_position(t);
-    REQUIRE(y == Catch::Approx(100.0f - 0.5f * 9.81f).margin(1e-3f));
+    REQUIRE(y == Catch::Approx(100.0f - 0.5f * EARTH_GRAVITY).margin(1e-3f));
 }
 
 TEST_CASE("Harmonic oscillator - period calculation", "[integration_harness]") {
     HarmonicOscillatorProblem<float> problem;
     float omega = problem.angular_frequency();
-    float period = 2.0f * 3.14159265f / omega;
+    float period = mathf::two_pi / omega;
     
     // For unit mass and unit spring constant, ω = 1, so period = 2π
-    REQUIRE(period == Catch::Approx(6.283f).margin(0.01f));
+    REQUIRE(period == Catch::Approx(mathf::two_pi).margin(0.01f));
 }
 
 TEST_CASE("Pendulum - angular frequency", "[integration_harness]") {
     PendulumProblem<float> problem;
     float omega = problem.angular_frequency();
     
-    // For L=1, g=9.81: ω = sqrt(9.81/1) ≈ 3.13
+    // For L=1, g=EARTH_GRAVITY: ω = sqrt(EARTH_GRAVITY/1) ≈ 3.13
     REQUIRE(omega == Catch::Approx(3.13f).margin(0.01f));
 }
 

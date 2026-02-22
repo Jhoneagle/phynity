@@ -15,10 +15,10 @@ struct Mat3 {
     static_assert(std::is_floating_point_v<T>, "Mat3 template parameter must be a floating-point type");
 
     // Constructors
-    Mat3() = default;
+    constexpr Mat3() = default;
 
     /// Fill constructor - creates matrix with all elements set to scalar
-    explicit Mat3(T scalar) {
+    explicit constexpr Mat3(T scalar) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 m[i][j] = scalar;
@@ -27,7 +27,7 @@ struct Mat3 {
     }
 
     /// Element-wise constructor
-    Mat3(T m00, T m01, T m02,
+    constexpr Mat3(T m00, T m01, T m02,
          T m10, T m11, T m12,
          T m20, T m21, T m22) {
         m[0][0] = m00; m[0][1] = m01; m[0][2] = m02;
@@ -36,14 +36,14 @@ struct Mat3 {
     }
 
     /// Column vector constructor (three column vectors)
-    Mat3(const Vec3<T>& col0, const Vec3<T>& col1, const Vec3<T>& col2) {
+    constexpr Mat3(const Vec3<T>& col0, const Vec3<T>& col1, const Vec3<T>& col2) {
         m[0][0] = col0.x; m[0][1] = col1.x; m[0][2] = col2.x;
         m[1][0] = col0.y; m[1][1] = col1.y; m[1][2] = col2.y;
         m[2][0] = col0.z; m[2][1] = col1.z; m[2][2] = col2.z;
     }
 
     // Operators
-    Mat3 operator+(const Mat3& other) const {
+    constexpr Mat3 operator+(const Mat3& other) const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -53,7 +53,7 @@ struct Mat3 {
         return result;
     }
 
-    Mat3 operator-(const Mat3& other) const {
+    constexpr Mat3 operator-(const Mat3& other) const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -63,7 +63,7 @@ struct Mat3 {
         return result;
     }
 
-    Mat3 operator*(T scalar) const {
+    constexpr Mat3 operator*(T scalar) const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -73,7 +73,7 @@ struct Mat3 {
         return result;
     }
 
-    Mat3 operator/(T scalar) const {
+    constexpr Mat3 operator/(T scalar) const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -84,7 +84,7 @@ struct Mat3 {
     }
 
     /// Matrix multiplication
-    Mat3 operator*(const Mat3& other) const {
+    constexpr Mat3 operator*(const Mat3& other) const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -98,7 +98,7 @@ struct Mat3 {
     }
 
     /// Matrix-vector multiplication
-    Vec3<T> operator*(const Vec3<T>& v) const {
+    constexpr Vec3<T> operator*(const Vec3<T>& v) const {
         return Vec3<T>(
             m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
             m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
@@ -106,7 +106,7 @@ struct Mat3 {
         );
     }
 
-    Mat3 operator-() const {
+    constexpr Mat3 operator-() const {
         Mat3 result;
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
@@ -177,7 +177,7 @@ struct Mat3 {
         return *this;
     }
 
-    bool operator==(const Mat3& other) const {
+    constexpr bool operator==(const Mat3& other) const {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 if (m[i][j] != other.m[i][j]) {
@@ -188,7 +188,7 @@ struct Mat3 {
         return true;
     }
 
-    bool operator!=(const Mat3& other) const {
+    constexpr bool operator!=(const Mat3& other) const {
         return !(*this == other);
     }
 

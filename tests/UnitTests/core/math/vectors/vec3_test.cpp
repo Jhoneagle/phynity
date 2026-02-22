@@ -1,10 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/math/utilities/constants.hpp>
 #include <cmath>
 #include <sstream>
 
 using phynity::math::vectors::Vec3f;
+using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 
 // ============================================================================
@@ -356,13 +358,13 @@ TEST_CASE("Vec3f: Angle between vectors", "[Vec3f][angle]") {
     SECTION("Perpendicular (angle = π/2)") {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(0.0f, 1.0f, 0.0f);
-        REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f / 2.0f, 1e-4f));
+        REQUIRE_THAT(a.angle(b), WithinAbs(mathf::half_pi, 1e-4f));
     }
 
     SECTION("Opposite direction (angle = π)") {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(-1.0f, 0.0f, 0.0f);
-        REQUIRE_THAT(a.angle(b), WithinAbs(3.14159f, 1e-4f));
+        REQUIRE_THAT(a.angle(b), WithinAbs(mathf::pi, 1e-4f));
     }
 }
 

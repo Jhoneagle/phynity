@@ -17,50 +17,50 @@ struct Mat2 {
     static_assert(std::is_floating_point_v<T>, "Mat2 template parameter must be a floating-point type");
 
     // Constructors
-    Mat2() = default;
+    constexpr Mat2() = default;
 
     /// Fill constructor - creates matrix with all elements set to scalar
-    explicit Mat2(T scalar) {
+    explicit constexpr Mat2(T scalar) {
         m[0][0] = scalar; m[0][1] = scalar;
         m[1][0] = scalar; m[1][1] = scalar;
     }
 
     /// Element-wise constructor
-    Mat2(T m00, T m01,
+    constexpr Mat2(T m00, T m01,
          T m10, T m11) {
         m[0][0] = m00; m[0][1] = m01;
         m[1][0] = m10; m[1][1] = m11;
     }
 
     /// Column vector constructor (two column vectors)
-    Mat2(const Vec2<T>& col0, const Vec2<T>& col1) {
+    constexpr Mat2(const Vec2<T>& col0, const Vec2<T>& col1) {
         m[0][0] = col0.x; m[0][1] = col1.x;
         m[1][0] = col0.y; m[1][1] = col1.y;
     }
 
     // Operators
-    Mat2 operator+(const Mat2& other) const {
+    constexpr Mat2 operator+(const Mat2& other) const {
         return Mat2(
             m[0][0] + other.m[0][0], m[0][1] + other.m[0][1],
             m[1][0] + other.m[1][0], m[1][1] + other.m[1][1]
         );
     }
 
-    Mat2 operator-(const Mat2& other) const {
+    constexpr Mat2 operator-(const Mat2& other) const {
         return Mat2(
             m[0][0] - other.m[0][0], m[0][1] - other.m[0][1],
             m[1][0] - other.m[1][0], m[1][1] - other.m[1][1]
         );
     }
 
-    Mat2 operator*(T scalar) const {
+    constexpr Mat2 operator*(T scalar) const {
         return Mat2(
             m[0][0] * scalar, m[0][1] * scalar,
             m[1][0] * scalar, m[1][1] * scalar
         );
     }
 
-    Mat2 operator/(T scalar) const {
+    constexpr Mat2 operator/(T scalar) const {
         return Mat2(
             m[0][0] / scalar, m[0][1] / scalar,
             m[1][0] / scalar, m[1][1] / scalar
@@ -68,7 +68,7 @@ struct Mat2 {
     }
 
     /// Matrix multiplication
-    Mat2 operator*(const Mat2& other) const {
+    constexpr Mat2 operator*(const Mat2& other) const {
         return Mat2(
             m[0][0] * other.m[0][0] + m[0][1] * other.m[1][0],
             m[0][0] * other.m[0][1] + m[0][1] * other.m[1][1],
@@ -78,14 +78,14 @@ struct Mat2 {
     }
 
     /// Matrix-vector multiplication
-    Vec2<T> operator*(const Vec2<T>& v) const {
+    constexpr Vec2<T> operator*(const Vec2<T>& v) const {
         return Vec2<T>(
             m[0][0] * v.x + m[0][1] * v.y,
             m[1][0] * v.x + m[1][1] * v.y
         );
     }
 
-    Mat2 operator-() const {
+    constexpr Mat2 operator-() const {
         return Mat2(
             -m[0][0], -m[0][1],
             -m[1][0], -m[1][1]
@@ -135,12 +135,12 @@ struct Mat2 {
         return *this;
     }
 
-    bool operator==(const Mat2& other) const {
+    constexpr bool operator==(const Mat2& other) const {
         return m[0][0] == other.m[0][0] && m[0][1] == other.m[0][1] &&
                m[1][0] == other.m[1][0] && m[1][1] == other.m[1][1];
     }
 
-    bool operator!=(const Mat2& other) const {
+    constexpr bool operator!=(const Mat2& other) const {
         return !(*this == other);
     }
 

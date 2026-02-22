@@ -1,6 +1,11 @@
 #pragma once
 
+#include <core/physics/physics_constants.hpp>
+#include <core/math/utilities/float_comparison.hpp>
+
 namespace phynity::physics {
+
+using namespace phynity::physics::constants;
 
 /// Timestep Controller for deterministic physics simulation.
 /// Implements the accumulator pattern to ensure consistent timesteps regardless
@@ -74,11 +79,10 @@ public:
     /// Check if a physics step should be performed and return the timestep to use
     /// @return Timestep to pass to physics engine, or 0.0f if no step should occur
     float step() {
-        // Use epsilon for floating point comparison to handle precision issues
-        const float epsilon = 1e-6f;
-        
         // Require accumulated > target (strictly greater), with epsilon tolerance
-        if (accumulated_time_ <= target_timestep_ - epsilon) {
+        using phynity::math::utilities::equals_absolute;
+        if (accumulated_time_ < target_timestep_ && 
+            !equals_absolute(accumulated_time_, target_timestep_, TIMESTEP_EPSILON)) {
             return 0.0f;  // Not enough accumulated time for a step yet
         }
 
@@ -102,7 +106,7 @@ public:
             // Calculate how much time we've consumed via steps
             float consumed = static_cast<float>(stats_.total_steps) * target_timestep_;
             // Only clamp if consumed >= max AND we have a non-zero remainder AND remainder can't make another step
-            if (consumed >= max_timestep_ && accumulated_time_ > epsilon && accumulated_time_ < target_timestep_ - epsilon) {
+            if (consumed >= max_timestep_ && accumulated_time_ > TIMESTEP_EPSILON && accumulated_time_ < target_timestep_ - TIMESTEP_EPSILON) {
                 accumulated_time_ = 0.0f;
             }
         }

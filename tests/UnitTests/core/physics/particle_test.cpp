@@ -2,10 +2,12 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/physics/particle.hpp>
 #include <core/physics/material.hpp>
+#include <core/physics/physics_constants.hpp>
 #include <cmath>
 
 using phynity::physics::Particle;
 using phynity::physics::Material;
+using phynity::physics::constants::EARTH_GRAVITY;
 using phynity::math::vectors::Vec3f;
 using Catch::Matchers::WithinAbs;
 
@@ -127,14 +129,14 @@ TEST_CASE("Particle: Gravity integration", "[Particle][integration]") {
     p.material.mass = 1.0f;
     p.material.linear_damping = 0.0f;  // No damping for this test
     
-    const float g = -9.81f;
+    const float g = -EARTH_GRAVITY;
     const float dt = 1.0f / 60.0f;
     
     p.apply_force(Vec3f(0.0f, g, 0.0f));
     p.update_acceleration();
     p.integrate(dt);
     
-    // After one frame: v = a*dt = -9.81 * (1/60)
+    // After one frame: v = a*dt = -EARTH_GRAVITY * (1/60)
     float expected_vy = g * dt;
     REQUIRE_THAT(p.velocity.y, WithinAbs(expected_vy, 1e-6f));
     
@@ -333,7 +335,7 @@ TEST_CASE("Particle: Apply gravity and integrate", "[Particle][integration][comb
     p.material.mass = 1.0f;
     p.material.linear_damping = 0.0f;
     
-    const float g = -9.81f;
+    const float g = -EARTH_GRAVITY;
     const float dt = 0.016f;  // 60 FPS
     
     // Step 1: Apply gravity

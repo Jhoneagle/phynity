@@ -9,32 +9,20 @@
 #include <core/physics/material.hpp>
 #include <core/physics/force_field.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/math/utilities/numeric.hpp>
+#include <core/math/utilities/comparison_utils.hpp>
+#include <core/math/utilities/constants.hpp>
+#include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics;
+using namespace phynity::physics::constants;
 using namespace phynity::math::vectors;
+using namespace phynity::math::utilities;
+using namespace phynity::test::helpers;
+using phynity::math::utilities::mathf;
 using Catch::Approx;
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
-
-namespace {
-Material make_no_damping_material(float mass) {
-    return Material(mass, 0.8f, 0.3f, 0.0f, 0.0f, 0.0f);
-}
-
-Material make_no_damping_material(float mass, float restitution) {
-    return Material(mass, restitution, 0.3f, 0.0f, 0.0f, 0.0f);
-}
-
-float geometric_sum(float ratio, int steps) {
-    float sum = 0.0f;
-    float term = ratio;
-    for (int i = 0; i < steps; ++i) {
-        sum += term;
-        term *= ratio;
-    }
-    return sum;
-}
-}  // namespace
 
 // ============================================================================
 // Physics Validation Tests - Phase 3
@@ -47,7 +35,7 @@ float geometric_sum(float ratio, int steps) {
 // ============================================================================
 
 TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]") {
-    // Problem: Single particle dropped from y=100m with g=9.81 m/s²
+    // Problem: Single particle dropped from y=100m with g=9.80665 m/s²
     // Analytical solution: y(t) = 100 - 0.5*g*t², v(t) = -g*t
     
     ParticleSystem system;
@@ -61,7 +49,7 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]") {
     );
     
     // Add gravity field
-    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     
     // Simulate for 2 seconds
     float simulation_time = 2.0f;
@@ -84,8 +72,8 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]") {
     const auto& p = particles[0];
     
     // Analytical solution at t ≈ 2.0s
-    float expected_y = 100.0f - 0.5f * 9.81f * actual_time * actual_time;
-    float expected_v = -9.81f * actual_time;
+    float expected_y = 100.0f - 0.5f * EARTH_GRAVITY * actual_time * actual_time;
+    float expected_v = -EARTH_GRAVITY * actual_time;
     
     // Tolerance: 1% for position, 2% for velocity (numerical integration)
     REQUIRE_THAT(p.position.y, WithinRel(expected_y, 0.01f));
@@ -105,7 +93,7 @@ TEST_CASE("Physics Validation - Reference-based determinism (free fall)", "[phys
 
     const float dt = 0.01f;
     const int steps = 100;  // 1 second
-    const float a = -9.81f;
+    const float a = -EARTH_GRAVITY;
 
     system.spawn(
         Vec3f(0.0f, 100.0f, 0.0f),
@@ -124,8 +112,8 @@ TEST_CASE("Physics Validation - Reference-based determinism (free fall)", "[phys
     const float expected_v = n * a * dt;
     const float expected_y = 100.0f + dt * (a * dt * n * (n + 1.0f) * 0.5f);
 
-    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, 1e-6f));
-    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-6f));
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, tolerance::VELOCITY));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, tolerance::POSITION));
 }
 
 // ============================================================================
@@ -153,12 +141,8 @@ TEST_CASE("Physics Validation - Reference-based determinism (constant velocity)"
     const float n = static_cast<float>(steps);
     Vec3f expected = p0 + v0 * (dt * n);
 
-    REQUIRE_THAT(p.position.x, WithinAbs(expected.x, 1e-4f));
-    REQUIRE_THAT(p.position.y, WithinAbs(expected.y, 1e-4f));
-    REQUIRE_THAT(p.position.z, WithinAbs(expected.z, 1e-4f));
-    REQUIRE_THAT(p.velocity.x, WithinAbs(v0.x, 1e-5f));
-    REQUIRE_THAT(p.velocity.y, WithinAbs(v0.y, 1e-5f));
-    REQUIRE_THAT(p.velocity.z, WithinAbs(v0.z, 1e-5f));
+    REQUIRE(approx_equal(p.position, expected, tolerance::POSITION));
+    REQUIRE(approx_equal(p.velocity, v0, tolerance::VELOCITY));
 }
 
 // ============================================================================
@@ -194,8 +178,8 @@ TEST_CASE("Physics Validation - Reference-based determinism (constant accel)", "
     const float expected_v = v0 + n * a * dt;
     const float expected_y = p0 + dt * (n * v0 + a * dt * n * (n + 1.0f) * 0.5f);
 
-    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, 1e-5f));
-    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-5f));
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, tolerance::VELOCITY));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, tolerance::VELOCITY));
 }
 
 // ============================================================================
@@ -228,10 +212,10 @@ TEST_CASE("Physics Validation - Reference-based determinism (linear drag)", "[ph
     const auto& p = system.particles()[0];
     const float ratio = 1.0f - k * dt;
     const float expected_v = v0 * std::pow(ratio, static_cast<float>(steps));
-    const float expected_x = p0 + dt * v0 * geometric_sum(ratio, steps);
+    const float expected_x = p0 + dt * v0 * geometric_series_sum(ratio, steps);
 
-    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_v, 1e-4f));
-    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, 1e-4f));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_v, tolerance::POSITION));
+    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, tolerance::POSITION));
 }
 
 // ============================================================================
@@ -250,7 +234,7 @@ TEST_CASE("Physics Validation - Reference-based determinism (2D coupled)", "[phy
     const int steps = 250;  // 2.5 seconds
     const Vec3f p0(0.0f, 10.0f, 0.0f);
     const Vec3f v0(3.0f, 2.0f, 0.0f);
-    const float ay = -9.81f;
+    const float ay = -EARTH_GRAVITY;
 
     system.spawn(p0, v0, make_no_damping_material(1.0f));
     system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, ay, 0.0f)));
@@ -270,10 +254,10 @@ TEST_CASE("Physics Validation - Reference-based determinism (2D coupled)", "[phy
     const float expected_y = p0.y + dt * (n * v0.y + ay * dt * n * (n + 1.0f) * 0.5f);
     const float expected_vy = v0.y + n * ay * dt;
 
-    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, 1e-4f));
-    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-4f));
-    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_vx, 1e-5f));
-    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_vy, 1e-4f));
+    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, tolerance::POSITION));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, tolerance::POSITION));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_vx, tolerance::VELOCITY));
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_vy, tolerance::POSITION));
 }
 
 // ============================================================================
@@ -372,9 +356,7 @@ TEST_CASE("Physics Validation - Momentum conservation in zero gravity", "[physic
     Vec3f final_momentum = diag_final.total_momentum;
     
     // Momentum should be conserved (no external forces, no damping)
-    REQUIRE_THAT(final_momentum.x, WithinAbs(initial_momentum.x, 1e-5f));
-    REQUIRE_THAT(final_momentum.y, WithinAbs(initial_momentum.y, 1e-5f));
-    REQUIRE_THAT(final_momentum.z, WithinAbs(initial_momentum.z, 1e-5f));
+    REQUIRE(approx_equal(final_momentum, initial_momentum, tolerance::MOMENTUM));
 }
 
 // ============================================================================
@@ -395,11 +377,11 @@ TEST_CASE("Physics Validation - Energy conservation with gravity", "[physics_val
         Vec3f(0.0f, 20.0f, 0.0f),
         make_no_damping_material(mass)
     );
-    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     
     // Calculate initial total energy
     float KE_initial = 0.5f * mass * (20.0f * 20.0f);  // v_y = 20 m/s
-    float PE_initial = mass * 9.81f * 50.0f;            // y = 50m
+    float PE_initial = mass * EARTH_GRAVITY * 50.0f;            // y = 50m
     float E_total_initial = KE_initial + PE_initial;
     
     // Simulate for 3 seconds
@@ -419,7 +401,7 @@ TEST_CASE("Physics Validation - Energy conservation with gravity", "[physics_val
         float KE = 0.5f * mass * (p.velocity.x * p.velocity.x + 
                                    p.velocity.y * p.velocity.y + 
                                    p.velocity.z * p.velocity.z);
-        float PE = mass * 9.81f * p.position.y;
+        float PE = mass * EARTH_GRAVITY * p.position.y;
         float E_total = KE + PE;
         
         float error = std::abs(E_total - E_total_initial);
@@ -437,14 +419,14 @@ TEST_CASE("Physics Validation - Energy conservation with gravity", "[physics_val
 
 TEST_CASE("Physics Validation - Projectile motion range", "[physics_validation]") {
     // Problem: Projectile launched at 45° with v=20 m/s from ground
-    // Expected: Range ≈ v²sin(2θ)/g = 400*sin(90°)/9.81 ≈ 40.77m
+    // Expected: Range ≈ v²sin(2θ)/g = 400*sin(90°)/9.80665 ≈ 40.77m
     
     ParticleSystem system;
     TimestepController controller(1.0f / 60.0f);
     
     // Launch angle: 45 degrees
     float v0 = 20.0f;
-    float angle = 3.14159265f / 4.0f;  // 45 degrees
+    float angle = mathf::pi / 4.0f;  // 45 degrees
     float vx = v0 * std::cos(angle);
     float vy = v0 * std::sin(angle);
     
@@ -453,7 +435,7 @@ TEST_CASE("Physics Validation - Projectile motion range", "[physics_validation]"
         Vec3f(vx, vy, 0.0f),
         make_no_damping_material(1.0f)
     );
-    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     
     // Simulate until particle returns to y ≈ 0
     float dt_frame = 0.016f;
@@ -480,8 +462,8 @@ TEST_CASE("Physics Validation - Projectile motion range", "[physics_validation]"
     
     REQUIRE(landed);
     
-    // Expected range: v²sin(2θ)/g = 400*sin(90°)/9.81 ≈ 40.77m
-    float expected_range = (v0 * v0) / 9.81f;  // sin(2*45°) = 1
+    // Expected range: v²sin(2θ)/g = 400*sin(90°)/9.80665 ≈ 40.77m
+    float expected_range = (v0 * v0) / EARTH_GRAVITY;  // sin(2*45°) = 1
     
     // Tolerance: 5% (allows for numerical integration and timestep effects)
     REQUIRE_THAT(landing_x, WithinRel(expected_range, 0.05f));
@@ -553,7 +535,7 @@ TEST_CASE("Physics Validation - Deterministic simulation reproducibility", "[phy
         system.spawn(Vec3f(0.0f, 10.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 2.0f);
         system.spawn(Vec3f(2.0f, 10.0f, 0.0f), Vec3f(-1.0f, 0.0f, 0.0f), 1.5f);
         
-        system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+        system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
         system.add_force_field(std::make_unique<DragField>(0.05f));
         
         // Simulate for 2 seconds
@@ -586,14 +568,10 @@ TEST_CASE("Physics Validation - Deterministic simulation reproducibility", "[phy
         const auto& p2 = particles2[i];
         
         // Positions should match exactly (deterministic)
-        REQUIRE_THAT(p1.position.x, WithinAbs(p2.position.x, 1e-10f));
-        REQUIRE_THAT(p1.position.y, WithinAbs(p2.position.y, 1e-10f));
-        REQUIRE_THAT(p1.position.z, WithinAbs(p2.position.z, 1e-10f));
+        REQUIRE(approx_equal(p1.position, p2.position, 1e-10f));
         
         // Velocities should match exactly
-        REQUIRE_THAT(p1.velocity.x, WithinAbs(p2.velocity.x, 1e-10f));
-        REQUIRE_THAT(p1.velocity.y, WithinAbs(p2.velocity.y, 1e-10f));
-        REQUIRE_THAT(p1.velocity.z, WithinAbs(p2.velocity.z, 1e-10f));
+        REQUIRE(approx_equal(p1.velocity, p2.velocity, 1e-10f));
     }
 }
 
@@ -625,7 +603,7 @@ TEST_CASE("Physics Validation - System energy conservation (multi-particle)", "[
         make_no_damping_material(1.5f)
     );
     
-    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     
     // Calculate initial total energy
     float E_total_initial = 0.0f;
@@ -633,7 +611,7 @@ TEST_CASE("Physics Validation - System energy conservation (multi-particle)", "[
         float KE = 0.5f * p.material.mass * (p.velocity.x * p.velocity.x + 
                                               p.velocity.y * p.velocity.y + 
                                               p.velocity.z * p.velocity.z);
-        float PE = p.material.mass * 9.81f * p.position.y;
+        float PE = p.material.mass * EARTH_GRAVITY * p.position.y;
         E_total_initial += KE + PE;
     }
     
@@ -655,7 +633,7 @@ TEST_CASE("Physics Validation - System energy conservation (multi-particle)", "[
             float KE = 0.5f * p.material.mass * (p.velocity.x * p.velocity.x + 
                                                   p.velocity.y * p.velocity.y + 
                                                   p.velocity.z * p.velocity.z);
-            float PE = p.material.mass * 9.81f * p.position.y;
+            float PE = p.material.mass * EARTH_GRAVITY * p.position.y;
             E_total_current += KE + PE;
         }
         

@@ -4,8 +4,10 @@
 #include <core/physics/particle_system.hpp>
 #include <core/physics/force_field.hpp>
 #include <core/physics/material.hpp>
+#include <core/physics/physics_constants.hpp>
 
 using namespace phynity::physics;
+using namespace phynity::physics::constants;
 using namespace phynity::math::vectors;
 using Catch::Matchers::WithinAbs;
 
@@ -105,13 +107,13 @@ TEST_CASE("ParticleSystem - Add force fields", "[particle_system]") {
     ParticleSystem ps;
     
     SECTION("Add single force field") {
-        ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+        ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
         
         REQUIRE(ps.force_field_count() == 1);
     }
     
     SECTION("Add multiple force fields") {
-        ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+        ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
         ps.add_force_field(std::make_unique<DragField>(0.1f));
         
         REQUIRE(ps.force_field_count() == 2);
@@ -121,7 +123,7 @@ TEST_CASE("ParticleSystem - Add force fields", "[particle_system]") {
 TEST_CASE("ParticleSystem - Clear force fields", "[particle_system]") {
     ParticleSystem ps;
     
-    ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     ps.add_force_field(std::make_unique<DragField>(0.1f));
     
     REQUIRE(ps.force_field_count() == 2);
@@ -366,7 +368,7 @@ TEST_CASE("ParticleSystem - Free fall simulation", "[particle_system][integratio
     ParticleSystem ps;
     ps.spawn(Vec3f(0.0f, 100.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f);
     
-    ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
+    ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f)));
     
     // Simulate for 1 second with small timesteps
     const float dt = 0.01f;
@@ -375,9 +377,9 @@ TEST_CASE("ParticleSystem - Free fall simulation", "[particle_system][integratio
     }
     
     // After 1 second:
-    // v = g*t = -9.81 m/s
-    // y = y0 + 0.5*g*t^2 = 100 - 0.5*9.81*1 = 100 - 4.905 ≈ 95.095 m
-    REQUIRE_THAT(ps.particles()[0].velocity.y, WithinAbs(-9.81f, 0.1f));
+    // v = g*t = -EARTH_GRAVITY m/s
+    // y = y0 + 0.5*g*t^2 = 100 - 0.5*EARTH_GRAVITY*1 = 100 - 4.903 ≈ 95.097 m
+    REQUIRE_THAT(ps.particles()[0].velocity.y, WithinAbs(-EARTH_GRAVITY, 0.1f));
     REQUIRE_THAT(ps.particles()[0].position.y, WithinAbs(95.095f, 0.1f));
 }
 
