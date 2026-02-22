@@ -214,7 +214,20 @@ struct Mat4 {
         return m[row][col];
     }
 
-    /// Get row as vector
+    /// Bounds-checked element access
+    T& at(int row, int col) {
+        if (row < 0 || row >= 4 || col < 0 || col >= 4) {
+            throw std::out_of_range("Mat4 index out of range");
+        }
+        return m[row][col];
+    }
+
+    const T& at(int row, int col) const {
+        if (row < 0 || row >= 4 || col < 0 || col >= 4) {
+            throw std::out_of_range("Mat4 index out of range");
+        }
+        return m[row][col];
+    }
     Vec4<T> getRow(int row) const {
         return Vec4<T>(m[row][0], m[row][1], m[row][2], m[row][3]);
     }

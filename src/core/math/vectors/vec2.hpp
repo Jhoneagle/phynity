@@ -101,6 +101,17 @@ struct Vec2 {
         return (i == 0) ? x : y;
     }
 
+    /// Bounds-checked element access
+    T& at(int i) {
+        if (i < 0 || i >= 2) throw std::out_of_range("Vec2 index out of range");
+        return (i == 0) ? x : y;
+    }
+
+    const T& at(int i) const {
+        if (i < 0 || i >= 2) throw std::out_of_range("Vec2 index out of range");
+        return (i == 0) ? x : y;
+    }
+
     T dot(const Vec2& other) const {
         return x * other.x + y * other.y;
     }

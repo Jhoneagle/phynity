@@ -27,6 +27,14 @@ public:
     template<typename Iter>
     VecDynamic(Iter begin, Iter end) : data(begin, end) {}
 
+    // Move semantics
+    VecDynamic(VecDynamic&& other) noexcept = default;
+    VecDynamic& operator=(VecDynamic&& other) noexcept = default;
+
+    // Copy semantics (implicitly defined, but be explicit for clarity)
+    VecDynamic(const VecDynamic& other) = default;
+    VecDynamic& operator=(const VecDynamic& other) = default;
+
     // Accessors
     std::size_t size() const {
         return data.size();

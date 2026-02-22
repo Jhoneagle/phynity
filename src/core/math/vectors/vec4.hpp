@@ -115,6 +115,17 @@ struct Vec4 {
         return (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
     }
 
+    /// Bounds-checked element access
+    T& at(int i) {
+        if (i < 0 || i >= 4) throw std::out_of_range("Vec4 index out of range");
+        return (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
+    }
+
+    const T& at(int i) const {
+        if (i < 0 || i >= 4) throw std::out_of_range("Vec4 index out of range");
+        return (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
+    }
+
     T dot(const Vec4& other) const {
         return x * other.x + y * other.y + z * other.z + w * other.w;
     }

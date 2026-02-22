@@ -37,6 +37,10 @@ public:
     /// Default constructor - creates particle at origin with default material
     Particle() = default;
 
+    // Move semantics (defaulted for simple data members)
+    Particle(Particle&& other) noexcept = default;
+    Particle& operator=(Particle&& other) noexcept = default;
+
     /// Full constructor with all parameters
     Particle(
         const Vec3f& pos,

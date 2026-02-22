@@ -10,6 +10,60 @@
 namespace phynity::math::matrices {
 
 using phynity::math::vectors::VecDynamic;
+
+/// Lightweight view proxy for a row in MatDynamic (avoids copying)
+template<typename T>
+class MatRowView {
+    template<typename U>
+    friend struct MatDynamic;
+
+public:
+    T& operator[](std::size_t col) {
+        return (*data_)[row_index_ * col_count_ + col];
+    }
+
+    const T& operator[](std::size_t col) const {
+        return (*data_)[row_index_ * col_count_ + col];
+    }
+
+    std::size_t size() const { return col_count_; }
+
+private:
+    MatRowView(std::vector<T>* data, std::size_t row_idx, std::size_t col_count)
+        : data_(data), row_index_(row_idx), col_count_(col_count) {}
+
+    std::vector<T>* data_;
+    std::size_t row_index_;
+    std::size_t col_count_;
+};
+
+/// Lightweight view proxy for a column in MatDynamic (avoids copying)
+template<typename T>
+class MatColView {
+    template<typename U>
+    friend struct MatDynamic;
+
+public:
+    T& operator[](std::size_t row) {
+        return (*data_)[row * col_count_ + col_index_];
+    }
+
+    const T& operator[](std::size_t row) const {
+        return (*data_)[row * col_count_ + col_index_];
+    }
+
+    std::size_t size() const { return row_count_; }
+
+private:
+    MatColView(std::vector<T>* data, std::size_t col_idx, std::size_t row_count, std::size_t col_count)
+        : data_(data), col_index_(col_idx), row_count_(row_count), col_count_(col_count) {}
+
+    std::vector<T>* data_;
+    std::size_t col_index_;
+    std::size_t row_count_;
+    std::size_t col_count_;
+};
+
 template<typename T = float>
 struct MatDynamic {
     static_assert(std::is_floating_point_v<T>, "MatDynamic template parameter must be a floating-point type");
@@ -20,6 +74,14 @@ struct MatDynamic {
 
     MatDynamic(std::size_t r, std::size_t c, T scalar)
         : rows(r), cols(c), data(r * c, scalar) {}
+
+    // Move semantics
+    MatDynamic(MatDynamic&& other) noexcept = default;
+    MatDynamic& operator=(MatDynamic&& other) noexcept = default;
+
+    // Copy semantics (implicitly defined, explicitly for clarity)
+    MatDynamic(const MatDynamic& other) = default;
+    MatDynamic& operator=(const MatDynamic& other) = default;
 
     /// Query methods
     std::size_t numRows() const { return rows; }
@@ -60,6 +122,14 @@ struct MatDynamic {
         return result;
     }
 
+    /// Get row as lightweight view (no copying)
+    MatRowView<T> row(std::size_t row_idx) {
+        if (row_idx >= rows) {
+            throw std::out_of_range("Row index out of range");
+        }
+        return MatRowView<T>(&data, row_idx, cols);
+    }
+
     /// Get column as vector
     VecDynamic<T> getColumn(std::size_t col) const {
         VecDynamic<T> result(rows);
@@ -67,6 +137,14 @@ struct MatDynamic {
             result[i] = (*this)(i, col);
         }
         return result;
+    }
+
+    /// Get column as lightweight view (no copying)
+    MatColView<T> col(std::size_t col_idx) {
+        if (col_idx >= cols) {
+            throw std::out_of_range("Column index out of range");
+        }
+        return MatColView<T>(&data, col_idx, rows, cols);
     }
 
     /// Set row from vector

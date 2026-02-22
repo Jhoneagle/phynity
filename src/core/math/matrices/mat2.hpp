@@ -152,6 +152,21 @@ struct Mat2 {
         return m[row][col];
     }
 
+    /// Bounds-checked element access
+    T& at(int row, int col) {
+        if (row < 0 || row >= 2 || col < 0 || col >= 2) {
+            throw std::out_of_range("Mat2 index out of range");
+        }
+        return m[row][col];
+    }
+
+    const T& at(int row, int col) const {
+        if (row < 0 || row >= 2 || col < 0 || col >= 2) {
+            throw std::out_of_range("Mat2 index out of range");
+        }
+        return m[row][col];
+    }
+
     /// Get row as vector
     Vec2<T> getRow(int row) const {
         return Vec2<T>(m[row][0], m[row][1]);

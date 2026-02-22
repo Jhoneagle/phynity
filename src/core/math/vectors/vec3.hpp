@@ -107,7 +107,16 @@ struct Vec3 {
     constexpr const T& operator[](int i) const {
         return (i == 0) ? x : (i == 1) ? y : z;
     }
+    /// Bounds-checked element access
+    T& at(int i) {
+        if (i < 0 || i >= 3) throw std::out_of_range("Vec3 index out of range");
+        return (i == 0) ? x : (i == 1) ? y : z;
+    }
 
+    const T& at(int i) const {
+        if (i < 0 || i >= 3) throw std::out_of_range("Vec3 index out of range");
+        return (i == 0) ? x : (i == 1) ? y : z;
+    }
     T dot(const Vec3& other) const {
         return x * other.x + y * other.y + z * other.z;
     }

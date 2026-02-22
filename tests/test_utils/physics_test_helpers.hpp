@@ -27,6 +27,22 @@ namespace tolerance {
     
     /// Momentum conservation tolerance
     constexpr float MOMENTUM = 1e-5f;
+
+    // ========================================================================
+    // Relative Tolerances for Physics Validation (percentage-based)
+    // ========================================================================
+    
+    /// Relative tolerance for analytical solution comparison (1%)
+    constexpr float ANALYTICAL_REL_1PCT = 0.01f;
+    
+    /// Relative tolerance for velocity (2%)
+    constexpr float ANALYTICAL_REL_2PCT = 0.02f;
+    
+    /// Relative tolerance for projectile motion/ballistics (5%)
+    constexpr float ANALYTICAL_REL_5PCT = 0.05f;
+    
+    /// Absolute tolerance for reference-based simulation (precision: 1e-3)
+    constexpr float REFERENCE_ABS = 1e-3f;
 }
 
 // ============================================================================

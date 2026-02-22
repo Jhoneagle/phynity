@@ -24,6 +24,10 @@ public:
     };
 
     ParticleSystem() = default;
+    
+    // Move semantics
+    ParticleSystem(ParticleSystem&& other) noexcept = default;
+    ParticleSystem& operator=(ParticleSystem&& other) noexcept = default;
 
     // ========================================================================
     // Particle Management
@@ -77,6 +81,9 @@ public:
     }
 
     /// Remove dead particles from the system.
+    /// WARNING: This invalidates any outstanding iterators or references to particles.
+    /// Do not keep references to particles obtained via particles() before calling this method.
+    /// The internal particle storage may be reordered or resized during removal.
     void remove_dead_particles() {
         particles_.erase(
             std::remove_if(particles_.begin(), particles_.end(),

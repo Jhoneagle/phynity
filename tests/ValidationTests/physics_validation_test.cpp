@@ -76,8 +76,8 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]") {
     float expected_v = -EARTH_GRAVITY * actual_time;
     
     // Tolerance: 1% for position, 2% for velocity (numerical integration)
-    REQUIRE_THAT(p.position.y, WithinRel(expected_y, 0.01f));
-    REQUIRE_THAT(p.velocity.y, WithinRel(expected_v, 0.02f));
+    REQUIRE_THAT(p.position.y, WithinRel(expected_y, tolerance::ANALYTICAL_REL_1PCT));
+    REQUIRE_THAT(p.velocity.y, WithinRel(expected_v, tolerance::ANALYTICAL_REL_2PCT));
 }
 
 // ============================================================================
@@ -308,8 +308,8 @@ TEST_CASE("Physics Validation - Reference-based determinism (spring force)", "[p
     const auto& p = system.particles()[0];
 
     // Spring oscillations accumulate error more than constant motion
-    REQUIRE_THAT(p.position.x, WithinAbs(x_ref, 1e-3f));
-    REQUIRE_THAT(p.velocity.x, WithinAbs(v_ref, 1e-3f));
+    REQUIRE_THAT(p.position.x, WithinAbs(x_ref, tolerance::REFERENCE_ABS));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(v_ref, tolerance::REFERENCE_ABS));
 }
 
 // ============================================================================
@@ -466,7 +466,7 @@ TEST_CASE("Physics Validation - Projectile motion range", "[physics_validation]"
     float expected_range = (v0 * v0) / EARTH_GRAVITY;  // sin(2*45°) = 1
     
     // Tolerance: 5% (allows for numerical integration and timestep effects)
-    REQUIRE_THAT(landing_x, WithinRel(expected_range, 0.05f));
+    REQUIRE_THAT(landing_x, WithinRel(expected_range, tolerance::ANALYTICAL_REL_5PCT));
 }
 
 // ============================================================================
@@ -746,7 +746,7 @@ TEST_CASE("Physics Validation - Simple elastic collision", "[physics_validation]
     }
 
     REQUIRE(collided);
-    REQUIRE_THAT(v1_after, WithinRel(-2.0f, 0.05f));
-    REQUIRE_THAT(v2_after, WithinRel(2.0f, 0.05f));
+    REQUIRE_THAT(v1_after, WithinRel(-2.0f, tolerance::ANALYTICAL_REL_5PCT));
+    REQUIRE_THAT(v2_after, WithinRel(2.0f, tolerance::ANALYTICAL_REL_5PCT));
 }
 
