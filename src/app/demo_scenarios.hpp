@@ -86,6 +86,38 @@ public:
     void setup(PhysicsContext& context) override;
 };
 
+/// Orbit stability using a spring field toward origin
+class OrbitStability : public Scenario {
+public:
+    const char* name() const override {
+        return "Orbit Stability";
+    }
+
+    const char* description() const override {
+        return "Spring-centered orbit with near-constant radius";
+    }
+
+    void setup(PhysicsContext& context) override;
+};
+
+/// Multi-particle collision scenario (simple sphere-sphere response)
+class MultiParticleCollision : public Scenario {
+public:
+    const char* name() const override {
+        return "Multi-Particle Collision";
+    }
+
+    const char* description() const override {
+        return "Two particles collide elastically and exchange momentum";
+    }
+
+    void setup(PhysicsContext& context) override;
+
+private:
+    float radius_ = 0.5f;
+    float restitution_ = 1.0f;
+};
+
 /// Reduced gravity environment (e.g., Moon)
 class LowGravity : public Scenario {
 public:

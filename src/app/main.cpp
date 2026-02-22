@@ -64,6 +64,8 @@ int main() {
     scenarios.push_back(std::make_unique<phynity::app::scenarios::GravityWell>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ParticleSpread>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ProjectileMotion>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::OrbitStability>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::MultiParticleCollision>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::DragInteraction>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::LowGravity>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ZeroGravity>());

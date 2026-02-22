@@ -65,10 +65,20 @@ public:
     // ========================================================================
 
     /// Spawn a new particle with mass
-    void spawn_particle(const Vec3f& position, const Vec3f& velocity, float mass = 1.0f);
+    void spawn_particle(
+        const Vec3f& position,
+        const Vec3f& velocity,
+        float mass = 1.0f,
+        float radius = -1.0f
+    );
 
     /// Spawn a new particle with full material specification
-    void spawn_particle(const Vec3f& position, const Vec3f& velocity, const Material& material);
+    void spawn_particle(
+        const Vec3f& position,
+        const Vec3f& velocity,
+        const Material& material,
+        float radius = -1.0f
+    );
 
     /// Clear all particles from the system
     void clear_particles();

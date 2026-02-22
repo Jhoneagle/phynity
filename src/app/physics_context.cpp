@@ -64,12 +64,17 @@ void PhysicsContext::reset_accumulator() {
     timestep_controller_ = TimestepController(target_ts, config_.max_timestep, mode);
 }
 
-void PhysicsContext::spawn_particle(const Vec3f& position, const Vec3f& velocity, float mass) {
-    particle_system_.spawn(position, velocity, mass);
+void PhysicsContext::spawn_particle(const Vec3f& position, const Vec3f& velocity, float mass, float radius) {
+    particle_system_.spawn(position, velocity, mass, -1.0f, radius);
 }
 
-void PhysicsContext::spawn_particle(const Vec3f& position, const Vec3f& velocity, const Material& material) {
-    particle_system_.spawn(position, velocity, material);
+void PhysicsContext::spawn_particle(
+    const Vec3f& position,
+    const Vec3f& velocity,
+    const Material& material,
+    float radius
+) {
+    particle_system_.spawn(position, velocity, material, -1.0f, radius);
 }
 
 void PhysicsContext::clear_particles() {

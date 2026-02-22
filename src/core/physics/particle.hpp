@@ -20,6 +20,7 @@ public:
     Vec3f velocity = Vec3f(0.0f);        ///< Current velocity
     Vec3f acceleration = Vec3f(0.0f);    ///< Current acceleration (computed each frame)
     Vec3f force_accumulator = Vec3f(0.0f); ///< Accumulated forces this frame
+    float radius = 0.5f;                 ///< Collision radius for sphere collisions
 
     // ========================================================================
     // Material and Lifecycle
@@ -138,6 +139,7 @@ public:
         velocity = vel;
         acceleration = Vec3f(0.0f);
         force_accumulator = Vec3f(0.0f);
+        radius = 0.5f;
         material = mat;
         lifetime = -1.0f;
         active = true;

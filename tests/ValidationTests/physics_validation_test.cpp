@@ -2,6 +2,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
+#include <cmath>
+
 #include <core/physics/particle_system.hpp>
 #include <core/physics/timestep_controller.hpp>
 #include <core/physics/material.hpp>
@@ -17,6 +19,20 @@ using Catch::Matchers::WithinRel;
 namespace {
 Material make_no_damping_material(float mass) {
     return Material(mass, 0.8f, 0.3f, 0.0f, 0.0f, 0.0f);
+}
+
+Material make_no_damping_material(float mass, float restitution) {
+    return Material(mass, restitution, 0.3f, 0.0f, 0.0f, 0.0f);
+}
+
+float geometric_sum(float ratio, int steps) {
+    float sum = 0.0f;
+    float term = ratio;
+    for (int i = 0; i < steps; ++i) {
+        sum += term;
+        term *= ratio;
+    }
+    return sum;
 }
 }  // namespace
 
@@ -74,6 +90,242 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]") {
     // Tolerance: 1% for position, 2% for velocity (numerical integration)
     REQUIRE_THAT(p.position.y, WithinRel(expected_y, 0.01f));
     REQUIRE_THAT(p.velocity.y, WithinRel(expected_v, 0.02f));
+}
+
+// ============================================================================
+// Test 1.1: Reference-Based Determinism (Fixed-Step Free Fall)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (free fall)", "[physics_validation]") {
+    // Reference values derived from semi-implicit Euler with constant acceleration:
+    // v_n = v0 + n * a * dt
+    // p_n = p0 + dt * (n * v0 + a * dt * n * (n + 1) / 2)
+
+    ParticleSystem system;
+
+    const float dt = 0.01f;
+    const int steps = 100;  // 1 second
+    const float a = -9.81f;
+
+    system.spawn(
+        Vec3f(0.0f, 100.0f, 0.0f),
+        Vec3f(0.0f, 0.0f, 0.0f),
+        make_no_damping_material(1.0f)
+    );
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, a, 0.0f)));
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+
+    const float n = static_cast<float>(steps);
+    const float expected_v = n * a * dt;
+    const float expected_y = 100.0f + dt * (a * dt * n * (n + 1.0f) * 0.5f);
+
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, 1e-6f));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-6f));
+}
+
+// ============================================================================
+// Test 1.2: Reference-Based Determinism (Constant Velocity)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (constant velocity)", "[physics_validation]") {
+    // No forces, no damping. Velocity remains constant.
+    // p_n = p0 + v0 * dt * n
+
+    ParticleSystem system;
+
+    const float dt = 0.02f;
+    const int steps = 200;  // 4 seconds
+    const Vec3f v0(1.25f, -2.5f, 0.75f);
+    const Vec3f p0(10.0f, -5.0f, 2.0f);
+
+    system.spawn(p0, v0, make_no_damping_material(1.0f));
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+    const float n = static_cast<float>(steps);
+    Vec3f expected = p0 + v0 * (dt * n);
+
+    REQUIRE_THAT(p.position.x, WithinAbs(expected.x, 1e-4f));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected.y, 1e-4f));
+    REQUIRE_THAT(p.position.z, WithinAbs(expected.z, 1e-4f));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(v0.x, 1e-5f));
+    REQUIRE_THAT(p.velocity.y, WithinAbs(v0.y, 1e-5f));
+    REQUIRE_THAT(p.velocity.z, WithinAbs(v0.z, 1e-5f));
+}
+
+// ============================================================================
+// Test 1.3: Reference-Based Determinism (Constant Acceleration with v0)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (constant accel)", "[physics_validation]") {
+    // Semi-implicit Euler with constant acceleration and nonzero v0:
+    // v_n = v0 + n * a * dt
+    // p_n = p0 + dt * (n * v0 + a * dt * n * (n + 1) / 2)
+
+    ParticleSystem system;
+
+    const float dt = 0.01f;
+    const int steps = 150;  // 1.5 seconds
+    const float a = -4.0f;
+    const float v0 = 3.0f;
+    const float p0 = 2.0f;
+
+    system.spawn(
+        Vec3f(0.0f, p0, 0.0f),
+        Vec3f(0.0f, v0, 0.0f),
+        make_no_damping_material(1.0f)
+    );
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, a, 0.0f)));
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+    const float n = static_cast<float>(steps);
+    const float expected_v = v0 + n * a * dt;
+    const float expected_y = p0 + dt * (n * v0 + a * dt * n * (n + 1.0f) * 0.5f);
+
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_v, 1e-5f));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-5f));
+}
+
+// ============================================================================
+// Test 1.4: Reference-Based Determinism (Linear Drag, Discrete)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (linear drag)", "[physics_validation]") {
+    // Discrete semi-implicit Euler with drag: v_{n+1} = v_n * (1 - k*dt)
+    // p_n = p0 + dt * v0 * sum_{i=1..n} (1 - k*dt)^i
+
+    ParticleSystem system;
+
+    const float dt = 0.01f;
+    const int steps = 200;  // 2 seconds
+    const float k = 0.2f;
+    const float v0 = 5.0f;
+    const float p0 = -1.0f;
+
+    system.spawn(
+        Vec3f(p0, 0.0f, 0.0f),
+        Vec3f(v0, 0.0f, 0.0f),
+        make_no_damping_material(1.0f)
+    );
+    system.add_force_field(std::make_unique<DragField>(k));
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+    const float ratio = 1.0f - k * dt;
+    const float expected_v = v0 * std::pow(ratio, static_cast<float>(steps));
+    const float expected_x = p0 + dt * v0 * geometric_sum(ratio, steps);
+
+    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_v, 1e-4f));
+    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, 1e-4f));
+}
+
+// ============================================================================
+// Test 1.5: Reference-Based Determinism (2D Coupled: Gravity + Lateral)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (2D coupled)", "[physics_validation]") {
+    // 2D motion: constant lateral velocity (x) + constant gravity (y)
+    // x_n = x0 + vx * dt * n
+    // y_n = y0 + dt * (n * vy0 + ay * dt * n * (n + 1) / 2)
+    // vy_n = vy0 + n * ay * dt
+
+    ParticleSystem system;
+
+    const float dt = 0.01f;
+    const int steps = 250;  // 2.5 seconds
+    const Vec3f p0(0.0f, 10.0f, 0.0f);
+    const Vec3f v0(3.0f, 2.0f, 0.0f);
+    const float ay = -9.81f;
+
+    system.spawn(p0, v0, make_no_damping_material(1.0f));
+    system.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, ay, 0.0f)));
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+    const float n = static_cast<float>(steps);
+
+    // X-axis: pure constant velocity
+    const float expected_x = p0.x + v0.x * dt * n;
+    const float expected_vx = v0.x;
+
+    // Y-axis: constant acceleration
+    const float expected_y = p0.y + dt * (n * v0.y + ay * dt * n * (n + 1.0f) * 0.5f);
+    const float expected_vy = v0.y + n * ay * dt;
+
+    REQUIRE_THAT(p.position.x, WithinAbs(expected_x, 1e-4f));
+    REQUIRE_THAT(p.position.y, WithinAbs(expected_y, 1e-4f));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(expected_vx, 1e-5f));
+    REQUIRE_THAT(p.velocity.y, WithinAbs(expected_vy, 1e-4f));
+}
+
+// ============================================================================
+// Test 1.6: Reference-Based Determinism (Spring Force)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Reference-based determinism (spring force)", "[physics_validation]") {
+    // Spring force: F = -k * (x - center), a = -k/m * x (center = 0)
+    // Semi-implicit Euler with spring:
+    // v_{n+1} = v_n - (k/m) * x_n * dt
+    // x_{n+1} = x_n + v_{n+1} * dt
+    //
+    // Discrete recurrence (1D):
+    // v_{n+1} = v_n - omega^2 * x_n * dt
+    // x_{n+1} = x_n + v_{n+1} * dt
+    // where omega^2 = k/m
+
+    ParticleSystem system;
+
+    const float dt = 0.005f;  // Smaller timestep for spring stability
+    const int steps = 400;    // 2 seconds
+    const float mass = 1.0f;
+    const float k = 10.0f;
+    const float omega_sq = k / mass;
+    
+    const float x0 = 2.0f;
+    const float v0 = 0.0f;
+
+    system.spawn(
+        Vec3f(x0, 0.0f, 0.0f),
+        Vec3f(v0, 0.0f, 0.0f),
+        make_no_damping_material(mass)
+    );
+    system.add_force_field(std::make_unique<SpringField>(Vec3f(0.0f, 0.0f, 0.0f), k));
+
+    // Compute reference using discrete semi-implicit Euler recurrence
+    float x_ref = x0;
+    float v_ref = v0;
+    for (int i = 0; i < steps; ++i) {
+        v_ref = v_ref - omega_sq * x_ref * dt;
+        x_ref = x_ref + v_ref * dt;
+    }
+
+    for (int i = 0; i < steps; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p = system.particles()[0];
+
+    // Spring oscillations accumulate error more than constant motion
+    REQUIRE_THAT(p.position.x, WithinAbs(x_ref, 1e-3f));
+    REQUIRE_THAT(p.velocity.x, WithinAbs(v_ref, 1e-3f));
 }
 
 // ============================================================================
@@ -414,5 +666,109 @@ TEST_CASE("Physics Validation - System energy conservation (multi-particle)", "[
     // Tolerance: 2% of initial total energy
     float tolerance = E_total_initial * 0.02f;
     REQUIRE(max_energy_error < tolerance);
+}
+
+// ============================================================================
+// Test 8: Orbit Stability (Spring Field)
+// ============================================================================
+
+TEST_CASE("Physics Validation - Orbit stability in spring field", "[physics_validation]") {
+    // Problem: Central spring force F = -k * r
+    // For circular orbit: v = sqrt(k / m) * r
+
+    ParticleSystem system;
+    TimestepController controller(1.0f / 120.0f);
+
+    const float mass = 1.0f;
+    const float radius = 5.0f;
+    const float spring_constant = 4.0f;
+    const float omega = std::sqrt(spring_constant / mass);
+    const float tangential_speed = omega * radius;
+
+    system.spawn(
+        Vec3f(radius, 0.0f, 0.0f),
+        Vec3f(0.0f, 0.0f, tangential_speed),
+        make_no_damping_material(mass)
+    );
+    system.add_force_field(std::make_unique<SpringField>(Vec3f(0.0f, 0.0f, 0.0f), spring_constant));
+
+    float dt_frame = 1.0f / 120.0f;
+    int frames = static_cast<int>(5.0f / dt_frame);
+    float max_radius_error = 0.0f;
+
+    for (int i = 0; i < frames; ++i) {
+        controller.accumulate(dt_frame);
+        float dt = 0.0f;
+        while ((dt = controller.step()) > 0.0f) {
+            system.update(dt);
+        }
+
+        const auto& p = system.particles()[0];
+        float current_radius = p.position.length();
+        float error = std::abs(current_radius - radius);
+        max_radius_error = std::max(max_radius_error, error);
+    }
+
+    // Tolerance: 5% radius drift for numerical integration
+    REQUIRE(max_radius_error < radius * 0.05f);
+}
+
+// ============================================================================
+// Test 9: Simple Sphere Collision Response
+// ============================================================================
+
+TEST_CASE("Physics Validation - Simple elastic collision", "[physics_validation]") {
+    // Problem: Two equal-mass spheres collide head-on
+    // Expected: Velocities swap for restitution = 1
+
+    ParticleSystem system;
+    TimestepController controller(1.0f / 240.0f);
+
+    const float radius = 0.5f;
+    const float restitution = 1.0f;
+
+    system.enable_collisions(true);
+    system.set_default_collision_radius(radius);
+
+    system.spawn(
+        Vec3f(-1.0f, 0.0f, 0.0f),
+        Vec3f(2.0f, 0.0f, 0.0f),
+        make_no_damping_material(1.0f, restitution),
+        -1.0f,
+        radius
+    );
+    system.spawn(
+        Vec3f(1.0f, 0.0f, 0.0f),
+        Vec3f(-2.0f, 0.0f, 0.0f),
+        make_no_damping_material(1.0f, restitution),
+        -1.0f,
+        radius
+    );
+
+    float dt_frame = 1.0f / 240.0f;
+    int frames = static_cast<int>(2.0f / dt_frame);
+    bool collided = false;
+    float v1_after = 0.0f;
+    float v2_after = 0.0f;
+
+    for (int i = 0; i < frames; ++i) {
+        controller.accumulate(dt_frame);
+        float dt = 0.0f;
+        while ((dt = controller.step()) > 0.0f) {
+            system.update(dt);
+        }
+
+        auto& particles = system.particles();
+        if (particles[0].velocity.x < 0.0f && particles[1].velocity.x > 0.0f) {
+            collided = true;
+            v1_after = particles[0].velocity.x;
+            v2_after = particles[1].velocity.x;
+            break;
+        }
+    }
+
+    REQUIRE(collided);
+    REQUIRE_THAT(v1_after, WithinRel(-2.0f, 0.05f));
+    REQUIRE_THAT(v2_after, WithinRel(2.0f, 0.05f));
 }
 

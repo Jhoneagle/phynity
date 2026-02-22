@@ -30,13 +30,20 @@ public:
     /// @param velocity Starting velocity
     /// @param mass Particle mass (default: 1.0)
     /// @param lifetime Particle lifetime (-1 = infinite, > 0 = finite)
-    void spawn(const Vec3f& position, const Vec3f& velocity, float mass = 1.0f, float lifetime = -1.0f) {
+    void spawn(
+        const Vec3f& position,
+        const Vec3f& velocity,
+        float mass = 1.0f,
+        float lifetime = -1.0f,
+        float radius = -1.0f
+    ) {
         particles_.emplace_back();
         Particle& p = particles_.back();
         p.position = position;
         p.velocity = velocity;
         p.material.mass = mass;
         p.lifetime = lifetime;
+        p.radius = (radius > 0.0f) ? radius : default_collision_radius_;
     }
 
     /// Spawn a new particle with full material specification.
@@ -44,13 +51,20 @@ public:
     /// @param velocity Starting velocity
     /// @param material Complete material definition
     /// @param lifetime Particle lifetime (-1 = infinite, > 0 = finite)
-    void spawn(const Vec3f& position, const Vec3f& velocity, const Material& material, float lifetime = -1.0f) {
+    void spawn(
+        const Vec3f& position,
+        const Vec3f& velocity,
+        const Material& material,
+        float lifetime = -1.0f,
+        float radius = -1.0f
+    ) {
         particles_.emplace_back();
         Particle& p = particles_.back();
         p.position = position;
         p.velocity = velocity;
         p.material = material;
         p.lifetime = lifetime;
+        p.radius = (radius > 0.0f) ? radius : default_collision_radius_;
     }
 
     /// Clear all particles.
@@ -86,6 +100,32 @@ public:
     /// Get the number of active force fields.
     size_t force_field_count() const {
         return force_fields_.size();
+    }
+
+    // ========================================================================
+    // Collision Management
+    // ========================================================================
+
+    /// Enable or disable simple sphere-sphere collision handling.
+    void enable_collisions(bool enabled) {
+        collisions_enabled_ = enabled;
+    }
+
+    /// Check whether collisions are enabled.
+    bool collisions_enabled() const {
+        return collisions_enabled_;
+    }
+
+    /// Set default collision radius used by spawn() when radius is not specified.
+    void set_default_collision_radius(float radius) {
+        if (radius > 0.0f) {
+            default_collision_radius_ = radius;
+        }
+    }
+
+    /// Get the current default collision radius.
+    float default_collision_radius() const {
+        return default_collision_radius_;
     }
 
     // ========================================================================
@@ -132,7 +172,12 @@ public:
             }
         }
 
-        // Step 5: Remove dead particles
+        // Step 5: Resolve collisions (optional)
+        if (collisions_enabled_) {
+            resolve_collisions();
+        }
+
+        // Step 6: Remove dead particles
         remove_dead_particles();
     }
 
@@ -190,6 +235,62 @@ public:
 private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
+    bool collisions_enabled_ = false;
+    float default_collision_radius_ = 0.5f;
+
+    void resolve_collisions() {
+        const size_t count = particles_.size();
+        for (size_t i = 0; i < count; ++i) {
+            Particle& a = particles_[i];
+            if (!a.is_alive()) {
+                continue;
+            }
+
+            for (size_t j = i + 1; j < count; ++j) {
+                Particle& b = particles_[j];
+                if (!b.is_alive()) {
+                    continue;
+                }
+
+                Vec3f delta = b.position - a.position;
+                float dist = delta.length();
+                float min_dist = a.radius + b.radius;
+
+                if (dist <= 1e-6f || dist > min_dist) {
+                    continue;
+                }
+
+                Vec3f normal = delta / dist;
+                Vec3f relative_velocity = b.velocity - a.velocity;
+                float rel_normal = relative_velocity.dot(normal);
+
+                if (rel_normal >= 0.0f) {
+                    continue;
+                }
+
+                float inv_m1 = a.inverse_mass();
+                float inv_m2 = b.inverse_mass();
+                float inv_sum = inv_m1 + inv_m2;
+                if (inv_sum <= 0.0f) {
+                    continue;
+                }
+
+                float restitution = std::min(a.material.restitution, b.material.restitution);
+                float impulse_mag = -(1.0f + restitution) * rel_normal / inv_sum;
+                Vec3f impulse = normal * impulse_mag;
+
+                a.velocity -= impulse * inv_m1;
+                b.velocity += impulse * inv_m2;
+
+                float penetration = min_dist - dist;
+                if (penetration > 0.0f) {
+                    Vec3f correction = normal * (penetration / inv_sum);
+                    a.position -= correction * inv_m1;
+                    b.position += correction * inv_m2;
+                }
+            }
+        }
+    }
 };
 
 }  // namespace phynity::physics

@@ -3,6 +3,14 @@
 
 namespace phynity::app::scenarios {
 
+namespace {
+using phynity::physics::Material;
+
+Material make_no_damping_material(float mass, float restitution = 0.8f) {
+    return Material(mass, restitution, 0.3f, 0.0f, 0.0f, 0.0f);
+}
+}  // namespace
+
 void GravityWell::setup(PhysicsContext& context) {
     context.clear_particles();
     context.set_gravity(Vec3f(0.0f, -9.81f, 0.0f));
@@ -58,6 +66,49 @@ void ProjectileMotion::setup(PhysicsContext& context) {
         Vec3f(0.0f, 0.0f, 0.0f),
         Vec3f(speed * std::cos(angle_rad * 0.5f), speed * std::sin(angle_rad * 0.5f), 0.0f),
         1.0f
+    );
+}
+
+void OrbitStability::setup(PhysicsContext& context) {
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+
+    const float mass = 1.0f;
+    const float radius = 5.0f;
+    const float spring_constant = 4.0f;
+    const float omega = std::sqrt(spring_constant / mass);
+    const float tangential_speed = omega * radius;
+
+    context.particle_system().add_force_field(
+        std::make_unique<phynity::physics::SpringField>(Vec3f(0.0f, 0.0f, 0.0f), spring_constant)
+    );
+
+    context.spawn_particle(
+        Vec3f(radius, 0.0f, 0.0f),
+        Vec3f(0.0f, 0.0f, tangential_speed),
+        make_no_damping_material(mass)
+    );
+}
+
+void MultiParticleCollision::setup(PhysicsContext& context) {
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+    context.particle_system().enable_collisions(true);
+    context.particle_system().set_default_collision_radius(radius_);
+
+    Material material = make_no_damping_material(1.0f, restitution_);
+
+    context.spawn_particle(
+        Vec3f(-1.0f, 0.0f, 0.0f),
+        Vec3f(2.0f, 0.0f, 0.0f),
+        material,
+        radius_
+    );
+    context.spawn_particle(
+        Vec3f(1.0f, 0.0f, 0.0f),
+        Vec3f(-2.0f, 0.0f, 0.0f),
+        material,
+        radius_
     );
 }
 
