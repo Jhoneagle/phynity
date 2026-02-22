@@ -1,49 +1,94 @@
-#include <core/physics/particle_system.hpp>
+#include "physics_context.hpp"
+#include "demo_scenarios.hpp"
 #include <iostream>
 #include <iomanip>
+#include <memory>
+#include <vector>
 
-using phynity::physics::ParticleSystem;
+using phynity::app::PhysicsContext;
+using phynity::app::scenarios::Scenario;
 using phynity::math::vectors::Vec3f;
 
-int main() {
-    std::cout << "=== Phynity Phase 0 - Simple Particle System ===" << std::endl;
+/// Simple demo runner that executes a scenario for a specified duration
+void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5.0f) {
+    std::cout << "\n" << std::string(70, '=') << std::endl;
+    std::cout << "Scenario: " << scenario->name() << std::endl;
+    std::cout << "Description: " << scenario->description() << std::endl;
+    std::cout << std::string(70, '=') << std::endl;
 
-    ParticleSystem system;
+    // Create physics context with default config (60 FPS)
+    PhysicsContext context;
     
-    // Spawn some particles
-    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(1.0f, 0.0f, 0.0f), 1.0f);
-    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(-1.0f, 0.0f, 0.0f), 1.0f);
-    system.spawn(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(0.0f, 0.0f, 1.0f), 1.0f);
+    // Setup the scenario
+    scenario->setup(context);
     
-    std::cout << "Spawned " << system.particleCount() << " particles at y=5" << std::endl;
+    std::cout << "Initial particle count: " << context.particle_count() << std::endl;
+    std::cout << "Initial force fields: " << context.force_field_count() << std::endl;
+    std::cout << "Running for " << duration_seconds << " seconds...\n" << std::endl;
 
-    // Simulation parameters
-    const float dt = 0.016f;  // ~60 FPS
-    const float gravity = -9.81f;
-    const int steps = 300;  // ~5 seconds
+    // Simulation loop
+    const float dt = 0.016f;  // ~60 FPS frame time
+    const int frames = static_cast<int>(duration_seconds / dt);
     
-    // Run simulation
-    for (int i = 0; i < steps; ++i) {
-        // Apply gravity
-        system.applyGravity(Vec3f(0.0f, gravity, 0.0f));
+    for (int frame = 0; frame < frames; ++frame) {
+        // Update physics with frame time
+        context.update(dt);
         
-        // Step simulation
-        system.step(dt);
+        // Call scenario step callback if needed
+        scenario->step_callback(context, dt);
         
-        // Print status every 60 frames (~1 second)
-        if (i % 60 == 0) {
-            float time = static_cast<float>(i) * dt;
-            std::cout << std::fixed << std::setprecision(2)
-                      << "t=" << time << "s, particles=" << system.particleCount();
+        // Print diagnostics every 60 frames (~1 second)
+        if (frame % 60 == 0) {
+            float elapsed_time = static_cast<float>(frame) * dt;
+            auto diag = context.diagnostics();
             
-            if (system.particleCount() > 0) {
-                const auto& particles = system.particles();
-                std::cout << ", first particle at " << particles[0].position;
-            }
-            std::cout << std::endl;
+            std::cout << std::fixed << std::setprecision(3);
+            std::cout << "t=" << std::setw(5) << elapsed_time << "s | "
+                      << "particles=" << std::setw(3) << diag.particle_count << " | "
+                      << "KE=" << std::setw(8) << diag.total_kinetic_energy << "J | "
+                      << "p_y=" << std::setw(8) << diag.total_momentum.y << std::endl;
         }
     }
 
-    std::cout << "Simulation complete. Final particle count: " << system.particleCount() << std::endl;
+    std::cout << "\nFinal simulation state:" << std::endl;
+    context.print_diagnostics();
+}
+
+int main() {
+    std::cout << "=== Phynity Phase 2 - Application Integration ===" << std::endl;
+    std::cout << "Physics Context with Demo Scenarios\n" << std::endl;
+
+    // Create a collection of scenarios to demonstrate
+    std::vector<std::unique_ptr<Scenario>> scenarios;
+    
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::GravityWell>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::ParticleSpread>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::ProjectileMotion>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::DragInteraction>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::LowGravity>());
+    scenarios.push_back(std::make_unique<phynity::app::scenarios::ZeroGravity>());
+
+    std::cout << "Available Scenarios:" << std::endl;
+    for (size_t i = 0; i < scenarios.size(); ++i) {
+        std::cout << "  " << (i + 1) << ". " << scenarios[i]->name() << std::endl;
+    }
+
+    // Run a subset of scenarios for the demo
+    // In a full application, user would select which scenario to run
+    std::cout << "\nRunning selected scenarios (5 seconds each)...\n" << std::endl;
+
+    // Run Gravity Well
+    run_scenario(std::make_unique<phynity::app::scenarios::GravityWell>(), 3.0f);
+
+    // Run Projectile Motion
+    run_scenario(std::make_unique<phynity::app::scenarios::ProjectileMotion>(), 3.0f);
+
+    // Run Drag Interaction
+    run_scenario(std::make_unique<phynity::app::scenarios::DragInteraction>(), 5.0f);
+
+    std::cout << "\n" << std::string(70, '=') << std::endl;
+    std::cout << "All scenarios completed successfully!" << std::endl;
+    std::cout << std::string(70, '=') << std::endl;
+    
     return 0;
 }
