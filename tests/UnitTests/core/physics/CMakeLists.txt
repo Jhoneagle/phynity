@@ -1,5 +1,7 @@
 # Core physics unit tests
 
+add_subdirectory(collision)
+
 add_executable(material_test material_test.cpp)
 phynity_target_defaults(material_test)
 phynity_apply_warnings(material_test)
