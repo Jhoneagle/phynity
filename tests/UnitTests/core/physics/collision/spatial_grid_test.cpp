@@ -2,7 +2,7 @@
 #include "../../../../../src/core/physics/collision/spatial_grid.hpp"
 #include <tests/test_utils/physics_test_helpers.hpp>
 
-using namespace phynity::core::physics::collision;
+using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
 

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cmath>
 
-namespace phynity::core::physics::collision {
+namespace phynity::physics::collision {
 
 /**
  * @brief Integer coordinates for a grid cell.
@@ -141,6 +141,6 @@ private:
     }
 };
 
-} // namespace phynity::core::physics::collision
+} // namespace phynity::physics::collision
 
 #endif // PHYNITY_CORE_PHYSICS_COLLISION_SPATIAL_GRID_HASH_HPP

@@ -3,7 +3,7 @@
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <unordered_set>
 
-using namespace phynity::core::physics::collision;
+using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
 using Catch::Matchers::WithinAbs;

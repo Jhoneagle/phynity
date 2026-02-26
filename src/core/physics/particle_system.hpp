@@ -6,10 +6,12 @@
 #include <core/physics/collision/sphere_collider.hpp>
 #include <core/physics/collision/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/impulse_resolver.hpp>
+#include <core/physics/collision/spatial_grid.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include <unordered_set>
 
 namespace phynity::physics {
 
@@ -142,6 +144,22 @@ public:
         return default_collision_radius_;
     }
 
+    /// Set the broadphase grid cell size (in world units).
+    /// Larger cells = fewer cells, faster insertion but more candidates per query.
+    /// Smaller cells = more cells, slower insertion but fewer candidates.
+    /// Recommended: 2x to 4x the average particle diameter.
+    void set_broadphase_cell_size(float cell_size) {
+        if (cell_size > 0.0f) {
+            broadphase_cell_size_ = cell_size;
+            spatial_grid_.set_cell_size(cell_size);
+        }
+    }
+
+    /// Get the current broadphase grid cell size.
+    float broadphase_cell_size() const {
+        return broadphase_cell_size_;
+    }
+
     // ========================================================================
     // Simulation Update
     // ========================================================================
@@ -249,8 +267,10 @@ public:
 private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
+    collision::SpatialGrid spatial_grid_{2.0f};  // Default cell size: 2x particle radius
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
+    float broadphase_cell_size_ = 2.0f;
 
     /// Convert a Particle to a SphereCollider for generic collision handling
     static collision::SphereCollider particle_to_collider(const Particle& p) {
@@ -272,18 +292,46 @@ private:
     void resolve_collisions() {
         using namespace phynity::physics::collision;
         
+        // Phase 1: Build broadphase spatial grid
+        spatial_grid_.clear();
         const size_t count = particles_.size();
+        for (size_t i = 0; i < count; ++i) {
+            const Particle& p = particles_[i];
+            if (p.is_alive()) {
+                spatial_grid_.insert(static_cast<uint32_t>(i), p.position);
+            }
+        }
+
+        // Phase 2: Collision detection using broadphase culling + narrowphase
+        // Track processed pairs to avoid duplicates (same pair from different queries)
+        std::unordered_set<uint64_t> processed_pairs;
+
         for (size_t i = 0; i < count; ++i) {
             Particle& a = particles_[i];
             if (!a.is_alive()) {
                 continue;
             }
 
-            for (size_t j = i + 1; j < count; ++j) {
+            // Get candidate neighbors from spatial grid
+            const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
+
+            for (uint32_t j_index : candidates) {
+                const auto j = static_cast<size_t>(j_index);
+                if (i >= j) {
+                    continue;  // Only process each pair once (i < j)
+                }
+
                 Particle& b = particles_[j];
                 if (!b.is_alive()) {
                     continue;
                 }
+
+                // Create pair ID for deduplication
+                const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
+                if (processed_pairs.count(pair_id) > 0) {
+                    continue;  // Already processed this pair
+                }
+                processed_pairs.insert(pair_id);
 
                 // Convert particles to generic colliders for collision detection
                 SphereCollider collider_a = particle_to_collider(a);

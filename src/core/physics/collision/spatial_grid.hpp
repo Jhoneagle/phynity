@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <algorithm>
 
-namespace phynity::core::physics::collision {
+namespace phynity::physics::collision {
 
 /**
  * @brief Cell in the spatial grid containing object indices.
@@ -258,6 +258,6 @@ private:
     std::unordered_map<uint64_t, GridCellData> cells_;
 };
 
-} // namespace phynity::core::physics::collision
+} // namespace phynity::physics::collision
 
 #endif // PHYNITY_CORE_PHYSICS_COLLISION_SPATIAL_GRID_HPP
