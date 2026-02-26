@@ -1,0 +1,47 @@
+[energy_monitor]
+frame_count=5.000000000
+current_energy=90.000000000
+violation_count=4.000000000
+violation_frame=1.000000000
+type=loss
+loss_percent=1.000000000
+energy_prev=100.000000000
+energy_curr=99.000000000
+violation_frame=2.000000000
+type=loss
+loss_percent=0.505050505
+energy_prev=99.000000000
+energy_curr=98.500000000
+violation_frame=3.000000000
+type=gain
+loss_percent=2.538071066
+energy_prev=98.500000000
+energy_curr=101.000000000
+violation_frame=4.000000000
+type=loss
+loss_percent=10.891089109
+energy_prev=101.000000000
+energy_curr=90.000000000
+[momentum_monitor]
+frame_count=4.000000000
+current=0.000000000 0.000000000 0.000000000
+violation_count=2.000000000
+violation_frame=1.000000000
+prev=0.000000000 0.000000000 0.000000000
+curr=1.000000000 0.000000000 0.000000000
+change_mag=1.000000000
+violation_frame=3.000000000
+prev=1.200000000 0.000000000 0.000000000
+curr=0.000000000 0.000000000 0.000000000
+change_mag=1.200000000
+[collision_monitor]
+frame1_candidates=10.000000000
+frame1_collisions=2.000000000
+frame1_efficiency=0.200000000
+frame2_candidates=10.000000000
+frame2_collisions=1.000000000
+frame2_efficiency=0.100000000
+violation_count=1.000000000
+violation_frame=2.000000000
+violation_efficiency=0.100000000
+min_efficiency=0.200000000

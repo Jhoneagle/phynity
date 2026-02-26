@@ -85,7 +85,6 @@ TEST_CASE("Broadphase correctness: Simple sphere-sphere collision", "[validation
         const Vec3f vel_b(-1.0f, 0.0f, 0.0f);   // Moving left
         const float radius = 0.5f;
         const float mass = 1.0f;
-        const float restitution = 0.8f;
 
         // Broadphase system
         broadphase_system.spawn(pos_a, vel_a, mass, -1.0f, radius);

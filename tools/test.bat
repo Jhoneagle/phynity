@@ -8,9 +8,14 @@ set FILTER=%2
 
 rem Map friendly filters to ctest regex
 set FILTER_REGEX=%FILTER%
+set CMAKE_EXTRA_FLAGS=
 if /i "%FILTER%"=="unit" set FILTER_REGEX=^unit\.
 if /i "%FILTER%"=="validation" set FILTER_REGEX=^validation\.
-cmake --preset %PRESET%
+if /i "%FILTER%"=="golden" (
+  set FILTER_REGEX=[golden]
+  set CMAKE_EXTRA_FLAGS=-DGOLDEN_CAPTURE_MODE=ON
+)
+cmake --preset %PRESET% %CMAKE_EXTRA_FLAGS%
 cmake --build --preset %PRESET%
 if "%FILTER%"=="" (
   ctest --preset %PRESET% --output-on-failure

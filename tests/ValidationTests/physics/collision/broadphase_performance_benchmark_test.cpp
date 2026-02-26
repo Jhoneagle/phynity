@@ -65,9 +65,10 @@ TimingResult time_broadphase(int particle_count, float cell_size, int frames) {
     // Spawn particles in a random distribution
     // Use seed for reproducibility
     unsigned int seed = 42;
+    constexpr float seed_max = 2147483647.0f;
     auto rand_float = [&seed](float min, float max) -> float {
         seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        float normalized = static_cast<float>(seed) / 0x7fffffff;
+        float normalized = static_cast<float>(seed) / seed_max;
         return min + normalized * (max - min);
     };
 
@@ -96,7 +97,7 @@ TimingResult time_broadphase(int particle_count, float cell_size, int frames) {
     const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     
     TimingResult result;
-    result.milliseconds = duration.count() / 1000.0;
+    result.milliseconds = static_cast<double>(duration.count()) / 1000.0;
     return result;
 }
 
@@ -106,9 +107,10 @@ TimingResult time_brute_force(int particle_count, int frames) {
 
     // Identical particle distribution
     unsigned int seed = 42;
+    constexpr float seed_max = 2147483647.0f;
     auto rand_float = [&seed](float min, float max) -> float {
         seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        float normalized = static_cast<float>(seed) / 0x7fffffff;
+        float normalized = static_cast<float>(seed) / seed_max;
         return min + normalized * (max - min);
     };
 
@@ -145,7 +147,7 @@ TimingResult time_brute_force(int particle_count, int frames) {
     const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     
     TimingResult result;
-    result.milliseconds = duration.count() / 1000.0;
+    result.milliseconds = static_cast<double>(duration.count()) / 1000.0;
     return result;
 }
 

@@ -1,0 +1,12 @@
+[sphere_non_collision]
+valid=0.000000000
+[sphere_separating]
+valid=0.000000000
+[aabb_touching_edges]
+valid=0.000000000
+[impulse_restitution]
+contact_valid=1.000000000
+vel_a=-0.400000095 0.000000000 0.000000000
+vel_b=0.200000048 0.000000000 0.000000000
+pos_a=-0.533333302 0.000000000 0.000000000
+pos_b=0.466666669 0.000000000 0.000000000

@@ -11,14 +11,19 @@ set -euo pipefail
 preset="${1:-debug}"
 filter="${2:-}"
 filter_regex="$filter"
+cmake_extra_flags=""
 case "$filter" in
   unit|Unit|UNIT) filter_regex='^unit\.' ;;
   validation|Validation|VALIDATION) filter_regex='^validation\.' ;;
+  golden|Golden|GOLDEN)
+    filter_regex='[golden]'
+    cmake_extra_flags="-DGOLDEN_CAPTURE_MODE=ON"
+    ;;
 esac
 
 # Build first to ensure tests are compiled
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-bash "$script_dir/build.sh" "$preset"
+CMAKE_EXTRA_FLAGS="$cmake_extra_flags" bash "$script_dir/build.sh" "$preset"
 
 # Run tests via CTest preset
 if [[ -n "$filter_regex" ]]; then

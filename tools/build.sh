@@ -5,6 +5,7 @@ set -euo pipefail
 # Presets: debug (default), release
 # Env overrides:
 #   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
+#   CMAKE_EXTRA_FLAGS="-DVAR=value" for additional CMake flags
 #   CLEAN=true to remove build/<preset> before configuring
 #   RECONFIGURE=true forces reconfigure (cmake --preset still configures if needed)
 
@@ -31,6 +32,11 @@ fi
 
 # Compose extra cache variables
 extra_cache=("-DPHYNITY_ENABLE_SANITIZERS=$sanitizers")
+
+# Add any additional CMake flags passed via environment
+if [[ -n "${CMAKE_EXTRA_FLAGS:-}" ]]; then
+  extra_cache+=($CMAKE_EXTRA_FLAGS)
+fi
 
 # Hook vcpkg toolchain if available
 if [[ -n "${VCPKG_ROOT:-}" && -f "vcpkg.json" ]]; then

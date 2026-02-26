@@ -1,41 +1,6 @@
-# Validation/Integration tests (slower, cross-component)
+# Validation tests organized by domain
 
-add_executable(integration_test_harness_test integration_test_harness_test.cpp)
-phynity_target_defaults(integration_test_harness_test)
-phynity_apply_warnings(integration_test_harness_test)
-phynity_apply_sanitizers(integration_test_harness_test)
-target_link_libraries(integration_test_harness_test PRIVATE phynity::tests Catch2::Catch2WithMain)
-add_test(NAME validation.calculus.integration_test_harness COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:integration_test_harness_test>)
-
-# Physics system validation tests
-add_executable(physics_validation_test physics_validation_test.cpp)
-phynity_target_defaults(physics_validation_test)
-phynity_apply_warnings(physics_validation_test)
-phynity_apply_sanitizers(physics_validation_test)
-target_link_libraries(physics_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
-add_test(NAME validation.physics.system COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:physics_validation_test>)
-
-# Broadphase correctness validation tests
-add_executable(broadphase_correctness_validation_test broadphase_correctness_validation_test.cpp)
-phynity_target_defaults(broadphase_correctness_validation_test)
-phynity_apply_warnings(broadphase_correctness_validation_test)
-phynity_apply_sanitizers(broadphase_correctness_validation_test)
-target_link_libraries(broadphase_correctness_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
-add_test(NAME validation.broadphase.correctness COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:broadphase_correctness_validation_test>)
-
-# Broadphase performance benchmark tests
-add_executable(broadphase_performance_benchmark_test broadphase_performance_benchmark_test.cpp)
-phynity_target_defaults(broadphase_performance_benchmark_test)
-phynity_apply_warnings(broadphase_performance_benchmark_test)
-phynity_apply_sanitizers(broadphase_performance_benchmark_test)
-target_link_libraries(broadphase_performance_benchmark_test PRIVATE phynity::tests Catch2::Catch2WithMain)
-add_test(NAME validation.broadphase.performance COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:broadphase_performance_benchmark_test>)
-
-# Profiler overhead benchmark tests
-add_executable(profiler_overhead_benchmark profiler_overhead_benchmark.cpp)
-phynity_target_defaults(profiler_overhead_benchmark)
-phynity_apply_warnings(profiler_overhead_benchmark)
-phynity_apply_sanitizers(profiler_overhead_benchmark)
-target_link_libraries(profiler_overhead_benchmark PRIVATE phynity::tests Catch2::Catch2WithMain)
-add_test(NAME validation.diagnostics.profiler_overhead COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:profiler_overhead_benchmark>)
+add_subdirectory(math)
+add_subdirectory(physics)
+add_subdirectory(diagnostics)
 

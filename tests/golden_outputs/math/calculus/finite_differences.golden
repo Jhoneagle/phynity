@@ -1,0 +1,9 @@
+[scalar_derivatives]
+forward_first=0.877678394
+central_first=0.877678394
+forward_second=-0.476837099
+central_second=-0.506639421
+[jacobian]
+J=
+0.499933958 1.000016928
+0.968873501 -1.000016928

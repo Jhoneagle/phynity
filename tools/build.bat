@@ -5,6 +5,7 @@ rem Usage: tools\build.bat [preset]
 rem Presets: debug (default), release
 rem Env overrides:
 rem   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
+rem   CMAKE_EXTRA_FLAGS="-DVAR=value" for additional CMake flags
 rem   CLEAN=true to remove build\<preset> before configuring
 
 rem Limit vcpkg parallelism to avoid file system contention
@@ -27,7 +28,7 @@ if /i "%CLEAN%"=="true" (
 )
 
 rem Configure + build
-cmake --preset %PRESET% -DPHYNITY_ENABLE_SANITIZERS=%SANITIZERS%
+cmake --preset %PRESET% -DPHYNITY_ENABLE_SANITIZERS=%SANITIZERS% %CMAKE_EXTRA_FLAGS%
 if errorlevel 1 exit /b 1
 
 cmake --build --preset %PRESET%
