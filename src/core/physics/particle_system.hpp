@@ -3,6 +3,9 @@
 #include <core/physics/particle.hpp>
 #include <core/physics/force_field.hpp>
 #include <core/physics/physics_constants.hpp>
+#include <core/physics/collision/sphere_collider.hpp>
+#include <core/physics/collision/sphere_sphere_narrowphase.hpp>
+#include <core/physics/collision/impulse_resolver.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <algorithm>
 #include <memory>
@@ -249,7 +252,26 @@ private:
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
 
+    /// Convert a Particle to a SphereCollider for generic collision handling
+    static collision::SphereCollider particle_to_collider(const Particle& p) {
+        collision::SphereCollider collider;
+        collider.position = p.position;
+        collider.velocity = p.velocity;
+        collider.radius = p.radius;
+        collider.inverse_mass = p.inverse_mass();
+        collider.restitution = p.material.restitution;
+        return collider;
+    }
+
+    /// Apply collision results back to a Particle
+    static void apply_collider_to_particle(const collision::SphereCollider& collider, Particle& p) {
+        p.position = collider.position;
+        p.velocity = collider.velocity;
+    }
+
     void resolve_collisions() {
+        using namespace phynity::physics::collision;
+        
         const size_t count = particles_.size();
         for (size_t i = 0; i < count; ++i) {
             Particle& a = particles_[i];
@@ -263,42 +285,20 @@ private:
                     continue;
                 }
 
-                Vec3f delta = b.position - a.position;
-                float dist = delta.length();
-                float min_dist = a.radius + b.radius;
+                // Convert particles to generic colliders for collision detection
+                SphereCollider collider_a = particle_to_collider(a);
+                SphereCollider collider_b = particle_to_collider(b);
 
-                using phynity::math::utilities::is_zero;
-                if (is_zero(dist, COLLISION_EPSILON) || dist > min_dist) {
-                    continue;
-                }
+                // Detect collision using generic narrowphase
+                ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
 
-                Vec3f normal = delta / dist;
-                Vec3f relative_velocity = b.velocity - a.velocity;
-                float rel_normal = relative_velocity.dot(normal);
-
-                if (rel_normal >= 0.0f) {
-                    continue;
-                }
-
-                float inv_m1 = a.inverse_mass();
-                float inv_m2 = b.inverse_mass();
-                float inv_sum = inv_m1 + inv_m2;
-                if (inv_sum <= 0.0f) {
-                    continue;
-                }
-
-                float restitution = std::min(a.material.restitution, b.material.restitution);
-                float impulse_mag = -(1.0f + restitution) * rel_normal / inv_sum;
-                Vec3f impulse = normal * impulse_mag;
-
-                a.velocity -= impulse * inv_m1;
-                b.velocity += impulse * inv_m2;
-
-                float penetration = min_dist - dist;
-                if (penetration > 0.0f) {
-                    Vec3f correction = normal * (penetration / inv_sum);
-                    a.position -= correction * inv_m1;
-                    b.position += correction * inv_m2;
+                // Resolve the contact if manifold exists
+                if (manifold.is_valid()) {
+                    ImpulseResolver::resolve(manifold, collider_a, collider_b);
+                    
+                    // Apply results back to particles
+                    apply_collider_to_particle(collider_a, a);
+                    apply_collider_to_particle(collider_b, b);
                 }
             }
         }
