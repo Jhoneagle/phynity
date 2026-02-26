@@ -8,6 +8,10 @@
 #include <core/physics/collision/impulse_resolver.hpp>
 #include <core/physics/collision/spatial_grid.hpp>
 #include <core/math/utilities/float_comparison.hpp>
+#include <core/diagnostics/profiling_macros.hpp>
+#include <core/diagnostics/energy_monitor.hpp>
+#include <core/diagnostics/momentum_monitor.hpp>
+#include <core/diagnostics/collision_monitor.hpp>
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -173,44 +177,78 @@ public:
     /// 5. Remove dead particles
     /// @param dt Time step in seconds
     void update(float dt) {
+        PROFILE_FUNCTION();
+        
         // Step 1: Clear forces from previous frame
-        for (auto& p : particles_) {
-            if (p.is_alive()) {
-                p.clear_forces();
+        {
+            PROFILE_SCOPE("clear_forces");
+            for (auto& p : particles_) {
+                if (p.is_alive()) {
+                    p.clear_forces();
+                }
             }
         }
 
         // Step 2: Apply all force fields to all particles
-        for (const auto& field : force_fields_) {
-            for (auto& p : particles_) {
-                if (p.is_alive()) {
-                    Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
-                    p.apply_force(force);
+        {
+            PROFILE_SCOPE("apply_force_fields");
+            for (const auto& field : force_fields_) {
+                for (auto& p : particles_) {
+                    if (p.is_alive()) {
+                        Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                        p.apply_force(force);
+                    }
                 }
             }
         }
 
         // Step 3: Update accelerations from accumulated forces
-        for (auto& p : particles_) {
-            if (p.is_alive()) {
-                p.update_acceleration();
+        {
+            PROFILE_SCOPE("update_accelerations");
+            for (auto& p : particles_) {
+                if (p.is_alive()) {
+                    p.update_acceleration();
+                }
             }
         }
 
         // Step 4: Integrate particle state
-        for (auto& p : particles_) {
-            if (p.is_alive()) {
-                p.integrate(dt);
+        {
+            PROFILE_SCOPE("integration");
+            for (auto& p : particles_) {
+                if (p.is_alive()) {
+                    p.integrate(dt);
+                }
             }
         }
 
         // Step 5: Resolve collisions (optional)
         if (collisions_enabled_) {
+            PROFILE_SCOPE("collision_resolution");
             resolve_collisions();
         }
 
-        // Step 6: Remove dead particles
-        remove_dead_particles();
+        // Step 6: Monitor physics (energy, momentum)
+        if (energy_monitor_enabled_ && energy_monitor_) {
+            PROFILE_SCOPE("energy_monitoring");
+            const Diagnostics diag = compute_diagnostics();
+            // Include potential energy from gravity fields if present
+            float total_energy = diag.total_kinetic_energy;
+            energy_monitor_->update(static_cast<double>(total_energy));
+        }
+
+        if (momentum_monitor_enabled_ && momentum_monitor_) {
+            PROFILE_SCOPE("momentum_monitoring");
+            const Diagnostics diag = compute_diagnostics();
+            diagnostics::Vec3 momentum(diag.total_momentum.x, diag.total_momentum.y, diag.total_momentum.z);
+            momentum_monitor_->update(momentum);
+        }
+
+        // Step 7: Remove dead particles
+        {
+            PROFILE_SCOPE("remove_dead_particles");
+            remove_dead_particles();
+        }
     }
 
     /// Legacy step method for backwards compatibility.
@@ -252,6 +290,46 @@ public:
     }
 
     // ========================================================================
+    // Physics Monitoring (Optional)
+    // ========================================================================
+
+    /// Enable energy conservation monitoring.
+    /// Monitors total system energy and detects violations (excess loss/gain).
+    void enable_energy_monitor(std::shared_ptr<diagnostics::EnergyMonitor> monitor) {
+        energy_monitor_ = monitor;
+        energy_monitor_enabled_ = true;
+    }
+
+    /// Disable energy monitoring.
+    void disable_energy_monitor() {
+        energy_monitor_enabled_ = false;
+    }
+
+    /// Enable momentum conservation monitoring.
+    /// Monitors total system momentum and detects unexpected changes.
+    void enable_momentum_monitor(std::shared_ptr<diagnostics::MomentumMonitor> monitor) {
+        momentum_monitor_ = monitor;
+        momentum_monitor_enabled_ = true;
+    }
+
+    /// Disable momentum monitoring.
+    void disable_momentum_monitor() {
+        momentum_monitor_enabled_ = false;
+    }
+
+    /// Enable collision efficiency monitoring.
+    /// Tracks broadphase/narrowphase efficiency to detect poor grid configuration.
+    void enable_collision_monitor(std::shared_ptr<diagnostics::CollisionMonitor> monitor) {
+        collision_monitor_ = monitor;
+        collision_monitor_enabled_ = true;
+    }
+
+    /// Disable collision monitoring.
+    void disable_collision_monitor() {
+        collision_monitor_enabled_ = false;
+    }
+
+    // ========================================================================
     // Accessors
     // ========================================================================
 
@@ -271,6 +349,14 @@ private:
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
     float broadphase_cell_size_ = 2.0f;
+
+    // Optional diagnostics monitors
+    std::shared_ptr<diagnostics::EnergyMonitor> energy_monitor_;
+    std::shared_ptr<diagnostics::MomentumMonitor> momentum_monitor_;
+    std::shared_ptr<diagnostics::CollisionMonitor> collision_monitor_;
+    bool energy_monitor_enabled_ = false;
+    bool momentum_monitor_enabled_ = false;
+    bool collision_monitor_enabled_ = false;
 
     /// Convert a Particle to a SphereCollider for generic collision handling
     static collision::SphereCollider particle_to_collider(const Particle& p) {
@@ -313,12 +399,15 @@ private:
         
         // Phase 1: Build broadphase spatial grid
         // Clear previous frame's spatial structure and re-insert all alive particles
-        spatial_grid_.clear();
-        const size_t count = particles_.size();
-        for (size_t i = 0; i < count; ++i) {
-            const Particle& p = particles_[i];
-            if (p.is_alive()) {
-                spatial_grid_.insert(static_cast<uint32_t>(i), p.position);
+        {
+            PROFILE_SCOPE("broadphase_grid_build");
+            spatial_grid_.clear();
+            const size_t count = particles_.size();
+            for (size_t i = 0; i < count; ++i) {
+                const Particle& p = particles_[i];
+                if (p.is_alive()) {
+                    spatial_grid_.insert(static_cast<uint32_t>(i), p.position);
+                }
             }
         }
 
@@ -326,6 +415,10 @@ private:
         // Track processed pairs to avoid duplicates (same pair from different queries)
         // Hash set provides O(1) lookup for pair deduplication
         std::unordered_set<uint64_t> processed_pairs;
+        uint32_t broadphase_candidates = 0;
+        uint32_t narrowphase_tests = 0;
+        uint32_t actual_collisions = 0;
+        const size_t count = particles_.size();
 
         for (size_t i = 0; i < count; ++i) {
             Particle& a = particles_[i];
@@ -335,6 +428,7 @@ private:
 
             // Get candidate neighbors from spatial grid (3x3x3 cell neighborhood)
             const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
+            broadphase_candidates += static_cast<uint32_t>(candidates.size());
 
             for (uint32_t j_index : candidates) {
                 const auto j = static_cast<size_t>(j_index);
@@ -363,10 +457,12 @@ private:
                 SphereCollider collider_b = particle_to_collider(b);
 
                 // Detect collision using generic narrowphase
+                ++narrowphase_tests;
                 ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
 
                 // Resolve the contact if manifold exists
                 if (manifold.is_valid()) {
+                    ++actual_collisions;
                     ImpulseResolver::resolve(manifold, collider_a, collider_b);
                     
                     // Apply results back to particles
@@ -374,6 +470,14 @@ private:
                     apply_collider_to_particle(collider_b, b);
                 }
             }
+        }
+
+        // Report collision statistics to monitor
+        if (collision_monitor_enabled_ && collision_monitor_) {
+            collision_monitor_->set_broadphase_candidates(broadphase_candidates);
+            collision_monitor_->set_narrowphase_tests(narrowphase_tests);
+            collision_monitor_->set_actual_collisions(actual_collisions);
+            collision_monitor_->end_frame();
         }
     }
 };
