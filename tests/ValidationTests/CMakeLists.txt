@@ -31,3 +31,11 @@ phynity_apply_sanitizers(broadphase_performance_benchmark_test)
 target_link_libraries(broadphase_performance_benchmark_test PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME validation.broadphase.performance COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:broadphase_performance_benchmark_test>)
 
+# Profiler overhead benchmark tests
+add_executable(profiler_overhead_benchmark profiler_overhead_benchmark.cpp)
+phynity_target_defaults(profiler_overhead_benchmark)
+phynity_apply_warnings(profiler_overhead_benchmark)
+phynity_apply_sanitizers(profiler_overhead_benchmark)
+target_link_libraries(profiler_overhead_benchmark PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.diagnostics.profiler_overhead COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:profiler_overhead_benchmark>)
+
