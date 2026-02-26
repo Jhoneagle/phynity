@@ -289,10 +289,30 @@ private:
         p.velocity = collider.velocity;
     }
 
+    /// Internal collision resolution using spatial grid broadphase + narrowphase
+    ///
+    /// Algorithm:
+    /// 1. Build spatial grid by inserting all particles at their positions
+    /// 2. For each particle, query neighbors from spatial grid (3x3x3 cell neighborhood)
+    /// 3. Run narrowphase collision detection on candidate pairs
+    /// 4. Resolve collisions using impulse-based contact resolution
+    ///
+    /// Pair Deduplication Strategy:
+    /// - Spatial grid returns all objects in neighboring cells (may include duplicates)
+    /// - Each particle queries its neighbors, so pairs (i,j) may be found from both i and j queries
+    /// - Deduplication uses canonical ordering: only process pairs where i < j
+    /// - Hash set tracks processed pairs to avoid redundant narrowphase calls
+    /// - Pair ID encoding: (i << 32) | j, ensuring unique 64-bit identifier
+    ///
+    /// Performance:
+    /// - Broadphase: O(n) grid insertion + O(n * k) neighbor queries, k = avg neighbors
+    /// - Narrowphase: O(m) where m = unique candidate pairs (typically m << n²)
+    /// - Advantage over brute force: k << n, so total is O(n * k) vs O(n²)
     void resolve_collisions() {
         using namespace phynity::physics::collision;
         
         // Phase 1: Build broadphase spatial grid
+        // Clear previous frame's spatial structure and re-insert all alive particles
         spatial_grid_.clear();
         const size_t count = particles_.size();
         for (size_t i = 0; i < count; ++i) {
@@ -304,6 +324,7 @@ private:
 
         // Phase 2: Collision detection using broadphase culling + narrowphase
         // Track processed pairs to avoid duplicates (same pair from different queries)
+        // Hash set provides O(1) lookup for pair deduplication
         std::unordered_set<uint64_t> processed_pairs;
 
         for (size_t i = 0; i < count; ++i) {
@@ -312,13 +333,16 @@ private:
                 continue;
             }
 
-            // Get candidate neighbors from spatial grid
+            // Get candidate neighbors from spatial grid (3x3x3 cell neighborhood)
             const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
 
             for (uint32_t j_index : candidates) {
                 const auto j = static_cast<size_t>(j_index);
+                
+                // Canonical ordering: only process pairs where i < j
+                // This ensures each pair is considered exactly once
                 if (i >= j) {
-                    continue;  // Only process each pair once (i < j)
+                    continue;  // Skip self-collisions (i==j) and reversed pairs (i>j)
                 }
 
                 Particle& b = particles_[j];
@@ -326,10 +350,11 @@ private:
                     continue;
                 }
 
-                // Create pair ID for deduplication
+                // Create unique pair ID for deduplication (i is guaranteed < j)
+                // Encoding: high 32 bits = i, low 32 bits = j
                 const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
                 if (processed_pairs.count(pair_id) > 0) {
-                    continue;  // Already processed this pair
+                    continue;  // Already processed this pair from a different grid cell query
                 }
                 processed_pairs.insert(pair_id);
 
