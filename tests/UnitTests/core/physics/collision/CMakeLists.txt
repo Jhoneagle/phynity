@@ -56,3 +56,10 @@ phynity_apply_sanitizers(contact_cache_test)
 target_link_libraries(contact_cache_test PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME unit.physics.collision.contact_cache COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:contact_cache_test>)
 
+add_executable(pgs_solver_test pgs_solver_test.cpp)
+phynity_target_defaults(pgs_solver_test)
+phynity_apply_warnings(pgs_solver_test)
+phynity_apply_sanitizers(pgs_solver_test)
+target_link_libraries(pgs_solver_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.physics.collision.pgs_solver COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:pgs_solver_test>)
+

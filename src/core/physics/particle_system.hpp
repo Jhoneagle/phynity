@@ -6,6 +6,7 @@
 #include <core/physics/collision/sphere_collider.hpp>
 #include <core/physics/collision/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/impulse_resolver.hpp>
+#include <core/physics/collision/pgs_solver.hpp>
 #include <core/physics/collision/spatial_grid.hpp>
 #include <core/physics/collision/contact_cache.hpp>
 #include <core/math/utilities/float_comparison.hpp>
@@ -27,6 +28,12 @@ using namespace phynity::physics::constants;
 /// Integrates Material system, ForceField system, and provides energy/momentum diagnostics.
 class ParticleSystem {
 public:
+    /// Collision solver modes for dual-solver architecture (Phase 4)
+    enum class SolverMode {
+        SimpleImpulse,  ///< Single-pass impulse-based collision resolution (fast, less stable)
+        PGS             ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
+    };
+
     /// Diagnostic information about the particle system
     struct Diagnostics {
         float total_kinetic_energy = 0.0f;  ///< Sum of all particle kinetic energies
@@ -35,6 +42,7 @@ public:
     };
 
     ParticleSystem() = default;
+
     
     // Move semantics
     ParticleSystem(ParticleSystem&& other) noexcept = default;
@@ -164,6 +172,59 @@ public:
     /// Get the current broadphase grid cell size.
     float broadphase_cell_size() const {
         return broadphase_cell_size_;
+    }
+
+    // ========================================================================
+    // Solver Configuration (Phase 4: Dual-Solver Architecture)
+    // ========================================================================
+
+    /// Set the collision solver mode (SimpleImpulse or PGS).
+    /// @param mode The solver mode to use
+    void set_solver_mode(SolverMode mode) {
+        solver_mode_ = mode;
+    }
+
+    /// Get the current collision solver mode.
+    SolverMode solver_mode() const {
+        return solver_mode_;
+    }
+
+    /// Set PGS solver configuration (only used when solver_mode == PGS).
+    /// @param config PGS solver configuration struct
+    void set_pgs_config(const collision::PGSConfig& config) {
+        pgs_config_ = config;
+    }
+
+    /// Get the current PGS solver configuration.
+    const collision::PGSConfig& pgs_config() const {
+        return pgs_config_;
+    }
+
+    /// Enable/disable adaptive iteration for PGS solver.
+    /// When enabled, iterates more for larger contact sets.
+    /// @param adaptive True to use adaptive iterations, false for fixed iterations
+    void set_pgs_adaptive(bool adaptive) {
+        pgs_adaptive_ = adaptive;
+    }
+
+    /// Check if adaptive iteration is enabled for PGS solver.
+    bool pgs_adaptive() const {
+        return pgs_adaptive_;
+    }
+
+    /// Get the contact threshold for automatic solver selection.
+    /// When not forcing a specific solver, the system uses:
+    /// - SimpleImpulse if contact count <= threshold
+    /// - PGS if contact count > threshold
+    /// @return The current contact count threshold
+    int contact_count_threshold() const {
+        return contact_count_threshold_;
+    }
+
+    /// Set the contact threshold for automatic solver selection.
+    /// @param threshold Contact count above which to use PGS (default: 10)
+    void set_contact_count_threshold(int threshold) {
+        contact_count_threshold_ = std::max(1, threshold);
     }
 
     // ========================================================================
@@ -382,6 +443,12 @@ private:
     float default_collision_radius_ = 0.5f;
     float broadphase_cell_size_ = 2.0f;
 
+    // Solver configuration (Phase 4: Dual-Solver Architecture)
+    SolverMode solver_mode_ = SolverMode::SimpleImpulse;
+    collision::PGSConfig pgs_config_;
+    bool pgs_adaptive_ = true;
+    int contact_count_threshold_ = 10;  ///< Use PGS if contact count exceeds this threshold
+
     // Optional diagnostics monitors
     std::shared_ptr<diagnostics::EnergyMonitor> energy_monitor_;
     std::shared_ptr<diagnostics::MomentumMonitor> momentum_monitor_;
@@ -505,27 +572,74 @@ private:
         // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
         std::vector<ContactManifold> cached_manifolds = contact_cache_.update(detected_manifolds);
 
-        // Phase 4: Resolve all cached manifolds and store applied impulses
-        for (const ContactManifold& manifold : cached_manifolds) {
-            ++actual_collisions;
+        // Phase 4: Resolve all cached manifolds using dual-solver architecture (Phase 4)
+        // Select solver based on contact count and configuration
+        // If SimpleImpulse mode, use it directly
+        // If PGS mode, use PGS
+        // If Auto mode (future): choose based on contact count threshold
+        bool use_pgs = (solver_mode_ == SolverMode::PGS);
+        
+        // Alternative: adaptive selection based on contact count
+        // if (solver_mode_ == SolverMode::Auto) {
+        //     use_pgs = (cached_manifolds.size() > static_cast<size_t>(contact_count_threshold_));
+        // }
 
-            // Get particles for this contact
-            Particle& a = particles_[manifold.object_a_id];
-            Particle& b = particles_[manifold.object_b_id];
+        if (use_pgs && !cached_manifolds.empty()) {
+            // Use PGS solver for iterative constraint resolution
+            std::vector<collision::SphereCollider> colliders;
+            colliders.reserve(particles_.size());
+            
+            // Build collider array from particles
+            for (const auto& particle : particles_) {
+                colliders.push_back(particle_to_collider(particle));
+            }
+            
+            // Solve all contacts with PGS
+            std::vector<Vec3f> applied_impulses;
+            if (pgs_adaptive_) {
+                applied_impulses = collision::PGSSolver::solve_adaptive(cached_manifolds, colliders, pgs_config_);
+            } else {
+                applied_impulses = collision::PGSSolver::solve(cached_manifolds, colliders, pgs_config_);
+            }
+            
+            // Apply results back to particles and cache impulses
+            for (size_t i = 0; i < cached_manifolds.size(); ++i) {
+                actual_collisions++;
+                const auto& manifold = cached_manifolds[i];
+                
+                if (manifold.object_a_id < particles_.size() && manifold.object_b_id < particles_.size()) {
+                    apply_collider_to_particle(colliders[manifold.object_a_id], particles_[manifold.object_a_id]);
+                    apply_collider_to_particle(colliders[manifold.object_b_id], particles_[manifold.object_b_id]);
+                    
+                    // Store applied impulse in cache for warm-start
+                    if (i < applied_impulses.size()) {
+                        contact_cache_.store_impulse(manifold.contact_id, applied_impulses[i]);
+                    }
+                }
+            }
+        } else {
+            // Use simple single-pass impulse resolver (faster, less stable)
+            for (const ContactManifold& manifold : cached_manifolds) {
+                actual_collisions++;
 
-            // Convert to colliders
-            SphereCollider collider_a = particle_to_collider(a);
-            SphereCollider collider_b = particle_to_collider(b);
+                // Get particles for this contact
+                Particle& a = particles_[manifold.object_a_id];
+                Particle& b = particles_[manifold.object_b_id];
 
-            // Resolve and get applied impulse
-            Vec3f applied_impulse = ImpulseResolver::resolve(manifold, collider_a, collider_b);
+                // Convert to colliders (note: SimpleImpulse only works with current state)
+                collision::SphereCollider collider_a = particle_to_collider(a);
+                collision::SphereCollider collider_b = particle_to_collider(b);
 
-            // Store impulse in cache for next frame's warm-start
-            contact_cache_.store_impulse(manifold.contact_id, applied_impulse);
+                // Resolve and get applied impulse
+                Vec3f applied_impulse = collision::ImpulseResolver::resolve(manifold, collider_a, collider_b);
 
-            // Apply results back to particles
-            apply_collider_to_particle(collider_a, a);
-            apply_collider_to_particle(collider_b, b);
+                // Store impulse in cache for next frame's warm-start
+                contact_cache_.store_impulse(manifold.contact_id, applied_impulse);
+
+                // Apply results back to particles
+                apply_collider_to_particle(collider_a, a);
+                apply_collider_to_particle(collider_b, b);
+            }
         }
 
         // Report collision statistics to monitor

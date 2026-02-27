@@ -48,3 +48,12 @@ phynity_apply_sanitizers(contact_cache_golden_test)
 target_link_libraries(contact_cache_golden_test PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME validation.physics.collision.contact_cache_golden COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:contact_cache_golden_test>)
 set_tests_properties(validation.physics.collision.contact_cache_golden PROPERTIES LABELS golden)
+
+# PGS solver golden tests
+add_executable(pgs_solver_golden_test pgs_solver_golden_test.cpp)
+phynity_target_defaults(pgs_solver_golden_test)
+phynity_apply_warnings(pgs_solver_golden_test)
+phynity_apply_sanitizers(pgs_solver_golden_test)
+target_link_libraries(pgs_solver_golden_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.pgs_solver_golden COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:pgs_solver_golden_test>)
+set_tests_properties(validation.physics.collision.pgs_solver_golden PROPERTIES LABELS golden)
