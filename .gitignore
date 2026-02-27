@@ -55,4 +55,5 @@ build
 vcpkg_installed
 
 # Temp
-*.txt
+AI-conversation.txt
+log.txt

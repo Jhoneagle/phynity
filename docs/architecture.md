@@ -33,9 +33,10 @@ Contains all platform-agnostic logic:
   - Collision detection and response (sphere-sphere)
   - Energy and momentum diagnostics
 - **Memory management** (`core/memory/`)
-  - Custom allocators (planned)
+  - Thread-safe arena allocator for per-frame allocations
 - **Job system and concurrency primitives** (`core/jobs/`)
-  - Parallel execution infrastructure (planned)
+  - Minimal job system with deterministic scheduling mode
+  - Parallel-for helper for data-parallel loops
 
 ### platform/
 Thin abstractions over OS and compiler features such as:
@@ -143,7 +144,7 @@ This is validated through reference-based tests comparing against analytical sol
 
 - O(n) force application per field
 - O(n²) collision detection (brute force, suitable for small-to-medium particle counts)
-- Single-threaded update loop (parallelization planned in future phases)
+- Update loop can use the job system for data-parallel passes when configured
 
 ### Future Extensions
 

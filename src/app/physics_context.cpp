@@ -21,7 +21,20 @@ PhysicsContext::PhysicsContext(const Config& config)
               : TimestepController::OverflowMode::CLAMP
       )
 {
+    if (config_.enable_jobs) {
+        JobSystemConfig job_config;
+        job_config.worker_count = config_.job_workers;
+        job_config.mode = config_.use_determinism
+            ? SchedulingMode::Deterministic
+            : SchedulingMode::Concurrent;
+        job_system_.start(job_config);
+        particle_system_.set_job_system(&job_system_);
+    }
     initialize_force_fields();
+}
+
+PhysicsContext::~PhysicsContext() {
+    job_system_.shutdown();
 }
 
 void PhysicsContext::initialize_force_fields() {

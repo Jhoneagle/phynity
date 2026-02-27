@@ -6,7 +6,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Core math bedrock (S): vectors/matrices/quaternions, linear algebra routines, trig helpers, numerical stability checks, small-angle approximations.✅
 - Calculus utilities (S): forward/central differences, simple integrators (Euler, semi-implicit), curve fitting for derivatives; integration harness for regression tests.✅
 - Particle simulation v2 (S): variable timestep support with determinism guardrails, basic gravity/drag fields, per-particle material presets.✅
-- Parallel core bootstrap (S): minimal job system, work-stealing queues, thread-safe arenas; deterministic scheduling mode for tests.
+- Parallel core bootstrap (S): minimal job system, work-stealing queues, thread-safe arenas; deterministic scheduling mode for tests.✅
 - Collision scaffolding (S): broadphase spatial grid, narrowphase for spheres/AABBs, contact manifold data structures.✅
 - Observability (S): profiling hooks in hot loops, frame markers, sanity-check assertions for energy/momentum drift.✅
 - Testing (S): golden tests for math primitives, particle integration, and deterministic stepping; CI smoke targets.✅

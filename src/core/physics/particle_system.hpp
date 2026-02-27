@@ -9,6 +9,7 @@
 #include <core/physics/collision/spatial_grid.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
+#include <core/jobs/job_system.hpp>
 #include <core/diagnostics/energy_monitor.hpp>
 #include <core/diagnostics/momentum_monitor.hpp>
 #include <core/diagnostics/collision_monitor.hpp>
@@ -178,25 +179,51 @@ public:
     /// @param dt Time step in seconds
     void update(float dt) {
         PROFILE_FUNCTION();
+
+        auto for_each_alive = [this](auto&& fn) {
+            const size_t count = particles_.size();
+            if (job_system_ && job_system_->is_running()) {
+                job_system_->parallel_for(0, static_cast<uint32_t>(count), 1, [&](uint32_t i) {
+                    Particle& p = particles_[i];
+                    if (p.is_alive()) {
+                        fn(p);
+                    }
+                });
+            } else {
+                for (auto& p : particles_) {
+                    if (p.is_alive()) {
+                        fn(p);
+                    }
+                }
+            }
+        };
         
         // Step 1: Clear forces from previous frame
         {
             PROFILE_SCOPE("clear_forces");
-            for (auto& p : particles_) {
-                if (p.is_alive()) {
-                    p.clear_forces();
-                }
-            }
+            for_each_alive([](Particle& p) { p.clear_forces(); });
         }
 
         // Step 2: Apply all force fields to all particles
         {
             PROFILE_SCOPE("apply_force_fields");
             for (const auto& field : force_fields_) {
-                for (auto& p : particles_) {
-                    if (p.is_alive()) {
+                if (job_system_ && job_system_->is_running()) {
+                    const size_t count = particles_.size();
+                    job_system_->parallel_for(0, static_cast<uint32_t>(count), 1, [&](uint32_t i) {
+                        Particle& p = particles_[i];
+                        if (!p.is_alive()) {
+                            return;
+                        }
                         Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
                         p.apply_force(force);
+                    });
+                } else {
+                    for (auto& p : particles_) {
+                        if (p.is_alive()) {
+                            Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                            p.apply_force(force);
+                        }
                     }
                 }
             }
@@ -205,21 +232,13 @@ public:
         // Step 3: Update accelerations from accumulated forces
         {
             PROFILE_SCOPE("update_accelerations");
-            for (auto& p : particles_) {
-                if (p.is_alive()) {
-                    p.update_acceleration();
-                }
-            }
+            for_each_alive([](Particle& p) { p.update_acceleration(); });
         }
 
         // Step 4: Integrate particle state
         {
             PROFILE_SCOPE("integration");
-            for (auto& p : particles_) {
-                if (p.is_alive()) {
-                    p.integrate(dt);
-                }
-            }
+            for_each_alive([dt](Particle& p) { p.integrate(dt); });
         }
 
         // Step 5: Resolve collisions (optional)
@@ -330,6 +349,16 @@ public:
     }
 
     // ========================================================================
+    // Job System Integration
+    // ========================================================================
+
+    /// Provide a job system for optional parallel update passes.
+    /// The system is not owned by ParticleSystem.
+    void set_job_system(phynity::jobs::JobSystem* job_system) {
+        job_system_ = job_system;
+    }
+
+    // ========================================================================
     // Accessors
     // ========================================================================
 
@@ -345,6 +374,7 @@ public:
 private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
+    phynity::jobs::JobSystem* job_system_ = nullptr;
     collision::SpatialGrid spatial_grid_{2.0f};  // Default cell size: 2x particle radius
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;

@@ -5,6 +5,7 @@
 #include <core/physics/material.hpp>
 #include <core/physics/force_field.hpp>
 #include <core/physics/physics_constants.hpp>
+#include <core/jobs/job_system.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <memory>
 
@@ -18,6 +19,9 @@ using phynity::physics::GravityField;
 using phynity::physics::DragField;
 using phynity::physics::constants::EARTH_GRAVITY;
 using phynity::math::vectors::Vec3f;
+using phynity::jobs::JobSystem;
+using phynity::jobs::JobSystemConfig;
+using phynity::jobs::SchedulingMode;
 
 /// Application-level physics context manager.
 /// Handles lifecycle management of the particle system, timestep controller,
@@ -29,6 +33,8 @@ public:
         float target_fps = 60.0f;           ///< Target frames per second
         float max_timestep = 1.0f / 30.0f;  ///< Maximum time per physics step
         bool use_determinism = true;        ///< Enable deterministic mode
+        bool enable_jobs = true;            ///< Enable job system parallelization
+        uint32_t job_workers = 0;           ///< Worker count (0 = auto)
         Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f);  ///< Gravitational acceleration
         float air_drag = 0.0f;              ///< Air drag coefficient
         
@@ -41,6 +47,9 @@ public:
     
     /// Constructor with default configuration
     PhysicsContext();
+
+    /// Destructor ensures job system shutdown
+    ~PhysicsContext();
 
     // Non-copyable, non-movable
     PhysicsContext(const PhysicsContext&) = delete;
@@ -135,6 +144,7 @@ private:
     Config config_;
     ParticleSystem particle_system_;
     TimestepController timestep_controller_;
+    JobSystem job_system_;
 
     /// Initialize force fields based on configuration
     void initialize_force_fields();
