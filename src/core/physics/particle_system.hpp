@@ -7,6 +7,7 @@
 #include <core/physics/collision/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/impulse_resolver.hpp>
 #include <core/physics/collision/spatial_grid.hpp>
+#include <core/physics/collision/contact_cache.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
@@ -376,6 +377,7 @@ private:
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem* job_system_ = nullptr;
     collision::SpatialGrid spatial_grid_{2.0f};  // Default cell size: 2x particle radius
+    collision::ContactCache contact_cache_;      // Contact cache for frame-to-frame tracking (Phase 3)
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
     float broadphase_cell_size_ = 2.0f;
@@ -450,6 +452,9 @@ private:
         uint32_t actual_collisions = 0;
         const size_t count = particles_.size();
 
+        // Phase 3: Collect all detected manifolds (instead of resolving immediately)
+        std::vector<ContactManifold> detected_manifolds;
+
         for (size_t i = 0; i < count; ++i) {
             Particle& a = particles_[i];
             if (!a.is_alive()) {
@@ -490,16 +495,37 @@ private:
                 ++narrowphase_tests;
                 ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
 
-                // Resolve the contact if manifold exists
+                // Collect valid manifolds for caching
                 if (manifold.is_valid()) {
-                    ++actual_collisions;
-                    ImpulseResolver::resolve(manifold, collider_a, collider_b);
-                    
-                    // Apply results back to particles
-                    apply_collider_to_particle(collider_a, a);
-                    apply_collider_to_particle(collider_b, b);
+                    detected_manifolds.push_back(manifold);
                 }
             }
+        }
+
+        // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
+        std::vector<ContactManifold> cached_manifolds = contact_cache_.update(detected_manifolds);
+
+        // Phase 4: Resolve all cached manifolds and store applied impulses
+        for (const ContactManifold& manifold : cached_manifolds) {
+            ++actual_collisions;
+
+            // Get particles for this contact
+            Particle& a = particles_[manifold.object_a_id];
+            Particle& b = particles_[manifold.object_b_id];
+
+            // Convert to colliders
+            SphereCollider collider_a = particle_to_collider(a);
+            SphereCollider collider_b = particle_to_collider(b);
+
+            // Resolve and get applied impulse
+            Vec3f applied_impulse = ImpulseResolver::resolve(manifold, collider_a, collider_b);
+
+            // Store impulse in cache for next frame's warm-start
+            contact_cache_.store_impulse(manifold.contact_id, applied_impulse);
+
+            // Apply results back to particles
+            apply_collider_to_particle(collider_a, a);
+            apply_collider_to_particle(collider_b, b);
         }
 
         // Report collision statistics to monitor

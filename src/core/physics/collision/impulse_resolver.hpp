@@ -17,13 +17,14 @@ public:
     /// @param manifold Contact manifold describing the collision
     /// @param collider_a First colliding object (modified in place)
     /// @param collider_b Second colliding object (modified in place)
-    static void resolve(
+    /// @return The impulse vector that was applied (useful for warm-start caching)
+    static Vec3f resolve(
         const ContactManifold& manifold,
         SphereCollider& collider_a,
         SphereCollider& collider_b
     ) {
         if (!manifold.is_valid()) {
-            return;
+            return Vec3f(0.0f);
         }
 
         const ContactPoint& contact = manifold.contact;
@@ -35,7 +36,7 @@ public:
 
         // Skip if both objects are static (infinite mass)
         if (inv_sum <= 0.0f) {
-            return;
+            return Vec3f(0.0f);
         }
 
         // Apply impulse to resolve velocity
@@ -52,6 +53,9 @@ public:
             collider_a.position -= correction * inv_m1;
             collider_b.position += correction * inv_m2;
         }
+
+        // Return the impulse for caching
+        return impulse;
     }
 };
 
