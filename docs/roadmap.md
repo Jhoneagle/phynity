@@ -12,18 +12,18 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Testing (S): golden tests for math primitives, particle integration, and deterministic stepping; CI smoke targets.✅
 
 ## Mid Term (3–9 months)
-- Rigid body MVP (M): inertia tensors, angular integration, basic constraints (fixed, hinge), Baumgarte stabilization; simple stacking demo.
 - Collision and constraints (M): SAT for convex hulls, GJK/EPA for general shapes, contact caching, impulse-based and PGS solvers.
+- Rigid body MVP (M): inertia tensors, angular integration, basic constraints (fixed, hinge), Baumgarte stabilization; simple stacking demo.
 - Continuous physics (M): CCD sweeps for fast movers, time-of-impact resolution, restitution and friction modeling.
-- Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.
-- Thermodynamics hooks (M): temperature as scalar field, heat diffusion prototype, energy accounting to support conservation checks.
-- Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.
-- Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.
-- CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.
+- Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.
 - Performance monitoring (M): automated benchmark regression detection with per-test thresholds, historical tracking (CSV/DB), performance dashboard for frame time/memory trends, alerts for > 5% regressions.
+- CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.
 - Platform and concurrency (M): task graph builder, fiber-backed jobs, pinned tasks for cache locality; deterministic replay of job schedules.
 - Tooling and UI (M): in-engine debug HUD, timeline scrubber for stepping, detachable inspectors for bodies/constraints.
-- Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.
+- Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.
+- Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.
+- Thermodynamics hooks (M): temperature as scalar field, heat diffusion prototype, energy accounting to support conservation checks.
+- Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.
 
 ## Long Term (9–18 months)
 - Advanced rigid bodies (L): articulated bodies, joint limits, motors, breakable constraints, soft constraints blending.
