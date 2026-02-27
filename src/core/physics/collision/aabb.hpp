@@ -22,15 +22,25 @@ struct AABB {
     {}
 
     /// Check if this AABB overlaps with another AABB
-    /// Uses separating axis theorem for AABB-AABB overlap
-    /// Edge-touching (faces in contact) does NOT count as overlap
+    /// Uses separating axis theorem for AABB-AABB overlap (3D)
     /// @param other The other AABB to test against
-    /// @return true if AABBs overlap, false otherwise
+    /// @return true if AABBs overlap, false if separated or just touching
     bool overlaps(const AABB& other) const {
-        // Check for separation on each axis (<=  means edge-touching is separated)
         if (max.x <= other.min.x || min.x >= other.max.x) return false;
         if (max.y <= other.min.y || min.y >= other.max.y) return false;
         if (max.z <= other.min.z || min.z >= other.max.z) return false;
+        
+        return true;
+    }
+
+    /// Check if this 2D AABB overlaps with another 2D AABB (ignores z-axis)
+    /// For use in 2D collision detection where shapes are flat on z=0 plane
+    /// @param other The other AABB to test against
+    /// @return true if AABBs overlap, false if separated or just touching
+    bool overlaps_2d(const AABB& other) const {
+        if (max.x <= other.min.x || min.x >= other.max.x) return false;
+        if (max.y <= other.min.y || min.y >= other.max.y) return false;
+        
         return true;
     }
 
