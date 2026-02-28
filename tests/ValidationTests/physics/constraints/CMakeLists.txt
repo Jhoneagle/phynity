@@ -1,0 +1,25 @@
+# Constraints validation tests
+
+add_executable(convergence_validation_test convergence_validation_test.cpp)
+phynity_target_defaults(convergence_validation_test)
+phynity_apply_warnings(convergence_validation_test)
+phynity_apply_sanitizers(convergence_validation_test)
+target_link_libraries(convergence_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.constraints.convergence COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:convergence_validation_test>)
+set_tests_properties(validation.physics.constraints.convergence PROPERTIES LABELS validation)
+
+add_executable(stability_validation_test stability_validation_test.cpp)
+phynity_target_defaults(stability_validation_test)
+phynity_apply_warnings(stability_validation_test)
+phynity_apply_sanitizers(stability_validation_test)
+target_link_libraries(stability_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.constraints.stability COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:stability_validation_test>)
+set_tests_properties(validation.physics.constraints.stability PROPERTIES LABELS validation)
+
+add_executable(constraint_interaction_edge_cases_test constraint_interaction_edge_cases_test.cpp)
+phynity_target_defaults(constraint_interaction_edge_cases_test)
+phynity_apply_warnings(constraint_interaction_edge_cases_test)
+phynity_apply_sanitizers(constraint_interaction_edge_cases_test)
+target_link_libraries(constraint_interaction_edge_cases_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.constraints.interaction_edge_cases COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:constraint_interaction_edge_cases_test>)
+set_tests_properties(validation.physics.constraints.interaction_edge_cases PROPERTIES LABELS validation)
