@@ -1,0 +1,17 @@
+# Broadphase collision tests
+
+add_executable(broadphase_correctness_validation_test broadphase_correctness_validation_test.cpp)
+phynity_target_defaults(broadphase_correctness_validation_test)
+phynity_apply_warnings(broadphase_correctness_validation_test)
+phynity_apply_sanitizers(broadphase_correctness_validation_test)
+target_link_libraries(broadphase_correctness_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.broadphase_correctness COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:broadphase_correctness_validation_test>)
+set_tests_properties(validation.physics.collision.broadphase_correctness PROPERTIES LABELS validation)
+
+add_executable(broadphase_performance_benchmark_test broadphase_performance_benchmark_test.cpp)
+phynity_target_defaults(broadphase_performance_benchmark_test)
+phynity_apply_warnings(broadphase_performance_benchmark_test)
+phynity_apply_sanitizers(broadphase_performance_benchmark_test)
+target_link_libraries(broadphase_performance_benchmark_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.broadphase_performance COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:broadphase_performance_benchmark_test>)
+set_tests_properties(validation.physics.collision.broadphase_performance PROPERTIES LABELS validation)

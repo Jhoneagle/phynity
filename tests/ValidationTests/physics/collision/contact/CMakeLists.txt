@@ -1,0 +1,25 @@
+# Contact resolution tests
+
+add_executable(contact_cache_golden_test contact_cache_golden_test.cpp)
+phynity_target_defaults(contact_cache_golden_test)
+phynity_apply_warnings(contact_cache_golden_test)
+phynity_apply_sanitizers(contact_cache_golden_test)
+target_link_libraries(contact_cache_golden_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.contact_cache_golden COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:contact_cache_golden_test>)
+set_tests_properties(validation.physics.collision.contact_cache_golden PROPERTIES LABELS golden)
+
+add_executable(pgs_solver_golden_test pgs_solver_golden_test.cpp)
+phynity_target_defaults(pgs_solver_golden_test)
+phynity_apply_warnings(pgs_solver_golden_test)
+phynity_apply_sanitizers(pgs_solver_golden_test)
+target_link_libraries(pgs_solver_golden_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.pgs_solver_golden COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:pgs_solver_golden_test>)
+set_tests_properties(validation.physics.collision.pgs_solver_golden PROPERTIES LABELS golden)
+
+add_executable(stacking_scenarios_test stacking_scenarios_test.cpp)
+phynity_target_defaults(stacking_scenarios_test)
+phynity_apply_warnings(stacking_scenarios_test)
+phynity_apply_sanitizers(stacking_scenarios_test)
+target_link_libraries(stacking_scenarios_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.stacking_scenarios COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:stacking_scenarios_test>)
+set_tests_properties(validation.physics.collision.stacking_scenarios PROPERTIES LABELS validation)

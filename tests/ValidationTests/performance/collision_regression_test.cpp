@@ -212,6 +212,9 @@ PerfResult run_solver_scenario(int contact_count, int iterations) {
 
 }  // namespace
 
+// Measures three representative collision workloads and writes JSON outputs
+// for baseline-vs-current regression checks. This test validates benchmark
+// execution and output generation, while threshold gating is done by script.
 TEST_CASE("Performance Regression: collision scenarios", "[validation][performance]") {
     const PerfResult broadphase = run_broadphase_scenario(300, 200);
     const PerfResult gjk = run_gjk_scenario(2000);
