@@ -164,6 +164,18 @@ public:
         return manifold_.contact_id;
     }
 
+    /// Get the combined coefficient of restitution for this contact.
+    /// Uses the minimum of the two bodies' restitution values.
+    float get_restitution() const override {
+        return std::min(body_a_.material.restitution, body_b_.material.restitution);
+    }
+
+    /// Get the initial approach velocity (for restitution calculation).
+    /// This is the relative velocity along the normal at first contact.
+    float get_initial_approach_velocity() const {
+        return manifold_.contact.relative_velocity_along_normal;
+    }
+
 private:
     const ContactManifold& manifold_;   ///< Reference to contact data
     Particle& body_a_;                  ///< First particle

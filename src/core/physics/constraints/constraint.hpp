@@ -91,6 +91,20 @@ public:
     virtual bool is_unilateral() const {
         return false;  // Default: bilateral (allow negative impulses)
     }
+
+    /// Get the coefficient of restitution for this constraint.
+    /// Used by the solver to compute bounce/restitution velocity.
+    /// @return Restitution coefficient (0.0 = inelastic, 1.0 = perfectly elastic)
+    virtual float get_restitution() const {
+        return 0.0f;  // Default: no restitution
+    }
+
+    /// Get the initial approach velocity for contact constraints.
+    /// Used for computing restitution target based on original impact velocity.
+    /// @return Initial relative velocity along contact normal (negative if approaching)
+    virtual float get_initial_approach_velocity() const {
+        return 0.0f;  // Default: no initial velocity (non-contact constraints)
+    }
 };
 
 }  // namespace phynity::physics::constraints

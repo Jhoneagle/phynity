@@ -1,0 +1,25 @@
+# Materials validation tests
+
+add_executable(restitution_validation_test restitution_validation_test.cpp)
+phynity_target_defaults(restitution_validation_test)
+phynity_apply_warnings(restitution_validation_test)
+phynity_apply_sanitizers(restitution_validation_test)
+target_link_libraries(restitution_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.materials.restitution COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:restitution_validation_test>)
+set_tests_properties(validation.physics.materials.restitution PROPERTIES LABELS validation)
+
+add_executable(friction_validation_test friction_validation_test.cpp)
+phynity_target_defaults(friction_validation_test)
+phynity_apply_warnings(friction_validation_test)
+phynity_apply_sanitizers(friction_validation_test)
+target_link_libraries(friction_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.materials.friction COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:friction_validation_test>)
+set_tests_properties(validation.physics.materials.friction PROPERTIES LABELS validation)
+
+add_executable(material_interaction_test material_interaction_test.cpp)
+phynity_target_defaults(material_interaction_test)
+phynity_apply_warnings(material_interaction_test)
+phynity_apply_sanitizers(material_interaction_test)
+target_link_libraries(material_interaction_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.materials.interaction COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:material_interaction_test>)
+set_tests_properties(validation.physics.materials.interaction PROPERTIES LABELS validation)

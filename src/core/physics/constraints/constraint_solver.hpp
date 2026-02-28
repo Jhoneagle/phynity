@@ -133,9 +133,22 @@ public:
 
                 // Compute impulse magnitude
                 // Using Baumgarte stabilization: add error-correcting term
-                // impulse_needed = -(jv + beta * error / dt) / (J * M^-1 * J^T)
+                // For contact constraints with restitution: add velocity bounce target
                 const float error_correction = config_.baumgarte_beta * error;
-                const float rhs = -(jv + error_correction);
+                
+                // Add restitution target velocity for contact constraints
+                // Restitution is based on INITIAL approach velocity, not current velocity
+                // This ensures restitution is only applied once, not re-computed each iteration
+                float restitution_term = 0.0f;
+                if (constraint->is_unilateral() && iter == 0) {  // Contact constraint, first iteration only
+                    float e = constraint->get_restitution();
+                    float v_approach = constraint->get_initial_approach_velocity();
+                    if (v_approach < -1e-3f) {  // Significant approach velocity
+                        restitution_term = e * v_approach;  // Note: v_approach is negative
+                    }
+                }
+                
+                const float rhs = -(jv + error_correction + restitution_term);
 
                 // Compute inverse mass sum along constraint direction
                 const float denominator = compute_jacobian_inverse_mass(jacobian, row, constraint->get_body_ids(), particles);
