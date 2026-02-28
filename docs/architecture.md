@@ -1,5 +1,23 @@
 # Architecture Overview
 
+### Dual-Core Physics Engine
+
+```
+PhysicsEngine
+├── ParticleSystem (micro-scale)
+│   ├── Point mass particles
+│   ├── Sphere collision only
+│   └── No rotation
+│
+└── RigidBodySystem (macro-scale)
+    ├── 6-DOF rigid bodies (position + rotation)
+    ├── Inertia tensors
+    ├── Angular dynamics
+    ├── Convex shape collisions (sphere, box, capsule)
+    ├── Constraints (fixed, hinge)
+    └── Deterministic simulation support
+```
+
 ## High-Level Structure
 
 The project is organized into clearly separated layers:

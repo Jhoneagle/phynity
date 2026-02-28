@@ -1,5 +1,6 @@
 #include "physics_context.hpp"
 #include "demo_scenarios.hpp"
+#include "rigid_body_demos.hpp"
 #include <iostream>
 #include <iomanip>
 #include <memory>
@@ -87,6 +88,32 @@ int main() {
 
     // Run Drag Interaction
     run_scenario(std::make_unique<phynity::app::scenarios::DragInteraction>(), 5.0f);
+
+    // Run Rigid Body Demos
+    std::cout << "\n" << std::string(70, '=') << std::endl;
+    std::cout << "RIGID BODY PHYSICS DEMOS" << std::endl;
+    std::cout << std::string(70, '=') << std::endl;
+    
+    // 1. Stacking Demo - Tower of boxes settling under gravity
+    {
+        std::cout << "\n--- Stacking Demo: Tower of Boxes ---" << std::endl;
+        phynity::app::rigid_body_demos::StackingDemoRB stacking_demo;
+        stacking_demo.simulate(3.0f);  // Run for 3 seconds
+    }
+    
+    // 2. Topple Demo - Tower with impulse applied
+    {
+        std::cout << "\n--- Topple Demo: Impulse on Tower ---" << std::endl;
+        phynity::app::rigid_body_demos::ToppleDemoRB topple_demo;
+        topple_demo.simulate();  // Run for 5 seconds
+    }
+    
+    // 3. Hinge Demo - Revolving door with constraint
+    {
+        std::cout << "\n--- Hinge Demo: Revolving Door ---" << std::endl;
+        phynity::app::rigid_body_demos::HingeDemoRB hinge_demo;
+        hinge_demo.simulate(5.0f);  // Run for 5 seconds
+    }
 
     std::cout << "\n" << std::string(70, '=') << std::endl;
     std::cout << "All scenarios completed successfully!" << std::endl;
