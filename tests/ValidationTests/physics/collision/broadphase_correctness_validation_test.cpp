@@ -1,7 +1,8 @@
 #include <catch2/catch_all.hpp>
 #include <core/physics/particle_system.hpp>
 #include <core/physics/collision/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/impulse_resolver.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics;
@@ -16,7 +17,9 @@ using namespace phynity::test::helpers;
  * identical results to the original O(n²) approach.
  */
 void resolve_collisions_brute_force(std::vector<Particle>& particles) {
+    std::vector<ContactManifold> manifolds;
     const size_t count = particles.size();
+
     for (size_t i = 0; i < count; ++i) {
         Particle& a = particles[i];
         if (!a.is_alive()) {
@@ -29,7 +32,6 @@ void resolve_collisions_brute_force(std::vector<Particle>& particles) {
                 continue;
             }
 
-            // Convert to colliders
             SphereCollider collider_a;
             collider_a.position = a.position;
             collider_a.velocity = a.velocity;
@@ -44,19 +46,32 @@ void resolve_collisions_brute_force(std::vector<Particle>& particles) {
             collider_b.inverse_mass = b.inverse_mass();
             collider_b.restitution = b.material.restitution;
 
-            // Detect and resolve
             ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
             if (manifold.is_valid()) {
-                ImpulseResolver::resolve(manifold, collider_a, collider_b);
-                
-                // Apply back
-                a.position = collider_a.position;
-                a.velocity = collider_a.velocity;
-                b.position = collider_b.position;
-                b.velocity = collider_b.velocity;
+                manifolds.push_back(manifold);
             }
         }
     }
+
+    if (manifolds.empty()) {
+        return;
+    }
+
+    std::vector<std::unique_ptr<constraints::Constraint>> constraints;
+    constraints.reserve(manifolds.size());
+    for (const auto& manifold : manifolds) {
+        if (manifold.object_a_id < particles.size() && manifold.object_b_id < particles.size()) {
+            constraints.push_back(std::make_unique<constraints::ContactConstraint>(
+                manifold,
+                particles[manifold.object_a_id],
+                particles[manifold.object_b_id],
+                constraints::ContactConstraint::ContactType::Normal
+            ));
+        }
+    }
+
+    constraints::ConstraintSolver solver;
+    solver.solve(constraints, particles);
 }
 
 TEST_CASE("Broadphase correctness: Simple sphere-sphere collision", "[validation][broadphase]") {

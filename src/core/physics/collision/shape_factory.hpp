@@ -124,7 +124,18 @@ public:
         vertices.push_back(Vec3f(x, y, z));     // 6: front-right-top
         vertices.push_back(Vec3f(-x, y, z));    // 7: front-left-top
 
-        return ConvexHull3D(vertices, center);
+        ConvexHull3D hull(vertices, center);
+        // Populate face normals for SAT collision detection
+        // Box has 6 faces with normals in ±x, ±y, ±z directions
+        hull.face_normals = {
+            Vec3f(1.0f, 0.0f, 0.0f),   // +X face normal
+            Vec3f(-1.0f, 0.0f, 0.0f),  // -X face normal
+            Vec3f(0.0f, 1.0f, 0.0f),   // +Y face normal
+            Vec3f(0.0f, -1.0f, 0.0f),  // -Y face normal
+            Vec3f(0.0f, 0.0f, 1.0f),   // +Z face normal
+            Vec3f(0.0f, 0.0f, -1.0f)   // -Z face normal
+        };
+        return hull;
     }
 
     /// Create a 3D regular tetrahedron
