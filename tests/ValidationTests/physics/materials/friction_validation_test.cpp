@@ -2,8 +2,11 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <core/physics/particle_system.hpp>
+#include <core/physics/force_field.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
+
+#include <cmath>
 
 using namespace phynity::physics;
 using namespace phynity::math::vectors;
@@ -116,7 +119,7 @@ TEST_CASE("Friction: Multiple collisions with friction", "[material][friction][v
         auto mat = make_no_damping_material(1.0f, 0.0f);
         mat.friction = 0.5f;
         
-        float x = -3.0f + (i * 2.0f);
+        float x = -3.0f + (static_cast<float>(i) * 2.0f);
         float vx = (i == 0) ? 2.0f : 0.0f;
         system.spawn(Vec3f(x, 0.0f, 0.0f), Vec3f(vx, 0.0f, 0.0f), mat, -1.0f, 0.4f);
     }
@@ -164,4 +167,72 @@ TEST_CASE("Friction: Friction in different contact pairs", "[material][friction]
     // System should stabilize
     REQUIRE(std::isfinite(system.particles()[0].velocity.x));
     REQUIRE(std::isfinite(system.particles()[1].velocity.x));
+}
+
+TEST_CASE("Friction: static-like threshold vs kinetic-like motion", "[material][friction][edge][validation]") {
+    auto run_with_initial_speed = [](float initial_speed) {
+        ParticleSystem system;
+        system.enable_collisions(true);
+
+        auto config = system.constraint_solver_config();
+        config.use_warm_start = false;
+        system.set_constraint_solver_config(config);
+
+        auto moving = make_no_damping_material(1.0f, 0.0f);
+        moving.friction = 1.2f;
+        auto stationary = make_no_damping_material(2.0f, 0.0f);
+        stationary.friction = 1.2f;
+
+        system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(initial_speed, 0.0f, 0.0f), moving, -1.0f, 0.4f);
+        system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), stationary, -1.0f, 0.4f);
+
+        constexpr float dt = 1.0f / 60.0f;
+        for (int i = 0; i < 240; ++i) {
+            system.update(dt);
+        }
+        return std::abs(system.particles()[0].velocity.x);
+    };
+
+    const float low_input_final_speed = run_with_initial_speed(0.5f);
+    const float high_input_final_speed = run_with_initial_speed(2.0f);
+
+    REQUIRE(std::isfinite(low_input_final_speed));
+    REQUIRE(std::isfinite(high_input_final_speed));
+    REQUIRE(low_input_final_speed < high_input_final_speed);
+}
+
+TEST_CASE("Friction: extreme coefficients remain stable", "[material][friction][edge][validation]") {
+    std::vector<float> coefficients{0.0f, 0.05f, 1.5f};
+
+    for (const float mu : coefficients) {
+        ParticleSystem system;
+        system.enable_collisions(true);
+
+        auto config = system.constraint_solver_config();
+        config.use_warm_start = false;
+        system.set_constraint_solver_config(config);
+
+        auto ground = make_no_damping_material(0.0f, 0.0f);
+        ground.friction = mu;
+        auto block = make_no_damping_material(1.0f, 0.0f);
+        block.friction = mu;
+
+        system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), ground, -1.0f, 2.0f);
+        system.spawn(Vec3f(0.0f, 2.5f, 0.0f), Vec3f(1.5f, 0.0f, 0.0f), block, -1.0f, 0.5f);
+
+        system.add_force_field(
+            std::make_unique<GravityField>(
+                Vec3f(0.0f, -phynity::test::helpers::constants::EARTH_GRAVITY, 0.0f)));
+
+        constexpr float dt = 1.0f / 60.0f;
+        for (int i = 0; i < 360; ++i) {
+            system.update(dt);
+        }
+
+        const auto& p = system.particles()[1];
+        REQUIRE(std::isfinite(p.position.x));
+        REQUIRE(std::isfinite(p.position.y));
+        REQUIRE(std::isfinite(p.velocity.x));
+        REQUIRE(std::isfinite(p.velocity.y));
+    }
 }

@@ -179,3 +179,128 @@ TEST_CASE("Restitution: sequential bounce decay", "[material][restitution][valid
         REQUIRE_THAT(ratio, WithinRel(expected_ratio, 0.15f));
     }
 }
+
+TEST_CASE("Restitution: asymmetry invariance e_AB vs e_BA", "[material][restitution][edge][validation]") {
+    auto run_case = [](float restitution_a, float restitution_b) {
+        ParticleSystem system;
+        system.enable_collisions(true);
+
+        auto config = system.constraint_solver_config();
+        config.use_warm_start = false;
+        system.set_constraint_solver_config(config);
+
+        auto mat_a = make_no_damping_material(1.0f, restitution_a);
+        auto mat_b = make_no_damping_material(1.0f, restitution_b);
+
+        system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(2.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.4f);
+        system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), mat_b, -1.0f, 0.4f);
+
+        constexpr float dt = 1.0f / 60.0f;
+        for (int i = 0; i < 220; ++i) {
+            system.update(dt);
+        }
+
+        const float v0 = system.particles()[0].velocity.x;
+        const float v1 = system.particles()[1].velocity.x;
+        return std::pair<float, float>{v0, v1};
+    };
+
+    const auto [v0_ab, v1_ab] = run_case(0.8f, 0.2f);
+    const auto [v0_ba, v1_ba] = run_case(0.2f, 0.8f);
+
+    REQUIRE_THAT(v0_ab, WithinRel(v0_ba, 0.12f));
+    REQUIRE_THAT(v1_ab, WithinRel(v1_ba, 0.12f));
+}
+
+TEST_CASE("Restitution: long-sequence decay remains bounded", "[material][restitution][edge][validation]") {
+    constexpr float restitution = 0.7f;
+    constexpr float initial_height = 8.0f;
+    constexpr float contact_height = 2.0f;
+
+    ParticleSystem system;
+    setup_drop_scene(system, restitution, initial_height);
+
+    constexpr float dt = 1.0f / 60.0f;
+    std::vector<float> peaks;
+    float prev_vy = system.particles()[1].velocity.y;
+    float current_peak = system.particles()[1].position.y;
+    bool rising = false;
+
+    for (int i = 0; i < 6000 && peaks.size() < 10; ++i) {
+        system.update(dt);
+        const auto& p = system.particles()[1];
+
+        if (p.velocity.y > 0.0f) {
+            rising = true;
+            current_peak = std::max(current_peak, p.position.y);
+        }
+
+        if (rising && prev_vy > 0.0f && p.velocity.y <= 0.0f) {
+            peaks.push_back(current_peak - contact_height);
+            rising = false;
+            current_peak = p.position.y;
+        }
+
+        prev_vy = p.velocity.y;
+    }
+
+    REQUIRE(peaks.size() >= 6);
+    for (size_t i = 1; i < peaks.size(); ++i) {
+        REQUIRE(std::isfinite(peaks[i]));
+        REQUIRE(peaks[i] <= peaks[i - 1] + 0.05f);
+    }
+}
+
+TEST_CASE("Restitution: stacking bounces transfer impulse", "[material][restitution][edge][validation]") {
+    ParticleSystem system;
+    system.enable_collisions(true);
+
+    auto config = system.constraint_solver_config();
+    config.use_warm_start = false;
+    system.set_constraint_solver_config(config);
+
+    auto ground = make_no_damping_material(0.0f, 0.8f);
+    auto bottom = make_no_damping_material(1.0f, 0.8f);
+    auto top = make_no_damping_material(1.0f, 0.8f);
+
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), ground, -1.0f, 1.5f);
+    system.spawn(Vec3f(0.0f, 2.5f, 0.0f), Vec3f(0.0f), bottom, -1.0f, 0.5f);
+    system.spawn(Vec3f(0.0f, 5.2f, 0.0f), Vec3f(0.0f), top, -1.0f, 0.5f);
+
+    system.add_force_field(
+        std::make_unique<GravityField>(
+            Vec3f(0.0f, -phynity::test::helpers::constants::EARTH_GRAVITY, 0.0f)));
+
+    constexpr float dt = 1.0f / 60.0f;
+    float max_upward_top_velocity = 0.0f;
+
+    for (int i = 0; i < 900; ++i) {
+        system.update(dt);
+        max_upward_top_velocity = std::max(max_upward_top_velocity, system.particles()[2].velocity.y);
+    }
+
+    REQUIRE(max_upward_top_velocity > 0.2f);
+    REQUIRE(std::isfinite(system.particles()[1].position.y));
+    REQUIRE(std::isfinite(system.particles()[2].position.y));
+}
+
+TEST_CASE("Restitution: extreme coefficient values stay stable", "[material][restitution][edge][validation]") {
+    std::vector<float> coefficients{0.0f, 0.05f, 0.95f};
+
+    for (const float e : coefficients) {
+        ParticleSystem system;
+        setup_drop_scene(system, e, 6.0f);
+
+        constexpr float dt = 1.0f / 60.0f;
+        for (int i = 0; i < 800; ++i) {
+            system.update(dt);
+        }
+
+        const auto& p = system.particles()[1];
+        REQUIRE(std::isfinite(p.position.x));
+        REQUIRE(std::isfinite(p.position.y));
+        REQUIRE(std::isfinite(p.velocity.x));
+        REQUIRE(std::isfinite(p.velocity.y));
+        REQUIRE(p.position.y < 100.0f);
+    }
+}

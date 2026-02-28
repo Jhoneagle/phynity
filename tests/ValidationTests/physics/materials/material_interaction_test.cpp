@@ -195,3 +195,36 @@ TEST_CASE("Material Interaction: Three particle system stability", "[material][i
     }
 }
 
+TEST_CASE("Material Interaction: contact persistence over long sequence", "[material][interaction][edge][validation]") {
+    ParticleSystem system;
+    system.enable_collisions(true);
+
+    auto config = system.constraint_solver_config();
+    config.use_warm_start = false;
+    system.set_constraint_solver_config(config);
+
+    auto left = make_no_damping_material(1.0f, 0.1f);
+    left.friction = 0.8f;
+    auto right = make_no_damping_material(1.0f, 0.1f);
+    right.friction = 0.8f;
+
+    // Slight overlap at start (distance 0.95 with radii sum 1.0) to keep persistent contact active.
+    system.spawn(Vec3f(-0.475f, 0.0f, 0.0f), Vec3f(0.02f, 0.0f, 0.0f), left, -1.0f, 0.5f);
+    system.spawn(Vec3f(0.475f, 0.0f, 0.0f), Vec3f(-0.02f, 0.0f, 0.0f), right, -1.0f, 0.5f);
+
+    constexpr float dt = 1.0f / 60.0f;
+    for (int i = 0; i < 2000; ++i) {
+        system.update(dt);
+    }
+
+    const auto& p0 = system.particles()[0];
+    const auto& p1 = system.particles()[1];
+    const float separation = std::abs(p1.position.x - p0.position.x);
+
+    REQUIRE(std::isfinite(p0.position.x));
+    REQUIRE(std::isfinite(p1.position.x));
+    REQUIRE(std::isfinite(p0.velocity.x));
+    REQUIRE(std::isfinite(p1.velocity.x));
+    REQUIRE(separation < 10.0f);
+}
+
