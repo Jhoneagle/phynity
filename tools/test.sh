@@ -7,6 +7,8 @@ set -euo pipefail
 #   ./tools/test.sh            # debug preset, all tests
 #   ./tools/test.sh release    # release preset, all tests
 #   ./tools/test.sh debug core # run tests matching 'core'
+#   ./tools/test.sh debug golden-compare # run golden tests (compare)
+#   ./tools/test.sh debug golden         # run golden tests (capture)
 
 preset="${1:-debug}"
 filter="${2:-}"
@@ -15,6 +17,9 @@ cmake_extra_flags=""
 case "$filter" in
   unit|Unit|UNIT) filter_regex='^unit\.' ;;
   validation|Validation|VALIDATION) filter_regex='^validation\.' ;;
+  golden-compare|Golden-compare|GOLDEN-COMPARE)
+    filter_regex='golden'
+    ;;
   golden|Golden|GOLDEN)
     filter_regex='[golden]'
     cmake_extra_flags="-DGOLDEN_CAPTURE_MODE=ON"

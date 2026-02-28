@@ -275,11 +275,11 @@ system.disable_collision_monitor();
 
 ### Profiling Overhead
 
-Measured overhead (debug builds on Windows/MinGW):
+Measured overhead (debug builds on Windows/MinGW, typical ranges):
 - **Empty scope**: ~50-200 ns per PROFILE_SCOPE
 - **Disabled profiling**: ~1-5 ns (branch prediction)
 - **Nested scopes**: Linear scaling (not exponential)
-- **Frame data retrieval**: < 1 µs
+- **Frame data retrieval**: typically < 1 us
 
 Optimized builds (Release with -O2/-O3) typically see 10x lower overhead.
 

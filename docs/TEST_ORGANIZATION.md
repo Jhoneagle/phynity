@@ -257,7 +257,7 @@ Use this quick routing table:
 - New performance benchmark
   - Add under `tests/ValidationTests/performance/`
 
-## Reorganization Notes (Phase 5)
+## Reorganization Notes (Current)
 
 Collision validation tests are organized by subsystem:
 

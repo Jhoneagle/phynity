@@ -119,10 +119,11 @@ Use for:
 
 - Run labeled golden tests.
 - Fail on unexpected baseline drift.
+- Preferred command: `tools/test.(bat|sh) debug golden-compare`.
 
 ### Capture mode (intentional update)
 
-- Enable golden capture mode in CMake.
+- Use capture mode via test wrapper (`tools/test.(bat|sh) debug golden`).
 - Re-run only affected scenarios when possible.
 - Review file diffs before commit.
 
@@ -148,7 +149,7 @@ Why this pattern:
 
 Recommended local flow:
 
-1. Run `validation.performance.collision_regression`.
+1. Run `tools/test.(bat|sh) debug validation.performance.collision_regression`.
 2. Run `python tools/performance_regression_check.py`.
 3. If intentional change, recapture baselines and re-check.
 
@@ -190,12 +191,13 @@ Each test section should include:
 - A header block that labels the topic.
 - Brief explanation of expected behavior.
 
-## CMake and Naming Standards
+## Build/Test and Naming Standards
 
 - Keep executable names aligned with file purpose.
 - Preserve stable ctest test names across reorganizations.
 - Apply labels (`validation`, `golden`) consistently.
 - Group related tests in subsystem subdirectories.
+- Prefer `tools/build`, `tools/test`, and `tools/run` as team entry points.
 
 ## Anti-Patterns to Avoid
 
@@ -223,7 +225,7 @@ When a test fails:
 - Added tests in the correct folder.
 - Test names describe behavior clearly.
 - Tolerances are justified and documented.
-- Labels and CMake entries are correct.
+- Labels and test discovery entries are correct.
 - New helper logic placed in `tests/test_utils/` when reusable.
 - Golden and performance workflows updated if affected.
 

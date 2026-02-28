@@ -8,17 +8,23 @@ This guide explains how to write, run, and maintain golden tests for the Phynity
 
 ```bash
 # Run all tests (including golden tests)
-cmake ..
-ctest
+./tools/test.sh debug
 
-# Run only golden tests
-ctest -L golden
+# Run only golden tests in compare mode
+./tools/test.sh debug golden-compare
 
 # Regenerate golden baselines (after intentional physics changes)
-cmake -DGOLDEN_CAPTURE_MODE=ON ..
-ctest -L golden
+./tools/test.sh debug golden
 git diff tests/golden_outputs/
 git add tests/golden_outputs/
+```
+
+Windows equivalents:
+
+```bat
+tools\test.bat debug
+tools\test.bat debug golden-compare
+tools\test.bat debug golden
 ```
 
 ## What Are Golden Tests?
@@ -34,8 +40,8 @@ Golden tests capture the **exact output** of a physics simulation and compare su
 
 | Mode | Purpose | Command |
 |------|---------|---------|
-| **Compare** | Normal testing (default) | `ctest -L golden` |
-| **Capture** | Create/update golden files | `cmake -DGOLDEN_CAPTURE_MODE=ON ..` |
+| **Compare** | Golden verification against baseline | `tools/test.(bat|sh) debug golden-compare` |
+| **Capture** | Create/update golden files | `tools/test.(bat|sh) debug golden` |
 
 ## Writing a Golden Test
 
@@ -133,9 +139,7 @@ Entity names: `{scenario}_{duration_or_count}.golden`
 # 1. Write test code in tests/ValidationTests/
 # 2. CMakeLists.txt automatically picks it up
 # 3. Capture baseline:
-cmake -DGOLDEN_CAPTURE_MODE=ON -B build/debug
-cd build/debug
-ctest -R your_test_name
+./tools/test.sh debug golden
 
 # 4. Golden files created in tests/golden_outputs/
 # 5. Review files:
@@ -151,13 +155,10 @@ git commit -m "Add golden test: scenario name"
 ```bash
 # 1. Make physics changes (new integrator, bug fix, algorithm improvement)
 # 2. Build normally to check compilation
-cmake -B build/debug
-cmake --build build/debug
+./tools/build.sh debug
 
 # 3. Regenerate goldens
-cmake -DGOLDEN_CAPTURE_MODE=ON -B build/debug_golden
-cd build/debug_golden
-ctest -L golden
+./tools/test.sh debug golden
 
 # 4. Review what changed (CRITICAL STEP)
 git diff tests/golden_outputs/
@@ -205,13 +206,12 @@ Files are JSON with 9-decimal precision for physics values:
 ### Test Fails on Expected Failure
 
 ```bash
-ctest -L golden  # Test fails
+./tools/test.sh debug golden-compare  # Test fails
 
 # Option 1: Is this an intentional change?
 git diff tests/golden_outputs/  # Review diff
 # If yes, regenerate:
-cmake -DGOLDEN_CAPTURE_MODE=ON ..
-ctest -L golden
+./tools/test.sh debug golden
 git add tests/golden_outputs/
 
 # Option 2: Is this a regression?
@@ -236,8 +236,7 @@ grep -A2 "frame_number" tests/golden_outputs/particle_gravity.golden
 # If it's acceptable numerical difference, update guidelines
 
 # 4. Once fixed, regenerate golden
-cmake -DGOLDEN_CAPTURE_MODE=ON ..
-ctest -L golden
+./tools/test.sh debug golden
 git add tests/golden_outputs/
 ```
 
@@ -264,22 +263,27 @@ git add tests/golden_outputs/
 
 ## Integration with CI
 
-The CMake setup already integrates with CI:
+The tools wrappers integrate cleanly with CI:
 
-```cmake
-# Tests tagged with "golden" can be run separately
-ctest -L golden
-ctest -L ^golden  # everything except golden (fast smoke test)
+```bash
+# Golden compare only
+./tools/test.sh debug golden-compare
+
+# All tests
+./tools/test.sh debug
 ```
 
 For GitHub Actions, add to workflow:
 
 ```yaml
-- name: Run all tests
-  run: ctest
+- name: Build
+  run: ./tools/build.sh debug
 
-- name: Run smoke tests (exclude golden)
-  run: ctest -L ^golden
+- name: Run all tests
+  run: ./tools/test.sh debug
+
+- name: Run golden compare tests
+  run: ./tools/test.sh debug golden-compare
 ```
 
 ## Common Scenarios
@@ -322,7 +326,7 @@ TEST_CASE("Particles in gravity + drag - golden") {
 | `Test passes in capture mode, fails in compare` | New golden files aren't committed; `git add golden_outputs/` |
 | `Diff is huge but code change was small` | Floating-point accumulation over many frames; review if expected |
 | `CMake can't find golden_serializer.hpp` | Check include paths in CMakeLists.txt match those in physics tests |
-| `GOLDEN_CAPTURE_MODE undefined` | Rebuild cache: `rm -rf build/` then `cmake ..` |
+| `GOLDEN_CAPTURE_MODE undefined` | Rebuild and re-run via `tools/build` then `tools/test ... golden` |
 
 ## Future Enhancements
 
@@ -339,11 +343,11 @@ For now, JSON + git diffs provide excellent clarity for a growing physics engine
 ---
 
 **Quick Links:**
-- [Golden Outputs Directory](../golden_outputs/)
-- [Golden Serializer Header](../test_utils/golden_serializer.hpp)
-- [Physics Test Helpers](../test_utils/physics_test_helpers.hpp)
-- [Example: Particle Golden Test](../ValidationTests/physics/particles/particle_golden_test.cpp)
-- [Example: Integration Scenes Golden Test](../ValidationTests/physics/particles/integration_scenes_golden_test.cpp)
-- [Example: Math Golden Test](../ValidationTests/math/math_golden_test.cpp)
-- [Example: Collision Golden Test](../ValidationTests/physics/collision/collision_golden_test.cpp)
-- [Example: Diagnostics Golden Test](../ValidationTests/diagnostics/diagnostics_golden_test.cpp)
+- [Golden Outputs Directory](../tests/golden_outputs/)
+- [Golden Serializer Header](../tests/test_utils/golden_serializer.hpp)
+- [Physics Test Helpers](../tests/test_utils/physics_test_helpers.hpp)
+- [Example: Particle Golden Test](../tests/ValidationTests/physics/particles/particle_golden_test.cpp)
+- [Example: Integration Scenes Golden Test](../tests/ValidationTests/physics/particles/integration_scenes_golden_test.cpp)
+- [Example: Math Golden Test](../tests/ValidationTests/math/math_golden_test.cpp)
+- [Example: Collision Golden Test](../tests/ValidationTests/physics/collision/collision_golden_test.cpp)
+- [Example: Diagnostics Golden Test](../tests/ValidationTests/diagnostics/diagnostics_golden_test.cpp)

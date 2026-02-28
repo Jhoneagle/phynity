@@ -1,12 +1,12 @@
 # Architecture Overview
 
-### Dual-Core Physics Engine
+### Dual-Scale Physics Engine
 
 ```
 PhysicsEngine
 ├── ParticleSystem (micro-scale)
 │   ├── Point mass particles
-│   ├── Sphere collision only
+│   ├── Broadphase + narrowphase collisions
 │   └── No rotation
 │
 └── RigidBodySystem (macro-scale)
@@ -14,7 +14,7 @@ PhysicsEngine
     ├── Inertia tensors
     ├── Angular dynamics
     ├── Convex shape collisions (sphere, box, capsule)
-    ├── Constraints (fixed, hinge)
+    ├── Constraints (fixed; hinge planned)
     └── Deterministic simulation support
 ```
 
@@ -48,7 +48,8 @@ Contains all platform-agnostic logic:
   - Particle-based simulation with material system
   - Force fields (gravity, drag, custom)
   - Timestep controller with determinism guarantees
-  - Collision detection and response (sphere-sphere)
+  - Collision detection and response (broadphase + narrowphase + contact)
+  - Constraints (solver, joints, contact)
   - Energy and momentum diagnostics
 - **Memory management** (`core/memory/`)
   - Thread-safe arena allocator for per-frame allocations
@@ -75,58 +76,80 @@ Minimal logic; orchestration only.
 - core must not depend on platform or render
 - render may depend on core
 - app may depend on everything
+
 ## Physics Subsystem Details
 
-The physics subsystem (`core/physics/`) implements a deterministic particle-based simulation engine with the following architecture:
+The physics subsystem (`core/physics/`) implements deterministic micro- and macro-scale simulation with shared collision and constraint infrastructure.
+
+Collision is organized into `broadphase/`, `narrowphase/`, `shapes/`, and `contact/` modules. Constraints are split into `solver/`, `joints/`, and `contact/` for clearer responsibilities.
+
+### Current Module Layout
+
+```text
+core/physics/
+├── common/
+├── micro/
+├── macro/
+├── collision/
+│   ├── broadphase/
+│   ├── narrowphase/
+│   ├── shapes/
+│   └── contact/
+└── constraints/
+    ├── solver/
+    ├── joints/
+    └── contact/
+```
 
 ### Component Overview
 
 ```
-ParticleSystem (manager)
-    ├── Particle[] (state container)
-    │   └── Material (properties)
-    ├── ForceField[] (pluggable forces)
-    │   ├── GravityField
-    │   ├── DragField
-    │   └── CustomField (extensible)
-    └── TimestepController (determinism)
+PhysicsContext
+├── Micro: ParticleSystem
+│   ├── Particle[] + Material
+│   ├── ForceField[]
+│   └── Collision + constraint integration
+├── Macro: RigidBodySystem
+│   ├── RigidBody[] + Shape + Inertia
+│   ├── ForceField[]
+│   └── Constraint solving
+├── Collision Pipeline
+│   ├── broadphase/
+│   ├── narrowphase/
+│   ├── shapes/
+│   └── contact/
+└── Constraints Pipeline
+    ├── solver/
+    ├── joints/
+    └── contact/
 ```
 
-### Core Components
+### Core Components by Subsystem
 
-**Particle** (`particle.hpp`)
-- Kinematic state: position, velocity, acceleration
-- Force accumulation pattern for composable forces
-- Material reference for physical properties
-- Lifecycle management (lifetime, active flags)
-- Semi-implicit Euler integration
-- Collision properties (radius)
+**Common** (`common/`)
+- Material properties and shared constants
+- Force field abstraction and implementations
+- Timestep control and determinism primitives
 
-**Material** (`material.hpp`)
-- Physical properties: mass, restitution, friction
-- Damping coefficients: linear, angular (reserved)
-- Drag coefficient for velocity-dependent forces
-- Preset factories: steel, rubber, wood, fluid_particle
-- Designed for data-driven extension
+**Micro Scale** (`micro/`)
+- Particle state and lifecycle management
+- Force accumulation and integration
+- Broadphase-assisted collision response for particle workloads
 
-**ForceField** (`force_field.hpp`)
-- Abstract base class for pluggable force systems
-- Concrete implementations: GravityField, DragField
-- Extensible via CustomField interface
-- Applied per-particle each simulation step
+**Macro Scale** (`macro/`)
+- 6-DOF rigid body state and integration
+- Inertia tensor and shape-driven dynamics
+- Constraint-driven contact/joint stabilization
 
-**TimestepController** (`timestep_controller.hpp`)
-- Accumulator pattern for fixed timestep physics
-- Overflow handling modes: CLAMP, SUBDIVIDE, UNCONSTRAINED
-- Determinism enforcement and validation
-- Statistics tracking (steps, overflows, subdivisions)
+**Collision** (`collision/`)
+- Broadphase candidate generation
+- Narrowphase manifold generation (sphere/AABB/GJK/EPA/SAT)
+- Contact cache and impulse/PGS resolution components
 
-**ParticleSystem** (`particle_system.hpp`)
-- Manages particle lifecycle (spawn, remove, update)
-- Force field registration and application
-- Collision detection and impulse-based resolution
-- Energy and momentum diagnostics
-- Update pipeline: clear forces → apply fields → integrate → collide → cleanup
+**Constraints** (`constraints/`)
+- Solver abstraction and iterative solver execution
+- Contact constraints
+- Joint constraints (fixed currently, additional joint types planned)
 
 ### Determinism Contract
 
@@ -141,13 +164,13 @@ This is validated through reference-based tests comparing against analytical sol
 
 **Application Layer** (`app/`)
 - `PhysicsContext`: Manages subsystem lifecycle and configuration
-- `demo_scenarios.hpp`: Reusable scenario templates
-- Example: GravityWell, OrbitStability, MultiParticleCollision
+- `main.cpp` + scenario orchestration entry points
+- Demo executable via `tools/run.(bat|sh)`
 
 **Testing**
-- 15+ unit tests for component behaviors
-- 6 reference-based determinism tests with analytical validation
-- 10+ validation scenarios for energy/momentum conservation
+- 70 automated tests across unit and validation suites
+- Reference-based determinism tests for reproducible stepping
+- Golden and performance regression checks for key scenarios
 - All tests use Catch2 framework
 
 ### Design Decisions
@@ -156,18 +179,17 @@ This is validated through reference-based tests comparing against analytical sol
 2. **Force accumulation pattern**: Enables composable, debuggable force application
 3. **Material-based properties**: Clear separation of particle state vs. physical constants
 4. **Pluggable force fields**: Extensible without modifying core particle logic
-5. **Collision at core level**: Integrated into ParticleSystem rather than app layer
+5. **Collision at core level**: Integrated in simulation systems rather than app-layer glue
 
 ### Performance Characteristics
 
 - O(n) force application per field
-- O(n²) collision detection (brute force, suitable for small-to-medium particle counts)
+- O(n^2) collision detection for brute-force fallback; spatial grid used for scale
 - Update loop can use the job system for data-parallel passes when configured
 
 ### Future Extensions
 
 See [roadmap.md](roadmap.md) for planned additions:
-- Broadphase spatial acceleration (spatial grid)
-- Rigid body dynamics with inertia tensors
-- Constraint solvers (joints, contacts)
 - Continuous collision detection (CCD)
+- Advanced rigid-body constraints (hinges, motors, limits)
+- Solver improvements and stability tuning

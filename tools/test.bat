@@ -1,7 +1,13 @@
 @echo off
 setlocal
 
-rem Usage: tools\test.bat [preset] [regex]
+rem Usage: tools\test.bat [preset] [filter]
+rem Filters:
+rem   unit              -> ^unit\.
+rem   validation        -> ^validation\.
+rem   golden-compare    -> golden tests only (compare mode)
+rem   golden            -> golden tests only (capture mode)
+rem   <other>           -> passed directly to ctest -R as regex
 set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 set FILTER=%2
@@ -11,6 +17,7 @@ set FILTER_REGEX=%FILTER%
 set CMAKE_EXTRA_FLAGS=
 if /i "%FILTER%"=="unit" set FILTER_REGEX=^unit\.
 if /i "%FILTER%"=="validation" set FILTER_REGEX=^validation\.
+if /i "%FILTER%"=="golden-compare" set FILTER_REGEX=golden
 if /i "%FILTER%"=="golden" (
   set FILTER_REGEX=[golden]
   set CMAKE_EXTRA_FLAGS=-DGOLDEN_CAPTURE_MODE=ON

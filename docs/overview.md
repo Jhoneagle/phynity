@@ -1,7 +1,7 @@
 # Project Overview
 
-**Status**: Active Development  
-**Last Updated**: February 22, 2026
+**Status**: Active Development (production-leaning)  
+**Last Updated**: February 28, 2026
 
 ## Current Milestones
 
@@ -9,27 +9,58 @@
 - **Core Math Bedrock**: Comprehensive vector/matrix/quaternion library with linear algebra
 - **Calculus Utilities**: Numerical differentiation, integration, and curve fitting
 - **Particle Simulation v2**: Deterministic particle physics engine with force fields and collisions
+- **Collision System**: Broadphase + narrowphase + contact resolution pipeline
+- **Constraint System**: Solver, contact constraints, fixed joints
 
 ### 📋 Planned
-- **Parallel Core**: Job system and work-stealing task scheduler
-- **Collision Scaffolding**: Broadphase spatial acceleration structures
-- **Rigid Body Dynamics**: Inertia tensors and constraint solvers
+- **Parallel Core Expansion**: Scheduling improvements and task graph tooling
+- **Rigid Body Dynamics**: Continued expansion (constraints, stability, demos)
 
 See [roadmap.md](roadmap.md) for detailed timeline.
+
+## Docs Index
+
+- [architecture.md](architecture.md) - System design and module boundaries
+- [phynity_user_guide.md](phynity_user_guide.md) - Usage patterns and scale guidance
+- [roadmap.md](roadmap.md) - Feature timeline and milestones
+- [observability.md](observability.md) - Profiling and diagnostics
+- [test_organization.md](test_organization.md) - Test mapping and structure
+- [testing_best_practices.md](testing_best_practices.md) - Test standards
+- [golden_tests.md](golden_tests.md) - Golden test workflow
+
+## Build, Test, Run
+
+Use the wrappers in `tools/` as the primary workflow.
+
+### Windows
+
+```bat
+tools\build.bat debug
+tools\test.bat debug
+tools\run.bat debug
+```
+
+### Linux/macOS/MSYS
+
+```bash
+./tools/build.sh debug
+./tools/test.sh debug
+./tools/run.sh debug
+```
 
 ---
 
 ## Technical Achievements
 
 ### Physics Engine (v2)
-The particle simulation subsystem is feature-complete with industrial-grade quality:
+The physics subsystem is feature-complete for particles and has a working rigid-body pipeline:
 - **Deterministic simulation**: Bit-identical results for identical inputs
 - **Material system**: Preset materials (steel, rubber, wood, fluid) with extensible properties
 - **Force fields**: Pluggable architecture (gravity, drag, custom)
-- **Collision system**: Impulse-based sphere-sphere collision with penetration correction
+- **Collision system**: Broadphase + narrowphase with contact caching and resolution
 - **Timestep control**: Fixed timestep accumulator with overflow handling
 - **Diagnostics**: Real-time energy and momentum tracking
-- **Test coverage**: 29 passing tests with analytical validation
+- **Test coverage**: 70 passing tests with analytical validation
 
 ### Mathematics Library
 Robust numerical foundation for simulation and scientific computing:
@@ -40,7 +71,7 @@ Robust numerical foundation for simulation and scientific computing:
 - **Calculus utilities**: Finite differences, numerical integrators, curve fitting
 
 ### Quality Assurance
-- **Unit testing**: Catch2-based test suite with 29 tests
+- **Unit testing**: Catch2-based test suite (unit + validation + golden)
 - **Validation testing**: Reference-based tests against analytical solutions
 - **Determinism validation**: Fixed timestep reproducibility guarantees
 - **Build system**: CMake with vcpkg dependency management

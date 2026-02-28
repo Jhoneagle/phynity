@@ -1,8 +1,30 @@
-# Physics Engine User Guide
+# Phynity User Guide
 
 ## Philosophy: Dual-Scale Physics
 
 Phynity is designed as a **professional-grade physics engine** capable of simulating phenomena across vastly different scales with equal fidelity. The engine recognizes that micro-scale and macro-scale physics require different representations, optimizations, and numerical approaches.
+
+**Status**: Active development, production-leaning. Core modules are stable; advanced features are still evolving.
+
+## Quick Commands
+
+Prefer `tools/` scripts for day-to-day workflow.
+
+### Windows
+
+```bat
+tools\build.bat debug
+tools\test.bat debug
+tools\run.bat debug
+```
+
+### Linux/macOS/MSYS
+
+```bash
+./tools/build.sh debug
+./tools/test.sh debug
+./tools/run.sh debug
+```
 
 ### The Two Scales
 
@@ -12,8 +34,8 @@ MICRO-SCALE                      MACRO-SCALE
 ─────────────────────────────────────────────────────────
 Point masses                     Extended bodies
 No rotation                      6-DOF (position + rotation)
-Simple collisions (spheres)      Complex shapes (convex hulls)
-O(n²) interactions               O(n log n) with broadphase
+Sphere collisions (broadphase)   Complex shapes (convex hulls)
+O(n^2) fallback                  O(n log n) with broadphase
 Mass-spring systems              Inertia tensors
 Molecular dynamics               Mechanical systems
 Fluids (SPH)                     Vehicles, buildings
@@ -35,7 +57,7 @@ Thousands of entities            Hundreds of entities
 **Characteristics**:
 - Entities represented as point masses
 - Position and velocity only (no rotation)
-- Simple sphere-sphere collisions
+- Sphere-sphere collisions with spatial broadphase
 - Force-based interactions (springs, fields)
 - Scales to thousands of entities
 - Lower per-entity computational cost
@@ -54,7 +76,7 @@ Thousands of entities            Hundreds of entities
 - Full 6-DOF state (position + orientation)
 - Inertia tensors for realistic rotation
 - Complex collision shapes (boxes, capsules, convex hulls)
-- Constraint-based joints (hinge, ball, prismatic)
+- Constraint-based joints (fixed; hinge/ball/prismatic planned)
 - Typically 10s to 100s of entities
 - Higher per-entity computational cost
 
@@ -85,7 +107,7 @@ for (int i = 0; i < 1000; ++i) {
 // Particles can interact with rigid body surfaces
 // - Rigid body acts as static/dynamic obstacle
 // - Particles bounce off with correct restitution
-// - No torque applied to rigid body (optional)
+// - Two-way coupling is planned (optional)
 
 // Example: Water (particles) splashing on rocks (rigid bodies)
 ```
@@ -124,25 +146,27 @@ Both scales share fundamental components:
 #include <core/physics/macro/rigid_body.hpp>
 #include <core/physics/macro/rigid_body_system.hpp>
 #include <core/physics/macro/shape.hpp>
-#include <core/physics/constraints/joints/hinge_joint.hpp>
+#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 ```
 
 **RigidBody**: 6-DOF with inertia tensor  
 **RigidBodySystem**: Manages lifecycle, forces, constraints  
 **Shape**: Collision geometry (sphere, box, capsule, convex)  
-**Constraints**: Joints for articulated systems  
+**Constraints**: Joints for articulated systems (fixed today; more planned)  
 
-### Universal Collision
+### Shared Collision and Constraints
 
 ```cpp
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
+#include <core/physics/constraints/solver/constraint_solver.hpp>
 ```
 
-Both scales use the same collision infrastructure:
+Both scales use the same collision and constraint infrastructure:
 - **Broadphase**: Spatial acceleration (grid, BVH)
 - **Narrowphase**: Collision detection (GJK, EPA, SAT)
 - **Contact**: Manifold generation and caching
+- **Constraints**: Solver + contact constraints, with joint constraints evolving over time
 
 ## Usage Patterns
 
@@ -177,9 +201,9 @@ for (int frame = 0; frame < 600; ++frame) {
 ```cpp
 #include <core/physics/macro/rigid_body_system.hpp>
 #include <core/physics/macro/shape.hpp>
-#include <core/physics/constraints/joints/hinge_joint.hpp>
+#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 
-// Vehicle with wheels connected by hinge joints
+// Vehicle with wheels welded to chassis (hinge joints planned)
 RigidBodySystem vehicle_sim;
 
 // Chassis (100 kg box)
@@ -196,13 +220,14 @@ for (int i = 0; i < 4; ++i) {
         wheel_pos, Quatf(), wheel_shape, 10.0f
     );
     
-    // Connect wheel to chassis with hinge
-    auto hinge = std::make_shared<HingeJoint>(
-        chassis_id, wheel_id,
-        wheel_pos, wheel_pos,
-        Vec3f(1, 0, 0)  // Rotation axis
+    // Weld wheel to chassis (placeholder until hinge joints are implemented)
+    auto weld = std::make_shared<FixedConstraintRB>(
+        vehicle_sim.get_body(chassis_id),
+        vehicle_sim.get_body(wheel_id),
+        wheel_pos,
+        wheel_pos
     );
-    vehicle_sim.add_constraint(hinge);
+    vehicle_sim.add_constraint(weld);
 }
 ```
 
@@ -268,25 +293,27 @@ TimestepController::Config config{
 // - Scientific validation
 ```
 
-## Performance Characteristics 
+## Performance Characteristics
+
+These numbers are illustrative only. Use profiling in your target environment for accurate measurements.
 
 ### Micro-Scale Performance
 
 | Entity Count | Update Time | Collision Time | Total    |
 |--------------|-------------|----------------|----------|
-| 100          | 0.1 ms      | 0.5 ms         | 0.6 ms   |
-| 1,000        | 1.0 ms      | 50 ms          | 51 ms    |
-| 10,000       | 10 ms       | 5000 ms        | 5010 ms  |
+| 100          | ~0.1 ms     | ~0.5 ms        | ~0.6 ms  |
+| 1,000        | ~1 ms       | ~5-20 ms       | ~6-21 ms |
+| 10,000       | ~10 ms      | ~100-500 ms    | ~110-510 ms |
 
-*Note: O(n²) collision without broadphase. Use spatial grid for 1000+ particles.*
+*Note: O(n^2) collision without broadphase. Use spatial grid for 1,000+ particles.*
 
 ### Macro-Scale Performance
 
 | Body Count | Update Time | Collision Time | Constraint Solving | Total  |
 |------------|-------------|----------------|--------------------|--------|
-| 10         | 0.2 ms      | 0.1 ms         | 0.1 ms             | 0.4 ms |
-| 100        | 2.0 ms      | 1.0 ms         | 2.0 ms             | 5.0 ms |
-| 1,000      | 20 ms       | 10 ms          | 30 ms              | 60 ms  |
+| 10         | ~0.2 ms     | ~0.1 ms        | ~0.1 ms            | ~0.4 ms |
+| 100        | ~2 ms       | ~1-3 ms        | ~2-5 ms            | ~5-10 ms |
+| 1,000      | ~20 ms      | ~10-30 ms      | ~30-80 ms          | ~60-130 ms |
 
 *Note: With spatial broadphase. Constraint solving scales with contact count.*
 
@@ -295,25 +322,27 @@ TimestepController::Config config{
 ### 1. Choose the Right Scale
 
 ```cpp
-// ❌ Don't use rigid bodies for fluids
-RigidBodySystem water;
-for (int i = 0; i < 10000; ++i) {
-    water.spawn_body(...);  // Too slow, overkill
-}
-
-// ✅ Use particles for fluids
+// Micro-scale: particles for large counts and simple interactions
+// ✅ Use particles for fluids and granular materials
 ParticleSystem water;
 for (int i = 0; i < 10000; ++i) {
     water.spawn(...);  // Fast, appropriate
 }
 
-// ❌ Don't use particles for rotating objects
-ParticleSystem box;
-box.spawn(...);  // Can't represent rotation
+// ❌ Avoid rigid bodies for large particle-like effects
+RigidBodySystem debris;
+for (int i = 0; i < 10000; ++i) {
+    debris.spawn_body(...);  // Too slow, overkill
+}
 
-// ✅ Use rigid bodies
+// Macro-scale: rigid bodies for rotation and complex shapes
+// ✅ Use rigid bodies for rotating objects and joints
 RigidBodySystem box;
 box.spawn_body(..., orientation, ...);  // Proper rotation
+
+// ❌ Avoid particles when rotation and shape matter
+ParticleSystem rotating_box;
+rotating_box.spawn(...);  // Can't represent rotation
 ```
 
 ### 2. Use Appropriate Timesteps
@@ -327,7 +356,7 @@ float dt_micro = 1.0f / 120.0f;  // 120 Hz
 RigidBodySystem bodies;
 float dt_macro = 1.0f / 60.0f;  // 60 Hz
 
-// Can run at different rates if needed
+// If running both, keep a fixed step and decouple render rate
 ```
 
 ### 3. Profile and Optimize
@@ -346,29 +375,35 @@ PROFILE_SCOPE("Physics Update");
     bodies.update(dt);  // Or this?
 }
 
-// Add spatial broadphase if collision is slow
+// Micro-scale: add spatial broadphase if collision is slow
 particles.set_broadphase(std::make_shared<SpatialGrid>(cell_size));
+
+// Macro-scale: profile constraint solve and contact density
+// before increasing solver iterations globally
 ```
 
 ### 4. Test Determinism
 
 ```cpp
-// Validate your simulation is deterministic
-TEST_CASE("Deterministic particle physics") {
-    ParticleSystem sys1, sys2;
-    
-    // Identical setup
-    setup_scenario(sys1);
-    setup_scenario(sys2);
-    
-    // Run in parallel
+// Validate deterministic stepping for both scales
+TEST_CASE("Deterministic simulation replay") {
+    ParticleSystem particles_a, particles_b;
+    RigidBodySystem rigid_a, rigid_b;
+
+    setup_particle_scenario(particles_a);
+    setup_particle_scenario(particles_b);
+    setup_rigid_scenario(rigid_a);
+    setup_rigid_scenario(rigid_b);
+
     for (int i = 0; i < 1000; ++i) {
-        sys1.update(dt);
-        sys2.update(dt);
+        particles_a.update(dt);
+        particles_b.update(dt);
+        rigid_a.update(dt);
+        rigid_b.update(dt);
     }
-    
-    // Should be bit-identical
-    REQUIRE(sys1.diagnostics() == sys2.diagnostics());
+
+    REQUIRE(hash_state(particles_a) == hash_state(particles_b));
+    REQUIRE(hash_state(rigid_a) == hash_state(rigid_b));
 }
 ```
 
@@ -407,14 +442,27 @@ Material mat;
 mat.linear_damping = 0.1f;  // 10% damping per second
 ```
 
+### Problem: Rigid Bodies Jittering or Exploding
+
+**Cause**: Large timestep, high contact density, or solver under-iteration  
+**Solution**:
+```cpp
+// Reduce timestep
+float dt = 1.0f / 120.0f;
+
+// Increase solver iterations for contact-heavy scenes
+ConstraintSolverConfig config;
+config.iterations = 20;  // Default: 4
+```
+
 ### Problem: Rigid Bodies Penetrating
 
 **Cause**: Constraint solver not converging  
 **Solution**:
 ```cpp
 // Increase solver iterations
-RigidBodySystem::Config config;
-config.solver_iterations = 20;  // Default: 10
+ConstraintSolverConfig config;
+config.iterations = 20;  // Default: 4
 
 // Or reduce timestep
 float dt = 1.0f / 120.0f;
@@ -429,8 +477,10 @@ float dt = 1.0f / 120.0f;
 auto grid = std::make_shared<SpatialGrid>(2.0f);  // 2m cells
 system.set_broadphase(grid);
 
-// Or reduce entity count
-// Or switch to coarser representation
+// If rigid-body scenes are slow:
+// - Profile narrowphase vs. constraint solver time
+// - Reduce contact density where possible
+// - Tune solver iteration count per scenario
 ```
 
 ### Problem: Non-Deterministic Behavior
@@ -476,7 +526,6 @@ config.enable_parallel = false;
 
 - **architecture.md**: Overall engine design
 - **roadmap.md**: Planned features timeline
-- **physics_restructuring_plan.md**: Module organization
 - **testing_best_practices.md**: How to test physics code
 
 ---
