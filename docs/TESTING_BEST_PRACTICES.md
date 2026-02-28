@@ -229,10 +229,8 @@ When a test fails:
 
 ## Reference Files
 
-- `tests/GOLDEN_TESTS.md`
-- `tests/TEST_ORGANIZATION.md`
-- `docs/TESTING_QUICK_START.txt`
-- `docs/TESTING_ROADMAP.txt`
-- `tests/test_utils/physics_test_helpers.hpp`
-- `tests/test_utils/golden_serializer.hpp`
+- [golden_tests.md](golden_tests.md)
+- [test_organization.md](test_organization.md)
+- [../tests/test_utils/physics_test_helpers.hpp](../tests/test_utils/physics_test_helpers.hpp)
+- [../tests/test_utils/golden_serializer.hpp](../tests/test_utils/golden_serializer.hpp)
 

@@ -15,7 +15,7 @@
 - **Collision Scaffolding**: Broadphase spatial acceleration structures
 - **Rigid Body Dynamics**: Inertia tensors and constraint solvers
 
-See `docs/roadmap.md` for detailed timeline.
+See [roadmap.md](roadmap.md) for detailed timeline.
 
 ---
 

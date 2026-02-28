@@ -34,9 +34,9 @@ tests/
 ├── ValidationTests/
 ├── golden_outputs/
 ├── test_utils/
-├── GOLDEN_TESTS.md
-├── TEST_ORGANIZATION.md
-└── TESTING_BEST_PRACTICES.md
+├── golden_tests.md
+├── test_organization.md
+└── testing_best_practices.md
 ```
 
 ## Unit Test Layout
@@ -292,9 +292,9 @@ This keeps CMake targets scoped by responsibility while preserving existing test
 
 ## Cross References
 
-- `docs/TESTING_QUICK_START.txt`
-- `docs/TESTING_ROADMAP.txt`
-- `tests/GOLDEN_TESTS.md`
+- [golden_tests.md](golden_tests.md)
+- [testing_best_practices.md](testing_best_practices.md)
+- [test_organization.md](test_organization.md)
 - `tests/ValidationTests/performance/collision_regression_test.cpp`
 - `tools/performance_regression_check.py`
 

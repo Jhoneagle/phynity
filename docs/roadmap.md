@@ -12,7 +12,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Testing (S): golden tests for math primitives, particle integration, and deterministic stepping; CI smoke targets.✅
 
 ## Mid Term (3–9 months)
-- Collision and constraints (M): SAT for convex hulls, GJK/EPA for general shapes, contact caching, impulse-based and PGS solvers.
+- Collision and constraints (M): SAT for convex hulls, GJK/EPA for general shapes, contact caching, impulse-based and PGS solvers.✅
 - Rigid body MVP (M): inertia tensors, angular integration, basic constraints (fixed, hinge), Baumgarte stabilization; simple stacking demo.
 - Continuous physics (M): CCD sweeps for fast movers, time-of-impact resolution, restitution and friction modeling.
 - Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.

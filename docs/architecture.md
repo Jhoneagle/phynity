@@ -148,7 +148,7 @@ This is validated through reference-based tests comparing against analytical sol
 
 ### Future Extensions
 
-See `docs/roadmap.md` for planned additions:
+See [roadmap.md](roadmap.md) for planned additions:
 - Broadphase spatial acceleration (spatial grid)
 - Rigid body dynamics with inertia tensors
 - Constraint solvers (joints, contacts)
