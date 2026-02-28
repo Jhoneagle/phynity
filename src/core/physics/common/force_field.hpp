@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <memory>
 

@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/particle.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/micro/particle.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <cmath>
 
 using phynity::physics::Particle;

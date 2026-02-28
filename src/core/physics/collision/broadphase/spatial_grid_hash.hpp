@@ -1,7 +1,7 @@
 #ifndef PHYNITY_CORE_PHYSICS_COLLISION_SPATIAL_GRID_HASH_HPP
 #define PHYNITY_CORE_PHYSICS_COLLISION_SPATIAL_GRID_HASH_HPP
 
-#include "../../math/vectors/vec3.hpp"
+#include "../../../math/vectors/vec3.hpp"
 #include <cstdint>
 #include <cmath>
 

@@ -2,7 +2,7 @@
 #define PHYNITY_CORE_PHYSICS_COLLISION_SPATIAL_GRID_HPP
 
 #include "spatial_grid_hash.hpp"
-#include "../../math/vectors/vec3.hpp"
+#include "../../../math/vectors/vec3.hpp"
 #include <unordered_map>
 #include <vector>
 #include <cstdint>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/physics/collision/shape_base.hpp>
-#include <core/physics/collision/aabb.hpp>
+#include <core/physics/collision/shapes/shape_base.hpp>
+#include <core/physics/collision/shapes/aabb.hpp>
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <vector>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <core/physics/collision/contact_manifold.hpp>
-#include <core/physics/collision/sphere_collider.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 
 namespace phynity::physics::collision {

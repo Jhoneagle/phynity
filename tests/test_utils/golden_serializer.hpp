@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/physics/particle.hpp>
-#include <core/physics/particle_system.hpp>
+#include <core/physics/micro/particle.hpp>
+#include <core/physics/micro/particle_system.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <string>
 #include <vector>

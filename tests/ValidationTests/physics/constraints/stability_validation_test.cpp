@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/particle_system.hpp>
-#include <core/physics/force_field.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/common/force_field.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 

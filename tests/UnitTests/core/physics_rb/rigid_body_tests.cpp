@@ -1,13 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/rigid_body.hpp>
-#include <core/physics/rigid_body_system.hpp>
-#include <core/physics/shape.hpp>
-#include <core/physics/inertia.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/constraints/fixed_constraint_rb.hpp>
+#include <core/physics/macro/rigid_body.hpp>
+#include <core/physics/macro/rigid_body_system.hpp>
+#include <core/physics/macro/shape.hpp>
+#include <core/physics/macro/inertia.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 #include <cmath>
 
 using namespace phynity::physics;

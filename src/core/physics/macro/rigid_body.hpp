@@ -4,8 +4,8 @@
 #include <core/math/matrices/mat3.hpp>
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/quaternions/quat_conversions.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/shape.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/macro/shape.hpp>
 #include <memory>
 
 namespace phynity::physics {

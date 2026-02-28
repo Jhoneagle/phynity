@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/physics/collision/contact_manifold.hpp>
-#include <core/physics/collision/sphere_collider.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <vector>
 #include <algorithm>

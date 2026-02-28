@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/collision/aabb_narrowphase.hpp>
+#include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics::collision;

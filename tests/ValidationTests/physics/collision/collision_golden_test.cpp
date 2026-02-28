@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <core/physics/collision/spatial_grid.hpp>
-#include <core/physics/collision/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/aabb_narrowphase.hpp>
-#include <core/physics/collision/impulse_resolver.hpp>
-#include <core/physics/collision/sphere_collider.hpp>
-#include <core/physics/collision/aabb.hpp>
+#include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
+#include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
+#include <core/physics/collision/contact/impulse_resolver.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/collision/shapes/aabb.hpp>
 #include <core/math/vectors/vec3.hpp>
 
 #include <filesystem>

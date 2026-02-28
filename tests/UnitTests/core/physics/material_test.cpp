@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/material.hpp>
+#include <core/physics/common/material.hpp>
 
 using phynity::physics::Material;
 using Catch::Matchers::WithinAbs;

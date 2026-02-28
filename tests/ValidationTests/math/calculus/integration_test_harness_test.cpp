@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "integration_test_harness.hpp"
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <core/math/utilities/constants.hpp>
 #include <cmath>
 

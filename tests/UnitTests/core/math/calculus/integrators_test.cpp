@@ -2,7 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/calculus/integrators.hpp>
 #include <core/math/utilities/comparison_utils.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <cmath>
 #include <array>
 

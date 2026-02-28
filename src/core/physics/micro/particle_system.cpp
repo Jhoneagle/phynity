@@ -1,4 +1,4 @@
-#include <core/physics/particle_system.hpp>
+#include <core/physics/micro/particle_system.hpp>
 
 namespace phynity::physics {
 

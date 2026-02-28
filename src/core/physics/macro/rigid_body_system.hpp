@@ -1,13 +1,13 @@
 #pragma once
 
-#include <core/physics/rigid_body.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/inertia.hpp>
-#include <core/physics/constraints/constraint.hpp>
-#include <core/physics/constraints/contact_constraint.hpp>
-#include <core/physics/constraints/constraint_solver.hpp>
-#include <core/physics/collision/spatial_grid.hpp>
-#include <core/physics/collision/sphere_sphere_narrowphase.hpp>
+#include <core/physics/macro/rigid_body.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/macro/inertia.hpp>
+#include <core/physics/constraints/solver/constraint.hpp>
+#include <core/physics/constraints/contact/contact_constraint.hpp>
+#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/diagnostics/energy_monitor.hpp>

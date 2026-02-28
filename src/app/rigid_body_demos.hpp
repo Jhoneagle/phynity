@@ -1,9 +1,9 @@
 #pragma once
 
-#include <core/physics/rigid_body_system.hpp>
-#include <core/physics/shape.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/constraints/fixed_constraint_rb.hpp>
+#include <core/physics/macro/rigid_body_system.hpp>
+#include <core/physics/macro/shape.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 #include <core/math/vectors/vec3.hpp>
 
 namespace phynity::app::rigid_body_demos {

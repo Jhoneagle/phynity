@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
-#include <core/physics/particle_system.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/timestep_controller.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/common/timestep_controller.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <filesystem>
 #include <cstdlib>

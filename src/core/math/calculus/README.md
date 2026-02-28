@@ -73,7 +73,7 @@ Numerical differentiation and integration methods for physics simulations.
 ```cpp
 #include <core/math/calculus/finite_differences.hpp>
 #include <core/math/calculus/integrators.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 
 using namespace phynity::math::calculus;
 using phynity::physics::constants::EARTH_GRAVITY;

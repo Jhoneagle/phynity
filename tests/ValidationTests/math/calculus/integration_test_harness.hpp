@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core/math/calculus/integrators.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <cmath>
 #include <limits>
 

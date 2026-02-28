@@ -1,5 +1,5 @@
 #include "demo_scenarios.hpp"
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/common/physics_constants.hpp>
 #include <cmath>
 
 namespace phynity::app::scenarios {

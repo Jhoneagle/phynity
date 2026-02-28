@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/collision/gjk_solver.hpp>
-#include <core/physics/collision/epa_solver.hpp>
-#include <core/physics/collision/support_function.hpp>
-#include <core/physics/collision/shape_factory.hpp>
+#include <core/physics/collision/narrowphase/gjk_solver.hpp>
+#include <core/physics/collision/narrowphase/epa_solver.hpp>
+#include <core/physics/collision/narrowphase/support_function.hpp>
+#include <core/physics/collision/shapes/shape_factory.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <cmath>
 

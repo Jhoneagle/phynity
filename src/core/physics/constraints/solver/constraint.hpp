@@ -2,7 +2,7 @@
 
 #include <core/math/vectors/vec3.hpp>
 #include <core/math/matrices/mat_dynamic.hpp>
-#include <core/physics/particle.hpp>
+#include <core/physics/micro/particle.hpp>
 #include <vector>
 #include <cstdint>
 

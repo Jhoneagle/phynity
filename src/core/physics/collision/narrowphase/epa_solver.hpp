@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/physics/collision/support_function.hpp>
-#include <core/physics/collision/gjk_solver.hpp>
+#include <core/physics/collision/narrowphase/support_function.hpp>
+#include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <vector>
 #include <cmath>

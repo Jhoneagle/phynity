@@ -5,10 +5,10 @@
 #include <cmath>
 #include <limits>
 
-#include <core/physics/particle_system.hpp>
-#include <core/physics/timestep_controller.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/force_field.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/common/timestep_controller.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/common/force_field.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/math/utilities/numeric.hpp>
 #include <core/math/utilities/comparison_utils.hpp>

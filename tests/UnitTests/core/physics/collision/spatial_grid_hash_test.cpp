@@ -1,5 +1,5 @@
 #include <catch2/catch_all.hpp>
-#include "../../../../../src/core/physics/collision/spatial_grid_hash.hpp"
+#include "../../../../../src/core/physics/collision/broadphase/spatial_grid_hash.hpp"
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <unordered_set>
 

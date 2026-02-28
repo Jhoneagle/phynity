@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/collision/contact_cache.hpp>
-#include <core/physics/collision/contact_manifold.hpp>
+#include <core/physics/collision/contact/contact_cache.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
 
 using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;

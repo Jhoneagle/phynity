@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/collision/sat_solver.hpp>
-#include <core/physics/collision/shape_factory.hpp>
+#include <core/physics/collision/narrowphase/sat_solver.hpp>
+#include <core/physics/collision/shapes/shape_factory.hpp>
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 

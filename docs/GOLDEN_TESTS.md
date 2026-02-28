@@ -44,7 +44,7 @@ Golden tests capture the **exact output** of a physics simulation and compare su
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
-#include <core/physics/particle_system.hpp>
+#include <core/physics/micro/particle_system.hpp>
 
 using namespace phynity::test;
 

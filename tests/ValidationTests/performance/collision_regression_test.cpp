@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <core/physics/particle_system.hpp>
-#include <core/physics/collision/gjk_solver.hpp>
-#include <core/physics/collision/shape_factory.hpp>
-#include <core/physics/collision/support_function.hpp>
-#include <core/physics/collision/pgs_solver.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/collision/narrowphase/gjk_solver.hpp>
+#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/collision/narrowphase/support_function.hpp>
+#include <core/physics/collision/contact/pgs_solver.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
 

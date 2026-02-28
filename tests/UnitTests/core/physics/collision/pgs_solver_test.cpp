@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/collision/pgs_solver.hpp>
-#include <core/physics/collision/contact_manifold.hpp>
-#include <core/physics/collision/sphere_collider.hpp>
+#include <core/physics/collision/contact/pgs_solver.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
 
 using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;

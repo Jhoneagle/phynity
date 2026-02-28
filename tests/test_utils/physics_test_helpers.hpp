@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/physics/material.hpp>
+#include <core/physics/common/material.hpp>
 #include <core/math/utilities/constants.hpp>
 
 namespace phynity::test::helpers {

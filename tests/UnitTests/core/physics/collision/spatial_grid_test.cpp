@@ -1,5 +1,5 @@
 #include <catch2/catch_all.hpp>
-#include "../../../../../src/core/physics/collision/spatial_grid.hpp"
+#include "../../../../../src/core/physics/collision/broadphase/spatial_grid.hpp"
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics::collision;
@@ -275,7 +275,7 @@ TEST_CASE("SpatialGrid::Large Scale Operations", "[physics][collision]") {
             const float x = static_cast<float>(i % 10);
             const float y = static_cast<float>((i / 10) % 10);
             const float z = 0.5f;
-            grid.insert(i, Vec3f{x + 0.5f, y + 0.5f, z});
+            grid.insert(static_cast<uint32_t>(i), Vec3f{x + 0.5f, y + 0.5f, z});
         }
         
         REQUIRE(grid.get_object_count() == 100);
@@ -284,7 +284,7 @@ TEST_CASE("SpatialGrid::Large Scale Operations", "[physics][collision]") {
 
     SECTION("Insert 1000 objects in same cell") {
         for (int i = 0; i < 1000; ++i) {
-            grid.insert(i, Vec3f{0.5f, 0.5f, 0.5f});
+            grid.insert(static_cast<uint32_t>(i), Vec3f{0.5f, 0.5f, 0.5f});
         }
         
         REQUIRE(grid.get_object_count() == 1000);
@@ -294,19 +294,19 @@ TEST_CASE("SpatialGrid::Large Scale Operations", "[physics][collision]") {
     SECTION("Update and remove many objects") {
         // Insert
         for (int i = 0; i < 50; ++i) {
-            grid.insert(i, Vec3f{0.5f, 0.5f, 0.5f});
+            grid.insert(static_cast<uint32_t>(i), Vec3f{0.5f, 0.5f, 0.5f});
         }
         REQUIRE(grid.get_object_count() == 50);
         
         // Update some
         for (int i = 0; i < 25; ++i) {
-            grid.update(i, Vec3f{1.5f, 0.5f, 0.5f});
+            grid.update(static_cast<uint32_t>(i), Vec3f{1.5f, 0.5f, 0.5f});
         }
         REQUIRE(grid.get_cell_count() == 2); // Two cells occupied
         
         // Remove some
         for (int i = 0; i < 10; ++i) {
-            grid.remove(i);
+            grid.remove(static_cast<uint32_t>(i));
         }
         REQUIRE(grid.get_object_count() == 40);
     }

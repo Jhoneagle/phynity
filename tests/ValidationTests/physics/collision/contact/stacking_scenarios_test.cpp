@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/particle_system.hpp>
-#include <core/physics/particle.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/collision/pgs_solver.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/micro/particle.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/collision/contact/pgs_solver.hpp>
 #include <core/math/vectors/vec3.hpp>
 
 using namespace phynity::physics;

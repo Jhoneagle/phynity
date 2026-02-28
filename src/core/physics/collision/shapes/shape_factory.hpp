@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/physics/collision/convex_hull.hpp>
+#include <core/physics/collision/shapes/convex_hull.hpp>
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <cmath>

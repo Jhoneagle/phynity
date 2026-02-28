@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core/physics/collision/contact_manifold.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
 #include <unordered_map>
 #include <vector>
 

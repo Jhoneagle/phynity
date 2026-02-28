@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
-#include <core/physics/particle_system.hpp>
-#include <core/physics/force_field.hpp>
-#include <core/physics/material.hpp>
-#include <core/physics/physics_constants.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/common/physics_constants.hpp>
 
 using namespace phynity::physics;
 using namespace phynity::physics::constants;
