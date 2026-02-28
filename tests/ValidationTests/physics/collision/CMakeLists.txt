@@ -84,3 +84,12 @@ target_link_libraries(stacking_scenarios_test PRIVATE phynity::tests Catch2::Cat
 add_test(NAME validation.physics.collision.stacking_scenarios COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:stacking_scenarios_test>)
 set_tests_properties(validation.physics.collision.stacking_scenarios PROPERTIES LABELS validation)
 
+# CCD (Continuous Collision Detection) validation tests
+add_executable(ccd_validation_test ccd_validation_test.cpp)
+phynity_target_defaults(ccd_validation_test)
+phynity_apply_warnings(ccd_validation_test)
+phynity_apply_sanitizers(ccd_validation_test)
+target_link_libraries(ccd_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.ccd COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_validation_test>)
+set_tests_properties(validation.physics.collision.ccd PROPERTIES LABELS validation)
+

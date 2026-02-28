@@ -171,6 +171,13 @@ public:
         buffer << file.rdbuf();
         return buffer.str();
     }
+
+    /// Load a JSON string from file (generic helper)
+    /// @param filepath Path to file
+    /// @return JSON string contents
+    static std::string load_json_file(const std::string& filepath) {
+        return load_golden_file(filepath);
+    }
     
     /// Save a state to golden file
     /// @param state The state to save
@@ -181,6 +188,17 @@ public:
             throw std::runtime_error("Failed to open file for writing: " + filepath);
         }
         file << to_json(state);
+    }
+
+    /// Save a JSON string to file (generic helper)
+    /// @param json JSON content to save
+    /// @param filepath Path where JSON should be written
+    static void save_json_file(const std::string& json, const std::string& filepath) {
+        std::ofstream file(filepath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open file for writing: " + filepath);
+        }
+        file << json;
     }
     
     /// Save a trajectory to golden file
