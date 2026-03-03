@@ -13,6 +13,7 @@
 #include <core/physics/collision/shapes/aabb.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/physics/collision/ccd/conservative_advancement.hpp>
+#include <core/physics/collision/ccd/convex_sweep.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/diagnostics/energy_monitor.hpp>
@@ -556,7 +557,7 @@ private:
                         config_.ccd_config
                     );
 
-                    if (!manifold.is_valid() && config_.ccd_config.enable_rotational_ccd) {
+                    if (!manifold.is_valid() && config_.ccd_config.enable_rotational_ccd && sphere_sphere) {
                         collision::ccd::SweptSphereSolver::Sphere sphere_a{
                             start_center_a,
                             body_a.velocity,
@@ -574,6 +575,83 @@ private:
                                 sphere_a,
                                 sphere_b,
                                 dt
+                            );
+
+                        if (toi.collision_occurs) {
+                            manifold.object_a_id = i;
+                            manifold.object_b_id = j;
+                            manifold.toi = toi.toi;
+                            manifold.contact.position = toi.contact_point;
+                            manifold.contact.normal = toi.contact_normal;
+                            manifold.contact.penetration = 0.0f;
+                            manifold.contact.relative_velocity_along_normal =
+                                (body_b.velocity - body_a.velocity).dot(toi.contact_normal);
+                        }
+                    }
+
+                    if (!manifold.is_valid() && !sphere_sphere && config_.ccd_config.enable_rotational_ccd) {
+                        collision::ccd::SweptSphereSolver::Sphere sphere_a{
+                            start_center_a,
+                            body_a.velocity,
+                            sweep_radius_a
+                        };
+
+                        collision::ccd::SweptSphereSolver::Sphere sphere_b{
+                            start_center_b,
+                            body_b.velocity,
+                            sweep_radius_b
+                        };
+
+                        collision::ccd::TimeOfImpactResult toi =
+                            collision::ccd::SweptSphereSolver::solve_static(
+                                sphere_a,
+                                sphere_b,
+                                dt
+                            );
+
+                        if (toi.collision_occurs) {
+                            manifold.object_a_id = i;
+                            manifold.object_b_id = j;
+                            manifold.toi = toi.toi;
+                            manifold.contact.position = toi.contact_point;
+                            manifold.contact.normal = toi.contact_normal;
+                            manifold.contact.penetration = 0.0f;
+                            manifold.contact.relative_velocity_along_normal =
+                                (body_b.velocity - body_a.velocity).dot(toi.contact_normal);
+                        }
+                    }
+
+                    if (!manifold.is_valid() && !sphere_sphere) {
+                        float expansion_a = 0.0f;
+                        float expansion_b = 0.0f;
+                        if (config_.ccd_config.enable_rotational_ccd) {
+                            float radius_a = body_a.shape ? body_a.shape->get_bounding_radius() : 0.0f;
+                            float radius_b = body_b.shape ? body_b.shape->get_bounding_radius() : 0.0f;
+                            expansion_a = body_a.angular_velocity.length() * radius_a * dt;
+                            expansion_b = body_b.angular_velocity.length() * radius_b * dt;
+                        }
+
+                        collision::ccd::ConvexSweepSolver::MovingConvex convex_a{
+                            body_a.shape.get(),
+                            frame_start_positions[i],
+                            body_a.velocity,
+                            expansion_a
+                        };
+
+                        collision::ccd::ConvexSweepSolver::MovingConvex convex_b{
+                            body_b.shape.get(),
+                            frame_start_positions[j],
+                            body_b.velocity,
+                            expansion_b
+                        };
+
+                        collision::ccd::TimeOfImpactResult toi =
+                            collision::ccd::ConvexSweepSolver::solve(
+                                convex_a,
+                                convex_b,
+                                dt,
+                                std::max(1, config_.ccd_config.max_substeps),
+                                config_.ccd_config.min_toi_separation
                             );
 
                         if (toi.collision_occurs) {
