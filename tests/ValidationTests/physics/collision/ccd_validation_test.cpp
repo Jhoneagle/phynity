@@ -373,3 +373,95 @@ TEST_CASE("ccd.long_duration_high_speed",
         REQUIRE(std::isfinite(p.velocity.x));
     }
 }
+
+TEST_CASE("ccd.tunneling_edge_case_coarse_dt",
+          "[validation][physics][collision][ccd]") {
+    ParticleSystem system;
+    system.enable_collisions(true);
+    system.set_ccd_config(ccd_presets::aggressive());
+
+    auto projectile_mat = make_no_damping_material(1.0f, 0.0f);
+    auto target_mat = make_no_damping_material(1e6f, 0.0f);
+
+    system.spawn(Vec3f(-8.0f, 0.0f, 0.0f), Vec3f(500.0f, 0.0f, 0.0f),
+                 projectile_mat, -1.0f, 0.05f);
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f),
+                 target_mat, -1.0f, 0.05f);
+
+    const float dt = 1.0f / 30.0f;
+    for (int step = 0; step < 10; ++step) {
+        system.update(dt);
+    }
+
+    const auto& projectile = system.particles()[0];
+    const auto& target = system.particles()[1];
+
+    float center_distance = (projectile.position - target.position).length();
+
+    REQUIRE(std::isfinite(projectile.position.x));
+    REQUIRE(std::isfinite(projectile.velocity.x));
+    REQUIRE(center_distance >= 0.095f);
+    REQUIRE(projectile.position.x <= 10.0f);
+    REQUIRE(projectile.velocity.x <= 1.0f);
+}
+
+// ============================================================================
+// Test 9: Bullet-Through-Paper Prevention
+// ============================================================================
+// Very fast, tiny projectile against a very thin static target.
+// Validates that CCD prevents a full pass-through at coarse frame dt.
+//
+TEST_CASE("ccd.bullet_through_paper_prevention",
+          "[validation][physics][collision][ccd]") {
+    ParticleSystem system;
+    system.enable_collisions(true);
+    system.enable_constraints(false);
+
+    constexpr float paper_x = 0.0f;
+    constexpr float bullet_radius = 0.02f;
+    constexpr float paper_radius = 0.02f;
+    constexpr float combined_radius = bullet_radius + paper_radius;
+
+    auto bullet_mat = make_no_damping_material(1.0f, 0.0f);
+    auto paper_mat = make_no_damping_material(1e6f, 0.0f);
+
+    system.spawn(
+        Vec3f(-5.0f, 0.0f, 0.0f),
+        Vec3f(300.0f, 0.0f, 0.0f),
+        bullet_mat,
+        -1.0f,
+        bullet_radius
+    );
+
+    system.spawn(
+        Vec3f(paper_x, 0.0f, 0.0f),
+        Vec3f(0.0f, 0.0f, 0.0f),
+        paper_mat,
+        -1.0f,
+        paper_radius
+    );
+
+    const float dt = 1.0f / 60.0f;
+    const int steps = 30;
+
+    float min_center_distance = std::numeric_limits<float>::max();
+
+    for (int step = 0; step < steps; ++step) {
+        system.update(dt);
+
+        const auto& bullet = system.particles()[0];
+        const auto& paper = system.particles()[1];
+
+        float distance = (bullet.position - paper.position).length();
+        min_center_distance = std::min(min_center_distance, distance);
+
+        REQUIRE(std::isfinite(bullet.position.x));
+        REQUIRE(std::isfinite(bullet.velocity.x));
+    }
+
+    const auto& bullet_final = system.particles()[0];
+
+    REQUIRE(min_center_distance <= combined_radius + 0.05f);
+    REQUIRE(bullet_final.position.x <= paper_x + combined_radius + 0.05f);
+    REQUIRE(bullet_final.velocity.x <= 1.0f);
+}

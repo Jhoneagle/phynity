@@ -10,6 +10,13 @@ target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/jobs/job_system.cpp
 )
 
+# Physics: Continuous Collision Detection (CCD) sources
+target_sources(phynity_core PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/physics/collision/ccd/swept_sphere.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/physics/collision/ccd/linear_cast.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/physics/collision/ccd/conservative_advancement.cpp
+)
+
 target_link_libraries(phynity_core PUBLIC phynity::platform)
 
 phynity_target_defaults(phynity_core)

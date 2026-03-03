@@ -63,3 +63,10 @@ phynity_apply_sanitizers(pgs_solver_test)
 target_link_libraries(pgs_solver_test PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME unit.physics.collision.pgs_solver COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:pgs_solver_test>)
 
+add_executable(ccd_swept_sphere_test ccd_swept_sphere_test.cpp)
+phynity_target_defaults(ccd_swept_sphere_test)
+phynity_apply_warnings(ccd_swept_sphere_test)
+phynity_apply_sanitizers(ccd_swept_sphere_test)
+target_link_libraries(ccd_swept_sphere_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME unit.physics.collision.ccd_swept_sphere COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_swept_sphere_test>)
+

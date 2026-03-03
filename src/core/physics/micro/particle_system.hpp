@@ -3,6 +3,7 @@
 #include <core/physics/micro/particle.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/physics_constants.hpp>
+#include <core/physics/common/ccd_config.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
@@ -241,6 +242,40 @@ public:
     }
 
     // ========================================================================
+    // Continuous Collision Detection (CCD) Configuration
+    // ========================================================================
+
+    /// Set continuous collision detection configuration.
+    /// Controls when CCD is triggered and how many substeps are used.
+    /// @param config CCD configuration struct
+    void set_ccd_config(const CCDConfig& config) {
+        ccd_config_ = config;
+    }
+
+    /// Get current continuous collision detection configuration.
+    const CCDConfig& ccd_config() const {
+        return ccd_config_;
+    }
+
+    /// Enable or disable CCD globally.
+    /// @param enabled True to enable CCD, false to disable
+    void set_ccd_enabled(bool enabled) {
+        ccd_config_.enabled = enabled;
+    }
+
+    /// Check if CCD is currently enabled.
+    bool is_ccd_enabled() const {
+        return ccd_config_.enabled;
+    }
+
+    /// Set the velocity threshold for CCD triggering.
+    /// Objects moving faster than this will use CCD.
+    /// @param threshold Minimum speed in m/s (0.0 = always use CCD)
+    void set_ccd_velocity_threshold(float threshold) {
+        ccd_config_.velocity_threshold = threshold;
+    }
+
+    // ========================================================================
     // Solver Configuration (Phase 4: Dual-Solver Architecture)
     // ========================================================================
 
@@ -307,6 +342,9 @@ public:
     /// @param dt Time step in seconds
     void update(float dt) {
         PROFILE_FUNCTION();
+        
+        // Store timestep for CCD calculations
+        dt_ = dt;
 
         auto for_each_alive = [this](auto&& fn) {
             const size_t count = particles_.size();
@@ -515,6 +553,10 @@ private:
     bool pgs_adaptive_ = true;
     int contact_count_threshold_ = 10;  ///< Use PGS if contact count exceeds this threshold
 
+    // Continuous Collision Detection (CCD) configuration
+    CCDConfig ccd_config_;
+    float dt_ = 0.016f;  ///< Current timestep (1/60 Hz default)
+
     // Constraint framework (Phase 5: Unified Constraint Solving)
     std::vector<std::unique_ptr<constraints::Constraint>> constraints_;
     constraints::ConstraintSolver constraint_solver_;
@@ -629,9 +671,11 @@ private:
                 SphereCollider collider_a = particle_to_collider(a);
                 SphereCollider collider_b = particle_to_collider(b);
 
-                // Detect collision using generic narrowphase
+                // Detect collision using generic narrowphase with CCD support
                 ++narrowphase_tests;
-                ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
+                ContactManifold manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
+                    collider_a, collider_b, i, j, dt_, ccd_config_
+                );
 
                 // Collect valid manifolds for caching
                 if (manifold.is_valid()) {
@@ -640,9 +684,98 @@ private:
             }
         }
 
+        // Phase 2.5: CCD fallback scan for fast movers that may tunnel past
+        // broadphase cells within one frame and therefore miss neighbor queries.
+        if (ccd_config_.enabled && dt_ > 1e-8f) {
+            PROFILE_SCOPE("ccd_fallback_scan");
+
+            // Optimization: Pre-compute and cache velocity magnitudes for all particles
+            // to avoid redundant length() calls in the nested loop
+            std::vector<float> particle_speeds;
+            particle_speeds.reserve(count);
+            for (size_t i = 0; i < count; ++i) {
+                if (particles_[i].is_alive()) {
+                    particle_speeds.push_back(particles_[i].velocity.length());
+                } else {
+                    particle_speeds.push_back(0.0f);
+                }
+            }
+
+            // Precompute threshold once instead of in lambda
+            const float ultra_fast_threshold = std::max(ccd_config_.velocity_threshold * 5.0f, 50.0f);
+
+            for (size_t i = 0; i < count; ++i) {
+                Particle& a = particles_[i];
+                if (!a.is_alive()) {
+                    continue;
+                }
+
+                float speed_a = particle_speeds[i];
+                // Early skip: if particle A is not fast enough, no pairs with it will qualify
+                if (speed_a < ultra_fast_threshold) {
+                    continue;
+                }
+
+                for (size_t j = i + 1; j < count; ++j) {
+                    Particle& b = particles_[j];
+                    if (!b.is_alive()) {
+                        continue;
+                    }
+
+                    float speed_b = particle_speeds[j];
+                    float max_speed = std::max(speed_a, speed_b);
+                    
+                    // Keep this fallback targeted to tunneling-risk projectiles only
+                    if (max_speed < ultra_fast_threshold) {
+                        continue;
+                    }
+
+                    const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
+                    if (processed_pairs.count(pair_id) > 0) {
+                        continue;
+                    }
+
+                    // Quick conservative distance gate to avoid expensive CCD on distant pairs.
+                    // Optimization: use squared distance comparison to avoid sqrt when possible
+                    Vec3f delta_now = b.position - a.position;
+                    float distance_sq = delta_now.dot(delta_now);
+                    float max_travel = (speed_a + speed_b) * dt_;
+                    float combined_radius = a.radius + b.radius;
+                    float max_reach = combined_radius + max_travel + ccd_config_.speculative_distance;
+                    
+                    // Early out using squared distance (avoids sqrt)
+                    if (distance_sq > max_reach * max_reach) {
+                        continue;
+                    }
+
+                    SphereCollider collider_a = particle_to_collider(a);
+                    SphereCollider collider_b = particle_to_collider(b);
+                    collider_a.position = a.position - a.velocity * dt_;
+                    collider_b.position = b.position - b.velocity * dt_;
+
+                    ++narrowphase_tests;
+                    ContactManifold manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
+                        collider_a, collider_b, i, j, dt_, ccd_config_
+                    );
+
+                    processed_pairs.insert(pair_id);
+                    if (manifold.is_valid()) {
+                        detected_manifolds.push_back(manifold);
+                    }
+                }
+            }
+        }
+
         // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
         std::vector<ContactManifold> cached_manifolds = contact_cache_.update(detected_manifolds);
         actual_collisions = static_cast<uint32_t>(cached_manifolds.size());
+
+        // Phase 3.75: CCD Sub-stepping (if enabled)
+        // Sort manifolds by TOI to resolve earliest collisions first
+        if (ccd_config_.enabled && ccd_config_.max_substeps > 0) {
+            PROFILE_SCOPE("ccd_substepping");
+            perform_ccd_substeps(cached_manifolds);
+        }
 
         // Phase 4: Unified Constraint Solving (Phase 5)
         // Create contact constraints from manifolds and solve alongside rigid constraints
@@ -699,6 +832,41 @@ private:
             collision_monitor_->set_actual_collisions(actual_collisions);
             collision_monitor_->end_frame();
         }
+    }
+
+    // Private helper method for CCD sub-stepping  
+    // When a collision is detected with TOI < 1.0, we handle only that collision
+    // in this iteration, re-detect after, and continue with remaining collisions.
+    // 
+    // Note: Particles are always integrated to t=dt in the main integration step.
+    // CCD reports when the collision would have occurred (toi * dt).
+    // Sub-stepping is about resolution order: earliest collisions first, then re-detect.
+    //
+    // This method iteratively:
+    // 1. Finds earliest TOI collision in manifold  
+    // 2. Keeps only that one for constraint solving (implicit in Phase 4)
+    // 3. Re-detects after (to find subsequent collisions)
+    // 4. Repeats until no early collisions remain
+    //
+    // For now, this is a placeholder that just processes all manifolds once.
+    // A full implementation would need to:
+    // - Filter manifolds to keep only the earliest TOI
+    // - Solve constraints for just that manifold
+    // - Re-detect collisions from new state
+    // - Repeat until all TOI-based collisions are resolved
+    void perform_ccd_substeps(std::vector<collision::ContactManifold>& manifolds) noexcept {
+        PROFILE_SCOPE("ccd_substeps");
+        
+        if (manifolds.empty() || !ccd_config_.enabled) {
+            return;
+        }
+        
+        // Future: Implement recursive sub-stepping
+        // For now, just ensure manifolds are sorted by TOI (earliest first)
+        std::sort(manifolds.begin(), manifolds.end(),
+            [](const collision::ContactManifold& a, const collision::ContactManifold& b) {
+                return a.toi < b.toi;
+            });
     }
 };
 

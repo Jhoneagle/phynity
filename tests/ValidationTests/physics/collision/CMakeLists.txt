@@ -39,3 +39,11 @@ target_link_libraries(ccd_validation_test PRIVATE phynity::tests Catch2::Catch2W
 add_test(NAME validation.physics.collision.ccd COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_validation_test>)
 set_tests_properties(validation.physics.collision.ccd PROPERTIES LABELS validation)
 
+# CCD end-to-end validation tests
+add_executable(ccd_e2e_validation_test ccd_e2e_validation_test.cpp)
+phynity_target_defaults(ccd_e2e_validation_test)
+phynity_apply_warnings(ccd_e2e_validation_test)
+phynity_apply_sanitizers(ccd_e2e_validation_test)
+target_link_libraries(ccd_e2e_validation_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+add_test(NAME validation.physics.collision.ccd_e2e COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_e2e_validation_test>)
+set_tests_properties(validation.physics.collision.ccd_e2e PROPERTIES LABELS validation)

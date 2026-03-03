@@ -7,6 +7,7 @@
 #include <core/physics/macro/inertia.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/material.hpp>
+#include <core/physics/common/ccd_config.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 #include <cmath>
 
@@ -262,6 +263,329 @@ TEST_CASE("RigidBodySystem energy conservation (no gravity)", "[system][energy]"
     
     // Energy should be conserved (within numerical error)
     REQUIRE_THAT(ke_final, WithinAbs(ke_initial, 0.01f * ke_initial));
+}
+
+TEST_CASE("RigidBodySystem sphere-sphere collision response", "[system][collision][sphere]") {
+    RigidBodySystem sys;
+
+    Material mat(1.0f, 0.8f, 0.3f, 0.0f, 0.0f, 0.0f);
+
+    auto moving_shape = std::make_shared<SphereShape>(0.5f);
+    auto target_shape = std::make_shared<SphereShape>(0.5f);
+
+    RigidBodyID moving_id = sys.spawn_body(
+        Vec3f(-2.0f, 0.0f, 0.0f),
+        Quatf(),
+        moving_shape,
+        1.0f,
+        mat
+    );
+
+    RigidBodyID target_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        target_shape,
+        1.0f,
+        mat
+    );
+
+    RigidBody* moving = sys.get_body(moving_id);
+    RigidBody* target = sys.get_body(target_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(target != nullptr);
+
+    moving->velocity = Vec3f(8.0f, 0.0f, 0.0f);
+    target->velocity = Vec3f(0.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < 120; ++i) {
+        sys.update(1.0f / 120.0f);
+    }
+
+    moving = sys.get_body(moving_id);
+    target = sys.get_body(target_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(target != nullptr);
+
+    float center_distance = (moving->position - target->position).length();
+    REQUIRE(center_distance >= 0.95f);
+    REQUIRE(target->velocity.x > 0.5f);
+}
+
+TEST_CASE("RigidBodySystem box AABB collision response", "[system][collision][aabb]") {
+    RigidBodySystem sys;
+
+    Material mat(1.0f, 0.6f, 0.3f, 0.0f, 0.0f, 0.0f);
+
+    auto moving_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+    auto wall_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+
+    RigidBodyID moving_id = sys.spawn_body(
+        Vec3f(-2.0f, 0.0f, 0.0f),
+        Quatf(),
+        moving_box,
+        1.0f,
+        mat
+    );
+
+    RigidBodyID wall_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        wall_box,
+        0.0f,
+        mat
+    );
+
+    RigidBody* moving = sys.get_body(moving_id);
+    RigidBody* wall = sys.get_body(wall_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(wall != nullptr);
+
+    moving->velocity = Vec3f(10.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < 120; ++i) {
+        sys.update(1.0f / 120.0f);
+    }
+
+    moving = sys.get_body(moving_id);
+    wall = sys.get_body(wall_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(wall != nullptr);
+
+    float center_distance = (moving->position - wall->position).length();
+    REQUIRE(center_distance >= 0.95f);
+    REQUIRE(moving->position.x <= 0.1f);
+    REQUIRE(moving->velocity.x <= 0.0f);
+}
+
+TEST_CASE("RigidBodySystem linear CCD prevents tunneling", "[system][collision][ccd]") {
+    RigidBodySystem::Config config;
+    config.enable_linear_ccd = true;
+    config.ccd_config = ccd_presets::aggressive();
+
+    RigidBodySystem sys(config);
+
+    Material inelastic(1.0f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f);
+
+    auto bullet_shape = std::make_shared<SphereShape>(0.05f);
+    auto target_shape = std::make_shared<SphereShape>(0.05f);
+
+    RigidBodyID bullet_id = sys.spawn_body(
+        Vec3f(-5.0f, 0.0f, 0.0f),
+        Quatf(),
+        bullet_shape,
+        1.0f,
+        inelastic
+    );
+
+    RigidBodyID target_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        target_shape,
+        0.0f,
+        inelastic
+    );
+
+    RigidBody* bullet = sys.get_body(bullet_id);
+    RigidBody* target = sys.get_body(target_id);
+    REQUIRE(bullet != nullptr);
+    REQUIRE(target != nullptr);
+
+    bullet->velocity = Vec3f(600.0f, 0.0f, 0.0f);
+
+    sys.update(1.0f / 60.0f);
+
+    bullet = sys.get_body(bullet_id);
+    target = sys.get_body(target_id);
+    REQUIRE(bullet != nullptr);
+    REQUIRE(target != nullptr);
+
+    float center_distance = (bullet->position - target->position).length();
+    REQUIRE(center_distance >= 0.095f);
+    REQUIRE(bullet->position.x <= 0.2f);
+    REQUIRE(bullet->velocity.x <= 1.0f);
+}
+
+TEST_CASE("RigidBodySystem impact response adds angular velocity", "[system][collision][impact]") {
+    RigidBodySystem sys;
+
+    Material mat(1.0f, 0.5f, 0.3f, 0.0f, 0.0f, 0.0f);
+
+    auto moving_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+    auto static_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+
+    RigidBodyID moving_id = sys.spawn_body(
+        Vec3f(-2.0f, 0.35f, 0.0f),
+        Quatf(),
+        moving_box,
+        1.0f,
+        mat
+    );
+
+    RigidBodyID obstacle_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        static_box,
+        0.0f,
+        mat
+    );
+
+    RigidBody* moving = sys.get_body(moving_id);
+    RigidBody* obstacle = sys.get_body(obstacle_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(obstacle != nullptr);
+
+    moving->velocity = Vec3f(8.0f, 0.0f, 0.0f);
+
+    for (int i = 0; i < 120; ++i) {
+        sys.update(1.0f / 120.0f);
+    }
+
+    moving = sys.get_body(moving_id);
+    REQUIRE(moving != nullptr);
+
+    REQUIRE(std::abs(moving->angular_velocity.z) > 1e-4f);
+}
+
+TEST_CASE("RigidBodySystem speculative contacts stabilize near impact", "[system][collision][speculative]") {
+    RigidBodySystem::Config config;
+    config.enable_linear_ccd = true;
+    config.ccd_config = ccd_presets::aggressive();
+    config.ccd_config.use_speculative_contacts = true;
+    config.ccd_config.speculative_distance = 0.25f;
+
+    RigidBodySystem sys(config);
+
+    Material inelastic(1.0f, 0.0f, 0.3f, 0.0f, 0.0f, 0.0f);
+
+    auto a_shape = std::make_shared<SphereShape>(0.5f);
+    auto b_shape = std::make_shared<SphereShape>(0.5f);
+
+    RigidBodyID a_id = sys.spawn_body(
+        Vec3f(-1.2f, 0.0f, 0.0f),
+        Quatf(),
+        a_shape,
+        1.0f,
+        inelastic
+    );
+
+    RigidBodyID b_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        b_shape,
+        0.0f,
+        inelastic
+    );
+
+    RigidBody* body_a = sys.get_body(a_id);
+    RigidBody* body_b = sys.get_body(b_id);
+    REQUIRE(body_a != nullptr);
+    REQUIRE(body_b != nullptr);
+
+    body_a->velocity = Vec3f(2.0f, 0.0f, 0.0f);
+
+    float initial_gap = (body_b->position - body_a->position).length() - (a_shape->radius + b_shape->radius);
+    REQUIRE(initial_gap > 0.0f);
+
+    sys.update(1.0f / 120.0f);
+
+    body_a = sys.get_body(a_id);
+    body_b = sys.get_body(b_id);
+    REQUIRE(body_a != nullptr);
+    REQUIRE(body_b != nullptr);
+
+    float post_gap = (body_b->position - body_a->position).length() - (a_shape->radius + b_shape->radius);
+    REQUIRE(post_gap >= -1e-3f);
+    REQUIRE(body_a->velocity.x <= 0.5f);
+}
+
+TEST_CASE("RigidBodySystem contact friction damps tangential velocity", "[system][collision][friction]") {
+    RigidBodySystem sys;
+
+    Material high_friction(1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+
+    auto moving_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+    auto static_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+
+    RigidBodyID moving_id = sys.spawn_body(
+        Vec3f(0.0f, 0.95f, 0.0f),
+        Quatf(),
+        moving_box,
+        1.0f,
+        high_friction
+    );
+
+    RigidBodyID static_id = sys.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Quatf(),
+        static_box,
+        0.0f,
+        high_friction
+    );
+
+    RigidBody* moving = sys.get_body(moving_id);
+    RigidBody* obstacle = sys.get_body(static_id);
+    REQUIRE(moving != nullptr);
+    REQUIRE(obstacle != nullptr);
+
+    moving->velocity = Vec3f(4.0f, -1.0f, 0.0f);
+
+    sys.update(1.0f / 120.0f);
+
+    moving = sys.get_body(moving_id);
+    REQUIRE(moving != nullptr);
+
+    REQUIRE(std::abs(moving->velocity.x) < 4.0f);
+}
+
+TEST_CASE("RigidBodySystem rotational CCD expands sweep envelope", "[system][collision][ccd][rotational]") {
+    auto run_case = [](bool enable_rotational_ccd) {
+        RigidBodySystem::Config config;
+        config.enable_linear_ccd = true;
+        config.ccd_config = ccd_presets::aggressive();
+        config.ccd_config.enable_rotational_ccd = enable_rotational_ccd;
+        config.ccd_config.use_speculative_contacts = false;
+
+        RigidBodySystem sys(config);
+
+        Material mat(1.0f, 0.0f, 0.2f, 0.0f, 0.0f, 0.0f);
+
+        auto moving_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+        auto static_box = std::make_shared<BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+
+        RigidBodyID moving_id = sys.spawn_body(
+            Vec3f(-1.9f, 0.0f, 0.0f),
+            Quatf(),
+            moving_box,
+            1.0f,
+            mat
+        );
+
+        [[maybe_unused]] RigidBodyID obstacle_id = sys.spawn_body(
+            Vec3f(0.0f, 0.0f, 0.0f),
+            Quatf(),
+            static_box,
+            0.0f,
+            mat
+        );
+
+        RigidBody* moving = sys.get_body(moving_id);
+        REQUIRE(moving != nullptr);
+
+        moving->velocity = Vec3f(0.2f, 0.0f, 0.0f);
+        moving->angular_velocity = Vec3f(0.0f, 0.0f, 40.0f);
+
+        sys.update(1.0f / 60.0f);
+
+        moving = sys.get_body(moving_id);
+        REQUIRE(moving != nullptr);
+        return moving->velocity.x;
+    };
+
+    float vx_without_rot = run_case(false);
+    float vx_with_rot = run_case(true);
+
+    REQUIRE(vx_without_rot > 0.1f);
+    REQUIRE(vx_with_rot <= 0.1f);
 }
 
 // ============================================================================

@@ -29,6 +29,10 @@ struct ContactManifold {
     int age = 0;                         ///< Number of frames this contact has been active
     Vec3f previous_impulse = Vec3f(0.0f); ///< Cached impulse from previous frame (for warm-start)
     
+    // Continuous collision detection (CCD) field
+    float toi = 1.0f;                    ///< Time of impact [0, 1] where 1 = end of timestep (for CCD)
+                                         ///< Only meaningful for manifolds created by CCD detection
+    
     bool is_valid() const {
         return object_a_id != static_cast<size_t>(-1) && object_b_id != static_cast<size_t>(-1);
     }
