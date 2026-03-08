@@ -144,7 +144,6 @@ TEST_CASE("Finite Differences: Cubic polynomial", "[calculus][finite_differences
 	// f''(x) = 6x + 4
 	auto f = [](float x) { return x * x * x + 2 * x * x - 5 * x + 1; };
 	auto f_prime = [](float x) { return 3 * x * x + 4 * x - 5; };
-	auto f_prime2 = [](float x) { return 6 * x + 4; };
 
 	float x = 2.0f;
 
