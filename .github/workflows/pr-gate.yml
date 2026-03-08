@@ -148,11 +148,11 @@ jobs:
 
       - name: Setup clang-format
         run: |
-          # Install clang-format 18 (stable version available in Ubuntu)
+          # Install clang-format 18.1.8 to match local development environment
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 18
-          sudo apt-get install -y clang-format-18
+          sudo apt-get install -y clang-format-18=1:18.1.8*
           sudo ln -sf /usr/bin/clang-format-18 /usr/bin/clang-format
           clang-format --version
 
