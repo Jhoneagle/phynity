@@ -8,9 +8,13 @@ rem   validation        -> ^validation\.
 rem   golden-compare    -> golden tests only (compare mode)
 rem   golden            -> golden tests only (capture mode)
 rem   <other>           -> passed directly to ctest -R as regex
+rem Env overrides:
+rem   VCPKG_TARGET_TRIPLET=<triplet> (default: x64-windows)
 set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 set FILTER=%2
+set TRIPLET=%VCPKG_TARGET_TRIPLET%
+if "%TRIPLET%"=="" set TRIPLET=x64-windows
 
 rem Map friendly filters to ctest regex
 set FILTER_REGEX=%FILTER%
@@ -22,7 +26,7 @@ if /i "%FILTER%"=="golden" (
   set FILTER_REGEX=[golden]
   set CMAKE_EXTRA_FLAGS=-DGOLDEN_CAPTURE_MODE=ON
 )
-cmake --preset %PRESET% %CMAKE_EXTRA_FLAGS%
+cmake --preset %PRESET% -DVCPKG_TARGET_TRIPLET=%TRIPLET% %CMAKE_EXTRA_FLAGS%
 cmake --build --preset %PRESET%
 if "%FILTER%"=="" (
   ctest --preset %PRESET% --output-on-failure

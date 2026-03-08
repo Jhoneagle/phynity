@@ -5,6 +5,7 @@ set -euo pipefail
 # Presets: debug (default), release
 # Env overrides:
 #   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
+#   VCPKG_TARGET_TRIPLET=<triplet> (default auto by platform)
 #   CMAKE_EXTRA_FLAGS="-DVAR=value" for additional CMake flags
 #   CLEAN=true to remove build/<preset> before configuring
 #   RECONFIGURE=true forces reconfigure (cmake --preset still configures if needed)
@@ -15,6 +16,8 @@ export VCPKG_MAX_CONCURRENCY=4
 preset="${1:-debug}"
 sanitizers="${PHYNITY_SANITIZERS:-auto}"
 os="$(uname -s || echo unknown)"
+arch="$(uname -m || echo unknown)"
+triplet="${VCPKG_TARGET_TRIPLET:-}"
 
 # Decide sanitizer default based on platform
 if [[ "$sanitizers" == "auto" ]]; then
@@ -25,6 +28,24 @@ if [[ "$sanitizers" == "auto" ]]; then
   fi
 fi
 
+if [[ -z "$triplet" ]]; then
+  case "$os" in
+    Linux*)
+      triplet="x64-linux"
+      ;;
+    Darwin*)
+      if [[ "$arch" == "arm64" ]]; then
+        triplet="arm64-osx"
+      else
+        triplet="x64-osx"
+      fi
+      ;;
+    MINGW*|MSYS*|CYGWIN*)
+      triplet="x64-mingw-static"
+      ;;
+  esac
+fi
+
 # Optional clean
 if [[ "${CLEAN:-false}" == "true" ]]; then
   rm -rf "build/$preset"
@@ -32,6 +53,9 @@ fi
 
 # Compose extra cache variables
 extra_cache=("-DPHYNITY_ENABLE_SANITIZERS=$sanitizers")
+if [[ -n "$triplet" ]]; then
+  extra_cache+=("-DVCPKG_TARGET_TRIPLET=$triplet")
+fi
 
 # Add any additional CMake flags passed via environment
 if [[ -n "${CMAKE_EXTRA_FLAGS:-}" ]]; then
