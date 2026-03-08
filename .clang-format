@@ -1,0 +1,68 @@
+---
+Language: Cpp
+Standard: c++20
+
+# Indentation
+UseTab: ForIndentation
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+
+# Line breaking
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpaceInEmptyBlock: false
+
+# Pointer alignment
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# Alignment
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+AlignTrailingComments: true
+
+# Comments
+ReflowComments: true
+SpaceBeforeLineComment: 2
+
+# Sorting and grouping
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*"'
+    Priority: 1
+  - Regex: '^<.*\.hpp>'
+    Priority: 2
+  - Regex: '^<.*>'
+    Priority: 3
+
+# Function definitions
+BinPackArguments: false
+BinPackParameters: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Other
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+DerivePointerAlignment: false
+IndentCaseLabels: true
+IndentPPDirectives: None
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+NamespaceMacros:
+  - 'PHYNITY_NAMESPACE_BEGIN'
+  - 'PHYNITY_NAMESPACE_END'

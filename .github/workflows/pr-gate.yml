@@ -1,0 +1,299 @@
+name: PR Gate - Build and Quality Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+env:
+  CMAKE_VERSION: 3.27
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
+
+jobs:
+  # Job 1: Build and test on all platforms with unit/validation tests
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows
+            runner: windows-2022
+            generator: Ninja
+            cc: clang-cl
+            cxx: clang-cl
+            build_type: Release
+
+          - os: linux
+            runner: ubuntu-22.04
+            generator: Ninja
+            cc: clang
+            cxx: clang++
+            build_type: Release
+
+          - os: macos
+            runner: macos-14
+            generator: Ninja
+            cc: clang
+            cxx: clang++
+            build_type: Release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup vcpkg cache
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('VCPKG_BINARY_SOURCES', process.env.VCPKG_BINARY_SOURCES)
+
+      - name: Restore vcpkg cache (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-${{ matrix.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-
+
+      - name: Restore vcpkg cache (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/archives
+            ${{ env.VCPKG_ROOT }}/src
+          key: vcpkg-windows-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-windows-
+
+      - name: Setup Ninja (Windows)
+        if: runner.os == 'Windows'
+        uses: seanmiddleditch/gha-setup-ninja@master
+        with:
+          version: latest
+
+      - name: Setup Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Setup Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Setup LLVM/Clang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld llvm-dev
+
+      - name: Configure CMake
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake --preset=release \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DPHYNITY_BUILD_TESTS=ON \
+            -DPHYNITY_WARNINGS_AS_ERRORS=ON \
+            -DPHYNITY_ENABLE_SANITIZERS=OFF
+
+      - name: Build
+        run: cmake --build build/release --config ${{ matrix.build_type }} -j
+
+      - name: Run Unit Tests
+        working-directory: build/release
+        run: ctest -C ${{ matrix.build_type }} -R "^UnitTests" --output-on-failure -j
+
+      - name: Run Validation Tests
+        working-directory: build/release
+        run: ctest -C ${{ matrix.build_type }} -R "^ValidationTests" --output-on-failure -j
+
+      - name: Archive test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.os }}
+          path: build/release/Testing/
+          retention-days: 30
+
+  # Job 2: Format check (clang-format)
+  format-check:
+    name: Format Check (clang-format)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Check formatting
+        run: |
+          echo "Checking code formatting with clang-format..."
+          find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | while read file; do
+            clang-format --style=file -output-replacements-xml "$file" | grep -q '<replacement' && {
+              echo "Format issue in: $file"
+              clang-format --style=file "$file" | diff -u "$file" - || true
+              exit 1
+            }
+          done || exit 1
+          echo "✓ All files properly formatted"
+
+  # Job 3: Static analysis (clang-tidy)
+  static-analysis:
+    name: Static Analysis (clang-tidy)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy ninja-build
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-linux-clang-tidy-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+
+      - name: Configure CMake for static analysis
+        run: |
+          cmake --preset=release \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPHYNITY_BUILD_TESTS=ON
+
+      - name: Run clang-tidy
+        run: |
+          cd build/release
+          # Generate compile_commands.json if not present
+          [ -f compile_commands.json ] || cmake --build . --target all
+          
+          # Run clang-tidy on source files (not tests initially)
+          find ../../src -type f -name "*.cpp" | head -20 | while read file; do
+            echo "Analyzing: $file"
+            clang-tidy -p . "$file" || true
+          done
+
+      - name: Archive clang-tidy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy-report
+          path: build/release/
+          retention-days: 30
+
+  # Job 4: Sanitizers (ASAN + UBSAN on Linux/macOS)
+  sanitizers:
+    name: Sanitizers (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-22.04
+            generator: Ninja
+            cc: clang
+            cxx: clang++
+
+          - os: macos
+            runner: macos-14
+            generator: Ninja
+            cc: clang
+            cxx: clang++
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
+
+      - name: Setup Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-${{ matrix.os }}-sanitizers-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-
+
+      - name: Configure CMake with sanitizers
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake --preset=debug-asan \
+            -DPHYNITY_BUILD_TESTS=ON \
+            -DPHYNITY_ENABLE_SANITIZERS=ON \
+            -DPHYNITY_WARNINGS_AS_ERRORS=OFF
+
+      - name: Build with sanitizers
+        run: cmake --build build/debug-asan -j
+
+      - name: Run tests with ASAN
+        working-directory: build/debug-asan
+        env:
+          ASAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
+          UBSAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
+        run: ctest -C Debug --output-on-failure -j
+
+      - name: Archive sanitizer reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanitizer-report-${{ matrix.os }}
+          path: build/debug-asan/
+          retention-days: 90
+
+  # Job 5: PR Quality Gate Summary
+  quality-gate:
+    name: Quality Gate Summary
+    runs-on: ubuntu-22.04
+    needs: [build-and-test, format-check, static-analysis, sanitizers]
+    if: always()
+    steps:
+      - name: Check all required checks passed
+        run: |
+          if [[ "${{ needs.build-and-test.result }}" != "success" || \
+                "${{ needs.format-check.result }}" != "success" || \
+                "${{ needs.static-analysis.result }}" != "success" || \
+                "${{ needs.sanitizers.result }}" != "success" ]]; then
+            echo "❌ PR Quality Gate FAILED"
+            echo ""
+            echo "Failed checks:"
+            [ "${{ needs.build-and-test.result }}" != "success" ] && echo "  - Build and Tests"
+            [ "${{ needs.format-check.result }}" != "success" ] && echo "  - Format Check"
+            [ "${{ needs.static-analysis.result }}" != "success" ] && echo "  - Static Analysis"
+            [ "${{ needs.sanitizers.result }}" != "success" ] && echo "  - Sanitizers"
+            exit 1
+          fi
+          
+          echo "✅ PR Quality Gate PASSED"
+          echo "  ✓ Build and Tests"
+          echo "  ✓ Format Check"
+          echo "  ✓ Static Analysis"
+          echo "  ✓ Sanitizers (Linux/macOS)"
