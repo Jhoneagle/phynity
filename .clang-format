@@ -33,7 +33,6 @@ AlignTrailingComments: true
 
 # Comments
 ReflowComments: true
-SpaceBeforeLineComment: 2
 
 # Sorting and grouping
 SortIncludes: CaseInsensitive

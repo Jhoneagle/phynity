@@ -81,9 +81,10 @@ jobs:
 
       - name: Setup Ninja (Windows)
         if: runner.os == 'Windows'
-        uses: seanmiddleditch/gha-setup-ninja@master
-        with:
-          version: latest
+        shell: pwsh
+        run: |
+          choco install ninja --no-progress -y
+          ninja --version
 
       - name: Setup Ninja (Linux)
         if: runner.os == 'Linux'
