@@ -25,3 +25,27 @@ This project uses CMake and vcpkg (manifest mode).
 ```bash
 cmake --preset debug
 cmake --build --preset debug
+```
+
+## Development Tools
+
+### Code Formatting
+
+This project uses clang-format for code style consistency. CI uses clang-format 18.
+
+**Format all code:**
+```bash
+# Windows
+tools\format.bat
+
+# Linux/macOS  
+./tools/format.sh
+```
+
+**Check formatting (without modifying):**
+```bash
+tools\format.bat --check
+```
+
+**Installing clang-format locally:**
+Your local clang-format version should match CI (version 22) to avoid formatting differences. If you have a different version, format discrepancies may occur between local and CI checks.

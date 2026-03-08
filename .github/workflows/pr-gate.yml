@@ -148,8 +148,13 @@ jobs:
 
       - name: Setup clang-format
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format
+          # Install clang-format 22 to match local development environment
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get install -y clang-format-22
+          sudo ln -sf /usr/bin/clang-format-22 /usr/bin/clang-format
+          clang-format --version
 
       - name: Check formatting
         run: |
