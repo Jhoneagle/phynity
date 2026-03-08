@@ -51,7 +51,6 @@ public:
 
 private:
     JobSystemConfig config_{};
-    bool running_ = false;
 };
 
 }  // namespace phynity::jobs

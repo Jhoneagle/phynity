@@ -45,6 +45,7 @@ TEST_CASE("EnergyMonitor: Energy loss within tolerance", "[diagnostics][energy_m
     int violation_count = 0;
     
     monitor.set_violation_callback([&](const EnergyViolation& v) {
+        (void)v;
         ++violation_count;
     });
     
@@ -86,6 +87,7 @@ TEST_CASE("EnergyMonitor: Enable/disable monitoring", "[diagnostics][energy_moni
     int violation_count = 0;
     
     monitor.set_violation_callback([&](const EnergyViolation& v) {
+        (void)v;
         ++violation_count;
     });
     
@@ -162,6 +164,7 @@ TEST_CASE("EnergyMonitor: Multiple violations", "[diagnostics][energy_monitor]")
     int violation_count = 0;
     
     monitor.set_violation_callback([&](const EnergyViolation& v) {
+        (void)v;
         ++violation_count;
     });
     

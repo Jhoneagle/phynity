@@ -16,7 +16,7 @@ set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 
 set TRIPLET=%VCPKG_TARGET_TRIPLET%
-if "%TRIPLET%"=="" set TRIPLET=x64-windows
+if "%TRIPLET%"=="" set TRIPLET=x64-mingw-static
 
 rem Sanitizers default to OFF on Windows (MinGW typically lacks usable ASan/UBSan)
 set SANITIZERS=%PHYNITY_SANITIZERS%

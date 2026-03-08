@@ -172,7 +172,7 @@ public:
 
     /// Get the initial approach velocity (for restitution calculation).
     /// This is the relative velocity along the normal at first contact.
-    float get_initial_approach_velocity() const {
+    float get_initial_approach_velocity() const override {
         return manifold_.contact.relative_velocity_along_normal;
     }
 

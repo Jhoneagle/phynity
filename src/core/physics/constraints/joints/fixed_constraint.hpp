@@ -185,7 +185,7 @@ private:
     Vec3f rest_offset_;             ///< Desired relative position (direction and magnitude)
     float rest_distance_;           ///< Distance to maintain between particles
     Vec3f accumulated_impulse_;     ///< Accumulated impulse vector (for warm-start)
-    int max_iterations_;            ///< Max iterations to converge (for reference)
+    [[maybe_unused]] int max_iterations_;  ///< Max iterations to converge (for reference)
 };
 
 }  // namespace phynity::physics::constraints

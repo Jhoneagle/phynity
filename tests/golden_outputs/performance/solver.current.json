@@ -1,6 +1,6 @@
 {
   "scenario": "solver",
-  "milliseconds": 3.061000,
+  "milliseconds": 3.178000,
   "iterations": 200,
   "workload": 64,
   "notes": "PGS solver with synthetic contacts"
