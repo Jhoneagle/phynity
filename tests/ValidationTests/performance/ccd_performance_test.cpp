@@ -5,7 +5,6 @@
 
 #include <chrono>
 #include <cmath>
-#include <cstdlib>
 #include <iostream>
 
 using namespace phynity::physics;
@@ -24,7 +23,7 @@ bool is_slow_env()
 	return true;
 #endif
 #endif
-	return std::getenv("CI") != nullptr || std::getenv("GITHUB_ACTIONS") != nullptr;
+	return false;
 }
 
 struct PerfResult

@@ -61,11 +61,6 @@ static std::string get_golden_dir()
 #ifdef GOLDEN_FILES_DIR
 	return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
 #else
-	const char *env_dir = std::getenv("GOLDEN_FILES_DIR");
-	if (env_dir)
-	{
-		return std::string(env_dir);
-	}
 	return "tests/golden_outputs";
 #endif
 }

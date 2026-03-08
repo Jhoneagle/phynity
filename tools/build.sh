@@ -5,6 +5,7 @@ set -euo pipefail
 # Presets: debug (default), release
 # Env overrides:
 #   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
+#   PHYNITY_WARNINGS_AS_ERRORS=ON|OFF (default: ON)
 #   VCPKG_TARGET_TRIPLET=<triplet> (default auto by platform)
 #   CMAKE_EXTRA_FLAGS="-DVAR=value" for additional CMake flags
 #   CLEAN=true to remove build/<preset> before configuring
@@ -15,6 +16,7 @@ export VCPKG_MAX_CONCURRENCY=4
 
 preset="${1:-debug}"
 sanitizers="${PHYNITY_SANITIZERS:-auto}"
+werror="${PHYNITY_WARNINGS_AS_ERRORS:-ON}"
 os="$(uname -s || echo unknown)"
 arch="$(uname -m || echo unknown)"
 triplet="${VCPKG_TARGET_TRIPLET:-}"
@@ -53,6 +55,7 @@ fi
 
 # Compose extra cache variables
 extra_cache=("-DPHYNITY_ENABLE_SANITIZERS=$sanitizers")
+extra_cache+=("-DPHYNITY_WARNINGS_AS_ERRORS=$werror")
 if [[ -n "$triplet" ]]; then
   extra_cache+=("-DVCPKG_TARGET_TRIPLET=$triplet")
 fi

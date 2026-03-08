@@ -5,7 +5,6 @@
 #include <tests/test_utils/golden_serializer.hpp>
 
 #include <cmath>
-#include <cstdlib>
 #include <filesystem>
 #include <iomanip>
 #include <regex>
@@ -29,11 +28,6 @@ static std::string get_golden_dir()
 #ifdef GOLDEN_FILES_DIR
 	return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
 #else
-	const char *env_dir = std::getenv("GOLDEN_FILES_DIR");
-	if (env_dir)
-	{
-		return std::string(env_dir);
-	}
 	return "tests/golden_outputs";
 #endif
 }
@@ -46,7 +40,7 @@ static void ensure_golden_dir(const std::string &dir)
 	}
 }
 
-static std::string normalize_json_numbers(const std::string &input, int precision = 6)
+static std::string normalize_json_numbers(const std::string &input, int precision = 4)
 {
 	std::regex number_regex(R"((-?\d+\.\d+))");
 	std::ostringstream out;

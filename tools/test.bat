@@ -15,6 +15,8 @@ if "%PRESET%"=="" set PRESET=debug
 set FILTER=%2
 set TRIPLET=%VCPKG_TARGET_TRIPLET%
 if "%TRIPLET%"=="" set TRIPLET=x64-mingw-static
+set WERROR=%PHYNITY_WARNINGS_AS_ERRORS%
+if "%WERROR%"=="" set WERROR=ON
 
 rem Map friendly filters to ctest regex
 set FILTER_REGEX=%FILTER%
@@ -26,7 +28,7 @@ if /i "%FILTER%"=="golden" (
   set FILTER_REGEX=[golden]
   set CMAKE_EXTRA_FLAGS=-DGOLDEN_CAPTURE_MODE=ON
 )
-cmake --preset %PRESET% -DVCPKG_TARGET_TRIPLET=%TRIPLET% %CMAKE_EXTRA_FLAGS%
+cmake --preset %PRESET% -DPHYNITY_WARNINGS_AS_ERRORS=%WERROR% -DVCPKG_TARGET_TRIPLET=%TRIPLET% %CMAKE_EXTRA_FLAGS%
 if errorlevel 1 exit /b 1
 
 cmake --build --preset %PRESET%

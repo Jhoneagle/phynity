@@ -84,6 +84,11 @@ public:
 	 */
 	[[nodiscard]] GridCell get_cell_coords(const math::vectors::Vec3f &position) const noexcept
 	{
+		if (!std::isfinite(cell_size_) || cell_size_ <= 0.0f)
+		{
+			return GridCell{0, 0, 0};
+		}
+
 		// Clamp to prevent overflow when converting extremely large positions to int32_t
 		constexpr float kMaxCoord = 2147483647.0f;  // INT32_MAX
 		constexpr float kMinCoord = -2147483648.0f; // INT32_MIN
@@ -91,6 +96,8 @@ public:
 		auto clamp_and_floor = [](float value, float cell_size) -> int32_t
 		{
 			float result = std::floor(value / cell_size);
+			if (!std::isfinite(result))
+				return 0;
 			if (result > kMaxCoord)
 				return INT32_MAX;
 			if (result < kMinCoord)

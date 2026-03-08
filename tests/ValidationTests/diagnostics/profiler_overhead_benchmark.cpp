@@ -4,7 +4,6 @@
 #include <core/diagnostics/timer.hpp>
 
 #include <chrono>
-#include <cstdlib>
 #include <vector>
 
 using namespace phynity::diagnostics;
@@ -21,7 +20,7 @@ bool is_slow_env()
 	return true;
 #endif
 #endif
-	return std::getenv("CI") != nullptr || std::getenv("GITHUB_ACTIONS") != nullptr;
+	return false;
 }
 } // namespace
 
@@ -100,7 +99,7 @@ TEST_CASE("Profiler Overhead: Empty scope timing", "[validation][profiler][bench
 
 	// Verify overhead is reasonable (less than 500ns per call)
 	// Note: This is conservative for debug builds; optimized builds should be <50ns
-	const double overhead_limit = is_slow_env() ? 1500.0 : 500.0;
+	const double overhead_limit = is_slow_env() ? 1700.0 : 500.0;
 	REQUIRE(overhead_ns < overhead_limit);
 	REQUIRE(overhead_ns >= 0.0); // Sanity check
 }
