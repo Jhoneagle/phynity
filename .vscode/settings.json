@@ -3,17 +3,6 @@
   "cmake.configurePreset": "debug",
   "cmake.buildPreset": "debug",
   "cmake.testPreset": "debug",
-  "editor.formatOnSave": true,
-  "editor.formatOnSaveMode": "file",
-  "[cpp]": {
-    "editor.defaultFormatter": "ms-vscode.cpptools"
-  },
-  "[c]": {
-    "editor.defaultFormatter": "ms-vscode.cpptools"
-  },
-  "C_Cpp.formatting": "clangFormat",
-  "C_Cpp.clang_format_style": "file",
-  "C_Cpp.clang_format_fallbackStyle": "none",
   "cmake.statusbar.advanced": {
     "buildTarget": {
       "visibility": "visible"
