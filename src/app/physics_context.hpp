@@ -1,153 +1,156 @@
 #pragma once
 
-#include <core/physics/micro/particle_system.hpp>
-#include <core/physics/common/timestep_controller.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/physics_constants.hpp>
 #include <core/jobs/job_system.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/common/material.hpp>
+#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/common/timestep_controller.hpp>
+#include <core/physics/micro/particle_system.hpp>
+
 #include <memory>
 
-namespace phynity::app {
+namespace phynity::app
+{
 
-using phynity::physics::ParticleSystem;
-using phynity::physics::TimestepController;
-using phynity::physics::Material;
-using phynity::physics::ForceField;
-using phynity::physics::GravityField;
-using phynity::physics::DragField;
-using phynity::physics::constants::EARTH_GRAVITY;
-using phynity::math::vectors::Vec3f;
 using phynity::jobs::JobSystem;
 using phynity::jobs::JobSystemConfig;
 using phynity::jobs::SchedulingMode;
+using phynity::math::vectors::Vec3f;
+using phynity::physics::DragField;
+using phynity::physics::ForceField;
+using phynity::physics::GravityField;
+using phynity::physics::Material;
+using phynity::physics::ParticleSystem;
+using phynity::physics::TimestepController;
+using phynity::physics::constants::EARTH_GRAVITY;
 
 /// Application-level physics context manager.
 /// Handles lifecycle management of the particle system, timestep controller,
 /// and provides convenient methods for scenario setup and diagnostics.
-class PhysicsContext {
+class PhysicsContext
+{
 public:
-    /// Configuration for physics simulation
-    struct Config {
-        float target_fps = 60.0f;           ///< Target frames per second
-        float max_timestep = 1.0f / 30.0f;  ///< Maximum time per physics step
-        bool use_determinism = true;        ///< Enable deterministic mode
-        bool enable_jobs = true;            ///< Enable job system parallelization
-        uint32_t job_workers = 0;           ///< Worker count (0 = auto)
-        Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f);  ///< Gravitational acceleration
-        float air_drag = 0.0f;              ///< Air drag coefficient
-        
-        /// Default constructor initializes all fields to defaults above
-        Config() = default;
-    };
+	/// Configuration for physics simulation
+	struct Config
+	{
+		float target_fps = 60.0f;                          ///< Target frames per second
+		float max_timestep = 1.0f / 30.0f;                 ///< Maximum time per physics step
+		bool use_determinism = true;                       ///< Enable deterministic mode
+		bool enable_jobs = true;                           ///< Enable job system parallelization
+		uint32_t job_workers = 0;                          ///< Worker count (0 = auto)
+		Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f); ///< Gravitational acceleration
+		float air_drag = 0.0f;                             ///< Air drag coefficient
 
-    /// Constructor with default or custom configuration
-    explicit PhysicsContext(const Config& config);
-    
-    /// Constructor with default configuration
-    PhysicsContext();
+		/// Default constructor initializes all fields to defaults above
+		Config() = default;
+	};
 
-    /// Destructor ensures job system shutdown
-    ~PhysicsContext();
+	/// Constructor with default or custom configuration
+	explicit PhysicsContext(const Config &config);
 
-    // Non-copyable, non-movable
-    PhysicsContext(const PhysicsContext&) = delete;
-    PhysicsContext& operator=(const PhysicsContext&) = delete;
+	/// Constructor with default configuration
+	PhysicsContext();
 
-    // ========================================================================
-    // Simulation Control
-    // ========================================================================
+	/// Destructor ensures job system shutdown
+	~PhysicsContext();
 
-    /// Update the simulation by delta_time seconds
-    /// Accumulates time and performs physics steps as needed
-    /// @param delta_time Time elapsed since last frame (seconds)
-    void update(float delta_time);
+	// Non-copyable, non-movable
+	PhysicsContext(const PhysicsContext &) = delete;
+	PhysicsContext &operator=(const PhysicsContext &) = delete;
 
-    /// Manually advance one physics step with fixed timestep
-    /// Used for deterministic testing or scripted scenarios
-    void step_deterministic();
+	// ========================================================================
+	// Simulation Control
+	// ========================================================================
 
-    /// Reset the timestep accumulator without performing physics steps
-    void reset_accumulator();
+	/// Update the simulation by delta_time seconds
+	/// Accumulates time and performs physics steps as needed
+	/// @param delta_time Time elapsed since last frame (seconds)
+	void update(float delta_time);
 
-    // ========================================================================
-    // Particle Management (delegates to ParticleSystem)
-    // ========================================================================
+	/// Manually advance one physics step with fixed timestep
+	/// Used for deterministic testing or scripted scenarios
+	void step_deterministic();
 
-    /// Spawn a new particle with mass
-    void spawn_particle(
-        const Vec3f& position,
-        const Vec3f& velocity,
-        float mass = 1.0f,
-        float radius = -1.0f
-    );
+	/// Reset the timestep accumulator without performing physics steps
+	void reset_accumulator();
 
-    /// Spawn a new particle with full material specification
-    void spawn_particle(
-        const Vec3f& position,
-        const Vec3f& velocity,
-        const Material& material,
-        float radius = -1.0f
-    );
+	// ========================================================================
+	// Particle Management (delegates to ParticleSystem)
+	// ========================================================================
 
-    /// Clear all particles from the system
-    void clear_particles();
+	/// Spawn a new particle with mass
+	void spawn_particle(const Vec3f &position, const Vec3f &velocity, float mass = 1.0f, float radius = -1.0f);
 
-    /// Get the number of active particles
-    size_t particle_count() const;
+	/// Spawn a new particle with full material specification
+	void spawn_particle(const Vec3f &position, const Vec3f &velocity, const Material &material, float radius = -1.0f);
 
-    /// Get direct access to the particle system
-    ParticleSystem& particle_system() { return particle_system_; }
-    const ParticleSystem& particle_system() const { return particle_system_; }
+	/// Clear all particles from the system
+	void clear_particles();
 
-    // ========================================================================
-    // Force Field Management
-    // ========================================================================
+	/// Get the number of active particles
+	size_t particle_count() const;
 
-    /// Set gravity acceleration
-    void set_gravity(const Vec3f& gravity);
+	/// Get direct access to the particle system
+	ParticleSystem &particle_system()
+	{
+		return particle_system_;
+	}
+	const ParticleSystem &particle_system() const
+	{
+		return particle_system_;
+	}
 
-    /// Set air drag coefficient
-    void set_drag(float drag_coefficient);
+	// ========================================================================
+	// Force Field Management
+	// ========================================================================
 
-    /// Clear all force fields
-    void clear_force_fields();
+	/// Set gravity acceleration
+	void set_gravity(const Vec3f &gravity);
 
-    /// Get the number of active force fields
-    size_t force_field_count() const;
+	/// Set air drag coefficient
+	void set_drag(float drag_coefficient);
 
-    // ========================================================================
-    // Diagnostics
-    // ========================================================================
+	/// Clear all force fields
+	void clear_force_fields();
 
-    /// Get current system diagnostics (energy, momentum, particle count)
-    ParticleSystem::Diagnostics diagnostics() const;
+	/// Get the number of active force fields
+	size_t force_field_count() const;
 
-    /// Get timestep controller statistics
-    const TimestepController::Statistics& timestep_statistics() const;
+	// ========================================================================
+	// Diagnostics
+	// ========================================================================
 
-    /// Print diagnostic information to standard output
-    void print_diagnostics() const;
+	/// Get current system diagnostics (energy, momentum, particle count)
+	ParticleSystem::Diagnostics diagnostics() const;
 
-    // ========================================================================
-    // Configuration Access
-    // ========================================================================
+	/// Get timestep controller statistics
+	const TimestepController::Statistics &timestep_statistics() const;
 
-    /// Get current configuration
-    const Config& config() const { return config_; }
+	/// Print diagnostic information to standard output
+	void print_diagnostics() const;
 
-    /// Get target timestep (1 / target_fps)
-    float target_timestep() const;
+	// ========================================================================
+	// Configuration Access
+	// ========================================================================
+
+	/// Get current configuration
+	const Config &config() const
+	{
+		return config_;
+	}
+
+	/// Get target timestep (1 / target_fps)
+	float target_timestep() const;
 
 private:
-    Config config_;
-    ParticleSystem particle_system_;
-    TimestepController timestep_controller_;
-    JobSystem job_system_;
+	Config config_;
+	ParticleSystem particle_system_;
+	TimestepController timestep_controller_;
+	JobSystem job_system_;
 
-    /// Initialize force fields based on configuration
-    void initialize_force_fields();
+	/// Initialize force fields based on configuration
+	void initialize_force_fields();
 };
 
-}  // namespace phynity::app
+} // namespace phynity::app

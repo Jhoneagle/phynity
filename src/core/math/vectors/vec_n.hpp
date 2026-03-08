@@ -1,299 +1,373 @@
 #pragma once
 
-#include <cmath>
-#include <ostream>
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <ostream>
 #include <type_traits>
 
-namespace phynity::math::vectors {
+namespace phynity::math::vectors
+{
 
 /// Fixed-length floating-point vector with compile-time size and precision.
-template<std::size_t N, typename T = float>
-struct VecN {
-    static_assert(std::is_floating_point_v<T>, "VecN template parameter must be a floating-point type");
+template <std::size_t N, typename T = float> struct VecN
+{
+	static_assert(std::is_floating_point_v<T>, "VecN template parameter must be a floating-point type");
 
-    // Constructors
-    VecN() = default;
-    
-    explicit VecN(T v) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] = v;
-        }
-    }
+	// Constructors
+	VecN() = default;
 
-    VecN(const std::array<T, N>& arr) : data(arr) {}
+	explicit VecN(T v)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] = v;
+		}
+	}
 
-    // Operators
-    VecN operator+(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] + other.data[i];
-        }
-        return result;
-    }
+	VecN(const std::array<T, N> &arr) : data(arr)
+	{
+	}
 
-    VecN operator-(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] - other.data[i];
-        }
-        return result;
-    }
+	// Operators
+	VecN operator+(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] + other.data[i];
+		}
+		return result;
+	}
 
-    VecN operator*(T scalar) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] * scalar;
-        }
-        return result;
-    }
+	VecN operator-(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] - other.data[i];
+		}
+		return result;
+	}
 
-    VecN operator/(T scalar) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] / scalar;
-        }
-        return result;
-    }
+	VecN operator*(T scalar) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] * scalar;
+		}
+		return result;
+	}
 
-    VecN operator*(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] * other.data[i];
-        }
-        return result;
-    }
+	VecN operator/(T scalar) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] / scalar;
+		}
+		return result;
+	}
 
-    VecN operator/(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] / other.data[i];
-        }
-        return result;
-    }
+	VecN operator*(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] * other.data[i];
+		}
+		return result;
+	}
 
-    VecN& operator+=(const VecN& other) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] += other.data[i];
-        }
-        return *this;
-    }
+	VecN operator/(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] / other.data[i];
+		}
+		return result;
+	}
 
-    VecN& operator-=(const VecN& other) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] -= other.data[i];
-        }
-        return *this;
-    }
+	VecN &operator+=(const VecN &other)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] += other.data[i];
+		}
+		return *this;
+	}
 
-    VecN& operator*=(T scalar) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] *= scalar;
-        }
-        return *this;
-    }
+	VecN &operator-=(const VecN &other)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] -= other.data[i];
+		}
+		return *this;
+	}
 
-    VecN& operator*=(const VecN& other) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] *= other.data[i];
-        }
-        return *this;
-    }
+	VecN &operator*=(T scalar)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] *= scalar;
+		}
+		return *this;
+	}
 
-    VecN& operator/=(T scalar) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] /= scalar;
-        }
-        return *this;
-    }
+	VecN &operator*=(const VecN &other)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] *= other.data[i];
+		}
+		return *this;
+	}
 
-    VecN& operator/=(const VecN& other) {
-        for (std::size_t i = 0; i < N; ++i) {
-            data[i] /= other.data[i];
-        }
-        return *this;
-    }
+	VecN &operator/=(T scalar)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] /= scalar;
+		}
+		return *this;
+	}
 
-    VecN operator-() const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = -data[i];
-        }
-        return result;
-    }
+	VecN &operator/=(const VecN &other)
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			data[i] /= other.data[i];
+		}
+		return *this;
+	}
 
-    bool operator==(const VecN& other) const {
-        for (std::size_t i = 0; i < N; ++i) {
-            if (data[i] != other.data[i]) return false;
-        }
-        return true;
-    }
+	VecN operator-() const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = -data[i];
+		}
+		return result;
+	}
 
-    bool operator!=(const VecN& other) const {
-        return !(*this == other);
-    }
+	bool operator==(const VecN &other) const
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			if (data[i] != other.data[i])
+				return false;
+		}
+		return true;
+	}
 
-    T& operator[](std::size_t i) {
-        return data[i];
-    }
+	bool operator!=(const VecN &other) const
+	{
+		return !(*this == other);
+	}
 
-    const T& operator[](std::size_t i) const {
-        return data[i];
-    }
+	T &operator[](std::size_t i)
+	{
+		return data[i];
+	}
 
-    T dot(const VecN& other) const {
-        T result = T(0);
-        for (std::size_t i = 0; i < N; ++i) {
-            result += data[i] * other.data[i];
-        }
-        return result;
-    }
+	const T &operator[](std::size_t i) const
+	{
+		return data[i];
+	}
 
-    T squaredLength() const {
-        return dot(*this);
-    }
+	T dot(const VecN &other) const
+	{
+		T result = T(0);
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result += data[i] * other.data[i];
+		}
+		return result;
+	}
 
-    T length() const {
-        return std::sqrt(squaredLength());
-    }
+	T squaredLength() const
+	{
+		return dot(*this);
+	}
 
-    VecN normalized() const {
-        T len = length();
-        return len > T(0) ? *this / len : VecN(T(0));
-    }
+	T length() const
+	{
+		return std::sqrt(squaredLength());
+	}
 
-    VecN& normalize() {
-        T len = length();
-        if (len > T(0)) {
-            *this /= len;
-        }
-        return *this;
-    }
+	VecN normalized() const
+	{
+		T len = length();
+		return len > T(0) ? *this / len : VecN(T(0));
+	}
 
-    T distance(const VecN& other) const {
-        return (*this - other).length();
-    }
+	VecN &normalize()
+	{
+		T len = length();
+		if (len > T(0))
+		{
+			*this /= len;
+		}
+		return *this;
+	}
 
-    T squaredDistance(const VecN& other) const {
-        return (*this - other).squaredLength();
-    }
+	T distance(const VecN &other) const
+	{
+		return (*this - other).length();
+	}
 
-    T angle(const VecN& other) const {
-        T denom = length() * other.length();
-        if (denom < T(1e-6)) return T(0);
-        T cosTheta = dot(other) / denom;
-        cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
-        return std::acos(cosTheta);
-    }
+	T squaredDistance(const VecN &other) const
+	{
+		return (*this - other).squaredLength();
+	}
 
-    VecN clamped(T maxLength) const {
-        T lenSq = squaredLength();
-        T maxLenSq = maxLength * maxLength;
-        if (lenSq <= maxLenSq) return *this;
-        return *this * (maxLength / std::sqrt(lenSq));
-    }
+	T angle(const VecN &other) const
+	{
+		T denom = length() * other.length();
+		if (denom < T(1e-6))
+			return T(0);
+		T cosTheta = dot(other) / denom;
+		cosTheta = cosTheta < T(-1) ? T(-1) : (cosTheta > T(1) ? T(1) : cosTheta);
+		return std::acos(cosTheta);
+	}
 
-    VecN& clamp(T maxLength) {
-        T lenSq = squaredLength();
-        T maxLenSq = maxLength * maxLength;
-        if (lenSq > maxLenSq) {
-            *this *= (maxLength / std::sqrt(lenSq));
-        }
-        return *this;
-    }
+	VecN clamped(T maxLength) const
+	{
+		T lenSq = squaredLength();
+		T maxLenSq = maxLength * maxLength;
+		if (lenSq <= maxLenSq)
+			return *this;
+		return *this * (maxLength / std::sqrt(lenSq));
+	}
 
-    VecN lerp(const VecN& other, T t) const {
-        return *this + (other - *this) * t;
-    }
+	VecN &clamp(T maxLength)
+	{
+		T lenSq = squaredLength();
+		T maxLenSq = maxLength * maxLength;
+		if (lenSq > maxLenSq)
+		{
+			*this *= (maxLength / std::sqrt(lenSq));
+		}
+		return *this;
+	}
 
-    VecN project(const VecN& onto) const {
-        T ontoLenSq = onto.squaredLength();
-        if (ontoLenSq < T(1e-6)) return VecN(T(0));
-        return onto * (dot(onto) / ontoLenSq);
-    }
+	VecN lerp(const VecN &other, T t) const
+	{
+		return *this + (other - *this) * t;
+	}
 
-    VecN reflect(const VecN& normal) const {
-        return *this - normal * (T(2) * dot(normal));
-    }
+	VecN project(const VecN &onto) const
+	{
+		T ontoLenSq = onto.squaredLength();
+		if (ontoLenSq < T(1e-6))
+			return VecN(T(0));
+		return onto * (dot(onto) / ontoLenSq);
+	}
 
-    VecN min(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] < other.data[i] ? data[i] : other.data[i];
-        }
-        return result;
-    }
+	VecN reflect(const VecN &normal) const
+	{
+		return *this - normal * (T(2) * dot(normal));
+	}
 
-    VecN max(const VecN& other) const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = data[i] > other.data[i] ? data[i] : other.data[i];
-        }
-        return result;
-    }
+	VecN min(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] < other.data[i] ? data[i] : other.data[i];
+		}
+		return result;
+	}
 
-    bool isZero() const {
-        for (std::size_t i = 0; i < N; ++i) {
-            if (data[i] != T(0)) return false;
-        }
-        return true;
-    }
+	VecN max(const VecN &other) const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = data[i] > other.data[i] ? data[i] : other.data[i];
+		}
+		return result;
+	}
 
-    bool isNormalized() const {
-        T lenSq = squaredLength();
-        return std::abs(lenSq - T(1)) < T(1e-5);
-    }
+	bool isZero() const
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			if (data[i] != T(0))
+				return false;
+		}
+		return true;
+	}
 
-    bool approxEqual(const VecN& other, T epsilon = T(1e-5)) const {
-        for (std::size_t i = 0; i < N; ++i) {
-            if (std::abs(data[i] - other.data[i]) >= epsilon) return false;
-        }
-        return true;
-    }
+	bool isNormalized() const
+	{
+		T lenSq = squaredLength();
+		return std::abs(lenSq - T(1)) < T(1e-5);
+	}
 
-    VecN abs() const {
-        VecN result;
-        for (std::size_t i = 0; i < N; ++i) {
-            result.data[i] = std::abs(data[i]);
-        }
-        return result;
-    }
+	bool approxEqual(const VecN &other, T epsilon = T(1e-5)) const
+	{
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			if (std::abs(data[i] - other.data[i]) >= epsilon)
+				return false;
+		}
+		return true;
+	}
 
-    // Access raw storage (std::array-like API)
-    T* dataPtr() {
-        return data.data();
-    }
+	VecN abs() const
+	{
+		VecN result;
+		for (std::size_t i = 0; i < N; ++i)
+		{
+			result.data[i] = std::abs(data[i]);
+		}
+		return result;
+	}
 
-    const T* dataPtr() const {
-        return data.data();
-    }
+	// Access raw storage (std::array-like API)
+	T *dataPtr()
+	{
+		return data.data();
+	}
 
-    // Get size
-    static constexpr std::size_t size() {
-        return N;
-    }
+	const T *dataPtr() const
+	{
+		return data.data();
+	}
+
+	// Get size
+	static constexpr std::size_t size()
+	{
+		return N;
+	}
 
 private:
-    std::array<T, N> data{};
+	std::array<T, N> data{};
 };
 
 // Scalar multiplication from left
-template<std::size_t N, typename T = float>
-inline VecN<N, T> operator*(T scalar, const VecN<N, T>& v) {
-    return v * scalar;
+template <std::size_t N, typename T = float> inline VecN<N, T> operator*(T scalar, const VecN<N, T> &v)
+{
+	return v * scalar;
 }
 
 // Stream output
-template<std::size_t N, typename T = float>
-inline std::ostream& operator<<(std::ostream& os, const VecN<N, T>& v) {
-    os << "(";
-    for (std::size_t i = 0; i < N; ++i) {
-        if (i > 0) os << ", ";
-        os << v[i];
-    }
-    os << ")";
-    return os;
+template <std::size_t N, typename T = float> inline std::ostream &operator<<(std::ostream &os, const VecN<N, T> &v)
+{
+	os << "(";
+	for (std::size_t i = 0; i < N; ++i)
+	{
+		if (i > 0)
+			os << ", ";
+		os << v[i];
+	}
+	os << ")";
+	return os;
 }
 
 // Useful type aliases
@@ -306,4 +380,4 @@ using Vec8d = VecN<8, double>;
 using Vec16f = VecN<16, float>;
 using Vec16d = VecN<16, double>;
 
-}  // namespace phynity::math::vectors
+} // namespace phynity::math::vectors

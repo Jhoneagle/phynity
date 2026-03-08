@@ -3,197 +3,211 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/common/material.hpp>
 
-namespace phynity::physics {
+namespace phynity::physics
+{
 
 using phynity::math::vectors::Vec3f;
 
 /// Represents a single particle in the simulation.
 /// Each particle has mass, kinematic state (position, velocity), material properties,
 /// and lifecycle management (lifetime, active flags for pooling).
-class Particle {
+class Particle
+{
 public:
-    // ========================================================================
-    // State Variables
-    // ========================================================================
-    
-    Vec3f position = Vec3f(0.0f);        ///< Current position in world space
-    Vec3f velocity = Vec3f(0.0f);        ///< Current velocity
-    Vec3f acceleration = Vec3f(0.0f);    ///< Current acceleration (computed each frame)
-    Vec3f force_accumulator = Vec3f(0.0f); ///< Accumulated forces this frame
-    float radius = 0.5f;                 ///< Collision radius for sphere collisions
+	// ========================================================================
+	// State Variables
+	// ========================================================================
 
-    // ========================================================================
-    // Material and Lifecycle
-    // ========================================================================
-    
-    Material material{};           ///< Material properties (mass, restitution, etc.)
-    float lifetime = -1.0f;        ///< Remaining lifetime (< 0 = infinite, 0 = dead, > 0 = finite)
-    bool active = true;            ///< Active flag for pooling/recycling
+	Vec3f position = Vec3f(0.0f);          ///< Current position in world space
+	Vec3f velocity = Vec3f(0.0f);          ///< Current velocity
+	Vec3f acceleration = Vec3f(0.0f);      ///< Current acceleration (computed each frame)
+	Vec3f force_accumulator = Vec3f(0.0f); ///< Accumulated forces this frame
+	float radius = 0.5f;                   ///< Collision radius for sphere collisions
 
-    // ========================================================================
-    // Constructors
-    // ========================================================================
+	// ========================================================================
+	// Material and Lifecycle
+	// ========================================================================
 
-    /// Default constructor - creates particle at origin with default material
-    Particle() = default;
+	Material material{};    ///< Material properties (mass, restitution, etc.)
+	float lifetime = -1.0f; ///< Remaining lifetime (< 0 = infinite, 0 = dead, > 0 = finite)
+	bool active = true;     ///< Active flag for pooling/recycling
 
-    // Move semantics (defaulted for simple data members)
-    Particle(Particle&& other) noexcept = default;
-    Particle& operator=(Particle&& other) noexcept = default;
+	// ========================================================================
+	// Constructors
+	// ========================================================================
 
-    /// Full constructor with all parameters
-    Particle(
-        const Vec3f& pos,
-        const Vec3f& vel = Vec3f(0.0f),
-        const Material& mat = Material{}
-    )
-        : position(pos), velocity(vel), material(mat)
-    {
-    }
+	/// Default constructor - creates particle at origin with default material
+	Particle() = default;
 
-    // ========================================================================
-    // Force Application
-    // ========================================================================
+	// Move semantics (defaulted for simple data members)
+	Particle(Particle &&other) noexcept = default;
+	Particle &operator=(Particle &&other) noexcept = default;
 
-    /// Accumulate a force on this particle (does not directly modify acceleration)
-    /// @param force Force vector in Newtons
-    void apply_force(const Vec3f& force) {
-        force_accumulator += force;
-    }
+	/// Full constructor with all parameters
+	Particle(const Vec3f &pos, const Vec3f &vel = Vec3f(0.0f), const Material &mat = Material{})
+	    : position(pos), velocity(vel), material(mat)
+	{
+	}
 
-    /// Clear the force accumulator (should be called after integration)
-    void clear_forces() {
-        force_accumulator = Vec3f(0.0f);
-    }
+	// ========================================================================
+	// Force Application
+	// ========================================================================
 
-    /// Compute acceleration from accumulated forces and material mass
-    /// Should be called after all forces are applied and before integration
-    void update_acceleration() {
-        if (material.mass > 0.0f) {
-            acceleration = force_accumulator * (1.0f / material.mass);
-        } else {
-            acceleration = Vec3f(0.0f);
-        }
-    }
+	/// Accumulate a force on this particle (does not directly modify acceleration)
+	/// @param force Force vector in Newtons
+	void apply_force(const Vec3f &force)
+	{
+		force_accumulator += force;
+	}
 
-    // ========================================================================
-    // Integration
-    // ========================================================================
+	/// Clear the force accumulator (should be called after integration)
+	void clear_forces()
+	{
+		force_accumulator = Vec3f(0.0f);
+	}
 
-    /// Integrates particle state using semi-implicit Euler integration.
-    /// Order: update velocity -> apply damping -> update position
-    /// @param dt Time step in seconds
-    void integrate(float dt) {
-        // Update velocity from acceleration
-        velocity += acceleration * dt;
+	/// Compute acceleration from accumulated forces and material mass
+	/// Should be called after all forces are applied and before integration
+	void update_acceleration()
+	{
+		if (material.mass > 0.0f)
+		{
+			acceleration = force_accumulator * (1.0f / material.mass);
+		}
+		else
+		{
+			acceleration = Vec3f(0.0f);
+		}
+	}
 
-        // Apply velocity damping (material effect)
-        float damping_factor = std::max(0.0f, 1.0f - material.linear_damping * dt);
-        velocity = velocity * damping_factor;
+	// ========================================================================
+	// Integration
+	// ========================================================================
 
-        // Update position from velocity
-        position += velocity * dt;
+	/// Integrates particle state using semi-implicit Euler integration.
+	/// Order: update velocity -> apply damping -> update position
+	/// @param dt Time step in seconds
+	void integrate(float dt)
+	{
+		// Update velocity from acceleration
+		velocity += acceleration * dt;
 
-        // Update lifetime if finite
-        if (lifetime > 0.0f) {
-            lifetime -= dt;
-            // Clamp to 0 when expired to distinguish from infinite lifetime
-            if (lifetime < 0.0f) lifetime = 0.0f;
-        }
+		// Apply velocity damping (material effect)
+		float damping_factor = std::max(0.0f, 1.0f - material.linear_damping * dt);
+		velocity = velocity * damping_factor;
 
-        // Clear forces for next frame (will be re-applied by force fields)
-        clear_forces();
-        acceleration = Vec3f(0.0f);
-    }
+		// Update position from velocity
+		position += velocity * dt;
 
-    // ========================================================================
-    // Lifecycle Management
-    // ========================================================================
+		// Update lifetime if finite
+		if (lifetime > 0.0f)
+		{
+			lifetime -= dt;
+			// Clamp to 0 when expired to distinguish from infinite lifetime
+			if (lifetime < 0.0f)
+				lifetime = 0.0f;
+		}
 
-    /// Returns true if particle is still alive
-    /// Particles with lifetime < 0 are infinite (always alive)
-    /// Particles with lifetime > 0 are alive and counting down
-    /// Particles with lifetime <= 0 (for positive lifetimes) are dead
-    bool is_alive() const {
-        return lifetime < 0.0f || lifetime > 0.0f;
-    }
+		// Clear forces for next frame (will be re-applied by force fields)
+		clear_forces();
+		acceleration = Vec3f(0.0f);
+	}
 
-    /// Set finite lifetime for this particle
-    /// @param lifetime_sec Remaining time in seconds (> 0)
-    void set_lifetime(float lifetime_sec) {
-        lifetime = lifetime_sec;
-    }
+	// ========================================================================
+	// Lifecycle Management
+	// ========================================================================
 
-    /// Set infinite lifetime for this particle
-    void set_infinite_lifetime() {
-        lifetime = -1.0f;
-    }
+	/// Returns true if particle is still alive
+	/// Particles with lifetime < 0 are infinite (always alive)
+	/// Particles with lifetime > 0 are alive and counting down
+	/// Particles with lifetime <= 0 (for positive lifetimes) are dead
+	bool is_alive() const
+	{
+		return lifetime < 0.0f || lifetime > 0.0f;
+	}
 
-    /// Reset particle to initial state (for pooling)
-    /// @param pos New position
-    /// @param vel New velocity
-    /// @param mat Material (optional)
-    void reset(
-        const Vec3f& pos,
-        const Vec3f& vel = Vec3f(0.0f),
-        const Material& mat = Material{}
-    ) {
-        position = pos;
-        velocity = vel;
-        acceleration = Vec3f(0.0f);
-        force_accumulator = Vec3f(0.0f);
-        radius = 0.5f;
-        material = mat;
-        lifetime = -1.0f;
-        active = true;
-    }
+	/// Set finite lifetime for this particle
+	/// @param lifetime_sec Remaining time in seconds (> 0)
+	void set_lifetime(float lifetime_sec)
+	{
+		lifetime = lifetime_sec;
+	}
 
-    // ========================================================================
-    // Accessors
-    // ========================================================================
+	/// Set infinite lifetime for this particle
+	void set_infinite_lifetime()
+	{
+		lifetime = -1.0f;
+	}
 
-    /// Get inverse mass (for efficient force calculations)
-    /// Returns 0 if mass is zero (kinematic particle)
-    float inverse_mass() const {
-        return material.mass > 0.0f ? 1.0f / material.mass : 0.0f;
-    }
+	/// Reset particle to initial state (for pooling)
+	/// @param pos New position
+	/// @param vel New velocity
+	/// @param mat Material (optional)
+	void reset(const Vec3f &pos, const Vec3f &vel = Vec3f(0.0f), const Material &mat = Material{})
+	{
+		position = pos;
+		velocity = vel;
+		acceleration = Vec3f(0.0f);
+		force_accumulator = Vec3f(0.0f);
+		radius = 0.5f;
+		material = mat;
+		lifetime = -1.0f;
+		active = true;
+	}
 
-    /// Get speed (magnitude of velocity)
-    float speed() const {
-        return velocity.length();
-    }
+	// ========================================================================
+	// Accessors
+	// ========================================================================
 
-    /// Get kinetic energy
-    float kinetic_energy() const {
-        return 0.5f * material.mass * velocity.squaredLength();
-    }
+	/// Get inverse mass (for efficient force calculations)
+	/// Returns 0 if mass is zero (kinematic particle)
+	float inverse_mass() const
+	{
+		return material.mass > 0.0f ? 1.0f / material.mass : 0.0f;
+	}
 
-    // ========================================================================
-    // Deprecated Methods (for backwards compatibility)
-    // ========================================================================
+	/// Get speed (magnitude of velocity)
+	float speed() const
+	{
+		return velocity.length();
+	}
 
-    /// @deprecated Use apply_force() instead
-    void applyForce(const Vec3f& force) {
-        apply_force(force);
-    }
+	/// Get kinetic energy
+	float kinetic_energy() const
+	{
+		return 0.5f * material.mass * velocity.squaredLength();
+	}
 
-    /// @deprecated Use is_alive() instead
-    bool isAlive() const {
-        return is_alive();
-    }
+	// ========================================================================
+	// Deprecated Methods (for backwards compatibility)
+	// ========================================================================
 
-    /// @deprecated Use integrate() with material damping instead
-    void integrate_legacy(float dt) {
-        velocity += acceleration * dt;
-        position += velocity * dt;
+	/// @deprecated Use apply_force() instead
+	void applyForce(const Vec3f &force)
+	{
+		apply_force(force);
+	}
 
-        if (lifetime > 0.0f) {
-            lifetime -= dt;
-        }
+	/// @deprecated Use is_alive() instead
+	bool isAlive() const
+	{
+		return is_alive();
+	}
 
-        clear_forces();
-        acceleration = Vec3f(0.0f);
-    }
+	/// @deprecated Use integrate() with material damping instead
+	void integrate_legacy(float dt)
+	{
+		velocity += acceleration * dt;
+		position += velocity * dt;
+
+		if (lifetime > 0.0f)
+		{
+			lifetime -= dt;
+		}
+
+		clear_forces();
+		acceleration = Vec3f(0.0f);
+	}
 };
 
-}  // namespace phynity::physics
+} // namespace phynity::physics
