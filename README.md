@@ -48,4 +48,4 @@ tools\format.bat --check
 ```
 
 **Installing clang-format locally:**
-Your local clang-format version should match CI (version 22) to avoid formatting differences. If you have a different version, format discrepancies may occur between local and CI checks.
+Your local clang-format version should match CI (version 18) to avoid formatting differences. If you have a different version, format discrepancies may occur between local and CI checks.
