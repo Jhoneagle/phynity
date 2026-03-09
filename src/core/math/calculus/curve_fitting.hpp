@@ -34,77 +34,77 @@ using phynity::math::vectors::VecN;
  */
 template <typename T> inline VecDynamic<T> solve_normal_equations(MatDynamic<T> &A, const VecDynamic<T> &b)
 {
-	if (A.numRows() != A.numCols() || A.numRows() != b.size())
-	{
-		throw std::runtime_error("solve_normal_equations: dimension mismatch");
-	}
+    if (A.numRows() != A.numCols() || A.numRows() != b.size())
+    {
+        throw std::runtime_error("solve_normal_equations: dimension mismatch");
+    }
 
-	int n = static_cast<int>(A.numRows());
-	VecDynamic<T> x = b; // Copy b
+    int n = static_cast<int>(A.numRows());
+    VecDynamic<T> x = b; // Copy b
 
-	// Forward elimination with partial pivoting
-	for (int k = 0; k < n - 1; ++k)
-	{
-		// Find pivot
-		int max_row = k;
-		T max_val = std::abs(A(static_cast<size_t>(k), static_cast<size_t>(k)));
-		for (int i = k + 1; i < n; ++i)
-		{
-			if (std::abs(A(static_cast<size_t>(i), static_cast<size_t>(k))) > max_val)
-			{
-				max_val = std::abs(A(static_cast<size_t>(i), static_cast<size_t>(k)));
-				max_row = i;
-			}
-		}
+    // Forward elimination with partial pivoting
+    for (int k = 0; k < n - 1; ++k)
+    {
+        // Find pivot
+        int max_row = k;
+        T max_val = std::abs(A(static_cast<size_t>(k), static_cast<size_t>(k)));
+        for (int i = k + 1; i < n; ++i)
+        {
+            if (std::abs(A(static_cast<size_t>(i), static_cast<size_t>(k))) > max_val)
+            {
+                max_val = std::abs(A(static_cast<size_t>(i), static_cast<size_t>(k)));
+                max_row = i;
+            }
+        }
 
-		// Swap rows
-		if (max_row != k)
-		{
-			for (int j = k; j < n; ++j)
-			{
-				std::swap(A(static_cast<size_t>(k), static_cast<size_t>(j)),
-				          A(static_cast<size_t>(max_row), static_cast<size_t>(j)));
-			}
-			std::swap(x[static_cast<size_t>(k)], x[static_cast<size_t>(max_row)]);
-		}
+        // Swap rows
+        if (max_row != k)
+        {
+            for (int j = k; j < n; ++j)
+            {
+                std::swap(A(static_cast<size_t>(k), static_cast<size_t>(j)),
+                          A(static_cast<size_t>(max_row), static_cast<size_t>(j)));
+            }
+            std::swap(x[static_cast<size_t>(k)], x[static_cast<size_t>(max_row)]);
+        }
 
-		// Check for singular matrix
-		if (std::abs(A(static_cast<size_t>(k), static_cast<size_t>(k))) < T(1e-10))
-		{
-			throw std::runtime_error("solve_normal_equations: matrix is singular");
-		}
+        // Check for singular matrix
+        if (std::abs(A(static_cast<size_t>(k), static_cast<size_t>(k))) < T(1e-10))
+        {
+            throw std::runtime_error("solve_normal_equations: matrix is singular");
+        }
 
-		// Eliminate
-		for (int i = k + 1; i < n; ++i)
-		{
-			T factor =
-			    A(static_cast<size_t>(i), static_cast<size_t>(k)) / A(static_cast<size_t>(k), static_cast<size_t>(k));
-			for (int j = k + 1; j < n; ++j)
-			{
-				A(static_cast<size_t>(i), static_cast<size_t>(j)) -=
-				    factor * A(static_cast<size_t>(k), static_cast<size_t>(j));
-			}
-			x[static_cast<size_t>(i)] -= factor * x[static_cast<size_t>(k)];
-		}
-	}
+        // Eliminate
+        for (int i = k + 1; i < n; ++i)
+        {
+            T factor =
+                A(static_cast<size_t>(i), static_cast<size_t>(k)) / A(static_cast<size_t>(k), static_cast<size_t>(k));
+            for (int j = k + 1; j < n; ++j)
+            {
+                A(static_cast<size_t>(i), static_cast<size_t>(j)) -=
+                    factor * A(static_cast<size_t>(k), static_cast<size_t>(j));
+            }
+            x[static_cast<size_t>(i)] -= factor * x[static_cast<size_t>(k)];
+        }
+    }
 
-	// Back substitution
-	VecDynamic<T> solution(static_cast<size_t>(n));
-	for (int i = n - 1; i >= 0; --i)
-	{
-		T sum = x[static_cast<size_t>(i)];
-		for (int j = i + 1; j < n; ++j)
-		{
-			sum -= A(static_cast<size_t>(i), static_cast<size_t>(j)) * solution[static_cast<size_t>(j)];
-		}
-		if (std::abs(A(static_cast<size_t>(i), static_cast<size_t>(i))) < T(1e-10))
-		{
-			throw std::runtime_error("solve_normal_equations: matrix is singular");
-		}
-		solution[static_cast<size_t>(i)] = sum / A(static_cast<size_t>(i), static_cast<size_t>(i));
-	}
+    // Back substitution
+    VecDynamic<T> solution(static_cast<size_t>(n));
+    for (int i = n - 1; i >= 0; --i)
+    {
+        T sum = x[static_cast<size_t>(i)];
+        for (int j = i + 1; j < n; ++j)
+        {
+            sum -= A(static_cast<size_t>(i), static_cast<size_t>(j)) * solution[static_cast<size_t>(j)];
+        }
+        if (std::abs(A(static_cast<size_t>(i), static_cast<size_t>(i))) < T(1e-10))
+        {
+            throw std::runtime_error("solve_normal_equations: matrix is singular");
+        }
+        solution[static_cast<size_t>(i)] = sum / A(static_cast<size_t>(i), static_cast<size_t>(i));
+    }
 
-	return solution;
+    return solution;
 }
 
 // ============================================================================
@@ -136,48 +136,48 @@ template <typename T> inline VecDynamic<T> solve_normal_equations(MatDynamic<T> 
 template <typename T>
 inline VecDynamic<T> fit_polynomial(int degree, const VecDynamic<T> &x_data, const VecDynamic<T> &y_data)
 {
-	if (x_data.size() != y_data.size())
-	{
-		throw std::runtime_error("fit_polynomial: x_data and y_data must have same size");
-	}
+    if (x_data.size() != y_data.size())
+    {
+        throw std::runtime_error("fit_polynomial: x_data and y_data must have same size");
+    }
 
-	int n_coeffs = degree + 1;
-	if (static_cast<int>(x_data.size()) < n_coeffs)
-	{
-		throw std::runtime_error("fit_polynomial: need at least (degree+1) data points");
-	}
+    int n_coeffs = degree + 1;
+    if (static_cast<int>(x_data.size()) < n_coeffs)
+    {
+        throw std::runtime_error("fit_polynomial: need at least (degree+1) data points");
+    }
 
-	int m = static_cast<int>(x_data.size()); // number of data points
+    int m = static_cast<int>(x_data.size()); // number of data points
 
-	// Build normal equations: (V^T * V) * c = V^T * y using dynamic matrices
-	MatDynamic<T> VtV(static_cast<size_t>(n_coeffs), static_cast<size_t>(n_coeffs), T(0));
-	VecDynamic<T> Vty(static_cast<size_t>(n_coeffs), T(0));
+    // Build normal equations: (V^T * V) * c = V^T * y using dynamic matrices
+    MatDynamic<T> VtV(static_cast<size_t>(n_coeffs), static_cast<size_t>(n_coeffs), T(0));
+    VecDynamic<T> Vty(static_cast<size_t>(n_coeffs), T(0));
 
-	// Accumulate V^T * V and V^T * y
-	for (int k = 0; k < m; ++k)
-	{
-		T x = x_data[static_cast<size_t>(k)];
-		T y = y_data[static_cast<size_t>(k)];
-		T x_pow_i = T(1); // x^0
+    // Accumulate V^T * V and V^T * y
+    for (int k = 0; k < m; ++k)
+    {
+        T x = x_data[static_cast<size_t>(k)];
+        T y = y_data[static_cast<size_t>(k)];
+        T x_pow_i = T(1); // x^0
 
-		for (int i = 0; i < n_coeffs; ++i)
-		{
-			T x_pow_j = T(1); // x^0
-			for (int j = 0; j < n_coeffs; ++j)
-			{
-				VtV(static_cast<size_t>(i), static_cast<size_t>(j)) += x_pow_i * x_pow_j;
-				x_pow_j *= x;
-			}
-			Vty[static_cast<size_t>(i)] += x_pow_i * y;
-			x_pow_i *= x;
-		}
-	}
+        for (int i = 0; i < n_coeffs; ++i)
+        {
+            T x_pow_j = T(1); // x^0
+            for (int j = 0; j < n_coeffs; ++j)
+            {
+                VtV(static_cast<size_t>(i), static_cast<size_t>(j)) += x_pow_i * x_pow_j;
+                x_pow_j *= x;
+            }
+            Vty[static_cast<size_t>(i)] += x_pow_i * y;
+            x_pow_i *= x;
+        }
+    }
 
-	// Solve (V^T * V) * c = V^T * y using Gaussian elimination with partial pivoting
-	// Since we can't use fixed-size solver with dynamic matrices, implement direct solve
-	VecDynamic<T> coeffs = solve_normal_equations(VtV, Vty);
+    // Solve (V^T * V) * c = V^T * y using Gaussian elimination with partial pivoting
+    // Since we can't use fixed-size solver with dynamic matrices, implement direct solve
+    VecDynamic<T> coeffs = solve_normal_equations(VtV, Vty);
 
-	return coeffs;
+    return coeffs;
 }
 
 /**
@@ -192,16 +192,16 @@ inline VecDynamic<T> fit_polynomial(int degree, const VecDynamic<T> &x_data, con
  */
 template <typename T> inline T evaluate_polynomial(const VecDynamic<T> &coeffs, T x)
 {
-	if (coeffs.empty())
-		return T(0);
+    if (coeffs.empty())
+        return T(0);
 
-	int n = static_cast<int>(coeffs.size()) - 1;
-	T result = coeffs[static_cast<size_t>(n)];
-	for (int i = n - 1; i >= 0; --i)
-	{
-		result = result * x + coeffs[static_cast<size_t>(i)];
-	}
-	return result;
+    int n = static_cast<int>(coeffs.size()) - 1;
+    T result = coeffs[static_cast<size_t>(n)];
+    for (int i = n - 1; i >= 0; --i)
+    {
+        result = result * x + coeffs[static_cast<size_t>(i)];
+    }
+    return result;
 }
 
 /**
@@ -217,16 +217,16 @@ template <typename T> inline T evaluate_polynomial(const VecDynamic<T> &coeffs, 
  */
 template <typename T> inline T polynomial_derivative(const VecDynamic<T> &coeffs, T x)
 {
-	if (coeffs.size() < 2)
-		return T(0); // Constant polynomial
+    if (coeffs.size() < 2)
+        return T(0); // Constant polynomial
 
-	int n = static_cast<int>(coeffs.size()) - 1;
-	T result = T(n) * coeffs[static_cast<size_t>(n)];
-	for (int i = n - 1; i >= 1; --i)
-	{
-		result = result * x + T(i) * coeffs[static_cast<size_t>(i)];
-	}
-	return result;
+    int n = static_cast<int>(coeffs.size()) - 1;
+    T result = T(n) * coeffs[static_cast<size_t>(n)];
+    for (int i = n - 1; i >= 1; --i)
+    {
+        result = result * x + T(i) * coeffs[static_cast<size_t>(i)];
+    }
+    return result;
 }
 
 // ============================================================================
@@ -256,67 +256,67 @@ inline VecDynamic<T> estimate_derivatives_from_data(const VecDynamic<T> &x_data,
                                                     int poly_degree = 2,
                                                     int window_size = -1)
 {
-	if (x_data.size() != y_data.size())
-	{
-		throw std::runtime_error("estimate_derivatives_from_data: size mismatch");
-	}
+    if (x_data.size() != y_data.size())
+    {
+        throw std::runtime_error("estimate_derivatives_from_data: size mismatch");
+    }
 
-	// Default window size: 2*degree + 1
-	if (window_size < 0)
-	{
-		window_size = 2 * poly_degree + 1;
-	}
+    // Default window size: 2*degree + 1
+    if (window_size < 0)
+    {
+        window_size = 2 * poly_degree + 1;
+    }
 
-	if (window_size % 2 == 0 || window_size < 2 * poly_degree + 1)
-	{
-		throw std::runtime_error("estimate_derivatives_from_data: window_size must be odd and >= 2*degree+1");
-	}
+    if (window_size % 2 == 0 || window_size < 2 * poly_degree + 1)
+    {
+        throw std::runtime_error("estimate_derivatives_from_data: window_size must be odd and >= 2*degree+1");
+    }
 
-	int n = static_cast<int>(x_data.size());
-	int half_win = window_size / 2;
-	VecDynamic<T> derivatives(static_cast<size_t>(n));
+    int n = static_cast<int>(x_data.size());
+    int half_win = window_size / 2;
+    VecDynamic<T> derivatives(static_cast<size_t>(n));
 
-	for (int i = 0; i < n; ++i)
-	{
-		int start = std::max(0, i - half_win);
-		int end = std::min(n - 1, i + half_win);
+    for (int i = 0; i < n; ++i)
+    {
+        int start = std::max(0, i - half_win);
+        int end = std::min(n - 1, i + half_win);
 
-		// Collect window of points
-		VecDynamic<T> x_window(static_cast<size_t>(end - start + 1));
-		VecDynamic<T> y_window(static_cast<size_t>(end - start + 1));
-		for (int j = start; j <= end; ++j)
-		{
-			x_window[static_cast<size_t>(j - start)] = x_data[static_cast<size_t>(j)];
-			y_window[static_cast<size_t>(j - start)] = y_data[static_cast<size_t>(j)];
-		}
+        // Collect window of points
+        VecDynamic<T> x_window(static_cast<size_t>(end - start + 1));
+        VecDynamic<T> y_window(static_cast<size_t>(end - start + 1));
+        for (int j = start; j <= end; ++j)
+        {
+            x_window[static_cast<size_t>(j - start)] = x_data[static_cast<size_t>(j)];
+            y_window[static_cast<size_t>(j - start)] = y_data[static_cast<size_t>(j)];
+        }
 
-		// Fit polynomial and evaluate derivative
-		if (static_cast<int>(x_window.size()) >= poly_degree + 1)
-		{
-			auto coeffs = fit_polynomial(poly_degree, x_window, y_window);
-			derivatives[static_cast<size_t>(i)] = polynomial_derivative(coeffs, x_data[static_cast<size_t>(i)]);
-		}
-		else
-		{
-			// Fallback: use central difference
-			if (i > 0 && i < n - 1)
-			{
-				derivatives[static_cast<size_t>(i)] =
-				    (y_data[static_cast<size_t>(i + 1)] - y_data[static_cast<size_t>(i - 1)]) /
-				    (x_data[static_cast<size_t>(i + 1)] - x_data[static_cast<size_t>(i - 1)]);
-			}
-			else if (i == 0 && n > 1)
-			{
-				derivatives[static_cast<size_t>(i)] = (y_data[1] - y_data[0]) / (x_data[1] - x_data[0]);
-			}
-			else
-			{
-				derivatives[static_cast<size_t>(i)] = T(0);
-			}
-		}
-	}
+        // Fit polynomial and evaluate derivative
+        if (static_cast<int>(x_window.size()) >= poly_degree + 1)
+        {
+            auto coeffs = fit_polynomial(poly_degree, x_window, y_window);
+            derivatives[static_cast<size_t>(i)] = polynomial_derivative(coeffs, x_data[static_cast<size_t>(i)]);
+        }
+        else
+        {
+            // Fallback: use central difference
+            if (i > 0 && i < n - 1)
+            {
+                derivatives[static_cast<size_t>(i)] =
+                    (y_data[static_cast<size_t>(i + 1)] - y_data[static_cast<size_t>(i - 1)]) /
+                    (x_data[static_cast<size_t>(i + 1)] - x_data[static_cast<size_t>(i - 1)]);
+            }
+            else if (i == 0 && n > 1)
+            {
+                derivatives[static_cast<size_t>(i)] = (y_data[1] - y_data[0]) / (x_data[1] - x_data[0]);
+            }
+            else
+            {
+                derivatives[static_cast<size_t>(i)] = T(0);
+            }
+        }
+    }
 
-	return derivatives;
+    return derivatives;
 }
 
 } // namespace phynity::math::calculus

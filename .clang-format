@@ -3,7 +3,7 @@ Language: Cpp
 Standard: c++20
 
 # Indentation
-UseTab: ForIndentation
+UseTab: Never
 TabWidth: 4
 IndentWidth: 4
 ContinuationIndentWidth: 4

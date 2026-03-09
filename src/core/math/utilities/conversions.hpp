@@ -16,8 +16,8 @@ namespace phynity::math::utilities
  */
 template <typename T> inline constexpr T degrees_to_radians(T degrees) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return degrees * math<T>::deg_to_rad;
+    static_assert(std::is_floating_point_v<T>);
+    return degrees * math<T>::deg_to_rad;
 }
 
 /**
@@ -25,8 +25,8 @@ template <typename T> inline constexpr T degrees_to_radians(T degrees) noexcept
  */
 template <typename T> inline constexpr T radians_to_degrees(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return radians * math<T>::rad_to_deg;
+    static_assert(std::is_floating_point_v<T>);
+    return radians * math<T>::rad_to_deg;
 }
 
 /**
@@ -34,7 +34,7 @@ template <typename T> inline constexpr T radians_to_degrees(T radians) noexcept
  */
 template <typename T> inline constexpr T deg2rad(T degrees) noexcept
 {
-	return degrees_to_radians(degrees);
+    return degrees_to_radians(degrees);
 }
 
 /**
@@ -42,7 +42,7 @@ template <typename T> inline constexpr T deg2rad(T degrees) noexcept
  */
 template <typename T> inline constexpr T rad2deg(T radians) noexcept
 {
-	return radians_to_degrees(radians);
+    return radians_to_degrees(radians);
 }
 
 } // namespace phynity::math::utilities

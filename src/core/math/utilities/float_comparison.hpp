@@ -17,8 +17,8 @@ namespace phynity::math::utilities
  */
 template <typename T> inline bool is_nan(T value) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::isnan(value);
+    static_assert(std::is_floating_point_v<T>);
+    return std::isnan(value);
 }
 
 /**
@@ -26,8 +26,8 @@ template <typename T> inline bool is_nan(T value) noexcept
  */
 template <typename T> inline bool is_inf(T value) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::isinf(value);
+    static_assert(std::is_floating_point_v<T>);
+    return std::isinf(value);
 }
 
 /**
@@ -35,8 +35,8 @@ template <typename T> inline bool is_inf(T value) noexcept
  */
 template <typename T> inline bool is_finite(T value) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::isfinite(value);
+    static_assert(std::is_floating_point_v<T>);
+    return std::isfinite(value);
 }
 
 /**
@@ -44,8 +44,8 @@ template <typename T> inline bool is_finite(T value) noexcept
  */
 template <typename T> inline bool is_normal(T value) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::isnormal(value) || value == T(0);
+    static_assert(std::is_floating_point_v<T>);
+    return std::isnormal(value) || value == T(0);
 }
 
 // ================================================================
@@ -57,13 +57,13 @@ template <typename T> inline bool is_normal(T value) noexcept
  */
 template <typename T> inline bool equals_absolute(T a, T b, T tolerance = epsilon<T>()) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (!is_finite(a) || !is_finite(b))
-	{
-		return a == b;
-	}
-	const T diff = a > b ? a - b : b - a;
-	return diff <= tolerance;
+    static_assert(std::is_floating_point_v<T>);
+    if (!is_finite(a) || !is_finite(b))
+    {
+        return a == b;
+    }
+    const T diff = a > b ? a - b : b - a;
+    return diff <= tolerance;
 }
 
 /**
@@ -85,16 +85,16 @@ template <typename T> inline bool equals_absolute(T a, T b, T tolerance = epsilo
  */
 template <typename T> inline bool equals_relative(T a, T b, T tolerance = epsilon<T>() * T(10)) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (!is_finite(a) || !is_finite(b))
-	{
-		return a == b;
-	}
-	const T abs_a = a < T(0) ? -a : a;
-	const T abs_b = b < T(0) ? -b : b;
-	const T max_abs = abs_a > abs_b ? abs_a : abs_b;
-	const T diff = a > b ? a - b : b - a;
-	return diff <= tolerance * max_abs;
+    static_assert(std::is_floating_point_v<T>);
+    if (!is_finite(a) || !is_finite(b))
+    {
+        return a == b;
+    }
+    const T abs_a = a < T(0) ? -a : a;
+    const T abs_b = b < T(0) ? -b : b;
+    const T max_abs = abs_a > abs_b ? abs_a : abs_b;
+    const T diff = a > b ? a - b : b - a;
+    return diff <= tolerance * max_abs;
 }
 
 /**
@@ -104,24 +104,24 @@ template <typename T> inline bool equals_relative(T a, T b, T tolerance = epsilo
 template <typename T>
 inline bool equals(T a, T b, T abs_tolerance = epsilon<T>(), T rel_tolerance = epsilon<T>() * T(10)) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (!is_finite(a) || !is_finite(b))
-	{
-		return a == b;
-	}
-	const T diff = a > b ? a - b : b - a;
+    static_assert(std::is_floating_point_v<T>);
+    if (!is_finite(a) || !is_finite(b))
+    {
+        return a == b;
+    }
+    const T diff = a > b ? a - b : b - a;
 
-	// Absolute tolerance check
-	if (diff <= abs_tolerance)
-	{
-		return true;
-	}
+    // Absolute tolerance check
+    if (diff <= abs_tolerance)
+    {
+        return true;
+    }
 
-	// Relative tolerance check
-	const T abs_a = a < T(0) ? -a : a;
-	const T abs_b = b < T(0) ? -b : b;
-	const T max_abs = abs_a > abs_b ? abs_a : abs_b;
-	return diff <= rel_tolerance * max_abs;
+    // Relative tolerance check
+    const T abs_a = a < T(0) ? -a : a;
+    const T abs_b = b < T(0) ? -b : b;
+    const T max_abs = abs_a > abs_b ? abs_a : abs_b;
+    return diff <= rel_tolerance * max_abs;
 }
 
 /**
@@ -129,9 +129,9 @@ inline bool equals(T a, T b, T abs_tolerance = epsilon<T>(), T rel_tolerance = e
  */
 template <typename T> inline bool is_zero(T value, T tolerance = epsilon<T>()) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	const T abs_val = value < T(0) ? -value : value;
-	return abs_val <= tolerance;
+    static_assert(std::is_floating_point_v<T>);
+    const T abs_val = value < T(0) ? -value : value;
+    return abs_val <= tolerance;
 }
 
 // ================================================================
@@ -143,17 +143,17 @@ template <typename T> inline bool is_zero(T value, T tolerance = epsilon<T>()) n
  */
 template <typename T> inline T clamp_to_safe_range(T value, T max_magnitude = infinity<T>()) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (!is_finite(value))
-	{
-		return T(0);
-	}
-	const T abs_val = value < T(0) ? -value : value;
-	if (abs_val > max_magnitude)
-	{
-		return value < T(0) ? -max_magnitude : max_magnitude;
-	}
-	return value;
+    static_assert(std::is_floating_point_v<T>);
+    if (!is_finite(value))
+    {
+        return T(0);
+    }
+    const T abs_val = value < T(0) ? -value : value;
+    if (abs_val > max_magnitude)
+    {
+        return value < T(0) ? -max_magnitude : max_magnitude;
+    }
+    return value;
 }
 
 } // namespace phynity::math::utilities

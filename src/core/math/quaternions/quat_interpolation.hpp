@@ -26,22 +26,22 @@ namespace phynity::math::quaternions
 /// @return Rotation angle in radians [0, 2π]
 template <typename T = float> inline T angleBetween(const Quat<T> &q1, const Quat<T> &q2)
 {
-	// Normalize both quaternions
-	Quat n1 = q1.normalized();
-	Quat n2 = q2.normalized();
+    // Normalize both quaternions
+    Quat n1 = q1.normalized();
+    Quat n2 = q2.normalized();
 
-	// Compute dot product
-	T dotProduct = dot(n1, n2);
+    // Compute dot product
+    T dotProduct = dot(n1, n2);
 
-	// Take absolute value to account for double-cover (q and -q represent same rotation)
-	dotProduct = std::abs(dotProduct);
+    // Take absolute value to account for double-cover (q and -q represent same rotation)
+    dotProduct = std::abs(dotProduct);
 
-	// Clamp to [-1, 1] to avoid numerical errors in acos
-	dotProduct = std::clamp(dotProduct, T(-1), T(1));
+    // Clamp to [-1, 1] to avoid numerical errors in acos
+    dotProduct = std::clamp(dotProduct, T(-1), T(1));
 
-	// Rotation angle = 2 * acos(|dot product|)
-	// The factor of 2 converts from quaternion angle to rotation angle
-	return T(2) * std::acos(dotProduct);
+    // Rotation angle = 2 * acos(|dot product|)
+    // The factor of 2 converts from quaternion angle to rotation angle
+    return T(2) * std::acos(dotProduct);
 }
 
 /// Returns q2 adjusted to take the shortest path to q1.
@@ -52,7 +52,7 @@ template <typename T = float> inline T angleBetween(const Quat<T> &q1, const Qua
 /// @return q2 or -q2, whichever is closer to q1
 template <typename T = float> inline Quat<T> shortestPath(const Quat<T> &q1, const Quat<T> &q2)
 {
-	return (dot(q1, q2) < T(0)) ? -q2 : q2;
+    return (dot(q1, q2) < T(0)) ? -q2 : q2;
 }
 
 /// ============================================================================
@@ -83,23 +83,23 @@ template <typename T = float> inline Quat<T> shortestPath(const Quat<T> &q1, con
 /// @return Interpolated quaternion (normalized)
 template <typename T = float> inline Quat<T> nlerp(const Quat<T> &q1, const Quat<T> &q2, T t)
 {
-	// Clamp t to [0, 1] to avoid extrapolation issues
-	t = std::clamp(t, T(0), T(1));
+    // Clamp t to [0, 1] to avoid extrapolation issues
+    t = std::clamp(t, T(0), T(1));
 
-	// Choose the shortest path by checking the dot product
-	// If dot product is negative, quaternions are on opposite hemispheres
-	// so we negate q2 to take the shorter path
-	Quat<T> q2_adjusted = shortestPath(q1, q2);
+    // Choose the shortest path by checking the dot product
+    // If dot product is negative, quaternions are on opposite hemispheres
+    // so we negate q2 to take the shorter path
+    Quat<T> q2_adjusted = shortestPath(q1, q2);
 
-	// Linear interpolation: lerp(q1, q2, t) = q1 * (1-t) + q2 * t
-	T oneMinusT = T(1) - t;
-	Quat<T> result(q1.w * oneMinusT + q2_adjusted.w * t,
-	               q1.x * oneMinusT + q2_adjusted.x * t,
-	               q1.y * oneMinusT + q2_adjusted.y * t,
-	               q1.z * oneMinusT + q2_adjusted.z * t);
+    // Linear interpolation: lerp(q1, q2, t) = q1 * (1-t) + q2 * t
+    T oneMinusT = T(1) - t;
+    Quat<T> result(q1.w * oneMinusT + q2_adjusted.w * t,
+                   q1.x * oneMinusT + q2_adjusted.x * t,
+                   q1.y * oneMinusT + q2_adjusted.y * t,
+                   q1.z * oneMinusT + q2_adjusted.z * t);
 
-	// Normalize to ensure unit quaternion
-	return result.normalized();
+    // Normalize to ensure unit quaternion
+    return result.normalized();
 }
 
 /// ============================================================================
@@ -133,43 +133,43 @@ template <typename T = float> inline Quat<T> nlerp(const Quat<T> &q1, const Quat
 /// @return Interpolated quaternion (normalized)
 template <typename T = float> inline Quat<T> slerp(const Quat<T> &q1, const Quat<T> &q2, T t)
 {
-	// Clamp t to [0, 1] to avoid extrapolation issues
-	t = std::clamp(t, T(0), T(1));
+    // Clamp t to [0, 1] to avoid extrapolation issues
+    t = std::clamp(t, T(0), T(1));
 
-	// Normalize input quaternions
-	Quat<T> n1 = q1.normalized();
-	Quat<T> n2 = q2.normalized();
+    // Normalize input quaternions
+    Quat<T> n1 = q1.normalized();
+    Quat<T> n2 = q2.normalized();
 
-	// Choose the shortest path
-	T dotProduct = dot(n1, n2);
-	if (dotProduct < T(0))
-	{
-		n2 = -n2;
-		dotProduct = -dotProduct;
-	}
+    // Choose the shortest path
+    T dotProduct = dot(n1, n2);
+    if (dotProduct < T(0))
+    {
+        n2 = -n2;
+        dotProduct = -dotProduct;
+    }
 
-	// Clamp to avoid acos domain errors
-	dotProduct = std::clamp(dotProduct, T(-1), T(1));
+    // Clamp to avoid acos domain errors
+    dotProduct = std::clamp(dotProduct, T(-1), T(1));
 
-	// If quaternions are very close, use NLERP to avoid division by near-zero
-	// Threshold: cos(1.8°) ≈ 0.9995
-	constexpr T SLERP_THRESHOLD = T(0.9995);
-	if (dotProduct > SLERP_THRESHOLD)
-	{
-		// Fall back to NLERP for numerical stability
-		return nlerp(q1, q2, t);
-	}
+    // If quaternions are very close, use NLERP to avoid division by near-zero
+    // Threshold: cos(1.8°) ≈ 0.9995
+    constexpr T SLERP_THRESHOLD = T(0.9995);
+    if (dotProduct > SLERP_THRESHOLD)
+    {
+        // Fall back to NLERP for numerical stability
+        return nlerp(q1, q2, t);
+    }
 
-	// Compute the angle between quaternions
-	T theta = std::acos(dotProduct);
-	T sinTheta = std::sin(theta);
+    // Compute the angle between quaternions
+    T theta = std::acos(dotProduct);
+    T sinTheta = std::sin(theta);
 
-	// Compute interpolation weights
-	T w1 = std::sin((T(1) - t) * theta) / sinTheta;
-	T w2 = std::sin(t * theta) / sinTheta;
+    // Compute interpolation weights
+    T w1 = std::sin((T(1) - t) * theta) / sinTheta;
+    T w2 = std::sin(t * theta) / sinTheta;
 
-	// Perform spherical interpolation
-	return Quat(n1.w * w1 + n2.w * w2, n1.x * w1 + n2.x * w2, n1.y * w1 + n2.y * w2, n1.z * w1 + n2.z * w2);
+    // Perform spherical interpolation
+    return Quat(n1.w * w1 + n2.w * w2, n1.x * w1 + n2.x * w2, n1.y * w1 + n2.y * w2, n1.z * w1 + n2.z * w2);
 }
 
 } // namespace phynity::math::quaternions

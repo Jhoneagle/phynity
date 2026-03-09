@@ -22,35 +22,35 @@ using Catch::Matchers::WithinRel;
 //
 TEST_CASE("ccd.discrete_collision_stability", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
-	system.enable_constraints(false);
+    ParticleSystem system;
+    system.enable_collisions(true);
+    system.enable_constraints(false);
 
-	// Moderate-speed projectile (not extremely fast)
-	auto projectile_mat = make_no_damping_material(1.0f, 0.5f);
-	system.spawn(Vec3f(-4.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.25f);
+    // Moderate-speed projectile (not extremely fast)
+    auto projectile_mat = make_no_damping_material(1.0f, 0.5f);
+    system.spawn(Vec3f(-4.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.25f);
 
-	// Wall
-	auto wall_mat = make_no_damping_material(1e6f, 0.8f);
-	system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), wall_mat, -1.0f, 0.3f);
+    // Wall
+    auto wall_mat = make_no_damping_material(1e6f, 0.8f);
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), wall_mat, -1.0f, 0.3f);
 
-	// Simulate with reasonable timestep
-	const float dt = 1.0f / 120.0f; // Standard 120 Hz timestep
-	for (int step = 0; step < 120; ++step)
-	{
-		system.update(dt);
-	}
+    // Simulate with reasonable timestep
+    const float dt = 1.0f / 120.0f; // Standard 120 Hz timestep
+    for (int step = 0; step < 120; ++step)
+    {
+        system.update(dt);
+    }
 
-	// Verify all values remain finite (system is stable)
-	for (size_t i = 0; i < 2; ++i)
-	{
-		REQUIRE(std::isfinite(system.particles()[i].position.x));
-		REQUIRE(std::isfinite(system.particles()[i].velocity.x));
-	}
+    // Verify all values remain finite (system is stable)
+    for (size_t i = 0; i < 2; ++i)
+    {
+        REQUIRE(std::isfinite(system.particles()[i].position.x));
+        REQUIRE(std::isfinite(system.particles()[i].velocity.x));
+    }
 
-	// Projectile should not pass through wall completely
-	// (with discrete CD and dt=1/120, this should be caught)
-	REQUIRE(system.particles()[0].position.x < 2.0f);
+    // Projectile should not pass through wall completely
+    // (with discrete CD and dt=1/120, this should be caught)
+    REQUIRE(system.particles()[0].position.x < 2.0f);
 }
 
 // ============================================================================
@@ -62,31 +62,31 @@ TEST_CASE("ccd.discrete_collision_stability", "[validation][physics][collision][
 //
 TEST_CASE("ccd.swept_sphere_collision", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Moving sphere toward obstacle
-	auto moving_mat = make_no_damping_material(1.0f, 0.8f);
-	system.spawn(Vec3f(-3.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), moving_mat, -1.0f, 0.3f);
+    // Moving sphere toward obstacle
+    auto moving_mat = make_no_damping_material(1.0f, 0.8f);
+    system.spawn(Vec3f(-3.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), moving_mat, -1.0f, 0.3f);
 
-	// Obstacle (stationary)
-	auto obstacle_mat = make_no_damping_material(1e6f, 0.7f);
-	system.spawn(Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.4f);
+    // Obstacle (stationary)
+    auto obstacle_mat = make_no_damping_material(1e6f, 0.7f);
+    system.spawn(Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.4f);
 
-	// Simulate
-	const float dt = 1.0f / 120.0f;
-	for (int step = 0; step < 120; ++step)
-	{
-		system.update(dt);
-	}
+    // Simulate
+    const float dt = 1.0f / 120.0f;
+    for (int step = 0; step < 120; ++step)
+    {
+        system.update(dt);
+    }
 
-	// After collision, moving sphere should not pass through obstacle
-	// Distance between centers should be >= sum of radii (0.3 + 0.4 = 0.7)
-	float dist = (system.particles()[0].position - system.particles()[1].position).length();
-	REQUIRE(dist >= 0.65f); // Allow small numerical tolerance
+    // After collision, moving sphere should not pass through obstacle
+    // Distance between centers should be >= sum of radii (0.3 + 0.4 = 0.7)
+    float dist = (system.particles()[0].position - system.particles()[1].position).length();
+    REQUIRE(dist >= 0.65f); // Allow small numerical tolerance
 
-	// Sphere should have some rebound velocity
-	REQUIRE(std::abs(system.particles()[0].velocity.x) > 0.1f);
+    // Sphere should have some rebound velocity
+    REQUIRE(std::abs(system.particles()[0].velocity.x) > 0.1f);
 }
 
 // ============================================================================
@@ -97,46 +97,46 @@ TEST_CASE("ccd.swept_sphere_collision", "[validation][physics][collision][ccd]")
 //
 TEST_CASE("ccd.time_of_impact_accuracy", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Particle A: moving right at 5 m/s
-	auto mat_a = make_no_damping_material(1.0f, 0.5f);
-	system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(5.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.25f);
+    // Particle A: moving right at 5 m/s
+    auto mat_a = make_no_damping_material(1.0f, 0.5f);
+    system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(5.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.25f);
 
-	// Particle B: moving left at 5 m/s
-	auto mat_b = make_no_damping_material(1.0f, 0.5f);
-	system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(-5.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.25f);
+    // Particle B: moving left at 5 m/s
+    auto mat_b = make_no_damping_material(1.0f, 0.5f);
+    system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(-5.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.25f);
 
-	// Expected collision time: they're 4 units apart, closing at 10 m/s
-	// Contact at (0+0.25) = 0.25 units from center
-	// Distance to close = 4 - 2*0.25 = 3.5 units
-	// Expected TOI = 3.5 / 10 = 0.35 seconds
+    // Expected collision time: they're 4 units apart, closing at 10 m/s
+    // Contact at (0+0.25) = 0.25 units from center
+    // Distance to close = 4 - 2*0.25 = 3.5 units
+    // Expected TOI = 3.5 / 10 = 0.35 seconds
 
-	int collision_step = -1;
-	const float dt = 1.0f / 120.0f;
+    int collision_step = -1;
+    const float dt = 1.0f / 120.0f;
 
-	for (int step = 0; step < 100; ++step)
-	{
-		float prev_dist = (system.particles()[0].position - system.particles()[1].position).length();
-		system.update(dt);
-		float curr_dist = (system.particles()[0].position - system.particles()[1].position).length();
+    for (int step = 0; step < 100; ++step)
+    {
+        float prev_dist = (system.particles()[0].position - system.particles()[1].position).length();
+        system.update(dt);
+        float curr_dist = (system.particles()[0].position - system.particles()[1].position).length();
 
-		// Detect collision frame (distance stops decreasing or reverses)
-		if (curr_dist > prev_dist && collision_step < 0)
-		{
-			collision_step = step;
-			break;
-		}
-	}
+        // Detect collision frame (distance stops decreasing or reverses)
+        if (curr_dist > prev_dist && collision_step < 0)
+        {
+            collision_step = step;
+            break;
+        }
+    }
 
-	// Should collide around step 40-50 (0.33-0.42 seconds)
-	REQUIRE(collision_step > 0);
-	REQUIRE(collision_step < 60); // Within ~0.5 seconds
+    // Should collide around step 40-50 (0.33-0.42 seconds)
+    REQUIRE(collision_step > 0);
+    REQUIRE(collision_step < 60); // Within ~0.5 seconds
 
-	// After collision, particles should be separating
-	float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
-	REQUIRE(final_dist >= 0.45f); // Slightly relaxed for numerical tolerance
+    // After collision, particles should be separating
+    float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
+    REQUIRE(final_dist >= 0.45f); // Slightly relaxed for numerical tolerance
 }
 
 // ============================================================================
@@ -147,44 +147,44 @@ TEST_CASE("ccd.time_of_impact_accuracy", "[validation][physics][collision][ccd]"
 //
 TEST_CASE("ccd.cascade_collision_sequence", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Three particles in a line: A moving, B center, C stationary
-	auto mat_a = make_no_damping_material(1.0f, 0.8f);
-	system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(4.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.2f);
+    // Three particles in a line: A moving, B center, C stationary
+    auto mat_a = make_no_damping_material(1.0f, 0.8f);
+    system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(4.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.2f);
 
-	auto mat_b = make_no_damping_material(1.0f, 0.8f);
-	system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.2f);
+    auto mat_b = make_no_damping_material(1.0f, 0.8f);
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.2f);
 
-	auto mat_c = make_no_damping_material(1.0f, 0.8f);
-	system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat_c, -1.0f, 0.2f);
+    auto mat_c = make_no_damping_material(1.0f, 0.8f);
+    system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat_c, -1.0f, 0.2f);
 
-	// Simulate cascade
-	const float dt = 1.0f / 120.0f;
-	for (int step = 0; step < 300; ++step)
-	{
-		system.update(dt);
-	}
+    // Simulate cascade
+    const float dt = 1.0f / 120.0f;
+    for (int step = 0; step < 300; ++step)
+    {
+        system.update(dt);
+    }
 
-	// Verify no explosive velocities or positions
-	for (size_t i = 0; i < 3; ++i)
-	{
-		REQUIRE(std::isfinite(system.particles()[i].position.x));
-		REQUIRE(std::isfinite(system.particles()[i].velocity.x));
-		REQUIRE(system.particles()[i].velocity.squaredLength() < 100.0f);
-	}
+    // Verify no explosive velocities or positions
+    for (size_t i = 0; i < 3; ++i)
+    {
+        REQUIRE(std::isfinite(system.particles()[i].position.x));
+        REQUIRE(std::isfinite(system.particles()[i].velocity.x));
+        REQUIRE(system.particles()[i].velocity.squaredLength() < 100.0f);
+    }
 
-	// After settling, verify sensible spacing (not explosive)
-	// Due to momentum transfer in elastic-ish collisions, particles will spread
-	float dist_ab = (system.particles()[0].position - system.particles()[1].position).length();
-	float dist_bc = (system.particles()[1].position - system.particles()[2].position).length();
-	float dist_ac = (system.particles()[0].position - system.particles()[2].position).length();
+    // After settling, verify sensible spacing (not explosive)
+    // Due to momentum transfer in elastic-ish collisions, particles will spread
+    float dist_ab = (system.particles()[0].position - system.particles()[1].position).length();
+    float dist_bc = (system.particles()[1].position - system.particles()[2].position).length();
+    float dist_ac = (system.particles()[0].position - system.particles()[2].position).length();
 
-	// Particles should maintain minimum separation (sum of radii)
-	REQUIRE(dist_ab >= 0.35f); // 0.2 + 0.2 radii
-	REQUIRE(dist_bc >= 0.35f);
-	REQUIRE(dist_ac >= 0.65f); // Total chain should span ~0.65+
+    // Particles should maintain minimum separation (sum of radii)
+    REQUIRE(dist_ab >= 0.35f); // 0.2 + 0.2 radii
+    REQUIRE(dist_bc >= 0.35f);
+    REQUIRE(dist_ac >= 0.65f); // Total chain should span ~0.65+
 }
 
 // ============================================================================
@@ -195,47 +195,47 @@ TEST_CASE("ccd.cascade_collision_sequence", "[validation][physics][collision][cc
 //
 TEST_CASE("ccd.extreme_velocity_robustness", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Extremely fast projectile (100 m/s)
-	auto projectile_mat = make_no_damping_material(1.0f, 0.9f);
-	system.spawn(Vec3f(-10.0f, 0.0f, 0.0f), Vec3f(100.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.2f);
+    // Extremely fast projectile (100 m/s)
+    auto projectile_mat = make_no_damping_material(1.0f, 0.9f);
+    system.spawn(Vec3f(-10.0f, 0.0f, 0.0f), Vec3f(100.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.2f);
 
-	// Series of obstacles
-	for (int i = 0; i < 3; ++i)
-	{
-		auto obstacle_mat = make_no_damping_material(1e6f, 0.8f);
-		float x_pos = 5.0f + static_cast<float>(i) * 5.0f;
-		system.spawn(Vec3f(x_pos, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.3f);
-	}
+    // Series of obstacles
+    for (int i = 0; i < 3; ++i)
+    {
+        auto obstacle_mat = make_no_damping_material(1e6f, 0.8f);
+        float x_pos = 5.0f + static_cast<float>(i) * 5.0f;
+        system.spawn(Vec3f(x_pos, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.3f);
+    }
 
-	// Simulate with small timesteps to handle extreme velocity
-	const float dt = 1.0f / 240.0f; // Smaller dt for stability
-	int num_steps = 1000;
+    // Simulate with small timesteps to handle extreme velocity
+    const float dt = 1.0f / 240.0f; // Smaller dt for stability
+    int num_steps = 1000;
 
-	for (int step = 0; step < num_steps; ++step)
-	{
-		system.update(dt);
+    for (int step = 0; step < num_steps; ++step)
+    {
+        system.update(dt);
 
-		// Check for NaN/Inf every 100 steps
-		if (step % 100 == 0)
-		{
-			for (const auto &p : system.particles())
-			{
-				REQUIRE(std::isfinite(p.position.x));
-				REQUIRE(std::isfinite(p.velocity.x));
-			}
-		}
-	}
+        // Check for NaN/Inf every 100 steps
+        if (step % 100 == 0)
+        {
+            for (const auto &p : system.particles())
+            {
+                REQUIRE(std::isfinite(p.position.x));
+                REQUIRE(std::isfinite(p.velocity.x));
+            }
+        }
+    }
 
-	// Final checks
-	REQUIRE(std::isfinite(system.particles()[0].position.x));
-	REQUIRE(std::isfinite(system.particles()[0].velocity.x));
+    // Final checks
+    REQUIRE(std::isfinite(system.particles()[0].position.x));
+    REQUIRE(std::isfinite(system.particles()[0].velocity.x));
 
-	// Projectile should have been affected by collisions (velocity reduced)
-	float final_speed_x = std::abs(system.particles()[0].velocity.x);
-	REQUIRE(final_speed_x < 100.0f); // Reduced from initial 100
+    // Projectile should have been affected by collisions (velocity reduced)
+    float final_speed_x = std::abs(system.particles()[0].velocity.x);
+    REQUIRE(final_speed_x < 100.0f); // Reduced from initial 100
 }
 
 // ============================================================================
@@ -246,31 +246,31 @@ TEST_CASE("ccd.extreme_velocity_robustness", "[validation][physics][collision][c
 //
 TEST_CASE("ccd.head_on_collision", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Particle moving right
-	auto mat_a = make_no_damping_material(1.0f, 0.7f);
-	system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(3.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.25f);
+    // Particle moving right
+    auto mat_a = make_no_damping_material(1.0f, 0.7f);
+    system.spawn(Vec3f(-2.0f, 0.0f, 0.0f), Vec3f(3.0f, 0.0f, 0.0f), mat_a, -1.0f, 0.25f);
 
-	// Particle moving left
-	auto mat_b = make_no_damping_material(1.0f, 0.7f);
-	system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(-3.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.25f);
+    // Particle moving left
+    auto mat_b = make_no_damping_material(1.0f, 0.7f);
+    system.spawn(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(-3.0f, 0.0f, 0.0f), mat_b, -1.0f, 0.25f);
 
-	// Simulate collision
-	const float dt = 1.0f / 120.0f;
-	for (int step = 0; step < 200; ++step)
-	{
-		system.update(dt);
-	}
+    // Simulate collision
+    const float dt = 1.0f / 120.0f;
+    for (int step = 0; step < 200; ++step)
+    {
+        system.update(dt);
+    }
 
-	// Verify collision occurred (particles separated after close approach)
-	float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
-	REQUIRE(final_dist >= 0.48f); // Particles at least touching (sum of radii 0.5)
+    // Verify collision occurred (particles separated after close approach)
+    float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
+    REQUIRE(final_dist >= 0.48f); // Particles at least touching (sum of radii 0.5)
 
-	// Both particles should have finite velocities
-	REQUIRE(std::isfinite(system.particles()[0].velocity.x));
-	REQUIRE(std::isfinite(system.particles()[1].velocity.x));
+    // Both particles should have finite velocities
+    REQUIRE(std::isfinite(system.particles()[0].velocity.x));
+    REQUIRE(std::isfinite(system.particles()[1].velocity.x));
 }
 
 // ============================================================================
@@ -280,36 +280,36 @@ TEST_CASE("ccd.head_on_collision", "[validation][physics][collision][ccd]")
 //
 TEST_CASE("ccd.high_speed_glancing_collision", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Fast projectile at shallow angle (mostly X, small Y perturbation)
-	auto projectile_mat = make_no_damping_material(1.0f, 0.8f);
-	system.spawn(Vec3f(-5.0f, 0.3f, 0.0f), Vec3f(20.0f, -0.5f, 0.0f), projectile_mat, -1.0f, 0.2f);
+    // Fast projectile at shallow angle (mostly X, small Y perturbation)
+    auto projectile_mat = make_no_damping_material(1.0f, 0.8f);
+    system.spawn(Vec3f(-5.0f, 0.3f, 0.0f), Vec3f(20.0f, -0.5f, 0.0f), projectile_mat, -1.0f, 0.2f);
 
-	// Small obstacle at glancing point
-	auto obstacle_mat = make_no_damping_material(1e6f, 0.8f);
-	system.spawn(Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.25f);
+    // Small obstacle at glancing point
+    auto obstacle_mat = make_no_damping_material(1e6f, 0.8f);
+    system.spawn(Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), obstacle_mat, -1.0f, 0.25f);
 
-	// Simulate
-	const float dt = 1.0f / 120.0f;
-	for (int step = 0; step < 180; ++step)
-	{
-		system.update(dt);
-	}
+    // Simulate
+    const float dt = 1.0f / 120.0f;
+    for (int step = 0; step < 180; ++step)
+    {
+        system.update(dt);
+    }
 
-	// Verify all finite
-	for (const auto &p : system.particles())
-	{
-		REQUIRE(std::isfinite(p.position.x));
-		REQUIRE(std::isfinite(p.position.y));
-		REQUIRE(std::isfinite(p.velocity.x));
-		REQUIRE(std::isfinite(p.velocity.y));
-	}
+    // Verify all finite
+    for (const auto &p : system.particles())
+    {
+        REQUIRE(std::isfinite(p.position.x));
+        REQUIRE(std::isfinite(p.position.y));
+        REQUIRE(std::isfinite(p.velocity.x));
+        REQUIRE(std::isfinite(p.velocity.y));
+    }
 
-	// Verify separation maintained (should have bounced or slid)
-	float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
-	REQUIRE(final_dist >= 0.42f);
+    // Verify separation maintained (should have bounced or slid)
+    float final_dist = (system.particles()[0].position - system.particles()[1].position).length();
+    REQUIRE(final_dist >= 0.42f);
 }
 
 // ============================================================================
@@ -320,86 +320,86 @@ TEST_CASE("ccd.high_speed_glancing_collision", "[validation][physics][collision]
 //
 TEST_CASE("ccd.long_duration_high_speed", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
+    ParticleSystem system;
+    system.enable_collisions(true);
 
-	// Several high-speed particles bouncing in confined area
-	std::vector<Vec3f> velocities = {Vec3f(20.0f, 10.0f, 0.0f), Vec3f(-15.0f, 8.0f, 0.0f), Vec3f(5.0f, -18.0f, 0.0f)};
+    // Several high-speed particles bouncing in confined area
+    std::vector<Vec3f> velocities = {Vec3f(20.0f, 10.0f, 0.0f), Vec3f(-15.0f, 8.0f, 0.0f), Vec3f(5.0f, -18.0f, 0.0f)};
 
-	for (size_t i = 0; i < velocities.size(); ++i)
-	{
-		auto mat = make_no_damping_material(1.0f, 0.8f);
-		float x = -2.0f + static_cast<float>(i) * 2.0f;
-		system.spawn(Vec3f(x, 0.0f, 0.0f), velocities[i], mat, -1.0f, 0.3f);
-	}
+    for (size_t i = 0; i < velocities.size(); ++i)
+    {
+        auto mat = make_no_damping_material(1.0f, 0.8f);
+        float x = -2.0f + static_cast<float>(i) * 2.0f;
+        system.spawn(Vec3f(x, 0.0f, 0.0f), velocities[i], mat, -1.0f, 0.3f);
+    }
 
-	// Wall obstacles
-	for (int i = 0; i < 2; ++i)
-	{
-		auto wall_mat = make_no_damping_material(1e6f, 0.8f);
-		float pos = -4.0f + static_cast<float>(i) * 8.0f;
-		system.spawn(Vec3f(pos, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), wall_mat, -1.0f, 0.2f);
-	}
+    // Wall obstacles
+    for (int i = 0; i < 2; ++i)
+    {
+        auto wall_mat = make_no_damping_material(1e6f, 0.8f);
+        float pos = -4.0f + static_cast<float>(i) * 8.0f;
+        system.spawn(Vec3f(pos, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), wall_mat, -1.0f, 0.2f);
+    }
 
-	// Long simulation
-	const float dt = 1.0f / 120.0f;
-	const int num_steps = 2400; // 20 seconds at 120 Hz
+    // Long simulation
+    const float dt = 1.0f / 120.0f;
+    const int num_steps = 2400; // 20 seconds at 120 Hz
 
-	for (int step = 0; step < num_steps; ++step)
-	{
-		system.update(dt);
+    for (int step = 0; step < num_steps; ++step)
+    {
+        system.update(dt);
 
-		// Periodic sanity checks
-		if (step % 240 == 0)
-		{
-			for (const auto &p : system.particles())
-			{
-				REQUIRE(std::isfinite(p.position.x));
-				REQUIRE(std::isfinite(p.position.y));
-				REQUIRE(std::isfinite(p.velocity.x));
-				REQUIRE(std::isfinite(p.velocity.y));
-				// Velocities shouldn't explode
-				REQUIRE(p.velocity.squaredLength() < 1000.0f);
-			}
-		}
-	}
+        // Periodic sanity checks
+        if (step % 240 == 0)
+        {
+            for (const auto &p : system.particles())
+            {
+                REQUIRE(std::isfinite(p.position.x));
+                REQUIRE(std::isfinite(p.position.y));
+                REQUIRE(std::isfinite(p.velocity.x));
+                REQUIRE(std::isfinite(p.velocity.y));
+                // Velocities shouldn't explode
+                REQUIRE(p.velocity.squaredLength() < 1000.0f);
+            }
+        }
+    }
 
-	// Final verification - all particles still valid
-	for (const auto &p : system.particles())
-	{
-		REQUIRE(std::isfinite(p.position.x));
-		REQUIRE(std::isfinite(p.velocity.x));
-	}
+    // Final verification - all particles still valid
+    for (const auto &p : system.particles())
+    {
+        REQUIRE(std::isfinite(p.position.x));
+        REQUIRE(std::isfinite(p.velocity.x));
+    }
 }
 
 TEST_CASE("ccd.tunneling_edge_case_coarse_dt", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
-	system.set_ccd_config(ccd_presets::aggressive());
+    ParticleSystem system;
+    system.enable_collisions(true);
+    system.set_ccd_config(ccd_presets::aggressive());
 
-	auto projectile_mat = make_no_damping_material(1.0f, 0.0f);
-	auto target_mat = make_no_damping_material(1e6f, 0.0f);
+    auto projectile_mat = make_no_damping_material(1.0f, 0.0f);
+    auto target_mat = make_no_damping_material(1e6f, 0.0f);
 
-	system.spawn(Vec3f(-8.0f, 0.0f, 0.0f), Vec3f(500.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.05f);
-	system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), target_mat, -1.0f, 0.05f);
+    system.spawn(Vec3f(-8.0f, 0.0f, 0.0f), Vec3f(500.0f, 0.0f, 0.0f), projectile_mat, -1.0f, 0.05f);
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), target_mat, -1.0f, 0.05f);
 
-	const float dt = 1.0f / 30.0f;
-	for (int step = 0; step < 10; ++step)
-	{
-		system.update(dt);
-	}
+    const float dt = 1.0f / 30.0f;
+    for (int step = 0; step < 10; ++step)
+    {
+        system.update(dt);
+    }
 
-	const auto &projectile = system.particles()[0];
-	const auto &target = system.particles()[1];
+    const auto &projectile = system.particles()[0];
+    const auto &target = system.particles()[1];
 
-	float center_distance = (projectile.position - target.position).length();
+    float center_distance = (projectile.position - target.position).length();
 
-	REQUIRE(std::isfinite(projectile.position.x));
-	REQUIRE(std::isfinite(projectile.velocity.x));
-	REQUIRE(center_distance >= 0.095f);
-	REQUIRE(projectile.position.x <= 10.0f);
-	REQUIRE(projectile.velocity.x <= 1.0f);
+    REQUIRE(std::isfinite(projectile.position.x));
+    REQUIRE(std::isfinite(projectile.velocity.x));
+    REQUIRE(center_distance >= 0.095f);
+    REQUIRE(projectile.position.x <= 10.0f);
+    REQUIRE(projectile.velocity.x <= 1.0f);
 }
 
 // ============================================================================
@@ -410,44 +410,44 @@ TEST_CASE("ccd.tunneling_edge_case_coarse_dt", "[validation][physics][collision]
 //
 TEST_CASE("ccd.bullet_through_paper_prevention", "[validation][physics][collision][ccd]")
 {
-	ParticleSystem system;
-	system.enable_collisions(true);
-	system.enable_constraints(false);
+    ParticleSystem system;
+    system.enable_collisions(true);
+    system.enable_constraints(false);
 
-	constexpr float paper_x = 0.0f;
-	constexpr float bullet_radius = 0.02f;
-	constexpr float paper_radius = 0.02f;
-	constexpr float combined_radius = bullet_radius + paper_radius;
+    constexpr float paper_x = 0.0f;
+    constexpr float bullet_radius = 0.02f;
+    constexpr float paper_radius = 0.02f;
+    constexpr float combined_radius = bullet_radius + paper_radius;
 
-	auto bullet_mat = make_no_damping_material(1.0f, 0.0f);
-	auto paper_mat = make_no_damping_material(1e6f, 0.0f);
+    auto bullet_mat = make_no_damping_material(1.0f, 0.0f);
+    auto paper_mat = make_no_damping_material(1e6f, 0.0f);
 
-	system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(300.0f, 0.0f, 0.0f), bullet_mat, -1.0f, bullet_radius);
+    system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(300.0f, 0.0f, 0.0f), bullet_mat, -1.0f, bullet_radius);
 
-	system.spawn(Vec3f(paper_x, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), paper_mat, -1.0f, paper_radius);
+    system.spawn(Vec3f(paper_x, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), paper_mat, -1.0f, paper_radius);
 
-	const float dt = 1.0f / 60.0f;
-	const int steps = 30;
+    const float dt = 1.0f / 60.0f;
+    const int steps = 30;
 
-	float min_center_distance = std::numeric_limits<float>::max();
+    float min_center_distance = std::numeric_limits<float>::max();
 
-	for (int step = 0; step < steps; ++step)
-	{
-		system.update(dt);
+    for (int step = 0; step < steps; ++step)
+    {
+        system.update(dt);
 
-		const auto &bullet = system.particles()[0];
-		const auto &paper = system.particles()[1];
+        const auto &bullet = system.particles()[0];
+        const auto &paper = system.particles()[1];
 
-		float distance = (bullet.position - paper.position).length();
-		min_center_distance = std::min(min_center_distance, distance);
+        float distance = (bullet.position - paper.position).length();
+        min_center_distance = std::min(min_center_distance, distance);
 
-		REQUIRE(std::isfinite(bullet.position.x));
-		REQUIRE(std::isfinite(bullet.velocity.x));
-	}
+        REQUIRE(std::isfinite(bullet.position.x));
+        REQUIRE(std::isfinite(bullet.velocity.x));
+    }
 
-	const auto &bullet_final = system.particles()[0];
+    const auto &bullet_final = system.particles()[0];
 
-	REQUIRE(min_center_distance <= combined_radius + 0.05f);
-	REQUIRE(bullet_final.position.x <= paper_x + combined_radius + 0.05f);
-	REQUIRE(bullet_final.velocity.x <= 1.0f);
+    REQUIRE(min_center_distance <= combined_radius + 0.05f);
+    REQUIRE(bullet_final.position.x <= paper_x + combined_radius + 0.05f);
+    REQUIRE(bullet_final.velocity.x <= 1.0f);
 }

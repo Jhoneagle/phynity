@@ -14,63 +14,63 @@ namespace phynity::jobs
 class JobQueue
 {
 public:
-	explicit JobQueue(uint32_t capacity = 1024) : capacity_(capacity)
-	{
-	}
-	JobQueue(const JobQueue &) = delete;
-	JobQueue &operator=(const JobQueue &) = delete;
+    explicit JobQueue(uint32_t capacity = 1024) : capacity_(capacity)
+    {
+    }
+    JobQueue(const JobQueue &) = delete;
+    JobQueue &operator=(const JobQueue &) = delete;
 
-	bool push(JobHandle job)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		if (queue_.size() >= capacity_)
-		{
-			return false;
-		}
-		queue_.push_back(job);
-		return true;
-	}
+    bool push(JobHandle job)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (queue_.size() >= capacity_)
+        {
+            return false;
+        }
+        queue_.push_back(job);
+        return true;
+    }
 
-	bool pop(JobHandle &job)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		if (queue_.empty())
-		{
-			return false;
-		}
-		job = queue_.back();
-		queue_.pop_back();
-		return true;
-	}
+    bool pop(JobHandle &job)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (queue_.empty())
+        {
+            return false;
+        }
+        job = queue_.back();
+        queue_.pop_back();
+        return true;
+    }
 
-	bool steal(JobHandle &job)
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		if (queue_.empty())
-		{
-			return false;
-		}
-		job = queue_.front();
-		queue_.pop_front();
-		return true;
-	}
+    bool steal(JobHandle &job)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (queue_.empty())
+        {
+            return false;
+        }
+        job = queue_.front();
+        queue_.pop_front();
+        return true;
+    }
 
-	size_t size() const
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		return queue_.size();
-	}
+    size_t size() const
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return queue_.size();
+    }
 
-	void clear()
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		queue_.clear();
-	}
+    void clear()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        queue_.clear();
+    }
 
 private:
-	mutable std::mutex mutex_;
-	std::deque<JobHandle> queue_;
-	uint32_t capacity_;
+    mutable std::mutex mutex_;
+    std::deque<JobHandle> queue_;
+    uint32_t capacity_;
 };
 
 } // namespace phynity::jobs

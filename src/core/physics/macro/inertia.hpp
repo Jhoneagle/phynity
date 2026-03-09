@@ -25,12 +25,12 @@ using phynity::math::vectors::Vec3f;
 /// @return 3x3 diagonal inertia tensor (body-space)
 inline Mat3f compute_sphere_inertia(float mass, float radius)
 {
-	float val = (2.0f / 5.0f) * mass * radius * radius;
-	Mat3f I(0.0f);
-	I(0, 0) = val;
-	I(1, 1) = val;
-	I(2, 2) = val;
-	return I;
+    float val = (2.0f / 5.0f) * mass * radius * radius;
+    Mat3f I(0.0f);
+    I(0, 0) = val;
+    I(1, 1) = val;
+    I(2, 2) = val;
+    return I;
 }
 
 /// Compute inertia tensor for a solid box (cuboid)
@@ -44,19 +44,19 @@ inline Mat3f compute_sphere_inertia(float mass, float radius)
 /// @return 3x3 diagonal inertia tensor (body-space)
 inline Mat3f compute_box_inertia(float mass, const Vec3f &half_extents)
 {
-	// Full dimensions
-	float a2 = 4.0f * half_extents.x * half_extents.x; // width² = (2*hx)²
-	float b2 = 4.0f * half_extents.y * half_extents.y; // height²
-	float c2 = 4.0f * half_extents.z * half_extents.z; // depth²
+    // Full dimensions
+    float a2 = 4.0f * half_extents.x * half_extents.x; // width² = (2*hx)²
+    float b2 = 4.0f * half_extents.y * half_extents.y; // height²
+    float c2 = 4.0f * half_extents.z * half_extents.z; // depth²
 
-	float coeff = mass / 12.0f;
+    float coeff = mass / 12.0f;
 
-	Mat3f I(0.0f);
-	I(0, 0) = coeff * (b2 + c2); // I_xx
-	I(1, 1) = coeff * (a2 + c2); // I_yy
-	I(2, 2) = coeff * (a2 + b2); // I_zz
+    Mat3f I(0.0f);
+    I(0, 0) = coeff * (b2 + c2); // I_xx
+    I(1, 1) = coeff * (a2 + c2); // I_yy
+    I(2, 2) = coeff * (a2 + b2); // I_zz
 
-	return I;
+    return I;
 }
 
 /// Compute inertia tensor for a solid capsule (cylinder + hemispheres)
@@ -68,19 +68,19 @@ inline Mat3f compute_box_inertia(float mass, const Vec3f &half_extents)
 /// @return 3x3 diagonal inertia tensor (body-space)
 inline Mat3f compute_capsule_inertia(float mass, float radius, float half_height)
 {
-	float r2 = radius * radius;
-	float h2 = half_height * half_height;
+    float r2 = radius * radius;
+    float h2 = half_height * half_height;
 
-	// Approximation: cylindrical approximation
-	float coeff_xy = mass * (3.0f * r2 / 4.0f + h2 / 12.0f);
-	float coeff_z = mass * r2 / 2.0f;
+    // Approximation: cylindrical approximation
+    float coeff_xy = mass * (3.0f * r2 / 4.0f + h2 / 12.0f);
+    float coeff_z = mass * r2 / 2.0f;
 
-	Mat3f I(0.0f);
-	I(0, 0) = coeff_xy;
-	I(1, 1) = coeff_xy;
-	I(2, 2) = coeff_z;
+    Mat3f I(0.0f);
+    I(0, 0) = coeff_xy;
+    I(1, 1) = coeff_xy;
+    I(2, 2) = coeff_z;
 
-	return I;
+    return I;
 }
 
 // ============================================================================
@@ -95,12 +95,12 @@ inline Mat3f compute_capsule_inertia(float mass, float radius, float half_height
 /// @return Inertia tensor rotated to world-space
 inline Mat3f rotate_inertia_tensor(const Mat3f &I_body, const Quatf &q)
 {
-	Mat3f R = phynity::math::quaternions::toRotationMatrix(q);
-	Mat3f R_transpose = R.transposed();
+    Mat3f R = phynity::math::quaternions::toRotationMatrix(q);
+    Mat3f R_transpose = R.transposed();
 
-	// I_world = R * I_body * R^T
-	Mat3f temp = R * I_body;
-	return temp * R_transpose;
+    // I_world = R * I_body * R^T
+    Mat3f temp = R * I_body;
+    return temp * R_transpose;
 }
 
 /// Compute inverse of inertia tensor with numerical stability
@@ -109,25 +109,25 @@ inline Mat3f rotate_inertia_tensor(const Mat3f &I_body, const Quatf &q)
 /// @return Inverse inertia tensor (I^-1)
 inline Mat3f invert_inertia_tensor(const Mat3f &I)
 {
-	// Only invert diagonal elements (inertia tensors are diagonal in principal axes)
-	// Off-diagonal elements should be zero
-	Mat3f I_inv(0.0f);
+    // Only invert diagonal elements (inertia tensors are diagonal in principal axes)
+    // Off-diagonal elements should be zero
+    Mat3f I_inv(0.0f);
 
-	float tol = 1e-6f;
-	if (std::abs(I(0, 0)) > tol)
-	{
-		I_inv(0, 0) = 1.0f / I(0, 0);
-	}
-	if (std::abs(I(1, 1)) > tol)
-	{
-		I_inv(1, 1) = 1.0f / I(1, 1);
-	}
-	if (std::abs(I(2, 2)) > tol)
-	{
-		I_inv(2, 2) = 1.0f / I(2, 2);
-	}
+    float tol = 1e-6f;
+    if (std::abs(I(0, 0)) > tol)
+    {
+        I_inv(0, 0) = 1.0f / I(0, 0);
+    }
+    if (std::abs(I(1, 1)) > tol)
+    {
+        I_inv(1, 1) = 1.0f / I(1, 1);
+    }
+    if (std::abs(I(2, 2)) > tol)
+    {
+        I_inv(2, 2) = 1.0f / I(2, 2);
+    }
 
-	return I_inv;
+    return I_inv;
 }
 
 // ============================================================================
@@ -140,7 +140,7 @@ inline Mat3f invert_inertia_tensor(const Mat3f &I)
 /// @return Angular momentum vector
 inline Vec3f compute_angular_momentum(const Mat3f &I, const Vec3f &omega)
 {
-	return I * omega;
+    return I * omega;
 }
 
 /// Compute angular kinetic energy: KE = 0.5 * ω^T * I * ω
@@ -149,8 +149,8 @@ inline Vec3f compute_angular_momentum(const Mat3f &I, const Vec3f &omega)
 /// @return Kinetic energy due to rotation
 inline float compute_angular_kinetic_energy(const Mat3f &I, const Vec3f &omega)
 {
-	Vec3f I_omega = I * omega;
-	return 0.5f * omega.dot(I_omega);
+    Vec3f I_omega = I * omega;
+    return 0.5f * omega.dot(I_omega);
 }
 
 // ============================================================================
@@ -166,14 +166,14 @@ inline float compute_angular_kinetic_energy(const Mat3f &I, const Vec3f &omega)
 /// @return Updated quaternion (not normalized)
 inline Quatf integrate_quaternion(const Quatf &q, const Vec3f &omega, float dt)
 {
-	// Create quaternion from angular velocity: q_omega = (0, ωx, ωy, ωz)
-	Quatf q_omega(0.0f, omega.x, omega.y, omega.z);
+    // Create quaternion from angular velocity: q_omega = (0, ωx, ωy, ωz)
+    Quatf q_omega(0.0f, omega.x, omega.y, omega.z);
 
-	// Update: q_new = q + 0.5 * dt * q_omega * q
-	Quatf q_omega_scaled = q_omega * (0.5f * dt);
-	Quatf dq = q_omega_scaled * q;
+    // Update: q_new = q + 0.5 * dt * q_omega * q
+    Quatf q_omega_scaled = q_omega * (0.5f * dt);
+    Quatf dq = q_omega_scaled * q;
 
-	return q + dq;
+    return q + dq;
 }
 
 } // namespace phynity::physics::inertia

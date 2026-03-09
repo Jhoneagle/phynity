@@ -17,20 +17,20 @@ namespace phynity::math::utilities
  */
 template <typename T> inline T normalize_angle(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	constexpr T pi = math<T>::pi;
-	constexpr T two_pi = math<T>::two_pi;
+    static_assert(std::is_floating_point_v<T>);
+    constexpr T pi = math<T>::pi;
+    constexpr T two_pi = math<T>::two_pi;
 
-	// Reduce to [-2π, 2π]
-	while (radians > pi)
-	{
-		radians -= two_pi;
-	}
-	while (radians < -pi)
-	{
-		radians += two_pi;
-	}
-	return radians;
+    // Reduce to [-2π, 2π]
+    while (radians > pi)
+    {
+        radians -= two_pi;
+    }
+    while (radians < -pi)
+    {
+        radians += two_pi;
+    }
+    return radians;
 }
 
 /**
@@ -38,8 +38,8 @@ template <typename T> inline T normalize_angle(T radians) noexcept
  */
 template <typename T> inline T sin_normalized(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::sin(normalize_angle(radians));
+    static_assert(std::is_floating_point_v<T>);
+    return std::sin(normalize_angle(radians));
 }
 
 /**
@@ -47,8 +47,8 @@ template <typename T> inline T sin_normalized(T radians) noexcept
  */
 template <typename T> inline T cos_normalized(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::cos(normalize_angle(radians));
+    static_assert(std::is_floating_point_v<T>);
+    return std::cos(normalize_angle(radians));
 }
 
 /**
@@ -56,8 +56,8 @@ template <typename T> inline T cos_normalized(T radians) noexcept
  */
 template <typename T> inline T tan_normalized(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::tan(normalize_angle(radians));
+    static_assert(std::is_floating_point_v<T>);
+    return std::tan(normalize_angle(radians));
 }
 
 /**
@@ -65,8 +65,8 @@ template <typename T> inline T tan_normalized(T radians) noexcept
  */
 template <typename T> inline T asin(T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::asin(x);
+    static_assert(std::is_floating_point_v<T>);
+    return std::asin(x);
 }
 
 /**
@@ -74,8 +74,8 @@ template <typename T> inline T asin(T x) noexcept
  */
 template <typename T> inline T acos(T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::acos(x);
+    static_assert(std::is_floating_point_v<T>);
+    return std::acos(x);
 }
 
 /**
@@ -83,8 +83,8 @@ template <typename T> inline T acos(T x) noexcept
  */
 template <typename T> inline T atan(T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::atan(x);
+    static_assert(std::is_floating_point_v<T>);
+    return std::atan(x);
 }
 
 /**
@@ -92,8 +92,8 @@ template <typename T> inline T atan(T x) noexcept
  */
 template <typename T> inline T atan2(T y, T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return std::atan2(y, x);
+    static_assert(std::is_floating_point_v<T>);
+    return std::atan2(y, x);
 }
 
 // ================================================================
@@ -106,9 +106,9 @@ template <typename T> inline T atan2(T y, T x) noexcept
  */
 template <typename T> inline bool is_small_angle(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	constexpr T threshold = T(0.1);
-	return radians >= -threshold && radians <= threshold;
+    static_assert(std::is_floating_point_v<T>);
+    constexpr T threshold = T(0.1);
+    return radians >= -threshold && radians <= threshold;
 }
 
 /**
@@ -117,12 +117,12 @@ template <typename T> inline bool is_small_angle(T radians) noexcept
  */
 template <typename T> inline T sin_small_angle(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (is_small_angle(radians))
-	{
-		return radians;
-	}
-	return std::sin(radians);
+    static_assert(std::is_floating_point_v<T>);
+    if (is_small_angle(radians))
+    {
+        return radians;
+    }
+    return std::sin(radians);
 }
 
 /**
@@ -131,13 +131,13 @@ template <typename T> inline T sin_small_angle(T radians) noexcept
  */
 template <typename T> inline T cos_small_angle(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (is_small_angle(radians))
-	{
-		const T r2 = radians * radians;
-		return T(1) - r2 / T(2);
-	}
-	return std::cos(radians);
+    static_assert(std::is_floating_point_v<T>);
+    if (is_small_angle(radians))
+    {
+        const T r2 = radians * radians;
+        return T(1) - r2 / T(2);
+    }
+    return std::cos(radians);
 }
 
 /**
@@ -146,12 +146,12 @@ template <typename T> inline T cos_small_angle(T radians) noexcept
  */
 template <typename T> inline T tan_small_angle(T radians) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (is_small_angle(radians))
-	{
-		return radians;
-	}
-	return std::tan(radians);
+    static_assert(std::is_floating_point_v<T>);
+    if (is_small_angle(radians))
+    {
+        return radians;
+    }
+    return std::tan(radians);
 }
 
 } // namespace phynity::math::utilities

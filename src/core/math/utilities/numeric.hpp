@@ -16,7 +16,7 @@ namespace phynity::math::utilities
  */
 template <typename T> inline constexpr T clamp(T value, T min_val, T max_val) noexcept
 {
-	return std::max(min_val, std::min(value, max_val));
+    return std::max(min_val, std::min(value, max_val));
 }
 
 // ================================================================
@@ -29,8 +29,8 @@ template <typename T> inline constexpr T clamp(T value, T min_val, T max_val) no
  */
 template <typename T> inline constexpr T lerp(T a, T b, T t) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return a + t * (b - a);
+    static_assert(std::is_floating_point_v<T>);
+    return a + t * (b - a);
 }
 
 /**
@@ -39,10 +39,10 @@ template <typename T> inline constexpr T lerp(T a, T b, T t) noexcept
  */
 template <typename T> inline T inverse_lerp(T a, T b, T c) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	if (a == b)
-		return T(0);
-	return (c - a) / (b - a);
+    static_assert(std::is_floating_point_v<T>);
+    if (a == b)
+        return T(0);
+    return (c - a) / (b - a);
 }
 
 // ================================================================
@@ -55,9 +55,9 @@ template <typename T> inline T inverse_lerp(T a, T b, T c) noexcept
  */
 template <typename T> inline constexpr T smoothstep(T min_val, T max_val, T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	const T t = clamp((x - min_val) / (max_val - min_val), T(0), T(1));
-	return t * t * (T(3) - T(2) * t);
+    static_assert(std::is_floating_point_v<T>);
+    const T t = clamp((x - min_val) / (max_val - min_val), T(0), T(1));
+    return t * t * (T(3) - T(2) * t);
 }
 
 /**
@@ -66,9 +66,9 @@ template <typename T> inline constexpr T smoothstep(T min_val, T max_val, T x) n
  */
 template <typename T> inline constexpr T smootherstep(T min_val, T max_val, T x) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	const T t = clamp((x - min_val) / (max_val - min_val), T(0), T(1));
-	return t * t * t * (t * (t * T(6) - T(15)) + T(10));
+    static_assert(std::is_floating_point_v<T>);
+    const T t = clamp((x - min_val) / (max_val - min_val), T(0), T(1));
+    return t * t * t * (t * (t * T(6) - T(15)) + T(10));
 }
 
 // ================================================================
@@ -80,7 +80,7 @@ template <typename T> inline constexpr T smootherstep(T min_val, T max_val, T x)
  */
 template <typename T> inline constexpr T min(T a, T b) noexcept
 {
-	return a < b ? a : b;
+    return a < b ? a : b;
 }
 
 /**
@@ -88,7 +88,7 @@ template <typename T> inline constexpr T min(T a, T b) noexcept
  */
 template <typename T> inline constexpr T max(T a, T b) noexcept
 {
-	return a > b ? a : b;
+    return a > b ? a : b;
 }
 
 /**
@@ -96,7 +96,7 @@ template <typename T> inline constexpr T max(T a, T b) noexcept
  */
 template <typename T> inline constexpr T abs(T value) noexcept
 {
-	return value < T(0) ? -value : value;
+    return value < T(0) ? -value : value;
 }
 
 /**
@@ -104,11 +104,11 @@ template <typename T> inline constexpr T abs(T value) noexcept
  */
 template <typename T> inline constexpr T sign(T value) noexcept
 {
-	if (value > T(0))
-		return T(1);
-	if (value < T(0))
-		return T(-1);
-	return T(0);
+    if (value > T(0))
+        return T(1);
+    if (value < T(0))
+        return T(-1);
+    return T(0);
 }
 
 // ================================================================
@@ -120,8 +120,8 @@ template <typename T> inline constexpr T sign(T value) noexcept
  */
 template <typename T> inline T fract(T value) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return value - std::floor(value);
+    static_assert(std::is_floating_point_v<T>);
+    return value - std::floor(value);
 }
 
 /**
@@ -129,8 +129,8 @@ template <typename T> inline T fract(T value) noexcept
  */
 template <typename T> inline T repeat(T value, T max_val) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	return value - std::floor(value / max_val) * max_val;
+    static_assert(std::is_floating_point_v<T>);
+    return value - std::floor(value / max_val) * max_val;
 }
 
 /**
@@ -138,9 +138,9 @@ template <typename T> inline T repeat(T value, T max_val) noexcept
  */
 template <typename T> inline T ping_pong(T value, T max_val) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	const T repeated = repeat(value, max_val * T(2));
-	return max_val - abs(repeated - max_val);
+    static_assert(std::is_floating_point_v<T>);
+    const T repeated = repeat(value, max_val * T(2));
+    return max_val - abs(repeated - max_val);
 }
 
 // ================================================================
@@ -157,15 +157,15 @@ template <typename T> inline T ping_pong(T value, T max_val) noexcept
  */
 template <typename T> inline T geometric_series_sum(T ratio, int terms) noexcept
 {
-	static_assert(std::is_floating_point_v<T>);
-	T sum = T(0);
-	T term = ratio;
-	for (int i = 0; i < terms; ++i)
-	{
-		sum += term;
-		term *= ratio;
-	}
-	return sum;
+    static_assert(std::is_floating_point_v<T>);
+    T sum = T(0);
+    T term = ratio;
+    for (int i = 0; i < terms; ++i)
+    {
+        sum += term;
+        term *= ratio;
+    }
+    return sum;
 }
 
 } // namespace phynity::math::utilities

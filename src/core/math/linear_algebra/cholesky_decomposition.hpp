@@ -31,86 +31,86 @@ using phynity::math::vectors::VecN;
 /// @tparam T Floating-point type (float, double)
 template <std::size_t N, typename T = float> struct CholeskyDecomposition
 {
-	static_assert(std::is_floating_point_v<T>, "CholeskyDecomposition requires floating-point type");
-	static_assert(N > 0, "CholeskyDecomposition matrix size must be > 0");
+    static_assert(std::is_floating_point_v<T>, "CholeskyDecomposition requires floating-point type");
+    static_assert(N > 0, "CholeskyDecomposition matrix size must be > 0");
 
-	MatN<N, N, T> L;           // Lower triangular matrix (only lower part is valid)
-	bool is_positive_definite; // True if matrix is SPD and decomposition succeeded
-	bool is_definite;          // True if positive or negative definite
+    MatN<N, N, T> L;           // Lower triangular matrix (only lower part is valid)
+    bool is_positive_definite; // True if matrix is SPD and decomposition succeeded
+    bool is_definite;          // True if positive or negative definite
 
-	/// Default constructor
-	CholeskyDecomposition() : L(T(0)), is_positive_definite(false), is_definite(false)
-	{
-	}
+    /// Default constructor
+    CholeskyDecomposition() : L(T(0)), is_positive_definite(false), is_definite(false)
+    {
+    }
 
-	/// Perform Cholesky decomposition using Doolittle's variant
-	/// @param A Symmetric positive-definite matrix to decompose
-	/// @param tolerance Tolerance for positivity check
-	explicit CholeskyDecomposition(const MatN<N, N, T> &A, T tolerance = epsilon<T>() * T(100))
-	{
-		perform_decomposition(A, tolerance);
-	}
+    /// Perform Cholesky decomposition using Doolittle's variant
+    /// @param A Symmetric positive-definite matrix to decompose
+    /// @param tolerance Tolerance for positivity check
+    explicit CholeskyDecomposition(const MatN<N, N, T> &A, T tolerance = epsilon<T>() * T(100))
+    {
+        perform_decomposition(A, tolerance);
+    }
 
-	/// Get the transpose of L (which is the upper triangular R = L^T)
-	MatN<N, N, T> getLT() const
-	{
-		return L.transposed();
-	}
+    /// Get the transpose of L (which is the upper triangular R = L^T)
+    MatN<N, N, T> getLT() const
+    {
+        return L.transposed();
+    }
 
-	/// Reconstruct the original matrix: A ≈ L * L^T
-	MatN<N, N, T> reconstruct() const
-	{
-		return L * L.transposed();
-	}
+    /// Reconstruct the original matrix: A ≈ L * L^T
+    MatN<N, N, T> reconstruct() const
+    {
+        return L * L.transposed();
+    }
 
 private:
-	/// Perform Cholesky decomposition using row-wise algorithm
-	void perform_decomposition(const MatN<N, N, T> &A, T tolerance)
-	{
-		L = MatN<N, N, T>(T(0));
-		is_positive_definite = false;
-		is_definite = false;
+    /// Perform Cholesky decomposition using row-wise algorithm
+    void perform_decomposition(const MatN<N, N, T> &A, T tolerance)
+    {
+        L = MatN<N, N, T>(T(0));
+        is_positive_definite = false;
+        is_definite = false;
 
-		// Doolittle's variant of Cholesky decomposition
-		for (std::size_t i = 0; i < N; ++i)
-		{
-			for (std::size_t j = 0; j <= i; ++j)
-			{
-				T sum = A(i, j);
+        // Doolittle's variant of Cholesky decomposition
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            for (std::size_t j = 0; j <= i; ++j)
+            {
+                T sum = A(i, j);
 
-				// Subtract contributions from previously computed L elements
-				for (std::size_t k = 0; k < j; ++k)
-				{
-					sum -= L(i, k) * L(j, k);
-				}
+                // Subtract contributions from previously computed L elements
+                for (std::size_t k = 0; k < j; ++k)
+                {
+                    sum -= L(i, k) * L(j, k);
+                }
 
-				if (i == j)
-				{
-					// Diagonal element: L(i,i) = sqrt(A(i,i) - sum(L(i,k)^2))
-					if (sum < tolerance)
-					{
-						// Not positive definite
-						return;
-					}
+                if (i == j)
+                {
+                    // Diagonal element: L(i,i) = sqrt(A(i,i) - sum(L(i,k)^2))
+                    if (sum < tolerance)
+                    {
+                        // Not positive definite
+                        return;
+                    }
 
-					L(i, i) = std::sqrt(sum);
-				}
-				else
-				{
-					// Off-diagonal: L(i,j) = (A(i,j) - sum) / L(j,j)
-					if (std::abs(L(j, j)) < tolerance)
-					{
-						return; // Singular
-					}
+                    L(i, i) = std::sqrt(sum);
+                }
+                else
+                {
+                    // Off-diagonal: L(i,j) = (A(i,j) - sum) / L(j,j)
+                    if (std::abs(L(j, j)) < tolerance)
+                    {
+                        return; // Singular
+                    }
 
-					L(i, j) = sum / L(j, j);
-				}
-			}
-		}
+                    L(i, j) = sum / L(j, j);
+                }
+            }
+        }
 
-		is_positive_definite = true;
-		is_definite = true;
-	}
+        is_positive_definite = true;
+        is_definite = true;
+    }
 };
 
 /// Solve Ax = b where A is symmetric positive-definite using Cholesky decomposition
@@ -120,50 +120,50 @@ private:
 template <std::size_t N, typename T = float>
 inline VecN<N, T> solve_cholesky(const CholeskyDecomposition<N, T> &chol, const VecN<N, T> &b)
 {
-	if (!chol.is_positive_definite)
-	{
-		return VecN<N, T>(T(0));
-	}
+    if (!chol.is_positive_definite)
+    {
+        return VecN<N, T>(T(0));
+    }
 
-	// Solve L*y = b by forward substitution
-	VecN<N, T> y(T(0));
-	for (std::size_t i = 0; i < N; ++i)
-	{
-		T sum = b[i];
-		for (std::size_t j = 0; j < i; ++j)
-		{
-			sum -= chol.L(i, j) * y[j];
-		}
+    // Solve L*y = b by forward substitution
+    VecN<N, T> y(T(0));
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        T sum = b[i];
+        for (std::size_t j = 0; j < i; ++j)
+        {
+            sum -= chol.L(i, j) * y[j];
+        }
 
-		if (std::abs(chol.L(i, i)) < epsilon<T>() * T(100))
-		{
-			return VecN<N, T>(T(0)); // Singular
-		}
+        if (std::abs(chol.L(i, i)) < epsilon<T>() * T(100))
+        {
+            return VecN<N, T>(T(0)); // Singular
+        }
 
-		y[i] = sum / chol.L(i, i);
-	}
+        y[i] = sum / chol.L(i, i);
+    }
 
-	// Solve L^T*x = y by back substitution
-	VecN<N, T> x(T(0));
-	for (int i = static_cast<int>(N) - 1; i >= 0; --i)
-	{
-		std::size_t ui = static_cast<std::size_t>(i);
-		T sum = y[ui];
-		for (int j = i + 1; j < static_cast<int>(N); ++j)
-		{
-			std::size_t uj = static_cast<std::size_t>(j);
-			sum -= chol.L(uj, ui) * x[uj];
-		}
+    // Solve L^T*x = y by back substitution
+    VecN<N, T> x(T(0));
+    for (int i = static_cast<int>(N) - 1; i >= 0; --i)
+    {
+        std::size_t ui = static_cast<std::size_t>(i);
+        T sum = y[ui];
+        for (int j = i + 1; j < static_cast<int>(N); ++j)
+        {
+            std::size_t uj = static_cast<std::size_t>(j);
+            sum -= chol.L(uj, ui) * x[uj];
+        }
 
-		if (std::abs(chol.L(ui, ui)) < epsilon<T>() * T(100))
-		{
-			return VecN<N, T>(T(0)); // Singular
-		}
+        if (std::abs(chol.L(ui, ui)) < epsilon<T>() * T(100))
+        {
+            return VecN<N, T>(T(0)); // Singular
+        }
 
-		x[ui] = sum / chol.L(ui, ui);
-	}
+        x[ui] = sum / chol.L(ui, ui);
+    }
 
-	return x;
+    return x;
 }
 
 /// Compute determinant of SPD matrix using Cholesky decomposition
@@ -172,18 +172,18 @@ inline VecN<N, T> solve_cholesky(const CholeskyDecomposition<N, T> &chol, const 
 /// @return Determinant of A, or 0 if not SPD
 template <std::size_t N, typename T = float> inline T determinant_cholesky(const CholeskyDecomposition<N, T> &chol)
 {
-	if (!chol.is_positive_definite)
-	{
-		return T(0);
-	}
+    if (!chol.is_positive_definite)
+    {
+        return T(0);
+    }
 
-	T det_L = T(1);
-	for (std::size_t i = 0; i < N; ++i)
-	{
-		det_L *= chol.L(i, i);
-	}
+    T det_L = T(1);
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        det_L *= chol.L(i, i);
+    }
 
-	return det_L * det_L;
+    return det_L * det_L;
 }
 
 /// Compute matrix inverse of SPD matrix using Cholesky decomposition
@@ -193,23 +193,23 @@ template <std::size_t N, typename T = float> inline T determinant_cholesky(const
 template <std::size_t N, typename T = float>
 inline MatN<N, N, T> inverse_cholesky(const CholeskyDecomposition<N, T> &chol)
 {
-	if (!chol.is_positive_definite)
-	{
-		return MatN<N, N, T>(T(0));
-	}
+    if (!chol.is_positive_definite)
+    {
+        return MatN<N, N, T>(T(0));
+    }
 
-	MatN<N, N, T> inv(T(0));
+    MatN<N, N, T> inv(T(0));
 
-	// Solve A*X = I column by column
-	MatN<N, N, T> I = MatN<N, N, T>::identity();
-	for (std::size_t col = 0; col < N; ++col)
-	{
-		VecN<N, T> e_col = I.getColumn(col);
-		VecN<N, T> x_col = solve_cholesky(chol, e_col);
-		inv.setColumn(col, x_col);
-	}
+    // Solve A*X = I column by column
+    MatN<N, N, T> I = MatN<N, N, T>::identity();
+    for (std::size_t col = 0; col < N; ++col)
+    {
+        VecN<N, T> e_col = I.getColumn(col);
+        VecN<N, T> x_col = solve_cholesky(chol, e_col);
+        inv.setColumn(col, x_col);
+    }
 
-	return inv;
+    return inv;
 }
 
 } // namespace phynity::math::linear_algebra

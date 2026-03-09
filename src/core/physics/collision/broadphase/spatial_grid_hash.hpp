@@ -14,26 +14,26 @@ namespace phynity::physics::collision
  */
 struct GridCell
 {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+    int32_t x;
+    int32_t y;
+    int32_t z;
 
-	GridCell() noexcept : x(0), y(0), z(0)
-	{
-	}
-	GridCell(int32_t x_, int32_t y_, int32_t z_) noexcept : x(x_), y(y_), z(z_)
-	{
-	}
+    GridCell() noexcept : x(0), y(0), z(0)
+    {
+    }
+    GridCell(int32_t x_, int32_t y_, int32_t z_) noexcept : x(x_), y(y_), z(z_)
+    {
+    }
 
-	bool operator==(const GridCell &other) const noexcept
-	{
-		return x == other.x && y == other.y && z == other.z;
-	}
+    bool operator==(const GridCell &other) const noexcept
+    {
+        return x == other.x && y == other.y && z == other.z;
+    }
 
-	bool operator!=(const GridCell &other) const noexcept
-	{
-		return !(*this == other);
-	}
+    bool operator!=(const GridCell &other) const noexcept
+    {
+        return !(*this == other);
+    }
 };
 
 /**
@@ -53,127 +53,127 @@ struct GridCell
 class SpatialGridHash
 {
 public:
-	explicit SpatialGridHash(float cell_size = 1.0f) noexcept : cell_size_(cell_size)
-	{
-	}
+    explicit SpatialGridHash(float cell_size = 1.0f) noexcept : cell_size_(cell_size)
+    {
+    }
 
-	/**
-	 * @brief Get the grid cell size in world units.
-	 */
-	[[nodiscard]] float get_cell_size() const noexcept
-	{
-		return cell_size_;
-	}
+    /**
+     * @brief Get the grid cell size in world units.
+     */
+    [[nodiscard]] float get_cell_size() const noexcept
+    {
+        return cell_size_;
+    }
 
-	/**
-	 * @brief Set the grid cell size in world units.
-	 */
-	void set_cell_size(float size) noexcept
-	{
-		cell_size_ = size;
-	}
+    /**
+     * @brief Set the grid cell size in world units.
+     */
+    void set_cell_size(float size) noexcept
+    {
+        cell_size_ = size;
+    }
 
-	/**
-	 * @brief Convert a position to its grid cell coordinates.
-	 *
-	 * @param position World position
-	 * @return Cell coordinates (x, y, z)
-	 *
-	 * Example: position=(2.5, 3.7, -1.2), cell_size=1.0
-	 *          -> cell_coords=(2, 3, -2)
-	 */
-	[[nodiscard]] GridCell get_cell_coords(const math::vectors::Vec3f &position) const noexcept
-	{
-		if (!std::isfinite(cell_size_) || cell_size_ <= 0.0f)
-		{
-			return GridCell{0, 0, 0};
-		}
+    /**
+     * @brief Convert a position to its grid cell coordinates.
+     *
+     * @param position World position
+     * @return Cell coordinates (x, y, z)
+     *
+     * Example: position=(2.5, 3.7, -1.2), cell_size=1.0
+     *          -> cell_coords=(2, 3, -2)
+     */
+    [[nodiscard]] GridCell get_cell_coords(const math::vectors::Vec3f &position) const noexcept
+    {
+        if (!std::isfinite(cell_size_) || cell_size_ <= 0.0f)
+        {
+            return GridCell{0, 0, 0};
+        }
 
-		// Clamp to prevent overflow when converting extremely large positions to int32_t
-		constexpr float kMaxCoord = 2147483647.0f;  // INT32_MAX
-		constexpr float kMinCoord = -2147483648.0f; // INT32_MIN
+        // Clamp to prevent overflow when converting extremely large positions to int32_t
+        constexpr float kMaxCoord = 2147483647.0f;  // INT32_MAX
+        constexpr float kMinCoord = -2147483648.0f; // INT32_MIN
 
-		auto clamp_and_floor = [](float value, float cell_size) -> int32_t
-		{
-			float result = std::floor(value / cell_size);
-			if (!std::isfinite(result))
-				return 0;
-			if (result > kMaxCoord)
-				return INT32_MAX;
-			if (result < kMinCoord)
-				return INT32_MIN;
-			return static_cast<int32_t>(result);
-		};
+        auto clamp_and_floor = [](float value, float cell_size) -> int32_t
+        {
+            float result = std::floor(value / cell_size);
+            if (!std::isfinite(result))
+                return 0;
+            if (result > kMaxCoord)
+                return INT32_MAX;
+            if (result < kMinCoord)
+                return INT32_MIN;
+            return static_cast<int32_t>(result);
+        };
 
-		return GridCell{clamp_and_floor(position.x, cell_size_),
-		                clamp_and_floor(position.y, cell_size_),
-		                clamp_and_floor(position.z, cell_size_)};
-	}
+        return GridCell{clamp_and_floor(position.x, cell_size_),
+                        clamp_and_floor(position.y, cell_size_),
+                        clamp_and_floor(position.z, cell_size_)};
+    }
 
-	/**
-	 * @brief Convert a position directly to a hash index.
-	 *
-	 * Combines cell coordinate calculation and hashing.
-	 *
-	 * @param position World position
-	 * @return Hash index for spatial grid
-	 */
-	[[nodiscard]] uint64_t hash_position(const math::vectors::Vec3f &position) const noexcept
-	{
-		const auto cell_coords = get_cell_coords(position);
-		return hash_coords(cell_coords.x, cell_coords.y, cell_coords.z);
-	}
+    /**
+     * @brief Convert a position directly to a hash index.
+     *
+     * Combines cell coordinate calculation and hashing.
+     *
+     * @param position World position
+     * @return Hash index for spatial grid
+     */
+    [[nodiscard]] uint64_t hash_position(const math::vectors::Vec3f &position) const noexcept
+    {
+        const auto cell_coords = get_cell_coords(position);
+        return hash_coords(cell_coords.x, cell_coords.y, cell_coords.z);
+    }
 
-	/**
-	 * @brief Convert 3D cell coordinates to a 1D hash index.
-	 *
-	 * Uses Cantor pairing function for robust, collision-free mapping.
-	 * Handles negative coordinates by offsetting them.
-	 *
-	 * Formula:
-	 * - pair(x, y) = ((x+y)*(x+y+1))/2 + y
-	 * - hash(x,y,z) = pair(pair(x, y), z)
-	 *
-	 * @param cell_x X cell coordinate
-	 * @param cell_y Y cell coordinate
-	 * @param cell_z Z cell coordinate
-	 * @return Unique hash index
-	 */
-	[[nodiscard]] static uint64_t hash_coords(int32_t cell_x, int32_t cell_y, int32_t cell_z) noexcept
-	{
-		// Offset negative coordinates to positive range for Cantor pairing
-		// This maintains the bijection property for all integer coordinates
-		const uint64_t x = static_cast<uint64_t>(cell_x) + 0x8000'0000ULL;
-		const uint64_t y = static_cast<uint64_t>(cell_y) + 0x8000'0000ULL;
-		const uint64_t z = static_cast<uint64_t>(cell_z) + 0x8000'0000ULL;
+    /**
+     * @brief Convert 3D cell coordinates to a 1D hash index.
+     *
+     * Uses Cantor pairing function for robust, collision-free mapping.
+     * Handles negative coordinates by offsetting them.
+     *
+     * Formula:
+     * - pair(x, y) = ((x+y)*(x+y+1))/2 + y
+     * - hash(x,y,z) = pair(pair(x, y), z)
+     *
+     * @param cell_x X cell coordinate
+     * @param cell_y Y cell coordinate
+     * @param cell_z Z cell coordinate
+     * @return Unique hash index
+     */
+    [[nodiscard]] static uint64_t hash_coords(int32_t cell_x, int32_t cell_y, int32_t cell_z) noexcept
+    {
+        // Offset negative coordinates to positive range for Cantor pairing
+        // This maintains the bijection property for all integer coordinates
+        const uint64_t x = static_cast<uint64_t>(cell_x) + 0x8000'0000ULL;
+        const uint64_t y = static_cast<uint64_t>(cell_y) + 0x8000'0000ULL;
+        const uint64_t z = static_cast<uint64_t>(cell_z) + 0x8000'0000ULL;
 
-		// Cantor pairing: pair(a, b) = ((a+b) * (a+b+1)) / 2 + b
-		const uint64_t pair_xy = cantor_pair(x, y);
-		return cantor_pair(pair_xy, z);
-	}
+        // Cantor pairing: pair(a, b) = ((a+b) * (a+b+1)) / 2 + b
+        const uint64_t pair_xy = cantor_pair(x, y);
+        return cantor_pair(pair_xy, z);
+    }
 
 private:
-	float cell_size_;
+    float cell_size_;
 
-	/**
-	 * @brief Cantor pairing function for 2D to 1D mapping.
-	 *
-	 * Creates a bijection from (unsigned) integer pairs to unsigned integers.
-	 * Properties:
-	 * - Deterministic: same input always produces same output
-	 * - Injective: different inputs produce different outputs (no collisions)
-	 * - Efficient: O(1) computation
-	 *
-	 * @param a First coordinate (must be non-negative)
-	 * @param b Second coordinate (must be non-negative)
-	 * @return Unique index
-	 */
-	[[nodiscard]] static inline uint64_t cantor_pair(uint64_t a, uint64_t b) noexcept
-	{
-		const uint64_t sum = a + b;
-		// ((sum * (sum + 1)) / 2 + b)
-		return ((sum * (sum + 1)) >> 1) + b;
-	}
+    /**
+     * @brief Cantor pairing function for 2D to 1D mapping.
+     *
+     * Creates a bijection from (unsigned) integer pairs to unsigned integers.
+     * Properties:
+     * - Deterministic: same input always produces same output
+     * - Injective: different inputs produce different outputs (no collisions)
+     * - Efficient: O(1) computation
+     *
+     * @param a First coordinate (must be non-negative)
+     * @param b Second coordinate (must be non-negative)
+     * @return Unique index
+     */
+    [[nodiscard]] static inline uint64_t cantor_pair(uint64_t a, uint64_t b) noexcept
+    {
+        const uint64_t sum = a + b;
+        // ((sum * (sum + 1)) / 2 + b)
+        return ((sum * (sum + 1)) >> 1) + b;
+    }
 };
 
 } // namespace phynity::physics::collision
