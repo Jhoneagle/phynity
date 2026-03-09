@@ -31,21 +31,38 @@ cmake --build --preset debug
 
 ### Code Formatting
 
-This project uses clang-format for code style consistency. CI uses clang-format 18.
+This project uses clang-format 18 for code style consistency across all platforms.
 
-**Format all code:**
+**First-time setup (enable pre-commit hook):**
 ```bash
-# Windows
-tools\format.bat
-
-# Linux/macOS  
-./tools/format.sh
+git config core.hooksPath .githooks
 ```
 
-**Check formatting (without modifying):**
+The pre-commit hook automatically formats staged C++ files before each commit, ensuring consistent formatting. To bypass temporarily: `git commit --no-verify`
+
+**Manual formatting:**
 ```bash
-tools\format.bat --check
+# Format all code
+./tools/format.sh          # Linux/macOS
+.\tools\format.bat           # Windows
+
+# Check formatting without modifying
+./tools/format.sh --check
+.\tools\format.bat --check
 ```
 
-**Installing clang-format locally:**
-Your local clang-format version should match CI (version 18) to avoid formatting differences. If you have a different version, format discrepancies may occur between local and CI checks.
+**Installing clang-format 18:**
+```bash
+# Linux (Ubuntu/Debian)
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 18
+sudo apt-get install clang-format-18
+
+# Windows (via LLVM installer)
+# Download from: https://github.com/llvm/llvm-project/releases/tag/llvmorg-18.1.8
+# Or use winget: winget install LLVM.LLVM
+
+# macOS
+brew install llvm@18
+```
