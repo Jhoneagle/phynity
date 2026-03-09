@@ -160,7 +160,7 @@ jobs:
         run: |
           echo "Checking code formatting with clang-format..."
           FAILED=0
-          for file in $(find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \)); do
+          while IFS= read -r -d '' file; do
             if ! diff -u "$file" <(clang-format --style=file "$file"); then
               echo ""
               echo "❌ Format issue in: $file"
@@ -168,7 +168,7 @@ jobs:
               echo ""
               FAILED=1
             fi
-          done
+          done < <(find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0)
           if [ $FAILED -eq 1 ]; then
             echo "Format check failed. Run 'tools/format.sh' locally to fix."
             exit 1
