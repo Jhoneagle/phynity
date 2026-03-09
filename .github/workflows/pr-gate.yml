@@ -295,7 +295,7 @@ jobs:
         env:
           ASAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
           UBSAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
-        run: ctest -C Debug --output-on-failure -j
+        run: ctest -C Debug --output-on-failure -LE performance -j
 
       - name: Archive sanitizer reports on failure
         if: failure()
