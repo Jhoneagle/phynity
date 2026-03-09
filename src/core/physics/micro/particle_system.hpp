@@ -40,15 +40,15 @@ public:
     enum class SolverMode
     {
         SimpleImpulse, ///< Single-pass impulse-based collision resolution (fast, less stable)
-        PGS            ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
+        PGS ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
     };
 
     /// Diagnostic information about the particle system
     struct Diagnostics
     {
-        float total_kinetic_energy = 0.0f;  ///< Sum of all particle kinetic energies
+        float total_kinetic_energy = 0.0f; ///< Sum of all particle kinetic energies
         Vec3f total_momentum = Vec3f(0.0f); ///< Sum of all particle momenta (mass * velocity)
-        size_t particle_count = 0;          ///< Number of active particles
+        size_t particle_count = 0; ///< Number of active particles
     };
 
     ParticleSystem() = default;
@@ -623,7 +623,7 @@ private:
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem *job_system_ = nullptr;
     collision::SpatialGrid spatial_grid_{2.0f}; // Default cell size: 2x particle radius
-    collision::ContactCache contact_cache_;     // Contact cache for frame-to-frame tracking (Phase 3)
+    collision::ContactCache contact_cache_; // Contact cache for frame-to-frame tracking (Phase 3)
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
     float broadphase_cell_size_ = 2.0f;

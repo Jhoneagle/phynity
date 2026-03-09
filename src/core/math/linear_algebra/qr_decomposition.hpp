@@ -33,8 +33,8 @@ template <std::size_t N, typename T = float> struct QRDecomposition
     static_assert(std::is_floating_point_v<T>, "QRDecomposition requires floating-point type");
     static_assert(N > 0, "QRDecomposition matrix size must be > 0");
 
-    MatN<N, N, T> Q;  // Orthogonal matrix (columns are orthonormal)
-    MatN<N, N, T> R;  // Upper triangular matrix
+    MatN<N, N, T> Q; // Orthogonal matrix (columns are orthonormal)
+    MatN<N, N, T> R; // Upper triangular matrix
     bool is_singular; // True if matrix is (nearly) singular
 
     /// Default constructor - identity Q, zero R

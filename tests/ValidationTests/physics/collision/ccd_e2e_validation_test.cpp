@@ -323,9 +323,9 @@ TEST_CASE("CCD E2E: Full pipeline integration check", "[validation][ccd][e2e]")
         Material mat(1.0f, 0.7f, 0.2f, 0.0f, 0.0f, 0.0f);
 
         // Mix of speeds
-        system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(30.0f, 0.0f, 0.0f), mat, -1.0f, 0.1f);  // Fast
-        system.spawn(Vec3f(-2.0f, 1.0f, 0.0f), Vec3f(3.0f, 0.0f, 0.0f), mat, -1.0f, 0.15f);  // Moderate
-        system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat, -1.0f, 0.2f);    // Static
+        system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(30.0f, 0.0f, 0.0f), mat, -1.0f, 0.1f); // Fast
+        system.spawn(Vec3f(-2.0f, 1.0f, 0.0f), Vec3f(3.0f, 0.0f, 0.0f), mat, -1.0f, 0.15f); // Moderate
+        system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), mat, -1.0f, 0.2f); // Static
         system.spawn(Vec3f(2.0f, -1.0f, 0.0f), Vec3f(-1.0f, 0.0f, 0.0f), mat, -1.0f, 0.12f); // Slow
 
         float dt = 1.0f / 60.0f;

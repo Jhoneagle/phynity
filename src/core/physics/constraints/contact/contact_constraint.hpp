@@ -198,12 +198,12 @@ public:
 
 private:
     const ContactManifold &manifold_; ///< Reference to contact data
-    Particle &body_a_;                ///< First particle
-    Particle &body_b_;                ///< Second particle
-    ContactType contact_type_;        ///< Normal or tangent/friction
-    float accumulated_impulse_;       ///< Total impulse applied (for warm-start caching)
-    float warm_start_impulse_;        ///< Impulse from previous frame (for warm-start)
-    bool active_ = true;              ///< Whether this contact is active
+    Particle &body_a_; ///< First particle
+    Particle &body_b_; ///< Second particle
+    ContactType contact_type_; ///< Normal or tangent/friction
+    float accumulated_impulse_; ///< Total impulse applied (for warm-start caching)
+    float warm_start_impulse_; ///< Impulse from previous frame (for warm-start)
+    bool active_ = true; ///< Whether this contact is active
 };
 
 } // namespace phynity::physics::constraints

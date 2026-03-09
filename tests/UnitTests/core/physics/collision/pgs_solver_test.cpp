@@ -179,7 +179,7 @@ TEST_CASE("PGSSolver - Friction reduces tangential motion", "[collision][pgs]")
     contact.object_b_id = 1;
     contact.contact.position = Vec3f(0.0f, 0.5f, 0.0f);
     contact.contact.normal = Vec3f(0.0f, 1.0f, 0.0f); // Normal is Y direction
-    contact.contact.penetration = 0.2f;               // Big penetration for strong normal impulse
+    contact.contact.penetration = 0.2f; // Big penetration for strong normal impulse
     contact.contact.relative_velocity_along_normal = 0.0f;
 
     std::vector<ContactManifold> manifolds = {contact};

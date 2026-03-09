@@ -34,13 +34,13 @@ public:
     /// Configuration for physics simulation
     struct Config
     {
-        float target_fps = 60.0f;                          ///< Target frames per second
-        float max_timestep = 1.0f / 30.0f;                 ///< Maximum time per physics step
-        bool use_determinism = true;                       ///< Enable deterministic mode
-        bool enable_jobs = true;                           ///< Enable job system parallelization
-        uint32_t job_workers = 0;                          ///< Worker count (0 = auto)
+        float target_fps = 60.0f; ///< Target frames per second
+        float max_timestep = 1.0f / 30.0f; ///< Maximum time per physics step
+        bool use_determinism = true; ///< Enable deterministic mode
+        bool enable_jobs = true; ///< Enable job system parallelization
+        uint32_t job_workers = 0; ///< Worker count (0 = auto)
         Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f); ///< Gravitational acceleration
-        float air_drag = 0.0f;                             ///< Air drag coefficient
+        float air_drag = 0.0f; ///< Air drag coefficient
 
         /// Default constructor initializes all fields to defaults above
         Config() = default;

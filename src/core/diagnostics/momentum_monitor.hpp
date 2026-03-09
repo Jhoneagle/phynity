@@ -45,12 +45,12 @@ struct Vec3
  */
 struct MomentumViolation
 {
-    uint64_t frame_number;   ///< Frame where violation occurred
-    Vec3 previous_momentum;  ///< Momentum in previous frame
-    Vec3 current_momentum;   ///< Momentum in current frame
-    Vec3 momentum_change;    ///< Change in momentum
+    uint64_t frame_number; ///< Frame where violation occurred
+    Vec3 previous_momentum; ///< Momentum in previous frame
+    Vec3 current_momentum; ///< Momentum in current frame
+    Vec3 momentum_change; ///< Change in momentum
     double change_magnitude; ///< Magnitude of change vector
-    std::string_view cause;  ///< "external_force" or "numerical"
+    std::string_view cause; ///< "external_force" or "numerical"
 
     /**
      * @brief Check if change is within tolerance.

@@ -90,7 +90,7 @@ public:
         }
 
         // Clamp to prevent overflow when converting extremely large positions to int32_t
-        constexpr float kMaxCoord = 2147483647.0f;  // INT32_MAX
+        constexpr float kMaxCoord = 2147483647.0f; // INT32_MAX
         constexpr float kMinCoord = -2147483648.0f; // INT32_MIN
 
         auto clamp_and_floor = [](float value, float cell_size) -> int32_t

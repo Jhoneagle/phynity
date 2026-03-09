@@ -141,7 +141,7 @@ TEST_CASE("RigidBody kinetic energy - angular only", "[rigid_body][energy]")
 
 TEST_CASE("Quaternion integration", "[quaternion][integration]")
 {
-    Quatf q;                       // Identity
+    Quatf q; // Identity
     Vec3f omega(1.0f, 0.0f, 0.0f); // Rotate around X-axis at 1 rad/s
     float dt = 0.1f;
 
@@ -195,7 +195,7 @@ TEST_CASE("RigidBodySystem gravity simulation", "[system][gravity]")
     // y = 10 - 0.5 * 9.81 * 1² ≈ 5.1 meters
     // v = -9.81 m/s
     REQUIRE(rb->position.y < 10.0f);
-    REQUIRE(rb->position.y > 4.0f);  // Should have fallen significantly
+    REQUIRE(rb->position.y > 4.0f); // Should have fallen significantly
     REQUIRE(rb->velocity.y < -5.0f); // Significant downward velocity
 }
 
@@ -536,8 +536,8 @@ TEST_CASE("HingeConstraint RB error computation", "[constraint][hinge]")
 
     constraints::HingeConstraintRB constraint(&body_a,
                                               &body_b,
-                                              Vec3f(0, 0, 0),   // Pivot at origin of A
-                                              Vec3f(0, 0, 0),   // Pivot at origin of B
+                                              Vec3f(0, 0, 0), // Pivot at origin of A
+                                              Vec3f(0, 0, 0), // Pivot at origin of B
                                               Vec3f(0, 0, 1.0f) // Hinge axis along Z
     );
 

@@ -170,9 +170,9 @@ TEST_CASE("EnergyMonitor: Tolerance check method", "[diagnostics][energy_monitor
     EnergyViolation violation;
     violation.loss_percentage = 2.5;
 
-    REQUIRE(violation.is_within_tolerance(3.0));       // 2.5% < 3.0%
+    REQUIRE(violation.is_within_tolerance(3.0)); // 2.5% < 3.0%
     REQUIRE_FALSE(violation.is_within_tolerance(2.0)); // 2.5% > 2.0%
-    REQUIRE(violation.is_within_tolerance(2.5));       // 2.5% == 2.5%
+    REQUIRE(violation.is_within_tolerance(2.5)); // 2.5% == 2.5%
 }
 
 TEST_CASE("EnergyMonitor: Multiple violations", "[diagnostics][energy_monitor]")

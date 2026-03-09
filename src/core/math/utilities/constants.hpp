@@ -58,24 +58,24 @@ template <typename T> struct physics_constants
     static_assert(std::is_floating_point_v<T>);
 
     // Fundamental
-    static constexpr T speed_of_light = T(299792458);        // m/s
+    static constexpr T speed_of_light = T(299792458); // m/s
     static constexpr T gravitational_const = T(6.67430e-11); // m^3 kg^-1 s^-2
 
     // Earth
     static constexpr T gravity_earth = T(9.80665); // m/s^2
-    static constexpr T earth_radius = T(6.371e6);  // meters
+    static constexpr T earth_radius = T(6.371e6); // meters
 
     // Thermodynamics
     static constexpr T boltzmann = T(1.380649e-23); // J/K
     static constexpr T avogadro = T(6.02214076e23); // 1/mol
 
     // Numerical tolerances
-    static constexpr T linear_slop = T(1e-5);  // meters
+    static constexpr T linear_slop = T(1e-5); // meters
     static constexpr T angular_slop = T(1e-5); // radians
     static constexpr T sleep_epsilon = T(1e-3);
 
     // Simulation
-    static constexpr T max_linear_velocity = T(1e3);  // m/s
+    static constexpr T max_linear_velocity = T(1e3); // m/s
     static constexpr T max_angular_velocity = T(1e3); // rad/s
 };
 

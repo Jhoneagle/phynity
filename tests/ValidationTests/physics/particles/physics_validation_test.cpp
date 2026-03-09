@@ -276,7 +276,7 @@ TEST_CASE("Physics Validation - Reference-based determinism (spring force)", "[p
     ParticleSystem system;
 
     const float dt = 0.005f; // Smaller timestep for spring stability
-    const int steps = 400;   // 2 seconds
+    const int steps = 400; // 2 seconds
     const float mass = 1.0f;
     const float k = 10.0f;
     const float omega_sq = k / mass;
@@ -371,7 +371,7 @@ TEST_CASE("Physics Validation - Energy conservation with gravity", "[physics_val
 
     // Calculate initial total energy
     float KE_initial = 0.5f * mass * (20.0f * 20.0f); // v_y = 20 m/s
-    float PE_initial = mass * EARTH_GRAVITY * 50.0f;  // y = 50m
+    float PE_initial = mass * EARTH_GRAVITY * 50.0f; // y = 50m
     float E_total_initial = KE_initial + PE_initial;
 
     // Simulate for 3 seconds

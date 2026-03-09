@@ -10,21 +10,21 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 end_of_line = lf
 
-# C++ source files
+# C++ source files - must use spaces to match clang-format UseTab: Never
 [*.{cpp,hpp,h,cc,cxx,c,inl}]
-indent_style = tab
+indent_style = space
 indent_size = 4
 tab_width = 4
 
-# CMake files
+# CMake files - consistent with C++ settings
 [{CMakeLists.txt,*.cmake}]
-indent_style = tab
+indent_style = space
 indent_size = 4
 end_of_line = lf
 
-# Script files
+# Script files - consistent with C++ settings
 [*.{sh,bash}]
-indent_style = tab
+indent_style = space
 indent_size = 4
 end_of_line = lf
 

@@ -381,7 +381,7 @@ TEST_CASE("SpatialGrid::Negative Coordinates", "[physics][collision]")
     SECTION("Neighbors across origin")
     {
         grid.insert(0, Vec3f{-0.5f, 0.5f, 0.5f}); // Cell (-1,0,0)
-        grid.insert(1, Vec3f{0.5f, 0.5f, 0.5f});  // Cell (0,0,0)
+        grid.insert(1, Vec3f{0.5f, 0.5f, 0.5f}); // Cell (0,0,0)
 
         const auto neighbors = grid.get_neighbor_objects(Vec3f{0.1f, 0.5f, 0.5f});
         REQUIRE(neighbors.size() == 2);

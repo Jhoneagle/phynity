@@ -268,7 +268,7 @@ TEST_CASE("Convergence rate - second order", "[integration_harness]")
     float dt_coarse = 0.01f;
     float dt_fine = 0.005f;
     float error_coarse = 1.0f; // Error with dt=0.01
-    float error_fine = 0.25f;  // Error with dt=0.005 (should be 1/4 for order 2)
+    float error_fine = 0.25f; // Error with dt=0.005 (should be 1/4 for order 2)
 
     float rate = convergence_rate(dt_coarse, dt_fine, error_coarse, error_fine);
     REQUIRE(rate == Catch::Approx(2.0f).margin(0.1f));
@@ -279,7 +279,7 @@ TEST_CASE("Convergence rate - fourth order", "[integration_harness]")
     // Simulating error proportional to dt⁴
     float dt_coarse = 0.01f;
     float dt_fine = 0.005f;
-    float error_coarse = 1.0f;       // Error with dt=0.01
+    float error_coarse = 1.0f; // Error with dt=0.01
     float error_fine = 1.0f / 16.0f; // Error with dt=0.005 (should be 1/16 for order 4)
 
     float rate = convergence_rate(dt_coarse, dt_fine, error_coarse, error_fine);

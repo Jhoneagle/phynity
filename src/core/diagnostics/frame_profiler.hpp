@@ -18,9 +18,9 @@ namespace phynity::diagnostics
  */
 struct FrameProfile
 {
-    uint64_t frame_number = 0;        ///< Frame index
+    uint64_t frame_number = 0; ///< Frame index
     uint64_t total_frame_time_us = 0; ///< Total frame duration in microseconds
-    std::vector<ProfileZone> zones;   ///< All profile zones recorded in this frame
+    std::vector<ProfileZone> zones; ///< All profile zones recorded in this frame
 
     FrameProfile() = default;
 
@@ -40,11 +40,11 @@ struct FrameProfile
  */
 struct ZoneStats
 {
-    std::string_view name;                                           ///< Zone name
+    std::string_view name; ///< Zone name
     uint64_t min_duration_us = std::numeric_limits<uint64_t>::max(); ///< Minimum duration
-    uint64_t max_duration_us = 0;                                    ///< Maximum duration
-    uint64_t total_duration_us = 0;                                  ///< Sum of all durations
-    uint32_t call_count = 0;                                         ///< Number of times zone appeared
+    uint64_t max_duration_us = 0; ///< Maximum duration
+    uint64_t total_duration_us = 0; ///< Sum of all durations
+    uint32_t call_count = 0; ///< Number of times zone appeared
 
     /**
      * @brief Get average duration across all calls.
@@ -340,10 +340,10 @@ public:
 
 private:
     std::vector<FrameProfile> frame_history_; ///< Ring buffer of frame profiles
-    size_t history_size_;                     ///< Size of ring buffer
-    size_t current_frame_index_;              ///< Current write position in ring buffer
-    uint64_t frame_counter_;                  ///< Total frames processed
-    uint64_t frame_start_time_us_;            ///< Start time of current frame
+    size_t history_size_; ///< Size of ring buffer
+    size_t current_frame_index_; ///< Current write position in ring buffer
+    uint64_t frame_counter_; ///< Total frames processed
+    uint64_t frame_start_time_us_; ///< Start time of current frame
 };
 
 } // namespace phynity::diagnostics

@@ -16,11 +16,11 @@ namespace phynity::diagnostics
  */
 struct ProfileZone
 {
-    std::string_view name;  ///< Zone name (must remain valid during profiling)
+    std::string_view name; ///< Zone name (must remain valid during profiling)
     uint64_t start_time_us; ///< Start time in microseconds
-    uint64_t duration_us;   ///< Duration in microseconds
-    uint32_t depth;         ///< Nesting level (0 = root)
-    uint32_t parent_index;  ///< Index of parent zone in zone list
+    uint64_t duration_us; ///< Duration in microseconds
+    uint32_t depth; ///< Nesting level (0 = root)
+    uint32_t parent_index; ///< Index of parent zone in zone list
 
     ProfileZone() noexcept = default;
     ProfileZone(std::string_view name_, uint32_t depth_, uint32_t parent_)
@@ -37,9 +37,9 @@ struct ProfileZone
  */
 struct ProfileContext
 {
-    std::vector<ProfileZone> zones;    ///< Collected zones for current frame
+    std::vector<ProfileZone> zones; ///< Collected zones for current frame
     std::vector<uint32_t> scope_stack; ///< Stack of active zone indices
-    bool enabled = false;              ///< Runtime enable/disable flag
+    bool enabled = false; ///< Runtime enable/disable flag
 
     void clear() noexcept
     {

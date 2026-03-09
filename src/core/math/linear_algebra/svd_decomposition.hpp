@@ -40,11 +40,11 @@ template <std::size_t N, typename T = float> struct SVDDecomposition
     static_assert(std::is_floating_point_v<T>, "SVDDecomposition requires floating-point type");
     static_assert(N > 0, "SVDDecomposition matrix size must be > 0");
 
-    MatN<N, N, T> U;                  // Left singular vectors (orthogonal matrix)
-    MatN<N, N, T> V;                  // Right singular vectors (orthogonal matrix)
+    MatN<N, N, T> U; // Left singular vectors (orthogonal matrix)
+    MatN<N, N, T> V; // Right singular vectors (orthogonal matrix)
     std::array<T, N> singular_values; // Diagonal entries of Σ (sorted descending)
-    int rank;                         // Numerical rank of matrix
-    T condition_number;               // κ(A) = σ_max / σ_min
+    int rank; // Numerical rank of matrix
+    T condition_number; // κ(A) = σ_max / σ_min
 
     /// Default constructor - identity decomposition
     SVDDecomposition()

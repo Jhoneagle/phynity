@@ -17,17 +17,17 @@ TEST_CASE("ContactCache - Stacked particles persistence", "[collision][contact_c
     // Particle 0: on the ground (static - very heavy)
     system.spawn(Vec3f(0.0f, 0.0f, 0.0f), // position
                  Vec3f(0.0f, 0.0f, 0.0f), // velocity
-                 1000.0f,                 // mass (heavy = nearly static)
-                 -1.0f,                   // lifetime (infinite)
-                 1.0f                     // radius
+                 1000.0f, // mass (heavy = nearly static)
+                 -1.0f, // lifetime (infinite)
+                 1.0f // radius
     );
 
     // Particle 1: on top, will settle onto particle 0
     system.spawn(Vec3f(0.0f, 1.8f, 0.0f), // position (just touching radius-to-radius)
                  Vec3f(0.0f, 0.0f, 0.0f), // velocity
-                 1.0f,                    // mass
-                 -1.0f,                   // lifetime (infinite)
-                 1.0f                     // radius
+                 1.0f, // mass
+                 -1.0f, // lifetime (infinite)
+                 1.0f // radius
     );
 
     // Add gravity
@@ -112,8 +112,8 @@ TEST_CASE("ContactCache - Multiple simultaneous contacts", "[collision][contact_
 
     // Create a 3-particle stack with very heavy bottom particle for stability
     system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 10000.0f, -1.0f, 1.0f); // Bottom (very heavy)
-    system.spawn(Vec3f(0.0f, 1.9f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 100.0f, -1.0f, 1.0f);   // Middle
-    system.spawn(Vec3f(0.0f, 3.8f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, -1.0f, 1.0f);     // Top (light)
+    system.spawn(Vec3f(0.0f, 1.9f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 100.0f, -1.0f, 1.0f); // Middle
+    system.spawn(Vec3f(0.0f, 3.8f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, -1.0f, 1.0f); // Top (light)
 
     system.add_force_field(std::make_unique<phynity::physics::GravityField>(Vec3f(0.0f, -9.8f, 0.0f)));
 
@@ -153,12 +153,12 @@ TEST_CASE("ContactCache - Contact appears and disappears", "[collision][contact_
 
     // Create two particles that will collide and separate
     system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), // Left particle
-                 Vec3f(2.0f, 0.0f, 0.0f),  // Moving right
+                 Vec3f(2.0f, 0.0f, 0.0f), // Moving right
                  1.0f,
                  -1.0f,
                  1.0f);
 
-    system.spawn(Vec3f(5.0f, 0.0f, 0.0f),  // Right particle
+    system.spawn(Vec3f(5.0f, 0.0f, 0.0f), // Right particle
                  Vec3f(-2.0f, 0.0f, 0.0f), // Moving left
                  1.0f,
                  -1.0f,

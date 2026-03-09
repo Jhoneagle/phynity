@@ -713,8 +713,8 @@ TEST_CASE("Round-trip: Euler -> Quatf -> Euler (gimbal lock with non-zero roll+y
     // The Euler representation is ambiguous - roll and yaw combine into a single degree of freedom.
     // We cannot expect to recover the exact same Euler angles, but the ROTATION must be preserved.
     Vec3f original(30.0f * mathf::deg_to_rad, // roll = 30°
-                   mathf::pi / 2.0f,          // pitch = 90° (gimbal lock)
-                   45.0f * mathf::deg_to_rad  // yaw = 45°
+                   mathf::pi / 2.0f, // pitch = 90° (gimbal lock)
+                   45.0f * mathf::deg_to_rad // yaw = 45°
     );
 
     Quatf q = toQuaternion(original);

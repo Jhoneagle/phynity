@@ -35,7 +35,7 @@ TEST_CASE("Profiler: Basic zone recording", "[diagnostics][profiler]")
     REQUIRE(zones.size() == 1);
     REQUIRE(zones[0].name == "test_zone");
     REQUIRE(zones[0].duration_us >= 4000); // At least 4ms
-    REQUIRE(zones[0].depth == 0);          // Root level
+    REQUIRE(zones[0].depth == 0); // Root level
 
     Profiler::enable(false);
 }
@@ -64,12 +64,12 @@ TEST_CASE("Profiler: Nested zones", "[diagnostics][profiler]")
     REQUIRE(zones[0].name == "outer");
     REQUIRE(zones[0].depth == 0);
     REQUIRE(zones[0].parent_index == static_cast<uint32_t>(-1)); // No parent
-    REQUIRE(zones[0].duration_us >= 6000);                       // At least 6ms total
+    REQUIRE(zones[0].duration_us >= 6000); // At least 6ms total
 
     // Inner zone
     REQUIRE(zones[1].name == "inner");
-    REQUIRE(zones[1].depth == 1);          // Nested inside outer
-    REQUIRE(zones[1].parent_index == 0);   // Parent is zones[0]
+    REQUIRE(zones[1].depth == 1); // Nested inside outer
+    REQUIRE(zones[1].parent_index == 0); // Parent is zones[0]
     REQUIRE(zones[1].duration_us >= 2000); // At least 2ms
 
     // Inner duration should be less than outer

@@ -18,19 +18,19 @@ public:
     // State Variables
     // ========================================================================
 
-    Vec3f position = Vec3f(0.0f);          ///< Current position in world space
-    Vec3f velocity = Vec3f(0.0f);          ///< Current velocity
-    Vec3f acceleration = Vec3f(0.0f);      ///< Current acceleration (computed each frame)
+    Vec3f position = Vec3f(0.0f); ///< Current position in world space
+    Vec3f velocity = Vec3f(0.0f); ///< Current velocity
+    Vec3f acceleration = Vec3f(0.0f); ///< Current acceleration (computed each frame)
     Vec3f force_accumulator = Vec3f(0.0f); ///< Accumulated forces this frame
-    float radius = 0.5f;                   ///< Collision radius for sphere collisions
+    float radius = 0.5f; ///< Collision radius for sphere collisions
 
     // ========================================================================
     // Material and Lifecycle
     // ========================================================================
 
-    Material material{};    ///< Material properties (mass, restitution, etc.)
+    Material material{}; ///< Material properties (mass, restitution, etc.)
     float lifetime = -1.0f; ///< Remaining lifetime (< 0 = infinite, 0 = dead, > 0 = finite)
-    bool active = true;     ///< Active flag for pooling/recycling
+    bool active = true; ///< Active flag for pooling/recycling
 
     // ========================================================================
     // Constructors

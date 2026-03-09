@@ -157,8 +157,8 @@ TEST_CASE("FrameProfiler: Min/max frame time", "[diagnostics][frame_profiler]")
     const auto max_time = profiler.get_max_frame_time(3);
 
     REQUIRE(min_time < max_time); // Min should be less than max
-    REQUIRE(min_time >= 1000);    // At least 1ms (should be ~2ms)
-    REQUIRE(max_time >= 12000);   // At least 12ms (should be ~15ms)
+    REQUIRE(min_time >= 1000); // At least 1ms (should be ~2ms)
+    REQUIRE(max_time >= 12000); // At least 12ms (should be ~15ms)
 
     PROFILER_ENABLE(false);
 }

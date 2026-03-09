@@ -57,12 +57,12 @@ constexpr float REFERENCE_ABS = 1e-3f;
 /// @return Material with specified mass and restitution, no damping
 inline Material make_no_damping_material(float mass, float restitution = 0.8f)
 {
-    return Material(mass,        // mass
+    return Material(mass, // mass
                     restitution, // restitution
-                    0.3f,        // friction
-                    0.0f,        // linear_damping (disabled)
-                    0.0f,        // angular_damping (disabled)
-                    0.0f         // drag_coefficient (disabled)
+                    0.3f, // friction
+                    0.0f, // linear_damping (disabled)
+                    0.0f, // angular_damping (disabled)
+                    0.0f // drag_coefficient (disabled)
     );
 }
 
@@ -76,7 +76,7 @@ inline Material make_low_restitution_material(float mass)
                     0.3f, // friction
                     0.0f, // linear_damping (disabled)
                     0.0f, // angular_damping (disabled)
-                    0.0f  // drag_coefficient (disabled)
+                    0.0f // drag_coefficient (disabled)
     );
 }
 

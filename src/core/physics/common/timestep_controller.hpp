@@ -204,11 +204,11 @@ public:
     }
 
 private:
-    float target_timestep_;      ///< Physics timestep per step
-    float max_timestep_;         ///< Maximum timestep before clamping/subdivision
+    float target_timestep_; ///< Physics timestep per step
+    float max_timestep_; ///< Maximum timestep before clamping/subdivision
     OverflowMode overflow_mode_; ///< How to handle accumulated time overflow
-    float accumulated_time_;     ///< Current accumulated time
-    Statistics stats_;           ///< Diagnostics and metrics
+    float accumulated_time_; ///< Current accumulated time
+    Statistics stats_; ///< Diagnostics and metrics
 };
 
 } // namespace phynity::physics

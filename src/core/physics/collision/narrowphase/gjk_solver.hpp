@@ -15,12 +15,12 @@ using phynity::math::vectors::Vec3f;
 /// Result of GJK algorithm: distance and closest points on both shapes
 struct GJKResult
 {
-    bool collision = false;                         ///< true if shapes are overlapping (distance <= 0)
-    float distance = 0.0f;                          ///< Minimum distance between shapes (negative if penetrating)
-    Vec3f closest_point_a = Vec3f(0.0f);            ///< Closest point on shape A
-    Vec3f closest_point_b = Vec3f(0.0f);            ///< Closest point on shape B
+    bool collision = false; ///< true if shapes are overlapping (distance <= 0)
+    float distance = 0.0f; ///< Minimum distance between shapes (negative if penetrating)
+    Vec3f closest_point_a = Vec3f(0.0f); ///< Closest point on shape A
+    Vec3f closest_point_b = Vec3f(0.0f); ///< Closest point on shape B
     Vec3f closest_normal = Vec3f(0.0f, 1.0f, 0.0f); ///< Normal from A to B (direction of separation)
-    int iterations = 0;                             ///< Number of iterations performed
+    int iterations = 0; ///< Number of iterations performed
 };
 
 /// Simplex: manages a set of points in the GJK algorithm
@@ -34,7 +34,7 @@ private:
 
     struct Vertex
     {
-        Vec3f point;     ///< Point in Minkowski difference space
+        Vec3f point; ///< Point in Minkowski difference space
         Vec3f support_a; ///< Original support point on shape A
         Vec3f support_b; ///< Original support point on shape B
     };
@@ -361,8 +361,8 @@ class GJKSolver
 public:
     // Configuration
     static constexpr float DISTANCE_EPSILON = 1e-6f; ///< Convergence threshold for distance
-    static constexpr float SUPPORT_EPSILON = 1e-6f;  ///< Threshold for detecting no progress
-    static constexpr int MAX_ITERATIONS = 64;        ///< Maximum iteration count
+    static constexpr float SUPPORT_EPSILON = 1e-6f; ///< Threshold for detecting no progress
+    static constexpr int MAX_ITERATIONS = 64; ///< Maximum iteration count
 
     /// Solve for minimum distance between two shapes (in 3D)
     /// @param shape_a Support function for shape A

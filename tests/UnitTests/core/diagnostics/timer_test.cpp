@@ -83,7 +83,7 @@ TEST_CASE("Timer: Elapsed time while running", "[diagnostics][timer]")
     // Continue running and check again
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     const auto elapsed2 = timer.elapsed_microseconds();
-    REQUIRE(elapsed2 >= 60000);   // At least 60ms total
+    REQUIRE(elapsed2 >= 60000); // At least 60ms total
     REQUIRE(elapsed2 > elapsed1); // Time should have increased
 }
 
@@ -101,7 +101,7 @@ TEST_CASE("Timer: Lap timing", "[diagnostics][timer]")
     std::this_thread::sleep_for(std::chrono::milliseconds(25));
     const auto lap2 = timer.lap();
     REQUIRE(lap2 >= 30000); // At least 30ms total
-    REQUIRE(lap2 > lap1);   // Second lap should be later
+    REQUIRE(lap2 > lap1); // Second lap should be later
 
     // Timer should still be running
     REQUIRE(timer.is_running());
@@ -138,7 +138,7 @@ TEST_CASE("Timer: Time unit conversions", "[diagnostics][timer]")
     REQUIRE_THAT(s, Catch::Matchers::WithinRel(static_cast<double>(us) / 1000000.0, 0.01));
 
     // Should be approximately 100ms
-    REQUIRE(ms >= 90.0);  // At least 90ms
+    REQUIRE(ms >= 90.0); // At least 90ms
     REQUIRE(ms <= 200.0); // At most 200ms (generous upper bound)
 }
 

@@ -57,7 +57,7 @@ TEST_CASE("Integrators: Constant acceleration (free fall)", "[calculus][integrat
     // Exact: x(t) = h - (g/2)t², v(t) = -gt
 
     float g = EARTH_GRAVITY; // gravity
-    float h = 100.0f;        // initial height
+    float h = 100.0f; // initial height
 
     auto gravity = [g]([[maybe_unused]] const VecN<1, float> &pos,
                        [[maybe_unused]] const VecN<1, float> &vel,
@@ -77,7 +77,7 @@ TEST_CASE("Integrators: Constant acceleration (free fall)", "[calculus][integrat
 
         // Exact values at t=1
         float expected_pos = h - 0.5f * g * 1.0f * 1.0f; // 100 - 4.905 = 95.095
-        float expected_vel = -g * 1.0f;                  // -9.81
+        float expected_vel = -g * 1.0f; // -9.81
 
         REQUIRE_THAT(state.position[0], WithinAbs(expected_pos, 0.1f));
         REQUIRE_THAT(state.velocity[0], WithinAbs(expected_vel, 0.1f));

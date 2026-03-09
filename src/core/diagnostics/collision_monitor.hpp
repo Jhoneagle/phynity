@@ -14,12 +14,12 @@ namespace phynity::diagnostics
  */
 struct CollisionStats
 {
-    uint64_t frame_number;          ///< Frame when stats were collected
+    uint64_t frame_number; ///< Frame when stats were collected
     uint32_t broadphase_candidates; ///< Potential collision pairs from broadphase
-    uint32_t narrowphase_tests;     ///< Actual collision tests performed
-    uint32_t actual_collisions;     ///< Confirmed collisions detected
-    double efficiency;              ///< actual_collisions / broadphase_candidates (0-1)
-    double false_positive_rate;     ///< (candidates - collisions) / candidates (0-1)
+    uint32_t narrowphase_tests; ///< Actual collision tests performed
+    uint32_t actual_collisions; ///< Confirmed collisions detected
+    double efficiency; ///< actual_collisions / broadphase_candidates (0-1)
+    double false_positive_rate; ///< (candidates - collisions) / candidates (0-1)
 };
 
 /**
@@ -33,7 +33,7 @@ struct CollisionEfficiencyViolation
     uint64_t frame_number;
     uint32_t broadphase_candidates;
     uint32_t actual_collisions;
-    double efficiency;     ///< Actual efficiency
+    double efficiency; ///< Actual efficiency
     double min_efficiency; ///< Expected minimum
     double false_positive_rate;
 };

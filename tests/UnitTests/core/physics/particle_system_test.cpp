@@ -96,8 +96,8 @@ TEST_CASE("ParticleSystem - Remove dead particles", "[particle_system]")
     ParticleSystem ps;
 
     ps.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, -1.0f); // Infinite
-    ps.spawn(Vec3f(1.0f, 1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 1.0f);  // 1 second
-    ps.spawn(Vec3f(2.0f, 2.0f, 2.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 0.5f);  // 0.5 second
+    ps.spawn(Vec3f(1.0f, 1.0f, 1.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 1.0f); // 1 second
+    ps.spawn(Vec3f(2.0f, 2.0f, 2.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, 0.5f); // 0.5 second
 
     REQUIRE(ps.particleCount() == 3);
 

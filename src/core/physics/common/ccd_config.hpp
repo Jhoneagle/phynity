@@ -97,15 +97,15 @@ namespace ccd_presets
 /// Fastest (lowest CPU cost), but higher tunneling risk
 inline constexpr CCDConfig conservative()
 {
-    return CCDConfig(true,  // enabled
-                     5.0f,  // velocity_threshold (only above 5 m/s)
-                     0.8f,  // distance_threshold
-                     1,     // max_substeps (minimal)
+    return CCDConfig(true, // enabled
+                     5.0f, // velocity_threshold (only above 5 m/s)
+                     0.8f, // distance_threshold
+                     1, // max_substeps (minimal)
                      1e-4f, // min_toi_separation
-                     0.0f,  // speculative_distance (disabled)
+                     0.0f, // speculative_distance (disabled)
                      false, // use_speculative_contacts
                      false, // enable_rotational_ccd
-                     false  // use_thick_raycast
+                     false // use_thick_raycast
     );
 }
 
@@ -113,15 +113,15 @@ inline constexpr CCDConfig conservative()
 /// Recommended for general use
 inline constexpr CCDConfig balanced()
 {
-    return CCDConfig(true,  // enabled
-                     2.0f,  // velocity_threshold
-                     0.5f,  // distance_threshold
-                     3,     // max_substeps
+    return CCDConfig(true, // enabled
+                     2.0f, // velocity_threshold
+                     0.5f, // distance_threshold
+                     3, // max_substeps
                      1e-5f, // min_toi_separation
                      0.05f, // speculative_distance
                      false, // use_speculative_contacts
                      false, // enable_rotational_ccd
-                     true   // use_thick_raycast
+                     true // use_thick_raycast
     );
 }
 
@@ -129,15 +129,15 @@ inline constexpr CCDConfig balanced()
 /// Higher CPU cost but better collision detection
 inline constexpr CCDConfig aggressive()
 {
-    return CCDConfig(true,  // enabled
-                     1.0f,  // velocity_threshold (even 1 m/s uses CCD)
-                     0.2f,  // distance_threshold
-                     5,     // max_substeps (more iterations)
+    return CCDConfig(true, // enabled
+                     1.0f, // velocity_threshold (even 1 m/s uses CCD)
+                     0.2f, // distance_threshold
+                     5, // max_substeps (more iterations)
                      1e-6f, // min_toi_separation (stricter)
-                     0.1f,  // speculative_distance
-                     true,  // use_speculative_contacts
-                     true,  // enable_rotational_ccd
-                     true   // use_thick_raycast
+                     0.1f, // speculative_distance
+                     true, // use_speculative_contacts
+                     true, // enable_rotational_ccd
+                     true // use_thick_raycast
     );
 }
 
@@ -145,15 +145,15 @@ inline constexpr CCDConfig aggressive()
 /// Uses thick raycast and aggressive detection
 inline constexpr CCDConfig projectile()
 {
-    return CCDConfig(true,  // enabled
+    return CCDConfig(true, // enabled
                      10.0f, // velocity_threshold (trigger at high speed)
-                     0.1f,  // distance_threshold (any noticeable movement)
-                     4,     // max_substeps
+                     0.1f, // distance_threshold (any noticeable movement)
+                     4, // max_substeps
                      1e-5f, // min_toi_separation
                      0.05f, // speculative_distance
                      false, // use_speculative_contacts
                      false, // enable_rotational_ccd
-                     true   // use_thick_raycast (critical for bullets)
+                     true // use_thick_raycast (critical for bullets)
     );
 }
 

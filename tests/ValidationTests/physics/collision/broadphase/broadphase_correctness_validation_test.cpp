@@ -106,7 +106,7 @@ TEST_CASE("Broadphase correctness: Simple sphere-sphere collision", "[validation
         // Spawn identical particles
         const Vec3f pos_a(-1.0f, 0.0f, 0.0f);
         const Vec3f pos_b(1.0f, 0.0f, 0.0f);
-        const Vec3f vel_a(1.0f, 0.0f, 0.0f);  // Moving right
+        const Vec3f vel_a(1.0f, 0.0f, 0.0f); // Moving right
         const Vec3f vel_b(-1.0f, 0.0f, 0.0f); // Moving left
         const float radius = 0.5f;
         const float mass = 1.0f;
@@ -310,9 +310,9 @@ TEST_CASE("Broadphase correctness: Particle at cell boundary", "[validation][bro
 
         // Position particles at/near cell boundary (x=2.0)
         // Particle A in cell x=0, Particle B in cell x=1
-        const Vec3f pos_a(1.9f, 0.0f, 0.0f);  // Near boundary
-        const Vec3f pos_b(2.1f, 0.0f, 0.0f);  // Just past boundary
-        const Vec3f vel_a(0.1f, 0.0f, 0.0f);  // Moving right
+        const Vec3f pos_a(1.9f, 0.0f, 0.0f); // Near boundary
+        const Vec3f pos_b(2.1f, 0.0f, 0.0f); // Just past boundary
+        const Vec3f vel_a(0.1f, 0.0f, 0.0f); // Moving right
         const Vec3f vel_b(-0.1f, 0.0f, 0.0f); // Moving left
 
         broadphase_system.spawn(pos_a, vel_a, 1.0f, -1.0f, 0.5f);

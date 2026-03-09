@@ -26,7 +26,7 @@ public:
     FixedConstraintRB(physics::RigidBody *body_a,
                       physics::RigidBody *body_b,
                       const Vec3f &anchor_a_local, ///< Anchor in body A's local frame
-                      const Vec3f &anchor_b_local  ///< Anchor in body B's local frame (or world if b is null)
+                      const Vec3f &anchor_b_local ///< Anchor in body B's local frame (or world if b is null)
                       )
         : body_a_(body_a),
           body_b_(body_b),
@@ -100,11 +100,11 @@ public:
         // [-r_a ×] = [  0  -rz   ry ]
         //            [ rz   0  -rx ]
         //            [-ry  rx   0  ]
-        J(0, 5) = r_a.z;  // ∂(x)/∂ω_a.y = rz
+        J(0, 5) = r_a.z; // ∂(x)/∂ω_a.y = rz
         J(0, 4) = -r_a.y; // ∂(x)/∂ω_a.z = -ry
         J(1, 3) = -r_a.z; // ∂(y)/∂ω_a.x = -rz
-        J(1, 5) = r_a.x;  // ∂(y)/∂ω_a.z = rx
-        J(2, 3) = r_a.y;  // ∂(z)/∂ω_a.x = ry
+        J(1, 5) = r_a.x; // ∂(y)/∂ω_a.z = rx
+        J(2, 3) = r_a.y; // ∂(z)/∂ω_a.x = ry
         J(2, 4) = -r_a.x; // ∂(z)/∂ω_a.y = -rx
 
         if (body_b_)
@@ -196,9 +196,9 @@ public:
 private:
     physics::RigidBody *body_a_; ///< First body (constrained, not null)
     physics::RigidBody *body_b_; ///< Second body (can be null for fixed-to-world)
-    Vec3f anchor_a_local_;       ///< Anchor point in body A's local frame
-    Vec3f anchor_b_local_;       ///< Anchor point in body B's local frame
-    Quatf initial_relative_q_;   ///< Initial relative orientation
+    Vec3f anchor_a_local_; ///< Anchor point in body A's local frame
+    Vec3f anchor_b_local_; ///< Anchor point in body B's local frame
+    Quatf initial_relative_q_; ///< Initial relative orientation
     float accumulated_impulse_;
 };
 
@@ -213,7 +213,7 @@ public:
                       physics::RigidBody *body_b,
                       const Vec3f &pivot_a_local, ///< Pivot point in body A's local frame
                       const Vec3f &pivot_b_local, ///< Pivot point in body B's local frame
-                      const Vec3f &axis_local     ///< Hinge axis in local frame (will be normalized)
+                      const Vec3f &axis_local ///< Hinge axis in local frame (will be normalized)
                       )
         : body_a_(body_a),
           body_b_(body_b),

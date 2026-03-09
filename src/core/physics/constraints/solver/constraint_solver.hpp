@@ -19,10 +19,10 @@ using phynity::physics::collision::ContactManifold;
 /// Solver configuration for constraint solving
 struct ConstraintSolverConfig
 {
-    int iterations = 4;                     ///< Number of solver iterations (higher = more stable but slower)
-    float convergence_threshold = 1e-5f;    ///< Convergence criterion (stop if impulse change < threshold)
-    float baumgarte_beta = 0.2f;            ///< Baumgarte penetration correction parameter (0.0-0.5)
-    bool use_warm_start = true;             ///< Whether to use warm-start from previous impulses
+    int iterations = 4; ///< Number of solver iterations (higher = more stable but slower)
+    float convergence_threshold = 1e-5f; ///< Convergence criterion (stop if impulse change < threshold)
+    float baumgarte_beta = 0.2f; ///< Baumgarte penetration correction parameter (0.0-0.5)
+    bool use_warm_start = true; ///< Whether to use warm-start from previous impulses
     bool enable_adaptive_iterations = true; ///< Increase iterations for large contact sets
 };
 
@@ -163,7 +163,7 @@ public:
                     float e = constraint->get_restitution();
                     float v_approach = constraint->get_initial_approach_velocity();
                     if (v_approach < -1e-3f)
-                    {                                      // Significant approach velocity
+                    { // Significant approach velocity
                         restitution_term = e * v_approach; // Note: v_approach is negative
                     }
                 }

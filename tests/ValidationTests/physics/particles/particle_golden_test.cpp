@@ -56,10 +56,10 @@ TEST_CASE("Particle trajectory under gravity - golden")
     ParticleSystem system;
 
     // Spawn particle with initial upward velocity
-    system.spawn({0.0f, 0.0f, 0.0f},  // position at origin
+    system.spawn({0.0f, 0.0f, 0.0f}, // position at origin
                  {0.0f, 10.0f, 0.0f}, // initial velocity: 10 m/s upward
-                 1.0f,                // mass: 1 kg
-                 -1.0f                // lifetime: infinite
+                 1.0f, // mass: 1 kg
+                 -1.0f // lifetime: infinite
     );
 
     // Add gravity field (downward, Earth-like)
@@ -136,8 +136,8 @@ TEST_CASE("Particle trajectory determinism - golden")
     {
         ParticleSystem sys;
 
-        sys.spawn({0.0f, 5.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, 1.0f);   // particle 1
-        sys.spawn({2.0f, 3.0f, 0.0f}, {-0.5f, 2.0f, 0.0f}, 1.5f);  // particle 2
+        sys.spawn({0.0f, 5.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, 1.0f); // particle 1
+        sys.spawn({2.0f, 3.0f, 0.0f}, {-0.5f, 2.0f, 0.0f}, 1.5f); // particle 2
         sys.spawn({-1.0f, 2.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, 0.8f); // particle 3
 
         sys.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));

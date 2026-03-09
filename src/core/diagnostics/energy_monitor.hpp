@@ -14,11 +14,11 @@ namespace phynity::diagnostics
  */
 struct EnergyViolation
 {
-    uint64_t frame_number;           ///< Frame where violation occurred
-    double previous_energy;          ///< Energy in previous frame
-    double current_energy;           ///< Energy in current frame
-    double energy_loss;              ///< Absolute energy lost
-    double loss_percentage;          ///< Loss as percentage of initial energy
+    uint64_t frame_number; ///< Frame where violation occurred
+    double previous_energy; ///< Energy in previous frame
+    double current_energy; ///< Energy in current frame
+    double energy_loss; ///< Absolute energy lost
+    double loss_percentage; ///< Loss as percentage of initial energy
     std::string_view violation_type; ///< "loss", "gain", or "spike"
 
     /**

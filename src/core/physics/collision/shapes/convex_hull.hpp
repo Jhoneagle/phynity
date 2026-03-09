@@ -20,11 +20,11 @@ using phynity::math::vectors::Vec3f;
 class ConvexHull2D : public Shape2D
 {
 public:
-    std::vector<Vec2f> vertices;  ///< Vertices in CCW order
-    std::vector<Vec2f> normals;   ///< Edge normals (outward facing) in same order as vertices
+    std::vector<Vec2f> vertices; ///< Vertices in CCW order
+    std::vector<Vec2f> normals; ///< Edge normals (outward facing) in same order as vertices
     Vec2f position = Vec2f(0.0f); ///< Center/reference position
     float bounding_radius = 0.0f; ///< Bounding circle radius for quick rejection
-    AABB bound;                   ///< Bounding box in 3D (z=0)
+    AABB bound; ///< Bounding box in 3D (z=0)
 
     ConvexHull2D() = default;
 
@@ -203,12 +203,12 @@ private:
 class ConvexHull3D : public Shape3D
 {
 public:
-    std::vector<Vec3f> vertices;     ///< Vertices of the hull
+    std::vector<Vec3f> vertices; ///< Vertices of the hull
     std::vector<Vec3f> face_normals; ///< Face normals (outward facing)
     std::vector<Vec3f> edge_normals; ///< Edge normals for edge-edge testing in SAT
-    Vec3f position = Vec3f(0.0f);    ///< Center/reference position
-    float bounding_radius = 0.0f;    ///< Bounding sphere radius
-    AABB bound;                      ///< Axis-aligned bounding box
+    Vec3f position = Vec3f(0.0f); ///< Center/reference position
+    float bounding_radius = 0.0f; ///< Bounding sphere radius
+    AABB bound; ///< Axis-aligned bounding box
 
     ConvexHull3D() = default;
 

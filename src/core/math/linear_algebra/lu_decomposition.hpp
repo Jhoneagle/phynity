@@ -32,10 +32,10 @@ template <std::size_t N, typename T = float> struct LUDecomposition
     static_assert(std::is_floating_point_v<T>, "LUDecomposition requires floating-point type");
     static_assert(N > 0, "LUDecomposition matrix size must be > 0");
 
-    MatN<N, N, T> lu;                 // Combined LU matrix (L below diagonal, U on and above)
+    MatN<N, N, T> lu; // Combined LU matrix (L below diagonal, U on and above)
     std::array<int, N> pivot_indices; // Permutation vector from partial pivoting
-    int pivot_count;                  // Number of row swaps (sign indicator)
-    bool is_singular;                 // True if matrix is (nearly) singular
+    int pivot_count; // Number of row swaps (sign indicator)
+    bool is_singular; // True if matrix is (nearly) singular
 
     /// Default constructor - all zeros, no decomposition
     LUDecomposition() : lu(T(0)), pivot_count(0), is_singular(false)

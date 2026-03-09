@@ -178,7 +178,7 @@ TEST_CASE("SpatialGridHash::hash_position", "[physics][collision]")
     SECTION("Custom cell size affects hashing")
     {
         const SpatialGridHash hasher2(2.0f);
-        const auto hash1 = hasher.hash_position(Vec3f{1.5f, 1.5f, 1.5f});  // Cell size 1.0 -> (1,1,1)
+        const auto hash1 = hasher.hash_position(Vec3f{1.5f, 1.5f, 1.5f}); // Cell size 1.0 -> (1,1,1)
         const auto hash2 = hasher2.hash_position(Vec3f{1.5f, 1.5f, 1.5f}); // Cell size 2.0 -> (0,0,0)
         REQUIRE(hash1 != hash2);
     }
@@ -223,13 +223,13 @@ TEST_CASE("SpatialGridHash::Grid cell indexing in 1D grid", "[physics][collision
     SECTION("Grid expansion: each cell in octants are unique")
     {
         // Test cells in all octants
-        const auto hash_ppp = SpatialGridHash::hash_coords(1, 1, 1);    // +,+,+
-        const auto hash_npp = SpatialGridHash::hash_coords(-1, 1, 1);   // -,+,+
-        const auto hash_pnp = SpatialGridHash::hash_coords(1, -1, 1);   // +,-,+
-        const auto hash_ppn = SpatialGridHash::hash_coords(1, 1, -1);   // +,+,-
-        const auto hash_nnp = SpatialGridHash::hash_coords(-1, -1, 1);  // -,-,+
-        const auto hash_npn = SpatialGridHash::hash_coords(-1, 1, -1);  // -,+,-
-        const auto hash_pnn = SpatialGridHash::hash_coords(1, -1, -1);  // +,-,-
+        const auto hash_ppp = SpatialGridHash::hash_coords(1, 1, 1); // +,+,+
+        const auto hash_npp = SpatialGridHash::hash_coords(-1, 1, 1); // -,+,+
+        const auto hash_pnp = SpatialGridHash::hash_coords(1, -1, 1); // +,-,+
+        const auto hash_ppn = SpatialGridHash::hash_coords(1, 1, -1); // +,+,-
+        const auto hash_nnp = SpatialGridHash::hash_coords(-1, -1, 1); // -,-,+
+        const auto hash_npn = SpatialGridHash::hash_coords(-1, 1, -1); // -,+,-
+        const auto hash_pnn = SpatialGridHash::hash_coords(1, -1, -1); // +,-,-
         const auto hash_nnn = SpatialGridHash::hash_coords(-1, -1, -1); // -,-,-
 
         std::unordered_set<uint64_t> hashes{

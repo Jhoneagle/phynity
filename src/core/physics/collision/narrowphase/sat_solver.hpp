@@ -20,17 +20,17 @@ using phynity::math::vectors::Vec3f;
 struct SATAxisTest
 {
     float penetration_depth = 0.0f; ///< Minimum penetration depth along the axis
-    Vec3f axis = Vec3f(0.0f);       ///< The separating axis direction (normalized)
-    bool is_separated = false;      ///< true if objects are separated on this axis
+    Vec3f axis = Vec3f(0.0f); ///< The separating axis direction (normalized)
+    bool is_separated = false; ///< true if objects are separated on this axis
 };
 
 /// Result of SAT-based collision detection
 struct SATCollisionResult
 {
-    bool is_colliding = false;            ///< true if objects are overlapping
-    float penetration_depth = 0.0f;       ///< Depth of penetration
+    bool is_colliding = false; ///< true if objects are overlapping
+    float penetration_depth = 0.0f; ///< Depth of penetration
     Vec3f collision_normal = Vec3f(0.0f); ///< Normal vector (from A to B)
-    Vec3f contact_point = Vec3f(0.0f);    ///< Approximate contact point
+    Vec3f contact_point = Vec3f(0.0f); ///< Approximate contact point
 };
 
 /// Separating Axis Theorem (SAT) collision detector for convex shapes

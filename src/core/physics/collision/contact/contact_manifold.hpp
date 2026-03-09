@@ -13,9 +13,9 @@ using phynity::math::vectors::Vec3f;
 /// Represents a single contact point between two objects
 struct ContactPoint
 {
-    Vec3f position = Vec3f(0.0f);                ///< Contact point position in world space
-    Vec3f normal = Vec3f(0.0f, 1.0f, 0.0f);      ///< Contact normal (from A to B)
-    float penetration = 0.0f;                    ///< Penetration depth (positive = penetrating)
+    Vec3f position = Vec3f(0.0f); ///< Contact point position in world space
+    Vec3f normal = Vec3f(0.0f, 1.0f, 0.0f); ///< Contact normal (from A to B)
+    float penetration = 0.0f; ///< Penetration depth (positive = penetrating)
     float relative_velocity_along_normal = 0.0f; ///< Relative velocity along contact normal
 };
 
@@ -29,13 +29,13 @@ struct ContactManifold
     ContactPoint contact; ///< Contact point information
 
     // Contact caching fields (Phase 3)
-    uint64_t contact_id = 0;              ///< Unique identifier for this contact (for matching across frames)
-    int age = 0;                          ///< Number of frames this contact has been active
+    uint64_t contact_id = 0; ///< Unique identifier for this contact (for matching across frames)
+    int age = 0; ///< Number of frames this contact has been active
     Vec3f previous_impulse = Vec3f(0.0f); ///< Cached impulse from previous frame (for warm-start)
 
     // Continuous collision detection (CCD) field
     float toi = 1.0f; ///< Time of impact [0, 1] where 1 = end of timestep (for CCD)
-                      ///< Only meaningful for manifolds created by CCD detection
+        ///< Only meaningful for manifolds created by CCD detection
 
     bool is_valid() const
     {

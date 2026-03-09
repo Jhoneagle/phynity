@@ -16,10 +16,10 @@ using phynity::math::vectors::Vec3f;
 /// Result of EPA algorithm: contact information for penetrating shapes
 struct EPAResult
 {
-    Vec3f contact_point = Vec3f(0.0f);              ///< Contact point position
+    Vec3f contact_point = Vec3f(0.0f); ///< Contact point position
     Vec3f contact_normal = Vec3f(0.0f, 1.0f, 0.0f); ///< Contact normal (A to B direction)
-    float penetration_depth = 0.0f;                 ///< Penetration depth (positive = penetrating)
-    int iterations = 0;                             ///< Number of iterations performed
+    float penetration_depth = 0.0f; ///< Penetration depth (positive = penetrating)
+    int iterations = 0; ///< Number of iterations performed
 };
 
 /// EPA (Expanding Polytope Algorithm): computes contact normal and penetration depth

@@ -216,7 +216,7 @@ TEST_CASE("Geometry: Sphere-sphere intersection", "[utilities][geometry]")
     Spheref s2(1.5f, 0.0f, 0.0f, 1.0f);
     Spheref s3(3.0f, 0.0f, 0.0f, 1.0f);
 
-    REQUIRE(sphere_sphere_intersection(s1, s2));       // Intersect
+    REQUIRE(sphere_sphere_intersection(s1, s2)); // Intersect
     REQUIRE_FALSE(sphere_sphere_intersection(s1, s3)); // Too far
 }
 

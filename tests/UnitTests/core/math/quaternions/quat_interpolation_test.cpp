@@ -58,8 +58,8 @@ TEST_CASE("NLERP: t=1 returns second quaternion", "[interpolation][nlerp]")
 
 TEST_CASE("NLERP: t=0.5 produces intermediate rotation", "[interpolation][nlerp]")
 {
-    Vec3f axis(0.0f, 0.0f, 1.0f);                        // Z-axis
-    Quatf q1;                                            // Identity (0°)
+    Vec3f axis(0.0f, 0.0f, 1.0f); // Z-axis
+    Quatf q1; // Identity (0°)
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = nlerp(q1, q2, 0.5f);
@@ -138,7 +138,7 @@ TEST_CASE("NLERP: Chooses shortest path (negative dot product)", "[interpolation
 TEST_CASE("NLERP: Handles opposite quaternions (180° apart)", "[interpolation][nlerp][edge-case]")
 {
     Vec3f axis(1.0f, 0.0f, 0.0f);
-    Quatf q1(axis, 0.0f);                          // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi)); // 180°
 
     Quatf result = nlerp(q1, q2, 0.5f);
@@ -154,7 +154,7 @@ TEST_CASE("NLERP: Handles opposite quaternions (180° apart)", "[interpolation][
 TEST_CASE("NLERP: X-axis rotation interpolation", "[interpolation][nlerp]")
 {
     Vec3f axis(1.0f, 0.0f, 0.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = nlerp(q1, q2, 0.5f);
@@ -174,7 +174,7 @@ TEST_CASE("NLERP: X-axis rotation interpolation", "[interpolation][nlerp]")
 TEST_CASE("NLERP: Y-axis rotation interpolation", "[interpolation][nlerp]")
 {
     Vec3f axis(0.0f, 1.0f, 0.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = nlerp(q1, q2, 0.5f);
@@ -194,7 +194,7 @@ TEST_CASE("NLERP: Y-axis rotation interpolation", "[interpolation][nlerp]")
 TEST_CASE("NLERP: Z-axis rotation interpolation", "[interpolation][nlerp]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = nlerp(q1, q2, 0.5f);
@@ -244,7 +244,7 @@ TEST_CASE("NLERP: Rotation to identity", "[interpolation][nlerp]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
     Quatf q1(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
-    Quatf q2;                                            // Identity
+    Quatf q2; // Identity
 
     Quatf halfway = nlerp(q1, q2, 0.5f);
 
@@ -295,7 +295,7 @@ TEST_CASE("NLERP: t > 1 is clamped to 1", "[interpolation][nlerp][clamping]")
 TEST_CASE("NLERP: Multiple t values produce smooth progression", "[interpolation][nlerp]")
 {
     Vec3f axis(0.0f, 1.0f, 0.0f);
-    Quatf q1;                                      // Identity
+    Quatf q1; // Identity
     Quatf q2(axis, static_cast<float>(mathf::pi)); // 180°
 
     Quatf prev = q1;
@@ -319,7 +319,7 @@ TEST_CASE("NLERP: Multiple t values produce smooth progression", "[interpolation
 TEST_CASE("NLERP: Interpolated quaternion rotates vectors correctly", "[interpolation][nlerp][rotation]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1;                                            // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90° around Z
 
     Quatf halfway = nlerp(q1, q2, 0.5f);
@@ -328,8 +328,8 @@ TEST_CASE("NLERP: Interpolated quaternion rotates vectors correctly", "[interpol
     Vec3f rotated = halfway.rotateVector(testVec);
 
     // Vector should be rotated somewhere between 0° and 90°
-    REQUIRE(rotated.x > 0.0f);                       // Still has X component
-    REQUIRE(rotated.y > 0.0f);                       // Has gained Y component
+    REQUIRE(rotated.x > 0.0f); // Still has X component
+    REQUIRE(rotated.y > 0.0f); // Has gained Y component
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-6f)); // No Z component
 }
 
@@ -382,7 +382,7 @@ TEST_CASE("NLERP: 180° rotation interpolation", "[interpolation][nlerp][large-a
 TEST_CASE("NLERP: Nearly 180° rotation (edge case)", "[interpolation][nlerp][large-angle]")
 {
     Vec3f axis(0.0f, 1.0f, 0.0f);
-    Quatf q1(axis, 0.01f);                                 // Small angle
+    Quatf q1(axis, 0.01f); // Small angle
     Quatf q2(axis, static_cast<float>(mathf::pi - 0.01f)); // Almost 180°
 
     Quatf halfway = nlerp(q1, q2, 0.5f);
@@ -450,7 +450,7 @@ TEST_CASE("angleBetween: Double-cover (q and -q) returns zero angle", "[interpol
 TEST_CASE("angleBetween: 90° rotation difference", "[interpolation][utility][angleBetween]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1;                                            // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     float angle = angleBetween(q1, q2);
@@ -461,7 +461,7 @@ TEST_CASE("angleBetween: 90° rotation difference", "[interpolation][utility][an
 TEST_CASE("angleBetween: 180° rotation difference", "[interpolation][utility][angleBetween]")
 {
     Vec3f axis(1.0f, 0.0f, 0.0f);
-    Quatf q1;                                      // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi)); // 180°
 
     float angle = angleBetween(q1, q2);
@@ -546,8 +546,8 @@ TEST_CASE("SLERP: t=1 returns second quaternion", "[interpolation][slerp]")
 
 TEST_CASE("SLERP: t=0.5 produces intermediate rotation", "[interpolation][slerp]")
 {
-    Vec3f axis(0.0f, 0.0f, 1.0f);                        // Z-axis
-    Quatf q1;                                            // Identity (0°)
+    Vec3f axis(0.0f, 0.0f, 1.0f); // Z-axis
+    Quatf q1; // Identity (0°)
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = slerp(q1, q2, 0.5f);
@@ -629,7 +629,7 @@ TEST_CASE("SLERP: Chooses shortest path (negative dot product)", "[interpolation
 TEST_CASE("SLERP: Falls back to NLERP for very small angles", "[interpolation][slerp][fallback]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1;               // Identity
+    Quatf q1; // Identity
     Quatf q2(axis, 0.001f); // Very small angle (~0.057°)
 
     Quatf slerpResult = slerp(q1, q2, 0.5f);
@@ -642,7 +642,7 @@ TEST_CASE("SLERP: Falls back to NLERP for very small angles", "[interpolation][s
 TEST_CASE("SLERP: Does not fallback for moderate angles", "[interpolation][slerp][fallback]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1;                                            // Identity
+    Quatf q1; // Identity
     Quatf q2(axis, static_cast<float>(mathf::pi / 4.0)); // 45° - well above threshold
 
     Quatf slerpResult = slerp(q1, q2, 0.5f);
@@ -661,7 +661,7 @@ TEST_CASE("SLERP: Does not fallback for moderate angles", "[interpolation][slerp
 TEST_CASE("SLERP: Maintains constant angular velocity", "[interpolation][slerp][angular-velocity]")
 {
     Vec3f axis(0.0f, 1.0f, 0.0f);
-    Quatf q1;                                            // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     // Interpolate at equal t intervals
@@ -684,7 +684,7 @@ TEST_CASE("SLERP: Maintains constant angular velocity", "[interpolation][slerp][
 TEST_CASE("SLERP: t=0.5 gives exactly halfway rotation", "[interpolation][slerp][angular-velocity]")
 {
     Vec3f axis(1.0f, 0.0f, 0.0f);
-    Quatf q1;                                            // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf halfway = slerp(q1, q2, 0.5f);
@@ -704,7 +704,7 @@ TEST_CASE("SLERP: t=0.5 gives exactly halfway rotation", "[interpolation][slerp]
 TEST_CASE("SLERP: X-axis rotation interpolation", "[interpolation][slerp]")
 {
     Vec3f axis(1.0f, 0.0f, 0.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = slerp(q1, q2, 0.5f);
@@ -724,7 +724,7 @@ TEST_CASE("SLERP: X-axis rotation interpolation", "[interpolation][slerp]")
 TEST_CASE("SLERP: Y-axis rotation interpolation", "[interpolation][slerp]")
 {
     Vec3f axis(0.0f, 1.0f, 0.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = slerp(q1, q2, 0.5f);
@@ -735,7 +735,7 @@ TEST_CASE("SLERP: Y-axis rotation interpolation", "[interpolation][slerp]")
 TEST_CASE("SLERP: Z-axis rotation interpolation", "[interpolation][slerp]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1(axis, 0.0f);                                // 0°
+    Quatf q1(axis, 0.0f); // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     Quatf result = slerp(q1, q2, 0.5f);
@@ -840,7 +840,7 @@ TEST_CASE("SLERP: Symmetry - slerp(q1, q2, t) related to slerp(q2, q1, 1-t)", "[
 TEST_CASE("SLERP vs NLERP: SLERP has constant angular velocity", "[interpolation][comparison]")
 {
     Vec3f axis(0.0f, 0.0f, 1.0f);
-    Quatf q1;                                            // 0°
+    Quatf q1; // 0°
     Quatf q2(axis, static_cast<float>(mathf::pi / 2.0)); // 90°
 
     // Measure angular velocity for SLERP

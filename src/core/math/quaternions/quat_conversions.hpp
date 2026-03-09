@@ -188,20 +188,20 @@ template <typename T = float> inline Vec3<T> toEulerAngles(const Quat<T> &q)
 
     if (singularity_test >= T(0.9999))
     {
-        euler.x = T(0);                    // roll = 0 (by convention)
-        euler.y = T(0.5) * math<T>::pi;    // pitch = π/2 (90 degrees)
+        euler.x = T(0); // roll = 0 (by convention)
+        euler.y = T(0.5) * math<T>::pi; // pitch = π/2 (90 degrees)
         euler.z = T(2) * std::atan2(z, w); // yaw captures combined rotation
     }
     else if (singularity_test <= T(-0.9999))
     {
-        euler.x = T(0);                     // roll = 0 (by convention)
-        euler.y = T(-0.5) * math<T>::pi;    // pitch = -π/2 (-90 degrees)
+        euler.x = T(0); // roll = 0 (by convention)
+        euler.y = T(-0.5) * math<T>::pi; // pitch = -π/2 (-90 degrees)
         euler.z = T(-2) * std::atan2(z, w); // yaw captures combined rotation
     }
     else
     {
         euler.x = std::atan2(T(2) * (w * x + y * z), T(1) - T(2) * (x * x + y * y)); // roll
-        euler.y = std::asin(std::clamp(singularity_test, T(-1), T(1)));              // pitch
+        euler.y = std::asin(std::clamp(singularity_test, T(-1), T(1))); // pitch
         euler.z = std::atan2(T(2) * (w * z + x * y), T(1) - T(2) * (y * y + z * z)); // yaw
     }
 
@@ -224,7 +224,7 @@ template <typename T = float> inline Quat<T> toQuaternion(const Vec3<T> &euler)
     return Quat<T>(cy * cp * cr + sy * sp * sr, // w
                    cy * cp * sr - sy * sp * cr, // x
                    cy * sp * cr + sy * cp * sr, // y
-                   sy * cp * cr - cy * sp * sr  // z
+                   sy * cp * cr - cy * sp * sr // z
     );
 }
 

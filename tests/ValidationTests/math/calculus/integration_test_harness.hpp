@@ -22,7 +22,7 @@ namespace phynity::math::calculus
  */
 template <typename T> struct FreeFallProblem
 {
-    T height = T(100);                                         // Initial height (m)
+    T height = T(100); // Initial height (m)
     T gravity = T(phynity::physics::constants::EARTH_GRAVITY); // Gravitational acceleration (m/s²)
 
     /**
@@ -60,10 +60,10 @@ template <typename T> struct FreeFallProblem
  */
 template <typename T> struct HarmonicOscillatorProblem
 {
-    T mass = T(1);            // Mass (kg)
+    T mass = T(1); // Mass (kg)
     T spring_constant = T(1); // Spring stiffness (N/m)
-    T amplitude = T(1);       // Amplitude of oscillation
-    T phase = T(0);           // Phase offset (radians)
+    T amplitude = T(1); // Amplitude of oscillation
+    T phase = T(0); // Phase offset (radians)
 
     T angular_frequency() const
     {
@@ -131,11 +131,11 @@ template <typename T> struct HarmonicOscillatorProblem
  */
 template <typename T> struct PendulumProblem
 {
-    T length = T(1);                                           // Pendulum length (m)
+    T length = T(1); // Pendulum length (m)
     T gravity = T(phynity::physics::constants::EARTH_GRAVITY); // Gravitational acceleration (m/s²)
-    T mass = T(1);                                             // Mass (kg)
-    T amplitude = T(0.1);                                      // Angle amplitude (radians, small angle approximation)
-    T phase = T(0);                                            // Phase offset
+    T mass = T(1); // Mass (kg)
+    T amplitude = T(0.1); // Angle amplitude (radians, small angle approximation)
+    T phase = T(0); // Phase offset
 
     T angular_frequency() const
     {

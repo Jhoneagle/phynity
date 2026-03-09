@@ -26,19 +26,19 @@ public:
     // Linear Motion State
     // ========================================================================
 
-    Vec3f position = Vec3f(0.0f);          ///< World-space position
-    Vec3f velocity = Vec3f(0.0f);          ///< World-space linear velocity
+    Vec3f position = Vec3f(0.0f); ///< World-space position
+    Vec3f velocity = Vec3f(0.0f); ///< World-space linear velocity
     Vec3f force_accumulator = Vec3f(0.0f); ///< Accumulated forces this frame
-    float inv_mass = 1.0f;                 ///< Inverse of mass (1/m) for numerical stability
+    float inv_mass = 1.0f; ///< Inverse of mass (1/m) for numerical stability
 
     // ========================================================================
     // Angular Motion State
     // ========================================================================
 
-    Quatf orientation = Quatf();            ///< World-space rotation as quaternion
-    Vec3f angular_velocity = Vec3f(0.0f);   ///< World-space angular velocity (rad/s)
+    Quatf orientation = Quatf(); ///< World-space rotation as quaternion
+    Vec3f angular_velocity = Vec3f(0.0f); ///< World-space angular velocity (rad/s)
     Vec3f torque_accumulator = Vec3f(0.0f); ///< Accumulated torques this frame
-    Mat3f inertia_tensor = Mat3f(0.0f);     ///< Body-space inertia tensor (I)
+    Mat3f inertia_tensor = Mat3f(0.0f); ///< Body-space inertia tensor (I)
     Mat3f inertia_tensor_inv = Mat3f(0.0f); ///< Precomputed inverse (I^-1)
 
     // ========================================================================
@@ -46,15 +46,15 @@ public:
     // ========================================================================
 
     std::shared_ptr<Shape> shape = nullptr; ///< Collision shape (sphere, box, capsule)
-    float collision_radius = 0.5f;          ///< Broadphase collision radius (for AABB)
+    float collision_radius = 0.5f; ///< Broadphase collision radius (for AABB)
 
     // ========================================================================
     // Material Properties and Lifecycle
     // ========================================================================
 
-    Material material{};    ///< Material properties (restitution, friction, damping)
-    bool active = true;     ///< Active flag for pooling/recycling
-    int id = -1;            ///< Unique identifier for constraint linking
+    Material material{}; ///< Material properties (restitution, friction, damping)
+    bool active = true; ///< Active flag for pooling/recycling
+    int id = -1; ///< Unique identifier for constraint linking
     float lifetime = -1.0f; ///< Remaining lifetime (< 0 = infinite, > 0 = finite)
 
     // ========================================================================

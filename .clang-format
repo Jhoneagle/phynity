@@ -2,6 +2,12 @@
 Language: Cpp
 Standard: c++20
 
+################################################################################
+# This config follows industry standards (Unreal Engine, Godot, LLVM) for
+# cross-platform consistency. Priority is on stable, version-independent
+# formatting rules that won't vary between Windows/Linux CI environments.
+################################################################################
+
 # Indentation
 UseTab: Never
 TabWidth: 4
@@ -23,18 +29,21 @@ SpaceInEmptyBlock: false
 PointerAlignment: Right
 ReferenceAlignment: Right
 
-# Alignment
+# Alignment - kept conservative to avoid version sensitivity
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: Left
 AlignOperands: AlignAfterOperator
-AlignTrailingComments: true
+# DISABLED: AlignTrailingComments causes inconsistencies across clang-format versions
+AlignTrailingComments: false
 
-# Comments
-ReflowComments: true
+# Comments - DISABLED for cross-platform stability
+# ReflowComments has known differences between clang-format versions and OS variants
+# Disabling ensures consistent behavior on CI (Linux) vs local (Windows)
+ReflowComments: false
 
-# Sorting and grouping
+# Sorting and grouping - standard across all versions
 SortIncludes: CaseInsensitive
 SortUsingDeclarations: true
 IncludeBlocks: Regroup

@@ -243,7 +243,7 @@ TEST_CASE("Broadphase performance: Cell size impact", "[validation][benchmark]")
 
         auto coarse = time_broadphase(particle_count, 4.0f, frames); // Large cells
         auto medium = time_broadphase(particle_count, 2.0f, frames); // Medium cells
-        auto fine = time_broadphase(particle_count, 0.5f, frames);   // Small cells
+        auto fine = time_broadphase(particle_count, 0.5f, frames); // Small cells
 
         // All should complete successfully
         REQUIRE(coarse.milliseconds > 0.0);
@@ -265,7 +265,7 @@ TEST_CASE("Broadphase performance: Scaling behavior", "[validation][benchmark]")
         const float cell_size = 1.0f;
         const int frames = 50;
 
-        auto small = time_broadphase(50, cell_size, frames);  // N=50
+        auto small = time_broadphase(50, cell_size, frames); // N=50
         auto large = time_broadphase(100, cell_size, frames); // N=100 (2x particles)
 
         // Both should complete successfully

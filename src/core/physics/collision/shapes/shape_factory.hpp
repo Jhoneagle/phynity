@@ -29,9 +29,9 @@ public:
         // Vertices in counter-clockwise order starting from bottom-left
         // Store in LOCAL space (relative to center)
         vertices.push_back(Vec2f(-half_width, -half_height)); // Bottom-left
-        vertices.push_back(Vec2f(half_width, -half_height));  // Bottom-right
-        vertices.push_back(Vec2f(half_width, half_height));   // Top-right
-        vertices.push_back(Vec2f(-half_width, half_height));  // Top-left
+        vertices.push_back(Vec2f(half_width, -half_height)); // Bottom-right
+        vertices.push_back(Vec2f(half_width, half_height)); // Top-right
+        vertices.push_back(Vec2f(-half_width, half_height)); // Top-left
 
         // Center position stored separately for world space
         return ConvexHull2D(vertices, center);
@@ -113,26 +113,26 @@ public:
 
         // Bottom face (z = -half_depth)
         vertices.push_back(Vec3f(-x, -y, -z)); // 0: back-left-bottom
-        vertices.push_back(Vec3f(x, -y, -z));  // 1: back-right-bottom
-        vertices.push_back(Vec3f(x, y, -z));   // 2: front-right-bottom
-        vertices.push_back(Vec3f(-x, y, -z));  // 3: front-left-bottom
+        vertices.push_back(Vec3f(x, -y, -z)); // 1: back-right-bottom
+        vertices.push_back(Vec3f(x, y, -z)); // 2: front-right-bottom
+        vertices.push_back(Vec3f(-x, y, -z)); // 3: front-left-bottom
 
         // Top face (z = +half_depth)
         vertices.push_back(Vec3f(-x, -y, z)); // 4: back-left-top
-        vertices.push_back(Vec3f(x, -y, z));  // 5: back-right-top
-        vertices.push_back(Vec3f(x, y, z));   // 6: front-right-top
-        vertices.push_back(Vec3f(-x, y, z));  // 7: front-left-top
+        vertices.push_back(Vec3f(x, -y, z)); // 5: back-right-top
+        vertices.push_back(Vec3f(x, y, z)); // 6: front-right-top
+        vertices.push_back(Vec3f(-x, y, z)); // 7: front-left-top
 
         ConvexHull3D hull(vertices, center);
         // Populate face normals for SAT collision detection
         // Box has 6 faces with normals in ±x, ±y, ±z directions
         hull.face_normals = {
-            Vec3f(1.0f, 0.0f, 0.0f),  // +X face normal
+            Vec3f(1.0f, 0.0f, 0.0f), // +X face normal
             Vec3f(-1.0f, 0.0f, 0.0f), // -X face normal
-            Vec3f(0.0f, 1.0f, 0.0f),  // +Y face normal
+            Vec3f(0.0f, 1.0f, 0.0f), // +Y face normal
             Vec3f(0.0f, -1.0f, 0.0f), // -Y face normal
-            Vec3f(0.0f, 0.0f, 1.0f),  // +Z face normal
-            Vec3f(0.0f, 0.0f, -1.0f)  // -Z face normal
+            Vec3f(0.0f, 0.0f, 1.0f), // +Z face normal
+            Vec3f(0.0f, 0.0f, -1.0f) // -Z face normal
         };
         return hull;
     }
@@ -164,11 +164,11 @@ public:
         std::vector<Vec3f> vertices;
 
         // 6 vertices at (±r, 0, 0), (0, ±r, 0), (0, 0, ±r)
-        vertices.push_back(Vec3f(radius, 0.0f, 0.0f));  // +X
+        vertices.push_back(Vec3f(radius, 0.0f, 0.0f)); // +X
         vertices.push_back(Vec3f(-radius, 0.0f, 0.0f)); // -X
-        vertices.push_back(Vec3f(0.0f, radius, 0.0f));  // +Y
+        vertices.push_back(Vec3f(0.0f, radius, 0.0f)); // +Y
         vertices.push_back(Vec3f(0.0f, -radius, 0.0f)); // -Y
-        vertices.push_back(Vec3f(0.0f, 0.0f, radius));  // +Z
+        vertices.push_back(Vec3f(0.0f, 0.0f, radius)); // +Z
         vertices.push_back(Vec3f(0.0f, 0.0f, -radius)); // -Z
 
         return ConvexHull3D(vertices, center);

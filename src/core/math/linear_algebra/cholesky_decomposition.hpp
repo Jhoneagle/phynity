@@ -34,9 +34,9 @@ template <std::size_t N, typename T = float> struct CholeskyDecomposition
     static_assert(std::is_floating_point_v<T>, "CholeskyDecomposition requires floating-point type");
     static_assert(N > 0, "CholeskyDecomposition matrix size must be > 0");
 
-    MatN<N, N, T> L;           // Lower triangular matrix (only lower part is valid)
+    MatN<N, N, T> L; // Lower triangular matrix (only lower part is valid)
     bool is_positive_definite; // True if matrix is SPD and decomposition succeeded
-    bool is_definite;          // True if positive or negative definite
+    bool is_definite; // True if positive or negative definite
 
     /// Default constructor
     CholeskyDecomposition() : L(T(0)), is_positive_definite(false), is_definite(false)

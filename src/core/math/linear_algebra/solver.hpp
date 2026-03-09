@@ -23,7 +23,7 @@ using phynity::math::vectors::VecN;
 enum class SolveMethod
 {
     LU, ///< LU decomposition (faster, general purpose)
-    QR  ///< QR decomposition (more stable for ill-conditioned systems)
+    QR ///< QR decomposition (more stable for ill-conditioned systems)
 };
 
 /// Solve Ax = b for x

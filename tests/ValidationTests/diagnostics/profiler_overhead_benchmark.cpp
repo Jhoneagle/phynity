@@ -199,7 +199,7 @@ TEST_CASE("Profiler Overhead: Nested scope scaling", "[validation][profiler][ben
     // Check: overhead(depth=20) / overhead(depth=5) should be roughly 20/5 = 4
     if (overhead_per_depth.size() >= 4)
     {
-        const double ratio_5_to_1 = overhead_per_depth[1] / overhead_per_depth[0];  // depth 5 / depth 1
+        const double ratio_5_to_1 = overhead_per_depth[1] / overhead_per_depth[0]; // depth 5 / depth 1
         const double ratio_20_to_5 = overhead_per_depth[3] / overhead_per_depth[1]; // depth 20 / depth 5
 
         INFO("Ratio (depth 5 / depth 1): " << ratio_5_to_1 << " (expect ~5)");
@@ -208,7 +208,7 @@ TEST_CASE("Profiler Overhead: Nested scope scaling", "[validation][profiler][ben
         // Very conservative check: ratio shouldn't be exponential (e.g., 2^depth would be 16x minimum)
         // Linear scaling means ratio should be roughly proportional to depth ratio
         REQUIRE(ratio_20_to_5 < 10.0); // Not exponential (would be 16+ for 2^depth)
-        REQUIRE(ratio_20_to_5 > 1.5);  // Does scale with depth (not constant overhead)
+        REQUIRE(ratio_20_to_5 > 1.5); // Does scale with depth (not constant overhead)
     }
 }
 

@@ -150,9 +150,9 @@ TEST_CASE("MomentumMonitor: Tolerance check method", "[diagnostics][momentum_mon
     MomentumViolation violation;
     violation.change_magnitude = 7.5;
 
-    REQUIRE(violation.is_within_tolerance(10.0));      // 7.5 < 10.0
+    REQUIRE(violation.is_within_tolerance(10.0)); // 7.5 < 10.0
     REQUIRE_FALSE(violation.is_within_tolerance(5.0)); // 7.5 > 5.0
-    REQUIRE(violation.is_within_tolerance(7.5));       // 7.5 == 7.5
+    REQUIRE(violation.is_within_tolerance(7.5)); // 7.5 == 7.5
 }
 
 TEST_CASE("MomentumMonitor: Negative momentum values", "[diagnostics][momentum_monitor]")

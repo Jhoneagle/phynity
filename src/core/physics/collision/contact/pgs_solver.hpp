@@ -16,10 +16,10 @@ using phynity::math::vectors::Vec3f;
 /// Configuration for PGS solver behavior
 struct PGSConfig
 {
-    int max_iterations = 4;              ///< Maximum number of iterations
+    int max_iterations = 4; ///< Maximum number of iterations
     float convergence_threshold = 1e-5f; ///< Threshold for early termination
-    float friction_coefficient = 0.2f;   ///< Default friction coefficient
-    float restitution_default = 0.0f;    ///< Default coefficient of restitution
+    float friction_coefficient = 0.2f; ///< Default friction coefficient
+    float restitution_default = 0.0f; ///< Default coefficient of restitution
 };
 
 /// Projected Gauss-Seidel solver for iterative constraint resolution

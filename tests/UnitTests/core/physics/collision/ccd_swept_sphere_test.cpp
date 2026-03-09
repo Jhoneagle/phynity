@@ -23,14 +23,14 @@ TEST_CASE("SweptSphereSolver::Head-on collision", "[unit][physics][collision][cc
         SweptSphereSolver::Sphere sphere_a{
             Vec3f(-2.0f, 0.0f, 0.0f), // position
             Vec3f(10.0f, 0.0f, 0.0f), // velocity
-            1.0f                      // radius
+            1.0f // radius
         };
 
         // Sphere B: stationary, positioned 4 units away
         SweptSphereSolver::Sphere sphere_b{
             Vec3f(2.0f, 0.0f, 0.0f), // position
             Vec3f(0.0f, 0.0f, 0.0f), // velocity (stationary)
-            1.0f                     // radius
+            1.0f // radius
         };
 
         float dt = 1.0f; // 1 second timeframe

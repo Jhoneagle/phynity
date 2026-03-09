@@ -34,7 +34,7 @@ template <std::size_t N, typename T = float> struct IntegrationState
 {
     VecN<N, T> position; ///< Current position
     VecN<N, T> velocity; ///< Current velocity
-    T time;              ///< Current simulation time
+    T time; ///< Current simulation time
 
     /// Default constructor
     IntegrationState() : position(T(0)), velocity(T(0)), time(T(0))
@@ -228,10 +228,10 @@ inline void integrate_rk4(IntegrationState<N, T> &state, const F &acceleration, 
 /// Enum for selecting integrator method
 enum class IntegratorMethod
 {
-    ForwardEuler,      ///< Fast but unstable
+    ForwardEuler, ///< Fast but unstable
     SemiImplicitEuler, ///< Good energy conservation, simple
-    VelocityVerlet,    ///< Best for physics (recommended)
-    RK4                ///< Highest accuracy
+    VelocityVerlet, ///< Best for physics (recommended)
+    RK4 ///< Highest accuracy
 };
 
 /// Unified integrator interface

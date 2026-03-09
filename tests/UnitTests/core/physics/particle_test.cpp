@@ -389,7 +389,7 @@ TEST_CASE("Particle: Damping reduces velocity over time", "[Particle][integratio
         p.integrate(0.016f);
     }
 
-    REQUIRE(p.velocity.x < v0);   // Velocity reduced
+    REQUIRE(p.velocity.x < v0); // Velocity reduced
     REQUIRE(p.velocity.x > 0.0f); // Still moving (not completely stopped)
 }
 

@@ -229,7 +229,7 @@ public:
 class CapsuleShape : public Shape
 {
 public:
-    float radius = 0.25f;     ///< Radius of the capsule
+    float radius = 0.25f; ///< Radius of the capsule
     float half_height = 0.5f; ///< Half-length of the cylinder
 
     explicit CapsuleShape(float r = 0.25f, float h = 0.5f, const Vec3f &center = Vec3f(0.0f))

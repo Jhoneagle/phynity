@@ -40,8 +40,8 @@ public:
     /// Sphere A (first sphere)
     struct Sphere
     {
-        Vec3f position;      ///< Position at start of timestep
-        Vec3f velocity;      ///< Velocity during timestep
+        Vec3f position; ///< Position at start of timestep
+        Vec3f velocity; ///< Velocity during timestep
         float radius = 0.5f; ///< Collision radius
     };
 

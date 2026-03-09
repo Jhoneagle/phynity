@@ -198,11 +198,11 @@ public:
     }
 
 private:
-    Particle &body_a_;                    ///< First particle
-    Particle &body_b_;                    ///< Second particle
-    Vec3f rest_offset_;                   ///< Desired relative position (direction and magnitude)
-    float rest_distance_;                 ///< Distance to maintain between particles
-    Vec3f accumulated_impulse_;           ///< Accumulated impulse vector (for warm-start)
+    Particle &body_a_; ///< First particle
+    Particle &body_b_; ///< Second particle
+    Vec3f rest_offset_; ///< Desired relative position (direction and magnitude)
+    float rest_distance_; ///< Distance to maintain between particles
+    Vec3f accumulated_impulse_; ///< Accumulated impulse vector (for warm-start)
     [[maybe_unused]] int max_iterations_; ///< Max iterations to converge (for reference)
 };
 

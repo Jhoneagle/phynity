@@ -118,7 +118,7 @@ TEST_CASE("ContactConstraint: Apply impulse", "[constraint][contact]")
     // Check velocities changed (direction depends on mass)
     // p_a should be pushed backward (negative x)
     // p_b should be pushed forward (positive x)
-    REQUIRE(p_a.velocity.x < 1.0f);  // Reduced
+    REQUIRE(p_a.velocity.x < 1.0f); // Reduced
     REQUIRE(p_b.velocity.x > -1.0f); // Increased (less negative)
 
     // Check accumulated impulse
@@ -203,7 +203,7 @@ TEST_CASE("FixedConstraint: Apply impulse", "[constraint][fixed]")
     p_b.material.mass = 1.0f;
 
     // Move p_b further away so we have a constraint violation
-    FixedConstraint constraint(p_a, p_b);   // Rest distance = 3.0
+    FixedConstraint constraint(p_a, p_b); // Rest distance = 3.0
     p_b.position = Vec3f(5.0f, 0.0f, 0.0f); // Now distance = 5.0, error = 2.0
 
     // Apply impulse to correct the distance

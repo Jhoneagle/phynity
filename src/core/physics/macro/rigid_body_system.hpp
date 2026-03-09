@@ -42,11 +42,11 @@ public:
 
     struct Config
     {
-        float gravity_acceleration = 9.81f;             ///< Gravitational acceleration (m/s²)
-        int broadphase_grid_resolution = 20;            ///< Spatial grid cell count
-        float broadphase_grid_size = 100.0f;            ///< Total grid size
-        float default_collision_radius = 1.0f;          ///< Default broadphase radius for new bodies
-        bool enable_linear_ccd = true;                  ///< Enable linear CCD for fast movers
+        float gravity_acceleration = 9.81f; ///< Gravitational acceleration (m/s²)
+        int broadphase_grid_resolution = 20; ///< Spatial grid cell count
+        float broadphase_grid_size = 100.0f; ///< Total grid size
+        float default_collision_radius = 1.0f; ///< Default broadphase radius for new bodies
+        bool enable_linear_ccd = true; ///< Enable linear CCD for fast movers
         CCDConfig ccd_config = ccd_presets::balanced(); ///< CCD thresholds and parameters
 
         constexpr Config() = default;
@@ -293,7 +293,7 @@ public:
         float total_kinetic_energy = 0.0f; ///< Linear + angular KE
         float total_linear_ke = 0.0f;
         float total_angular_ke = 0.0f;
-        Vec3f total_momentum = Vec3f(0.0f);         ///< Linear momentum (m*v)
+        Vec3f total_momentum = Vec3f(0.0f); ///< Linear momentum (m*v)
         Vec3f total_angular_momentum = Vec3f(0.0f); ///< Angular momentum (I*ω)
         size_t body_count = 0;
     };

@@ -42,9 +42,9 @@ TEST_CASE("FrameBudget: Zone budget management", "[diagnostics][frame_budget]")
 {
     FrameBudget budget;
 
-    budget.set_zone_budget("physics", 5000);   // 5ms
+    budget.set_zone_budget("physics", 5000); // 5ms
     budget.set_zone_budget("rendering", 8000); // 8ms
-    budget.set_zone_budget("audio", 2000);     // 2ms
+    budget.set_zone_budget("audio", 2000); // 2ms
 
     REQUIRE(budget.get_zone_budget("physics") == 5000);
     REQUIRE(budget.get_zone_budget("rendering") == 8000);
@@ -97,7 +97,7 @@ TEST_CASE("FrameBudget: Zone budget violation detection", "[diagnostics][frame_b
     FrameBudget budget;
     FrameProfiler profiler(5);
 
-    budget.set_target_frame_time(50000);            // 50ms total budget (won't violate)
+    budget.set_target_frame_time(50000); // 50ms total budget (won't violate)
     budget.set_zone_budget("expensive_zone", 5000); // 5ms zone budget
 
     bool violation_triggered = false;
@@ -161,7 +161,7 @@ TEST_CASE("FrameBudget: Multiple violations in one frame", "[diagnostics][frame_
     FrameBudget budget;
     FrameProfiler profiler(5);
 
-    budget.set_target_frame_time(100000);   // 100ms total (won't violate)
+    budget.set_target_frame_time(100000); // 100ms total (won't violate)
     budget.set_zone_budget("zone_a", 3000); // 3ms (tighter budget)
     budget.set_zone_budget("zone_b", 5000); // 5ms (tighter budget)
 
@@ -248,11 +248,11 @@ TEST_CASE("FrameBudget: Violation overage calculations", "[diagnostics][frame_bu
     v.budget_us = 10000; // 10ms budget
     v.actual_us = 15000; // 15ms actual
 
-    REQUIRE(v.overage_us() == 5000);      // 5ms over
+    REQUIRE(v.overage_us() == 5000); // 5ms over
     REQUIRE(v.overage_percent() == 50.0); // 50% over
 
-    v.actual_us = 20000;                   // 20ms actual
-    REQUIRE(v.overage_us() == 10000);      // 10ms over
+    v.actual_us = 20000; // 20ms actual
+    REQUIRE(v.overage_us() == 10000); // 10ms over
     REQUIRE(v.overage_percent() == 100.0); // 100% over
 
     v.actual_us = 8000; // Under budget

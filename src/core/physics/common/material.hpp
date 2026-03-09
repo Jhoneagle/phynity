@@ -57,9 +57,9 @@ struct Material
 inline constexpr Material steel()
 {
     return Material(
-        /*mass=*/7850.0f,         // ~7.85 kg/cm³ typical density
-        /*restitution=*/0.3f,     // Low bounce
-        /*friction=*/0.6f,        // High friction
+        /*mass=*/7850.0f, // ~7.85 kg/cm³ typical density
+        /*restitution=*/0.3f, // Low bounce
+        /*friction=*/0.6f, // High friction
         /*linear_damping=*/0.02f, // Slight damping
         /*angular_damping=*/0.02f,
         /*drag_coefficient=*/0.01f // Very small air resistance
@@ -71,9 +71,9 @@ inline constexpr Material steel()
 inline constexpr Material rubber()
 {
     return Material(
-        /*mass=*/1200.0f,         // ~1.2 kg/cm³ typical density
-        /*restitution=*/0.8f,     // High bounce
-        /*friction=*/0.4f,        // Moderate friction
+        /*mass=*/1200.0f, // ~1.2 kg/cm³ typical density
+        /*restitution=*/0.8f, // High bounce
+        /*friction=*/0.4f, // Moderate friction
         /*linear_damping=*/0.01f, // Low damping
         /*angular_damping=*/0.01f,
         /*drag_coefficient=*/0.05f // Moderate air resistance
@@ -85,9 +85,9 @@ inline constexpr Material rubber()
 inline constexpr Material wood()
 {
     return Material(
-        /*mass=*/600.0f,          // ~0.6 kg/cm³ typical density
-        /*restitution=*/0.4f,     // Moderate bounce
-        /*friction=*/0.5f,        // Moderate-high friction
+        /*mass=*/600.0f, // ~0.6 kg/cm³ typical density
+        /*restitution=*/0.4f, // Moderate bounce
+        /*friction=*/0.5f, // Moderate-high friction
         /*linear_damping=*/0.02f, // Slight damping
         /*angular_damping=*/0.02f,
         /*drag_coefficient=*/0.03f // Low-moderate air resistance
@@ -99,9 +99,9 @@ inline constexpr Material wood()
 inline constexpr Material fluid_particle()
 {
     return Material(
-        /*mass=*/0.1f,            // Very light particle
-        /*restitution=*/0.1f,     // No bounce (inelastic)
-        /*friction=*/0.2f,        // Low friction
+        /*mass=*/0.1f, // Very light particle
+        /*restitution=*/0.1f, // No bounce (inelastic)
+        /*friction=*/0.2f, // Low friction
         /*linear_damping=*/0.05f, // Moderate damping (viscous)
         /*angular_damping=*/0.05f,
         /*drag_coefficient=*/0.5f // High drag (fluid-like)
@@ -113,9 +113,9 @@ inline constexpr Material fluid_particle()
 inline constexpr Material dust()
 {
     return Material(
-        /*mass=*/0.01f,          // Extremely light
-        /*restitution=*/0.0f,    // No bounce
-        /*friction=*/0.1f,       // Very low friction
+        /*mass=*/0.01f, // Extremely light
+        /*restitution=*/0.0f, // No bounce
+        /*friction=*/0.1f, // Very low friction
         /*linear_damping=*/0.1f, // High damping
         /*angular_damping=*/0.1f,
         /*drag_coefficient=*/1.0f // Very high drag
@@ -127,9 +127,9 @@ inline constexpr Material dust()
 inline constexpr Material stone()
 {
     return Material(
-        /*mass=*/2500.0f,         // ~2.5 kg/cm³ typical density
-        /*restitution=*/0.15f,    // Very low bounce
-        /*friction=*/0.7f,        // High friction
+        /*mass=*/2500.0f, // ~2.5 kg/cm³ typical density
+        /*restitution=*/0.15f, // Very low bounce
+        /*friction=*/0.7f, // High friction
         /*linear_damping=*/0.01f, // Minimal damping
         /*angular_damping=*/0.01f,
         /*drag_coefficient=*/0.02f // Low air resistance

@@ -16,9 +16,9 @@ namespace phynity::diagnostics
 struct BudgetViolation
 {
     std::string_view zone_name; ///< Name of zone that exceeded budget (empty = total frame)
-    uint64_t budget_us;         ///< Allocated budget in microseconds
-    uint64_t actual_us;         ///< Actual time taken in microseconds
-    uint64_t frame_number;      ///< Frame number where violation occurred
+    uint64_t budget_us; ///< Allocated budget in microseconds
+    uint64_t actual_us; ///< Actual time taken in microseconds
+    uint64_t frame_number; ///< Frame number where violation occurred
 
     /**
      * @brief Get overage amount.
@@ -262,10 +262,10 @@ public:
     }
 
 private:
-    uint64_t target_frame_time_us_;                          ///< Target frame time budget
+    uint64_t target_frame_time_us_; ///< Target frame time budget
     std::unordered_map<std::string, uint64_t> zone_budgets_; ///< Per-zone budgets
-    BudgetViolationCallback violation_callback_;             ///< Callback for violations
-    bool enabled_;                                           ///< Enable/disable flag
+    BudgetViolationCallback violation_callback_; ///< Callback for violations
+    bool enabled_; ///< Enable/disable flag
 
     /**
      * @brief Trigger a budget violation callback.

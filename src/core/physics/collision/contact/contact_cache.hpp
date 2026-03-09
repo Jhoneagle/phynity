@@ -151,7 +151,7 @@ private:
     }
 
     std::unordered_map<uint64_t, ContactManifold> cache_; ///< Map of contact_id -> manifold
-    int max_age_;                                         ///< Maximum age before removal
+    int max_age_; ///< Maximum age before removal
 };
 
 } // namespace phynity::physics::collision

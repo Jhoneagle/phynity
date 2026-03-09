@@ -43,7 +43,7 @@ TEST_CASE("CollisionMonitor: Efficiency calculation", "[diagnostics][collision_m
     REQUIRE(stats.frame_number == 1);
     REQUIRE(stats.broadphase_candidates == 100);
     REQUIRE(stats.actual_collisions == 10);
-    REQUIRE(stats.efficiency == 0.1);          // 10/100 = 10%
+    REQUIRE(stats.efficiency == 0.1); // 10/100 = 10%
     REQUIRE(stats.false_positive_rate == 0.9); // 90/100 = 90%
 }
 
@@ -275,6 +275,6 @@ TEST_CASE("CollisionMonitor: Perfect efficiency", "[diagnostics][collision_monit
     REQUIRE(violation_count == 0); // No violation
 
     CollisionStats stats = monitor.get_last_frame_stats();
-    REQUIRE(stats.efficiency == 1.0);          // 100% efficiency
+    REQUIRE(stats.efficiency == 1.0); // 100% efficiency
     REQUIRE(stats.false_positive_rate == 0.0); // 0% false positives
 }
