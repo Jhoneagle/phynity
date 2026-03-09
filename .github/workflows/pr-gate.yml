@@ -159,13 +159,20 @@ jobs:
       - name: Check formatting
         run: |
           echo "Checking code formatting with clang-format..."
-          find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | while read file; do
-            clang-format --style=file -output-replacements-xml "$file" | grep -q '<replacement' && {
-              echo "Format issue in: $file"
-              clang-format --style=file "$file" | diff -u "$file" - || true
-              exit 1
-            }
-          done || exit 1
+          FAILED=0
+          for file in $(find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \)); do
+            if ! diff -u "$file" <(clang-format --style=file "$file"); then
+              echo ""
+              echo "❌ Format issue in: $file"
+              echo "^^^ See diff above ^^^"
+              echo ""
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "Format check failed. Run 'tools/format.sh' locally to fix."
+            exit 1
+          fi
           echo "✓ All files properly formatted"
 
   # Job 3: Static analysis (clang-tidy)
