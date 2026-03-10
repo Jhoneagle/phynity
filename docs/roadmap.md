@@ -3,6 +3,7 @@
 This roadmap is organized by time horizon and anchored to the current architecture: `core` owns math/physics and determinism, `platform` owns timing and threading, `render` is optional visualization, and `app` is orchestration. Items marked (S) are short-term deliverables, (M) mid-term, and (L) long-term.
 
 ## Near Term (0–3 months)
+
 - Core math bedrock (S): vectors/matrices/quaternions, linear algebra routines, trig helpers, numerical stability checks, small-angle approximations.✅
 - Calculus utilities (S): forward/central differences, simple integrators (Euler, semi-implicit), curve fitting for derivatives; integration harness for regression tests.✅
 - Particle simulation v2 (S): variable timestep support with determinism guardrails, basic gravity/drag fields, per-particle material presets.✅
@@ -12,6 +13,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Testing (S): golden tests for math primitives, particle integration, and deterministic stepping; CI smoke targets.✅
 
 ## Mid Term (3–9 months)
+
 - Collision and constraints (M): SAT for convex hulls, GJK/EPA for general shapes, contact caching, impulse-based and PGS solvers.✅
 - Rigid body MVP (M): inertia tensors, angular integration, basic constraints (fixed, hinge), Baumgarte stabilization; simple stacking demo.✅
 - Continuous physics (M): CCD sweeps for fast movers, time-of-impact resolution, restitution and friction modeling.✅
@@ -26,6 +28,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.
 
 ## Long Term (9–18 months)
+
 - Advanced rigid bodies (L): articulated bodies, joint limits, motors, breakable constraints, soft constraints blending.
 - Deformables and soft bodies (L): mass-spring systems, position-based dynamics constraints, cloth/rope with self-collision handling.
 - Fluid and gas expansions (L): incompressible solver with pressure projection, vorticity confinement, multiphase interactions, basic combustion hooks.
@@ -38,6 +41,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Parallelism at scale (L): NUMA-aware scheduling, task batching for thousands of bodies, deterministic lock-free data paths where feasible.
 
 ## Quality, Process, and Docs (ongoing)
+
 - Determinism contract: document fixed-point vs floating-point modes, reproducibility expectations, tolerance budgets.
 - Validation: benchmark scenes for collisions, constraints, fluids, and EM fields with expected energy/momentum ranges.
 - Architecture alignment: keep physics/math in `core`; `platform` owns timing/threads; `render` remains optional; `app` orchestrates scenarios.

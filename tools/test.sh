@@ -31,10 +31,15 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 CMAKE_EXTRA_FLAGS="$cmake_extra_flags" bash "$script_dir/build.sh" "$preset"
 
 # Run tests via CTest preset
+ctest_status=0
 if [[ -n "$filter_regex" ]]; then
-  ctest --preset "$preset" -R "$filter_regex" --output-on-failure || true
+  ctest --preset "$preset" -R "$filter_regex" --output-on-failure || ctest_status=$?
 else
-  ctest --preset "$preset" --output-on-failure || true
+  ctest --preset "$preset" --output-on-failure || ctest_status=$?
+fi
+
+if [[ $ctest_status -eq 0 ]]; then
+  exit 0
 fi
 
 # Fallback for Windows/MSYS environments where CTest may fail to launch .exe
@@ -42,6 +47,7 @@ os="$(uname -s || echo unknown)"
 if [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
   tests_root="build/$preset/tests"
   if [[ -d "$tests_root" ]]; then
+    fallback_status=0
     shopt -s nullglob
     mapfile -t exes < <(find "$tests_root" -type f -name "*_test.exe" 2>/dev/null || true)
     for exe in "${exes[@]}"; do
@@ -64,11 +70,14 @@ if [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
           else
             win_path="$exe"
           fi
-          cmd.exe /c "$win_path"
+          cmd.exe /c "$win_path" || fallback_status=1
         else
-          "$exe"
+          "$exe" || fallback_status=1
         fi
       fi
     done
+    exit $fallback_status
   fi
 fi
+
+exit $ctest_status

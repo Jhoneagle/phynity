@@ -23,7 +23,7 @@ add_test(NAME validation.performance.collision_regression
 	$<TARGET_FILE:collision_regression_test>
 )
 
-set_tests_properties(validation.performance.collision_regression PROPERTIES LABELS validation)
+set_tests_properties(validation.performance.collision_regression PROPERTIES LABELS "validation;performance")
 
 # CCD performance overhead tests
 add_executable(ccd_performance_test ccd_performance_test.cpp)
@@ -32,5 +32,5 @@ phynity_apply_warnings(ccd_performance_test)
 phynity_apply_sanitizers(ccd_performance_test)
 target_link_libraries(ccd_performance_test PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME validation.performance.ccd COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_performance_test>)
-set_tests_properties(validation.performance.ccd PROPERTIES LABELS validation)
+set_tests_properties(validation.performance.ccd PROPERTIES LABELS "validation;performance")
 

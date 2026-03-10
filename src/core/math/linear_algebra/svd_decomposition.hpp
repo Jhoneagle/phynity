@@ -1,18 +1,20 @@
 #pragma once
 
 #include <core/math/matrices/mat_n.hpp>
-#include <core/math/vectors/vec_n.hpp>
 #include <core/math/utilities/float_comparison.hpp>
-#include <cstddef>
-#include <cmath>
+#include <core/math/vectors/vec_n.hpp>
+
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <type_traits>
 
-namespace phynity::math::linear_algebra {
+namespace phynity::math::linear_algebra
+{
 
 using phynity::math::matrices::MatN;
-using phynity::math::vectors::VecN;
 using phynity::math::utilities::epsilon;
+using phynity::math::vectors::VecN;
 
 /// ============================================================================
 /// SINGULAR VALUE DECOMPOSITION (SVD)
@@ -33,21 +35,23 @@ using phynity::math::utilities::epsilon;
 ///
 /// @tparam N Size of NxN matrix
 /// @tparam T Floating-point type (float, double)
-template<std::size_t N, typename T = float>
-struct SVDDecomposition {
+template <std::size_t N, typename T = float> struct SVDDecomposition
+{
     static_assert(std::is_floating_point_v<T>, "SVDDecomposition requires floating-point type");
     static_assert(N > 0, "SVDDecomposition matrix size must be > 0");
 
-    MatN<N, N, T> U;                 // Left singular vectors (orthogonal matrix)
-    MatN<N, N, T> V;                 // Right singular vectors (orthogonal matrix)
+    MatN<N, N, T> U; // Left singular vectors (orthogonal matrix)
+    MatN<N, N, T> V; // Right singular vectors (orthogonal matrix)
     std::array<T, N> singular_values; // Diagonal entries of Σ (sorted descending)
-    int rank;                         // Numerical rank of matrix
-    T condition_number;               // κ(A) = σ_max / σ_min
+    int rank; // Numerical rank of matrix
+    T condition_number; // κ(A) = σ_max / σ_min
 
     /// Default constructor - identity decomposition
-    SVDDecomposition() 
-        : U(MatN<N, N, T>::identity()), V(MatN<N, N, T>::identity()), rank(static_cast<int>(N)), condition_number(T(1)) {
-        for (std::size_t i = 0; i < N; ++i) {
+    SVDDecomposition()
+        : U(MatN<N, N, T>::identity()), V(MatN<N, N, T>::identity()), rank(static_cast<int>(N)), condition_number(T(1))
+    {
+        for (std::size_t i = 0; i < N; ++i)
+        {
             singular_values[i] = T(1);
         }
     }
@@ -56,35 +60,39 @@ struct SVDDecomposition {
     /// @param A Matrix to decompose
     /// @param max_iterations Maximum number of Jacobi iterations
     /// @param tolerance Tolerance for convergence and singularity detection
-    explicit SVDDecomposition(
-        const MatN<N, N, T>& A,
-        std::size_t max_iterations = 100,
-        T tolerance = epsilon<T>() * T(100)
-    ) {
+    explicit SVDDecomposition(const MatN<N, N, T> &A,
+                              std::size_t max_iterations = 100,
+                              T tolerance = epsilon<T>() * T(100))
+    {
         svd_jacobi(A, max_iterations, tolerance);
     }
 
     /// Get the transpose of U
-    MatN<N, N, T> getUT() const {
+    MatN<N, N, T> getUT() const
+    {
         return U.transposed();
     }
 
     /// Get the transpose of V
-    MatN<N, N, T> getVT() const {
+    MatN<N, N, T> getVT() const
+    {
         return V.transposed();
     }
 
     /// Get the diagonal matrix Σ
-    MatN<N, N, T> getSigma() const {
+    MatN<N, N, T> getSigma() const
+    {
         MatN<N, N, T> sigma(T(0));
-        for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t i = 0; i < N; ++i)
+        {
             sigma(i, i) = singular_values[i];
         }
         return sigma;
     }
 
     /// Reconstruct the original matrix: A ≈ U * Σ * V^T
-    MatN<N, N, T> reconstruct() const {
+    MatN<N, N, T> reconstruct() const
+    {
         MatN<N, N, T> sigma = getSigma();
         MatN<N, N, T> VT = getVT();
         return U * sigma * VT;
@@ -94,7 +102,8 @@ private:
     /// One-sided Jacobi SVD algorithm
     /// Computes SVD by diagonalizing A^T * A to find V and Σ,
     /// then computes U from A * V * Σ^-1
-    void svd_jacobi(const MatN<N, N, T>& A, std::size_t max_iterations, T tolerance) {
+    void svd_jacobi(const MatN<N, N, T> &A, std::size_t max_iterations, T tolerance)
+    {
         // Compute A^T * A
         MatN<N, N, T> AT = A.transposed();
         MatN<N, N, T> ATA = AT * A;
@@ -103,18 +112,22 @@ private:
         V = MatN<N, N, T>::identity();
 
         // Jacobi iteration to diagonalize A^T * A
-        for (std::size_t iter = 0; iter < max_iterations; ++iter) {
+        for (std::size_t iter = 0; iter < max_iterations; ++iter)
+        {
             bool converged = true;
 
             // Sweep through all off-diagonal pairs
-            for (std::size_t i = 0; i < N - 1; ++i) {
-                for (std::size_t j = i + 1; j < N; ++j) {
+            for (std::size_t i = 0; i < N - 1; ++i)
+            {
+                for (std::size_t j = i + 1; j < N; ++j)
+                {
                     T a_ii = ATA(i, i);
                     T a_jj = ATA(j, j);
                     T a_ij = ATA(i, j);
 
                     // Check convergence criterion
-                    if (std::abs(a_ij) > tolerance * std::max(std::abs(a_ii), std::abs(a_jj))) {
+                    if (std::abs(a_ij) > tolerance * std::max(std::abs(a_ii), std::abs(a_jj)))
+                    {
                         converged = false;
 
                         // Compute Givens rotation angle
@@ -133,8 +146,10 @@ private:
                         ATA(j, i) = a_ij_new;
 
                         // Apply rotation to other rows/columns
-                        for (std::size_t k = 0; k < N; ++k) {
-                            if (k != i && k != j) {
+                        for (std::size_t k = 0; k < N; ++k)
+                        {
+                            if (k != i && k != j)
+                            {
                                 T a_ki = ATA(k, i);
                                 T a_kj = ATA(k, j);
                                 ATA(k, i) = c * a_ki - s * a_kj;
@@ -145,7 +160,8 @@ private:
                         }
 
                         // Apply rotation to V
-                        for (std::size_t k = 0; k < N; ++k) {
+                        for (std::size_t k = 0; k < N; ++k)
+                        {
                             T v_ki = V(k, i);
                             T v_kj = V(k, j);
                             V(k, i) = c * v_ki - s * v_kj;
@@ -155,13 +171,15 @@ private:
                 }
             }
 
-            if (converged) {
+            if (converged)
+            {
                 break;
             }
         }
 
         // Extract singular values from diagonal of ATA
-        for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t i = 0; i < N; ++i)
+        {
             T val = ATA(i, i);
             singular_values[i] = (val > T(0)) ? std::sqrt(val) : T(0);
         }
@@ -177,16 +195,21 @@ private:
     }
 
     /// Sort singular values in descending order and permute V and U accordingly
-    void sort_singular_values_descending() {
-        for (std::size_t i = 0; i < N - 1; ++i) {
+    void sort_singular_values_descending()
+    {
+        for (std::size_t i = 0; i < N - 1; ++i)
+        {
             std::size_t max_idx = i;
-            for (std::size_t j = i + 1; j < N; ++j) {
-                if (singular_values[j] > singular_values[max_idx]) {
+            for (std::size_t j = i + 1; j < N; ++j)
+            {
+                if (singular_values[j] > singular_values[max_idx])
+                {
                     max_idx = j;
                 }
             }
 
-            if (max_idx != i) {
+            if (max_idx != i)
+            {
                 // Swap singular values
                 std::swap(singular_values[i], singular_values[max_idx]);
 
@@ -200,17 +223,22 @@ private:
     }
 
     /// Compute U matrix from A, V, and Σ
-    void compute_U(const MatN<N, N, T>& A) {
+    void compute_U(const MatN<N, N, T> &A)
+    {
         U = MatN<N, N, T>(T(0));
 
-        for (std::size_t j = 0; j < N; ++j) {
+        for (std::size_t j = 0; j < N; ++j)
+        {
             VecN<N, T> v_j = V.getColumn(j);
 
-            if (singular_values[j] > epsilon<T>() * T(100)) {
+            if (singular_values[j] > epsilon<T>() * T(100))
+            {
                 VecN<N, T> u_j = A * v_j;
                 u_j = u_j * (T(1) / singular_values[j]);
                 U.setColumn(j, u_j);
-            } else {
+            }
+            else
+            {
                 // For zero singular values, U column can be arbitrary orthonormal vector
                 // For now, set to zero
                 VecN<N, T> zero_col(T(0));
@@ -223,12 +251,15 @@ private:
     }
 
     /// Gram-Schmidt orthonormalization of matrix columns
-    void orthonormalize_matrix(MatN<N, N, T>& mat) {
-        for (std::size_t j = 0; j < N; ++j) {
+    void orthonormalize_matrix(MatN<N, N, T> &mat)
+    {
+        for (std::size_t j = 0; j < N; ++j)
+        {
             VecN<N, T> col = mat.getColumn(j);
 
             // Project out previously computed orthonormal columns
-            for (std::size_t i = 0; i < j; ++i) {
+            for (std::size_t i = 0; i < j; ++i)
+            {
                 VecN<N, T> u_i = mat.getColumn(i);
                 T projection = col.dot(u_i);
                 col = col - u_i * projection;
@@ -236,7 +267,8 @@ private:
 
             // Normalize
             T norm = col.length();
-            if (norm > epsilon<T>() * T(100)) {
+            if (norm > epsilon<T>() * T(100))
+            {
                 col = col * (T(1) / norm);
             }
 
@@ -245,31 +277,42 @@ private:
     }
 
     /// Compute numerical rank and condition number
-    void compute_rank_and_condition(T tolerance) {
+    void compute_rank_and_condition(T tolerance)
+    {
         rank = 0;
-        for (std::size_t i = 0; i < N; ++i) {
-            if (singular_values[i] > tolerance) {
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            if (singular_values[i] > tolerance)
+            {
                 rank++;
             }
         }
 
         // Condition number: κ(A) = σ_max / σ_min
-        if (singular_values[0] > epsilon<T>() * T(100) && rank > 0) {
+        if (singular_values[0] > epsilon<T>() * T(100) && rank > 0)
+        {
             T sigma_min = T(0);
-            for (int i = static_cast<int>(N) - 1; i >= 0; --i) {
+            for (int i = static_cast<int>(N) - 1; i >= 0; --i)
+            {
                 std::size_t ui = static_cast<std::size_t>(i);
-                if (singular_values[ui] > epsilon<T>() * T(100)) {
+                if (singular_values[ui] > epsilon<T>() * T(100))
+                {
                     sigma_min = singular_values[ui];
                     break;
                 }
             }
 
-            if (sigma_min > epsilon<T>() * T(100)) {
+            if (sigma_min > epsilon<T>() * T(100))
+            {
                 condition_number = singular_values[0] / sigma_min;
-            } else {
+            }
+            else
+            {
                 condition_number = std::numeric_limits<T>::infinity();
             }
-        } else {
+        }
+        else
+        {
             condition_number = std::numeric_limits<T>::infinity();
         }
     }
@@ -280,21 +323,27 @@ private:
 /// @param svd SVD decomposition of A
 /// @param tolerance Tolerance for considering singular value as non-zero
 /// @return Pseudoinverse of A
-template<std::size_t N, typename T = float>
-inline MatN<N, N, T> pseudoinverse(const SVDDecomposition<N, T>& svd, T tolerance = epsilon<T>() * T(100)) {
+template <std::size_t N, typename T = float>
+inline MatN<N, N, T> pseudoinverse(const SVDDecomposition<N, T> &svd, T tolerance = epsilon<T>() * T(100))
+{
     // Create Σ^+ by taking reciprocals of non-zero singular values
     std::array<T, N> sigma_inv;
-    for (std::size_t i = 0; i < N; ++i) {
-        if (svd.singular_values[i] > tolerance) {
+    for (std::size_t i = 0; i < N; ++i)
+    {
+        if (svd.singular_values[i] > tolerance)
+        {
             sigma_inv[i] = T(1) / svd.singular_values[i];
-        } else {
+        }
+        else
+        {
             sigma_inv[i] = T(0);
         }
     }
 
     // Build Σ^+ as diagonal matrix
     MatN<N, N, T> sigma_plus(T(0));
-    for (std::size_t i = 0; i < N; ++i) {
+    for (std::size_t i = 0; i < N; ++i)
+    {
         sigma_plus(i, i) = sigma_inv[i];
     }
 
@@ -303,4 +352,4 @@ inline MatN<N, N, T> pseudoinverse(const SVDDecomposition<N, T>& svd, T toleranc
     return svd.V * sigma_plus * UT;
 }
 
-}  // namespace phynity::math::linear_algebra
+} // namespace phynity::math::linear_algebra

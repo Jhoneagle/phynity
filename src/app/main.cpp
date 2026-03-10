@@ -1,8 +1,9 @@
-#include "physics_context.hpp"
 #include "demo_scenarios.hpp"
+#include "physics_context.hpp"
 #include "rigid_body_demos.hpp"
-#include <iostream>
+
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -11,7 +12,8 @@ using phynity::app::scenarios::Scenario;
 using phynity::math::vectors::Vec3f;
 
 /// Simple demo runner that executes a scenario for a specified duration
-void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5.0f) {
+void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5.0f)
+{
     std::cout << "\n" << std::string(70, '=') << std::endl;
     std::cout << "Scenario: " << scenario->name() << std::endl;
     std::cout << "Description: " << scenario->description() << std::endl;
@@ -19,30 +21,32 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
 
     // Create physics context with default config (60 FPS)
     PhysicsContext context;
-    
+
     // Setup the scenario
     scenario->setup(context);
-    
+
     std::cout << "Initial particle count: " << context.particle_count() << std::endl;
     std::cout << "Initial force fields: " << context.force_field_count() << std::endl;
     std::cout << "Running for " << duration_seconds << " seconds...\n" << std::endl;
 
     // Simulation loop
-    const float dt = 0.016f;  // ~60 FPS frame time
+    const float dt = 0.016f; // ~60 FPS frame time
     const int frames = static_cast<int>(duration_seconds / dt);
-    
-    for (int frame = 0; frame < frames; ++frame) {
+
+    for (int frame = 0; frame < frames; ++frame)
+    {
         // Update physics with frame time
         context.update(dt);
-        
+
         // Call scenario step callback if needed
         scenario->step_callback(context, dt);
-        
+
         // Print diagnostics every 60 frames (~1 second)
-        if (frame % 60 == 0) {
+        if (frame % 60 == 0)
+        {
             float elapsed_time = static_cast<float>(frame) * dt;
             auto diag = context.diagnostics();
-            
+
             std::cout << std::fixed << std::setprecision(3);
             std::cout << "t=" << std::setw(5) << elapsed_time << "s | "
                       << "particles=" << std::setw(3) << diag.particle_count << " | "
@@ -55,13 +59,14 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
     context.print_diagnostics();
 }
 
-int main() {
+int main()
+{
     std::cout << "=== Phynity Phase 2 - Application Integration ===" << std::endl;
     std::cout << "Physics Context with Demo Scenarios\n" << std::endl;
 
     // Create a collection of scenarios to demonstrate
     std::vector<std::unique_ptr<Scenario>> scenarios;
-    
+
     scenarios.push_back(std::make_unique<phynity::app::scenarios::GravityWell>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ParticleSpread>());
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ProjectileMotion>());
@@ -72,7 +77,8 @@ int main() {
     scenarios.push_back(std::make_unique<phynity::app::scenarios::ZeroGravity>());
 
     std::cout << "Available Scenarios:" << std::endl;
-    for (size_t i = 0; i < scenarios.size(); ++i) {
+    for (size_t i = 0; i < scenarios.size(); ++i)
+    {
         std::cout << "  " << (i + 1) << ". " << scenarios[i]->name() << std::endl;
     }
 
@@ -93,31 +99,31 @@ int main() {
     std::cout << "\n" << std::string(70, '=') << std::endl;
     std::cout << "RIGID BODY PHYSICS DEMOS" << std::endl;
     std::cout << std::string(70, '=') << std::endl;
-    
+
     // 1. Stacking Demo - Tower of boxes settling under gravity
     {
         std::cout << "\n--- Stacking Demo: Tower of Boxes ---" << std::endl;
         phynity::app::rigid_body_demos::StackingDemoRB stacking_demo;
-        stacking_demo.simulate(3.0f);  // Run for 3 seconds
+        stacking_demo.simulate(3.0f); // Run for 3 seconds
     }
-    
+
     // 2. Topple Demo - Tower with impulse applied
     {
         std::cout << "\n--- Topple Demo: Impulse on Tower ---" << std::endl;
         phynity::app::rigid_body_demos::ToppleDemoRB topple_demo;
-        topple_demo.simulate();  // Run for 5 seconds
+        topple_demo.simulate(); // Run for 5 seconds
     }
-    
+
     // 3. Hinge Demo - Revolving door with constraint
     {
         std::cout << "\n--- Hinge Demo: Revolving Door ---" << std::endl;
         phynity::app::rigid_body_demos::HingeDemoRB hinge_demo;
-        hinge_demo.simulate(5.0f);  // Run for 5 seconds
+        hinge_demo.simulate(5.0f); // Run for 5 seconds
     }
 
     std::cout << "\n" << std::string(70, '=') << std::endl;
     std::cout << "All scenarios completed successfully!" << std::endl;
     std::cout << std::string(70, '=') << std::endl;
-    
+
     return 0;
 }

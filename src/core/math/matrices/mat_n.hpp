@@ -1,176 +1,219 @@
 #pragma once
 
 #include <core/math/vectors/vec_n.hpp>
-#include <array>
-#include <cstddef>
-#include <stdexcept>
+
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <ostream>
+#include <stdexcept>
 #include <type_traits>
 
-namespace phynity::math::matrices {
+namespace phynity::math::matrices
+{
 
 using phynity::math::vectors::VecN;
-template <std::size_t M, std::size_t N, typename T = float>
-struct MatN {
+template <std::size_t M, std::size_t N, typename T = float> struct MatN
+{
     static_assert(std::is_floating_point_v<T>, "MatN template parameter must be a floating-point type");
 
     // Constructors
-    MatN() {
+    MatN()
+    {
         data.fill(T(0));
     }
 
     /// Fill constructor - sets all elements to scalar
-    explicit MatN(T scalar) {
+    explicit MatN(T scalar)
+    {
         data.fill(scalar);
     }
 
     /// Initialize from contiguous array (row-major)
-    explicit MatN(const std::array<T, M * N>& values) : data(values) {}
+    explicit MatN(const std::array<T, M * N> &values) : data(values)
+    {
+    }
 
     /// Element access (row, col)
-    T& operator()(std::size_t row, std::size_t col) {
+    T &operator()(std::size_t row, std::size_t col)
+    {
         return data[row * N + col];
     }
 
-    const T& operator()(std::size_t row, std::size_t col) const {
+    const T &operator()(std::size_t row, std::size_t col) const
+    {
         return data[row * N + col];
     }
 
     /// Get row as vector
-    VecN<N, T> getRow(std::size_t row) const {
+    VecN<N, T> getRow(std::size_t row) const
+    {
         VecN<N, T> result;
-        for (std::size_t j = 0; j < N; ++j) {
+        for (std::size_t j = 0; j < N; ++j)
+        {
             result[j] = (*this)(row, j);
         }
         return result;
     }
 
     /// Get column as vector
-    VecN<M, T> getColumn(std::size_t col) const {
+    VecN<M, T> getColumn(std::size_t col) const
+    {
         VecN<M, T> result;
-        for (std::size_t i = 0; i < M; ++i) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
             result[i] = (*this)(i, col);
         }
         return result;
     }
 
     /// Set row from vector
-    void setRow(std::size_t row, const VecN<N, T>& v) {
-        for (std::size_t j = 0; j < N; ++j) {
+    void setRow(std::size_t row, const VecN<N, T> &v)
+    {
+        for (std::size_t j = 0; j < N; ++j)
+        {
             (*this)(row, j) = v[j];
         }
     }
 
     /// Set column from vector
-    void setColumn(std::size_t col, const VecN<M, T>& v) {
-        for (std::size_t i = 0; i < M; ++i) {
+    void setColumn(std::size_t col, const VecN<M, T> &v)
+    {
+        for (std::size_t i = 0; i < M; ++i)
+        {
             (*this)(i, col) = v[i];
         }
     }
 
     // Arithmetic operators
-    MatN operator+(const MatN& other) const {
+    MatN operator+(const MatN &other) const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = data[i] + other.data[i];
         }
         return result;
     }
 
-    MatN operator-(const MatN& other) const {
+    MatN operator-(const MatN &other) const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = data[i] - other.data[i];
         }
         return result;
     }
 
-    MatN operator*(T scalar) const {
+    MatN operator*(T scalar) const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = data[i] * scalar;
         }
         return result;
     }
 
-    MatN operator/(T scalar) const {
+    MatN operator/(T scalar) const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = data[i] / scalar;
         }
         return result;
     }
 
-    MatN operator-() const {
+    MatN operator-() const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = -data[i];
         }
         return result;
     }
 
-    MatN& operator+=(const MatN& other) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &operator+=(const MatN &other)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] += other.data[i];
         }
         return *this;
     }
 
-    MatN& operator-=(const MatN& other) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &operator-=(const MatN &other)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] -= other.data[i];
         }
         return *this;
     }
 
-    MatN& operator*=(T scalar) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &operator*=(T scalar)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] *= scalar;
         }
         return *this;
     }
 
-    MatN& operator/=(T scalar) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &operator/=(T scalar)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] /= scalar;
         }
         return *this;
     }
 
     /// Component-wise (Hadamard) multiplication
-    MatN& mulComponentWise(const MatN& other) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &mulComponentWise(const MatN &other)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] *= other.data[i];
         }
         return *this;
     }
 
     /// Component-wise division
-    MatN& divComponentWise(const MatN& other) {
-        for (std::size_t i = 0; i < M * N; ++i) {
+    MatN &divComponentWise(const MatN &other)
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             data[i] /= other.data[i];
         }
         return *this;
     }
 
-    bool operator==(const MatN& other) const {
+    bool operator==(const MatN &other) const
+    {
         return data == other.data;
     }
 
-    bool operator!=(const MatN& other) const {
+    bool operator!=(const MatN &other) const
+    {
         return !(*this == other);
     }
 
     /// Matrix multiplication (M x K) * (K x P) = (M x P)
-    template <std::size_t P>
-    MatN<M, P> operator*(const MatN<N, P>& other) const {
+    template <std::size_t P> MatN<M, P> operator*(const MatN<N, P> &other) const
+    {
         MatN<M, P> result;
-        for (std::size_t i = 0; i < M; ++i) {
-            for (std::size_t j = 0; j < P; ++j) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
+            for (std::size_t j = 0; j < P; ++j)
+            {
                 T sum = T(0);
-                for (std::size_t k = 0; k < N; ++k) {
+                for (std::size_t k = 0; k < N; ++k)
+                {
                     sum += (*this)(i, k) * other(k, j);
                 }
                 result(i, j) = sum;
@@ -180,11 +223,14 @@ struct MatN {
     }
 
     /// Matrix-vector multiplication (VecN length N -> VecN length M)
-    VecN<M, T> operator*(const VecN<N, T>& v) const {
+    VecN<M, T> operator*(const VecN<N, T> &v) const
+    {
         VecN<M, T> result;
-        for (std::size_t i = 0; i < M; ++i) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
             T sum = T(0);
-            for (std::size_t k = 0; k < N; ++k) {
+            for (std::size_t k = 0; k < N; ++k)
+            {
                 sum += (*this)(i, k) * v[k];
             }
             result[i] = sum;
@@ -193,10 +239,13 @@ struct MatN {
     }
 
     /// Matrix transpose
-    MatN<N, M> transposed() const {
+    MatN<N, M> transposed() const
+    {
         MatN<N, M> result;
-        for (std::size_t i = 0; i < M; ++i) {
-            for (std::size_t j = 0; j < N; ++j) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
+            for (std::size_t j = 0; j < N; ++j)
+            {
                 result(j, i) = (*this)(i, j);
             }
         }
@@ -204,10 +253,13 @@ struct MatN {
     }
 
     /// In-place transpose (only for square matrices)
-    MatN& transpose() {
+    MatN &transpose()
+    {
         static_assert(M == N, "transpose() in-place requires square matrix");
-        for (std::size_t i = 0; i < M; ++i) {
-            for (std::size_t j = i + 1; j < N; ++j) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
+            for (std::size_t j = i + 1; j < N; ++j)
+            {
                 std::swap((*this)(i, j), (*this)(j, i));
             }
         }
@@ -215,19 +267,24 @@ struct MatN {
     }
 
     /// Trace (square matrices only)
-    T trace() const {
+    T trace() const
+    {
         static_assert(M == N, "trace() requires square matrix");
         T sum = T(0);
-        for (std::size_t i = 0; i < M; ++i) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
             sum += (*this)(i, i);
         }
         return sum;
     }
 
     /// Approximate equality with epsilon tolerance
-    bool approxEqual(const MatN& other, T epsilon = T(1e-5)) const {
-        for (std::size_t i = 0; i < M * N; ++i) {
-            if (std::abs(data[i] - other.data[i]) >= epsilon) {
+    bool approxEqual(const MatN &other, T epsilon = T(1e-5)) const
+    {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
+            if (std::abs(data[i] - other.data[i]) >= epsilon)
+            {
                 return false;
             }
         }
@@ -235,27 +292,34 @@ struct MatN {
     }
 
     /// Return matrix with absolute values of all elements
-    MatN abs() const {
+    MatN abs() const
+    {
         MatN result;
-        for (std::size_t i = 0; i < M * N; ++i) {
+        for (std::size_t i = 0; i < M * N; ++i)
+        {
             result.data[i] = std::abs(data[i]);
         }
         return result;
     }
 
     /// Minor determinant after removing row r and column c (square, size>1, N<=4)
-    T minor(std::size_t r, std::size_t c) const {
+    T minor(std::size_t r, std::size_t c) const
+    {
         static_assert(M == N, "minor() requires square matrix");
         static_assert(M > 1, "minor() undefined for 1x1 matrices");
         static_assert(M <= 4, "minor() only implemented for N<=4");
 
         MatN<M - 1, M - 1> sub;
         std::size_t dstRow = 0;
-        for (std::size_t i = 0; i < M; ++i) {
-            if (i == r) continue;
+        for (std::size_t i = 0; i < M; ++i)
+        {
+            if (i == r)
+                continue;
             std::size_t dstCol = 0;
-            for (std::size_t j = 0; j < N; ++j) {
-                if (j == c) continue;
+            for (std::size_t j = 0; j < N; ++j)
+            {
+                if (j == c)
+                    continue;
                 sub(dstRow, dstCol) = (*this)(i, j);
                 ++dstCol;
             }
@@ -265,12 +329,15 @@ struct MatN {
     }
 
     /// Cofactor matrix (square, N<=4)
-    MatN cofactor() const {
+    MatN cofactor() const
+    {
         static_assert(M == N, "cofactor() requires square matrix");
         static_assert(M <= 4, "cofactor() only implemented for N<=4");
         MatN result(T(0));
-        for (std::size_t i = 0; i < M; ++i) {
-            for (std::size_t j = 0; j < N; ++j) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
+            for (std::size_t j = 0; j < N; ++j)
+            {
                 T sign = ((i + j) % 2 == 0) ? T(1) : T(-1);
                 result(i, j) = sign * minor(i, j);
             }
@@ -279,18 +346,21 @@ struct MatN {
     }
 
     /// Determinant (square, N<=4)
-    T determinant() const {
+    T determinant() const
+    {
         static_assert(M == N, "determinant() requires square matrix");
         static_assert(M <= 4, "determinant() only implemented for N<=4");
         return determinant_impl(*this);
     }
 
     /// Inverse (square, N<=4). Returns zero matrix when singular.
-    MatN inverse() const {
+    MatN inverse() const
+    {
         static_assert(M == N, "inverse() requires square matrix");
         static_assert(M <= 4, "inverse() only implemented for N<=4");
         T det = determinant();
-        if (std::abs(det) < T(1e-6)) {
+        if (std::abs(det) < T(1e-6))
+        {
             return MatN(T(0));
         }
         MatN cof = cofactor();
@@ -299,59 +369,71 @@ struct MatN {
     }
 
     /// Create zero matrix
-    static MatN zero() {
+    static MatN zero()
+    {
         return MatN(T(0));
     }
 
     /// Create identity matrix (only when square)
-    static MatN identity() {
+    static MatN identity()
+    {
         static_assert(M == N, "identity() only available for square matrices");
         MatN result = MatN::zero();
-        for (std::size_t i = 0; i < M; ++i) {
+        for (std::size_t i = 0; i < M; ++i)
+        {
             result(i, i) = T(1);
         }
         return result;
     }
 
     // Raw pointer to first element (row-major)
-    T* dataPtr() {
+    T *dataPtr()
+    {
         return data.data();
     }
 
-    const T* dataPtr() const {
+    const T *dataPtr() const
+    {
         return data.data();
     }
 
 private:
-    std::array<T, M * N> data{};  // default zero-initialized
+    std::array<T, M * N> data{}; // default zero-initialized
 
-    template <std::size_t Size>
-    static T determinant_impl(const MatN<Size, Size>& mtx) {
-        if constexpr (Size == 1) {
+    template <std::size_t Size> static T determinant_impl(const MatN<Size, Size> &mtx)
+    {
+        if constexpr (Size == 1)
+        {
             return mtx(0, 0);
-        } else if constexpr (Size == 2) {
+        }
+        else if constexpr (Size == 2)
+        {
             return mtx(0, 0) * mtx(1, 1) - mtx(0, 1) * mtx(1, 0);
-        } else if constexpr (Size == 3) {
+        }
+        else if constexpr (Size == 3)
+        {
             return mtx(0, 0) * (mtx(1, 1) * mtx(2, 2) - mtx(1, 2) * mtx(2, 1)) -
                    mtx(0, 1) * (mtx(1, 0) * mtx(2, 2) - mtx(1, 2) * mtx(2, 0)) +
                    mtx(0, 2) * (mtx(1, 0) * mtx(2, 1) - mtx(1, 1) * mtx(2, 0));
-        } else if constexpr (Size == 4) {
+        }
+        else if constexpr (Size == 4)
+        {
             // Compute 3x3 minors of first row
             T m00 = mtx(1, 1) * (mtx(2, 2) * mtx(3, 3) - mtx(2, 3) * mtx(3, 2)) -
-                        mtx(1, 2) * (mtx(2, 1) * mtx(3, 3) - mtx(2, 3) * mtx(3, 1)) +
-                        mtx(1, 3) * (mtx(2, 1) * mtx(3, 2) - mtx(2, 2) * mtx(3, 1));
+                    mtx(1, 2) * (mtx(2, 1) * mtx(3, 3) - mtx(2, 3) * mtx(3, 1)) +
+                    mtx(1, 3) * (mtx(2, 1) * mtx(3, 2) - mtx(2, 2) * mtx(3, 1));
 
             T m01 = mtx(1, 0) * (mtx(2, 2) * mtx(3, 3) - mtx(2, 3) * mtx(3, 2)) -
-                        mtx(1, 2) * (mtx(2, 0) * mtx(3, 3) - mtx(2, 3) * mtx(3, 0)) +
-                        mtx(1, 3) * (mtx(2, 0) * mtx(3, 2) - mtx(2, 2) * mtx(3, 0));
+                    mtx(1, 2) * (mtx(2, 0) * mtx(3, 3) - mtx(2, 3) * mtx(3, 0)) +
+                    mtx(1, 3) * (mtx(2, 0) * mtx(3, 2) - mtx(2, 2) * mtx(3, 0));
 
             T m02 = mtx(1, 0) * (mtx(2, 1) * mtx(3, 3) - mtx(2, 3) * mtx(3, 1)) -
-                        mtx(1, 1) * (mtx(2, 0) * mtx(3, 3) - mtx(2, 3) * mtx(3, 0)) +
-                        mtx(1, 3) * (mtx(2, 0) * mtx(3, 1) - mtx(2, 1) * mtx(3, 0));
+                    mtx(1, 1) * (mtx(2, 0) * mtx(3, 3) - mtx(2, 3) * mtx(3, 0)) +
+                    mtx(1, 3) * (mtx(2, 0) * mtx(3, 1) - mtx(2, 1) * mtx(3, 0));
 
             T m03 = mtx(1, 0) * (mtx(2, 1) * mtx(3, 2) - mtx(2, 2) * mtx(3, 1)) -
-                        mtx(1, 1) * (mtx(2, 0) * mtx(3, 2) - mtx(2, 2) * mtx(3, 0)) +
-                        mtx(1, 2) * (mtx(2, 0) * mtx(3, 1) - mtx(2, 1) * mtx(3, 0));
+                    mtx(1, 1) * (mtx(2, 0) * mtx(3, 2) - mtx(2, 2) * mtx(3, 0)) +
+                    mtx(1, 2) * (mtx(2, 0) * mtx(3, 1) - mtx(2, 1) * mtx(3, 0));
 
             return mtx(0, 0) * m00 - mtx(0, 1) * m01 + mtx(0, 2) * m02 - mtx(0, 3) * m03;
         }
@@ -360,25 +442,32 @@ private:
 
 /// Scalar * Matrix multiplication (commutative for scalar)
 template <std::size_t M, std::size_t N, typename T = float>
-inline MatN<M, N, T> operator*(T scalar, const MatN<M, N, T>& m) {
+inline MatN<M, N, T> operator*(T scalar, const MatN<M, N, T> &m)
+{
     return m * scalar;
 }
 
 /// Matrix * Vector multiplication
 template <std::size_t M, std::size_t N, typename T = float>
-inline VecN<M, T> operator*(const MatN<M, N, T>& m, const VecN<N, T>& v) {
+inline VecN<M, T> operator*(const MatN<M, N, T> &m, const VecN<N, T> &v)
+{
     return m * v;
 }
 
 /// Stream output
 template <std::size_t M, std::size_t N, typename T = float>
-inline std::ostream& operator<<(std::ostream& os, const MatN<M, N, T>& m) {
+inline std::ostream &operator<<(std::ostream &os, const MatN<M, N, T> &m)
+{
     os << "[";
-    for (std::size_t i = 0; i < M; ++i) {
-        if (i > 0) os << ", ";
+    for (std::size_t i = 0; i < M; ++i)
+    {
+        if (i > 0)
+            os << ", ";
         os << "(";
-        for (std::size_t j = 0; j < N; ++j) {
-            if (j > 0) os << ", ";
+        for (std::size_t j = 0; j < N; ++j)
+        {
+            if (j > 0)
+                os << ", ";
             os << m(i, j);
         }
         os << ")";
@@ -387,4 +476,4 @@ inline std::ostream& operator<<(std::ostream& os, const MatN<M, N, T>& m) {
     return os;
 }
 
-}  // namespace phynity::math::matrices
+} // namespace phynity::math::matrices

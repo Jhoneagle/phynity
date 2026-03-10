@@ -1,11 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
-
-#include <core/physics/micro/particle_system.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
-#include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/constraints/solver/constraint.hpp>
+#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/micro/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <algorithm>
@@ -19,14 +18,17 @@ using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
 
-namespace {
+namespace
+{
 
-struct SolveMetrics {
+struct SolveMetrics
+{
     float closing_speed = 0.0f;
     bool finite = true;
 };
 
-SolveMetrics solve_fixed_once(int iterations, bool warm_start) {
+SolveMetrics solve_fixed_once(int iterations, bool warm_start)
+{
     std::vector<Particle> particles;
     particles.emplace_back(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f));
     particles.emplace_back(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f));
@@ -55,7 +57,8 @@ SolveMetrics solve_fixed_once(int iterations, bool warm_start) {
     return metrics;
 }
 
-float second_step_closing_speed_with_or_without_warm_start(bool warm_start) {
+float second_step_closing_speed_with_or_without_warm_start(bool warm_start)
+{
     std::vector<Particle> particles;
     particles.emplace_back(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f));
     particles.emplace_back(Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f));
@@ -86,10 +89,13 @@ float second_step_closing_speed_with_or_without_warm_start(bool warm_start) {
     return particles[0].velocity.x - particles[1].velocity.x;
 }
 
-bool particle_system_finite(const ParticleSystem& system) {
-    for (const auto& p : system.particles()) {
+bool particle_system_finite(const ParticleSystem &system)
+{
+    for (const auto &p : system.particles())
+    {
         if (!std::isfinite(p.position.x) || !std::isfinite(p.position.y) || !std::isfinite(p.position.z) ||
-            !std::isfinite(p.velocity.x) || !std::isfinite(p.velocity.y) || !std::isfinite(p.velocity.z)) {
+            !std::isfinite(p.velocity.x) || !std::isfinite(p.velocity.y) || !std::isfinite(p.velocity.z))
+        {
             return false;
         }
     }
@@ -98,7 +104,8 @@ bool particle_system_finite(const ParticleSystem& system) {
 
 } // namespace
 
-TEST_CASE("Constraint convergence: more iterations increase correction", "[constraint][convergence][validation]") {
+TEST_CASE("Constraint convergence: more iterations increase correction", "[constraint][convergence][validation]")
+{
     const SolveMetrics low_iter = solve_fixed_once(1, false);
     const SolveMetrics high_iter = solve_fixed_once(8, false);
 
@@ -107,7 +114,8 @@ TEST_CASE("Constraint convergence: more iterations increase correction", "[const
     REQUIRE(high_iter.closing_speed >= low_iter.closing_speed);
 }
 
-TEST_CASE("Constraint convergence: warm-start improves second-step response", "[constraint][convergence][validation]") {
+TEST_CASE("Constraint convergence: warm-start improves second-step response", "[constraint][convergence][validation]")
+{
     const float no_warm = second_step_closing_speed_with_or_without_warm_start(false);
     const float warm = second_step_closing_speed_with_or_without_warm_start(true);
 
@@ -116,7 +124,8 @@ TEST_CASE("Constraint convergence: warm-start improves second-step response", "[
     REQUIRE(warm >= no_warm * 0.95f);
 }
 
-TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[constraint][convergence][validation]") {
+TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[constraint][convergence][validation]")
+{
     std::vector<Particle> particles;
     particles.emplace_back(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f));
     particles.emplace_back(Vec3f(1.2f, 0.0f, 0.0f), Vec3f(0.0f));
@@ -153,8 +162,10 @@ TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[cons
     REQUIRE(std::abs(particles[1].velocity.x) < 1000.0f);
 }
 
-TEST_CASE("Constraint convergence: timestep robustness stays finite", "[constraint][convergence][validation]") {
-    auto run_dt = [](float dt, int steps) {
+TEST_CASE("Constraint convergence: timestep robustness stays finite", "[constraint][convergence][validation]")
+{
+    auto run_dt = [](float dt, int steps)
+    {
         ParticleSystem system;
         system.enable_collisions(true);
         system.enable_constraints(true);
@@ -171,10 +182,11 @@ TEST_CASE("Constraint convergence: timestep robustness stays finite", "[constrai
         system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), ground, -1.0f, 1.5f);
         system.spawn(Vec3f(0.0f, 6.0f, 0.0f), Vec3f(0.0f), body, -1.0f, 0.5f);
 
-        system.add_force_field(std::make_unique<GravityField>(
-            Vec3f(0.0f, -phynity::test::helpers::constants::EARTH_GRAVITY, 0.0f)));
+        system.add_force_field(
+            std::make_unique<GravityField>(Vec3f(0.0f, -phynity::test::helpers::constants::EARTH_GRAVITY, 0.0f)));
 
-        for (int i = 0; i < steps; ++i) {
+        for (int i = 0; i < steps; ++i)
+        {
             system.update(dt);
         }
         return system;
@@ -187,8 +199,10 @@ TEST_CASE("Constraint convergence: timestep robustness stays finite", "[constrai
     REQUIRE(particle_system_finite(large_dt));
 }
 
-TEST_CASE("Constraint convergence: larger contact sets remain bounded", "[constraint][convergence][validation]") {
-    auto run_contact_set = [](int count) {
+TEST_CASE("Constraint convergence: larger contact sets remain bounded", "[constraint][convergence][validation]")
+{
+    auto run_contact_set = [](int count)
+    {
         ParticleSystem system;
         system.enable_collisions(true);
         system.enable_constraints(true);
@@ -202,13 +216,15 @@ TEST_CASE("Constraint convergence: larger contact sets remain bounded", "[constr
         auto material = make_no_damping_material(1.0f, 0.1f);
         const float radius = 0.5f;
 
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; ++i)
+        {
             const float x = static_cast<float>(i) * 0.95f;
             system.spawn(Vec3f(x, 0.0f, 0.0f), Vec3f(0.0f), material, -1.0f, radius);
         }
 
         constexpr float dt = 1.0f / 60.0f;
-        for (int i = 0; i < 240; ++i) {
+        for (int i = 0; i < 240; ++i)
+        {
             system.update(dt);
         }
 
@@ -222,12 +238,14 @@ TEST_CASE("Constraint convergence: larger contact sets remain bounded", "[constr
     REQUIRE(particle_system_finite(set_16));
 
     float max_speed_6 = 0.0f;
-    for (const auto& p : set_6.particles()) {
+    for (const auto &p : set_6.particles())
+    {
         max_speed_6 = std::max(max_speed_6, p.velocity.length());
     }
 
     float max_speed_16 = 0.0f;
-    for (const auto& p : set_16.particles()) {
+    for (const auto &p : set_16.particles())
+    {
         max_speed_16 = std::max(max_speed_16, p.velocity.length());
     }
 

@@ -8,29 +8,43 @@
 #include <mutex>
 #include <vector>
 
-namespace phynity::jobs {
+namespace phynity::jobs
+{
 
-struct JobEntry {
+struct JobEntry
+{
     JobFn fn;
     std::atomic<bool> completed{false};
     std::condition_variable done_cv;
     std::mutex done_mutex;
 
     JobEntry() = default;
-    explicit JobEntry(JobFn f) : fn(std::move(f)), completed(false) {}
+    explicit JobEntry(JobFn f) : fn(std::move(f)), completed(false)
+    {
+    }
 };
 
-class JobSystemImpl {
+class JobSystemImpl
+{
 public:
-    explicit JobSystemImpl(const JobSystemConfig& config);
+    explicit JobSystemImpl(const JobSystemConfig &config);
     ~JobSystemImpl();
 
-    void start(const JobSystemConfig& config);
+    void start(const JobSystemConfig &config);
     void shutdown();
 
-    bool is_running() const noexcept { return running_.load(); }
-    uint32_t worker_count() const noexcept { return worker_count_; }
-    SchedulingMode scheduling_mode() const noexcept { return mode_; }
+    bool is_running() const noexcept
+    {
+        return running_.load();
+    }
+    uint32_t worker_count() const noexcept
+    {
+        return worker_count_;
+    }
+    SchedulingMode scheduling_mode() const noexcept
+    {
+        return mode_;
+    }
 
     JobHandle submit(JobFn job);
     void wait(JobHandle handle);
@@ -55,18 +69,22 @@ private:
     std::vector<uint32_t> job_queue_;
 };
 
-JobSystemImpl::JobSystemImpl(const JobSystemConfig& config) {
+JobSystemImpl::JobSystemImpl(const JobSystemConfig &config)
+{
     start(config);
 }
 
-void JobSystemImpl::start(const JobSystemConfig& config) {
-    if (running_.load()) {
+void JobSystemImpl::start(const JobSystemConfig &config)
+{
+    if (running_.load())
+    {
         return;
     }
 
     mode_ = config.mode;
     worker_count_ = config.worker_count;
-    if (worker_count_ == 0) {
+    if (worker_count_ == 0)
+    {
         worker_count_ = platform::hardware_concurrency();
     }
 
@@ -76,13 +94,16 @@ void JobSystemImpl::start(const JobSystemConfig& config) {
     // In deterministic mode, use single worker thread.
     uint32_t actual_workers = (mode_ == SchedulingMode::Deterministic) ? 1 : worker_count_;
 
-    for (uint32_t i = 0; i < actual_workers; ++i) {
+    for (uint32_t i = 0; i < actual_workers; ++i)
+    {
         workers_.emplace_back([this] { worker_loop(); });
     }
 }
 
-void JobSystemImpl::shutdown() {
-    if (!running_.load()) {
+void JobSystemImpl::shutdown()
+{
+    if (!running_.load())
+    {
         return;
     }
 
@@ -96,20 +117,25 @@ void JobSystemImpl::shutdown() {
     }
 
     // Join all workers
-    for (auto& worker : workers_) {
-        if (worker.joinable()) {
+    for (auto &worker : workers_)
+    {
+        if (worker.joinable())
+        {
             worker.join();
         }
     }
     workers_.clear();
 }
 
-JobSystemImpl::~JobSystemImpl() {
+JobSystemImpl::~JobSystemImpl()
+{
     shutdown();
 }
 
-JobHandle JobSystemImpl::submit(JobFn job) {
-    if (!running_.load()) {
+JobHandle JobSystemImpl::submit(JobFn job)
+{
+    if (!running_.load())
+    {
         return JobHandle{};
     }
 
@@ -129,16 +155,19 @@ JobHandle JobSystemImpl::submit(JobFn job) {
     return JobHandle{job_id, 1};
 }
 
-void JobSystemImpl::wait(JobHandle handle) {
-    if (!handle.valid() || !running_.load()) {
+void JobSystemImpl::wait(JobHandle handle)
+{
+    if (!handle.valid() || !running_.load())
+    {
         return;
     }
 
-    JobEntry* entry = nullptr;
+    JobEntry *entry = nullptr;
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         auto it = jobs_.find(handle.id);
-        if (it == jobs_.end()) {
+        if (it == jobs_.end())
+        {
             return;
         }
         entry = it->second.get();
@@ -157,40 +186,45 @@ void JobSystemImpl::wait(JobHandle handle) {
     }
 }
 
-void JobSystemImpl::worker_loop() {
-    while (running_.load()) {
+void JobSystemImpl::worker_loop()
+{
+    while (running_.load())
+    {
         uint32_t job_id = 0;
 
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
-            queue_cv_.wait(lock, [this] {
-                return !job_queue_.empty() || !running_.load();
-            });
+            queue_cv_.wait(lock, [this] { return !job_queue_.empty() || !running_.load(); });
 
-            if (!running_.load()) {
+            if (!running_.load())
+            {
                 break;
             }
 
-            if (!job_queue_.empty()) {
+            if (!job_queue_.empty())
+            {
                 job_id = job_queue_.front();
                 job_queue_.erase(job_queue_.begin());
             }
         }
 
-        if (job_id == 0) {
+        if (job_id == 0)
+        {
             continue;
         }
 
-        JobEntry* entry = nullptr;
+        JobEntry *entry = nullptr;
         {
             std::lock_guard<std::mutex> lock(jobs_mutex_);
             auto it = jobs_.find(job_id);
-            if (it != jobs_.end()) {
+            if (it != jobs_.end())
+            {
                 entry = it->second.get();
             }
         }
 
-        if (entry && entry->fn) {
+        if (entry && entry->fn)
+        {
             entry->fn();
             entry->completed.store(true);
             entry->done_cv.notify_all();
@@ -204,49 +238,62 @@ void JobSystemImpl::worker_loop() {
 
 static thread_local std::unique_ptr<JobSystemImpl> g_job_system;
 
-JobSystem::JobSystem(const JobSystemConfig& config) {
+JobSystem::JobSystem(const JobSystemConfig &config)
+{
     start(config);
 }
 
-void JobSystem::start(const JobSystemConfig& config) {
-    if (!g_job_system) {
+void JobSystem::start(const JobSystemConfig &config)
+{
+    if (!g_job_system)
+    {
         g_job_system = std::make_unique<JobSystemImpl>(config);
     }
 }
 
-void JobSystem::shutdown() {
-    if (g_job_system) {
+void JobSystem::shutdown()
+{
+    if (g_job_system)
+    {
         g_job_system->shutdown();
         g_job_system.reset();
     }
 }
 
-bool JobSystem::is_running() const noexcept {
+bool JobSystem::is_running() const noexcept
+{
     return g_job_system && g_job_system->is_running();
 }
 
-uint32_t JobSystem::worker_count() const noexcept {
+uint32_t JobSystem::worker_count() const noexcept
+{
     return g_job_system ? g_job_system->worker_count() : 0;
 }
 
-SchedulingMode JobSystem::scheduling_mode() const noexcept {
+SchedulingMode JobSystem::scheduling_mode() const noexcept
+{
     return g_job_system ? g_job_system->scheduling_mode() : SchedulingMode::Concurrent;
 }
 
-JobHandle JobSystem::submit(JobFn job) {
+JobHandle JobSystem::submit(JobFn job)
+{
     return g_job_system ? g_job_system->submit(std::move(job)) : JobHandle{};
 }
 
-void JobSystem::wait(JobHandle handle) {
-    if (g_job_system) {
+void JobSystem::wait(JobHandle handle)
+{
+    if (g_job_system)
+    {
         g_job_system->wait(handle);
     }
 }
 
-void JobSystem::wait_all(std::span<const JobHandle> handles) {
-    for (const auto& handle : handles) {
+void JobSystem::wait_all(std::span<const JobHandle> handles)
+{
+    for (const auto &handle : handles)
+    {
         wait(handle);
     }
 }
 
-}  // namespace phynity::jobs
+} // namespace phynity::jobs

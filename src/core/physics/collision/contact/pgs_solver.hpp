@@ -1,40 +1,44 @@
 #pragma once
 
+#include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
-#include <core/math/vectors/vec3.hpp>
-#include <vector>
+
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
-namespace phynity::physics::collision {
+namespace phynity::physics::collision
+{
 
 using phynity::math::vectors::Vec3f;
 
 /// Configuration for PGS solver behavior
-struct PGSConfig {
-    int max_iterations = 4;              ///< Maximum number of iterations
+struct PGSConfig
+{
+    int max_iterations = 4; ///< Maximum number of iterations
     float convergence_threshold = 1e-5f; ///< Threshold for early termination
-    float friction_coefficient = 0.2f;   ///< Default friction coefficient
-    float restitution_default = 0.0f;    ///< Default coefficient of restitution
+    float friction_coefficient = 0.2f; ///< Default friction coefficient
+    float restitution_default = 0.0f; ///< Default coefficient of restitution
 };
 
 /// Projected Gauss-Seidel solver for iterative constraint resolution
 /// Solves contact constraints by iteratively applying impulses to resolve
 /// penetration and velocity constraints. Supports friction and warm-start.
-class PGSSolver {
+class PGSSolver
+{
 public:
     /// Solve contact constraints using PGS iteration
     /// @param manifolds Vector of contact manifolds to resolve
     /// @param colliders Vector of colliders (indexed by object_id)
     /// @param config PGS solver configuration
     /// @return Vector of applied impulses (one per contact)
-    static std::vector<Vec3f> solve(
-        const std::vector<ContactManifold>& manifolds,
-        std::vector<SphereCollider>& colliders,
-        const PGSConfig& config = PGSConfig()
-    ) {
-        if (manifolds.empty() || colliders.empty()) {
+    static std::vector<Vec3f> solve(const std::vector<ContactManifold> &manifolds,
+                                    std::vector<SphereCollider> &colliders,
+                                    const PGSConfig &config = PGSConfig())
+    {
+        if (manifolds.empty() || colliders.empty())
+        {
             return std::vector<Vec3f>();
         }
 
@@ -42,50 +46,52 @@ public:
         std::vector<Vec3f> accumulated_impulses(manifolds.size(), Vec3f(0.0f));
 
         // Phase 1: Apply warm-start impulses from previous frame
-        for (size_t i = 0; i < manifolds.size(); ++i) {
-            if (!manifolds[i].is_valid()) continue;
-            if (manifolds[i].object_a_id >= colliders.size() || 
-                manifolds[i].object_b_id >= colliders.size()) continue;
+        for (size_t i = 0; i < manifolds.size(); ++i)
+        {
+            if (!manifolds[i].is_valid())
+                continue;
+            if (manifolds[i].object_a_id >= colliders.size() || manifolds[i].object_b_id >= colliders.size())
+                continue;
 
-            const Vec3f& prev_impulse = manifolds[i].previous_impulse;
-            if (prev_impulse.length() > 1e-10f) {
-                apply_impulse(
-                    colliders[manifolds[i].object_a_id],
-                    colliders[manifolds[i].object_b_id],
-                    prev_impulse
-                );
+            const Vec3f &prev_impulse = manifolds[i].previous_impulse;
+            if (prev_impulse.length() > 1e-10f)
+            {
+                apply_impulse(colliders[manifolds[i].object_a_id], colliders[manifolds[i].object_b_id], prev_impulse);
                 accumulated_impulses[i] = prev_impulse;
             }
         }
 
         // Phase 2: Main PGS iteration loop
-        for (int iteration = 0; iteration < config.max_iterations; ++iteration) {
+        for (int iteration = 0; iteration < config.max_iterations; ++iteration)
+        {
             float max_impulse_change = 0.0f;
 
             // Process each contact
-            for (size_t i = 0; i < manifolds.size(); ++i) {
-                const ContactManifold& manifold = manifolds[i];
-                
-                if (!manifold.is_valid()) {
+            for (size_t i = 0; i < manifolds.size(); ++i)
+            {
+                const ContactManifold &manifold = manifolds[i];
+
+                if (!manifold.is_valid())
+                {
                     continue;
                 }
 
                 // Get colliders
-                if (manifold.object_a_id >= colliders.size() || manifold.object_b_id >= colliders.size()) {
+                if (manifold.object_a_id >= colliders.size() || manifold.object_b_id >= colliders.size())
+                {
                     continue;
                 }
 
-                SphereCollider& collider_a = colliders[manifold.object_a_id];
-                SphereCollider& collider_b = colliders[manifold.object_b_id];
+                SphereCollider &collider_a = colliders[manifold.object_a_id];
+                SphereCollider &collider_b = colliders[manifold.object_b_id];
 
                 // Compute the impulse needed at this contact with current velocities
-                Vec3f delta_impulse = compute_contact_impulse(
-                    manifold, collider_a, collider_b, config, accumulated_impulses[i]
-                );
+                Vec3f delta_impulse =
+                    compute_contact_impulse(manifold, collider_a, collider_b, config, accumulated_impulses[i]);
 
                 // Apply the delta impulse
                 apply_impulse(collider_a, collider_b, delta_impulse);
-                
+
                 // Track change for convergence check
                 max_impulse_change = std::max(max_impulse_change, delta_impulse.length());
 
@@ -94,7 +100,8 @@ public:
             }
 
             // Check for convergence
-            if (max_impulse_change < config.convergence_threshold) {
+            if (max_impulse_change < config.convergence_threshold)
+            {
                 break;
             }
         }
@@ -104,24 +111,30 @@ public:
 
     /// Solve with adaptive iterations based on constraint count
     /// Adds more iterations for larger contact sets
-    static std::vector<Vec3f> solve_adaptive(
-        const std::vector<ContactManifold>& manifolds,
-        std::vector<SphereCollider>& colliders,
-        const PGSConfig& config = PGSConfig()
-    ) {
+    static std::vector<Vec3f> solve_adaptive(const std::vector<ContactManifold> &manifolds,
+                                             std::vector<SphereCollider> &colliders,
+                                             const PGSConfig &config = PGSConfig())
+    {
         // Scale iterations with contact count
         PGSConfig adaptive_config = config;
         int contact_count = 0;
-        for (const auto& m : manifolds) {
-            if (m.is_valid()) contact_count++;
+        for (const auto &m : manifolds)
+        {
+            if (m.is_valid())
+                contact_count++;
         }
-        
+
         // Add iterations for larger systems: 4 for 1-10 contacts, 8 for 11-50, 16 for 50+
-        if (contact_count <= 10) {
+        if (contact_count <= 10)
+        {
             adaptive_config.max_iterations = 4;
-        } else if (contact_count <= 50) {
+        }
+        else if (contact_count <= 50)
+        {
             adaptive_config.max_iterations = 8;
-        } else {
+        }
+        else
+        {
             adaptive_config.max_iterations = 16;
         }
 
@@ -132,14 +145,13 @@ private:
     /// Compute the incremental impulse to apply at a contact point
     /// This solves the constraint: resolve relative velocity and penetration
     /// The impulse is incremental - what needs to be added to what's already been applied
-    static Vec3f compute_contact_impulse(
-        const ContactManifold& manifold,
-        const SphereCollider& collider_a,
-        const SphereCollider& collider_b,
-        const PGSConfig& config,
-        const Vec3f& accumulated_impulse
-    ) {
-        const ContactPoint& contact = manifold.contact;
+    static Vec3f compute_contact_impulse(const ContactManifold &manifold,
+                                         const SphereCollider &collider_a,
+                                         const SphereCollider &collider_b,
+                                         const PGSConfig &config,
+                                         const Vec3f &accumulated_impulse)
+    {
+        const ContactPoint &contact = manifold.contact;
 
         // Compute inverse masses
         float inv_m1 = collider_a.inverse_mass;
@@ -147,11 +159,12 @@ private:
         float inv_sum = inv_m1 + inv_m2;
 
         // Skip if both objects are static
-        if (inv_sum <= 0.0f) {
+        if (inv_sum <= 0.0f)
+        {
             return Vec3f(0.0f);
         }
 
-        // Compute relative velocity at contact point  
+        // Compute relative velocity at contact point
         Vec3f relative_velocity = collider_b.velocity - collider_a.velocity;
         float velocity_along_normal = relative_velocity.dot(contact.normal);
 
@@ -167,7 +180,8 @@ private:
         float baumgarte_scalar = 0.2f;
         float dt = 1.0f / 60.0f;
         float penetration_bias = 0.0f;
-        if (contact.penetration > 0.0f) {
+        if (contact.penetration > 0.0f)
+        {
             penetration_bias = (baumgarte_scalar / dt) * contact.penetration;
         }
 
@@ -189,24 +203,22 @@ private:
         Vec3f tangent = compute_tangent_direction(contact.normal, relative_velocity);
         Vec3f friction_impulse = Vec3f(0.0f);
 
-        if (tangent.squaredLength() > 1e-10f && new_normal_impulse > 1e-10f) {
+        if (tangent.squaredLength() > 1e-10f && new_normal_impulse > 1e-10f)
+        {
             // Current tangential impulse from accumulated
             Vec3f current_tangent_impulse = accumulated_impulse - contact.normal * current_normal_impulse;
             float current_tangent_magnitude = current_tangent_impulse.dot(tangent);
 
             // Velocity along tangent direction
             float velocity_along_tangent = relative_velocity.dot(tangent);
-            
+
             // Tangential impulse needed to bring velocity to zero
             float friction_coefficient = config.friction_coefficient;
             float max_friction_impulse = friction_coefficient * new_normal_impulse;
-            
+
             float tangent_impulse_magnitude = -velocity_along_tangent / inv_sum;
             float new_tangent_impulse = std::clamp(
-                current_tangent_magnitude + tangent_impulse_magnitude,
-                -max_friction_impulse,
-                max_friction_impulse
-            );
+                current_tangent_magnitude + tangent_impulse_magnitude, -max_friction_impulse, max_friction_impulse);
             float delta_tangent_impulse = new_tangent_impulse - current_tangent_magnitude;
             friction_impulse = tangent * delta_tangent_impulse;
         }
@@ -216,14 +228,16 @@ private:
     }
 
     /// Compute a tangent direction (perpendicular to normal)
-    static Vec3f compute_tangent_direction(const Vec3f& normal, const Vec3f& relative_velocity) {
+    static Vec3f compute_tangent_direction(const Vec3f &normal, const Vec3f &relative_velocity)
+    {
         // Project relative velocity onto tangent plane (perpendicular to normal)
         Vec3f tangent_velocity = relative_velocity - normal * relative_velocity.dot(normal);
-        
-        if (tangent_velocity.squaredLength() > 1e-10f) {
+
+        if (tangent_velocity.squaredLength() > 1e-10f)
+        {
             return tangent_velocity.normalized();
         }
-        
+
         // If no tangent velocity, pick an arbitrary perpendicular direction
         // Find a direction not parallel to normal
         Vec3f arbitrary = (std::abs(normal.x) < 0.9f) ? Vec3f(1.0f, 0.0f, 0.0f) : Vec3f(0.0f, 1.0f, 0.0f);
@@ -231,11 +245,8 @@ private:
     }
 
     /// Apply an impulse to both colliders
-    static void apply_impulse(
-        SphereCollider& collider_a,
-        SphereCollider& collider_b,
-        const Vec3f& impulse
-    ) {
+    static void apply_impulse(SphereCollider &collider_a, SphereCollider &collider_b, const Vec3f &impulse)
+    {
         float inv_m1 = collider_a.inverse_mass;
         float inv_m2 = collider_b.inverse_mass;
 
@@ -244,4 +255,4 @@ private:
     }
 };
 
-}  // namespace phynity::physics::collision
+} // namespace phynity::physics::collision

@@ -1,6 +1,7 @@
 #include "timestep_controller.hpp"
 
-namespace phynity::physics {
+namespace phynity::physics
+{
 
 // TimestepController is fully defined in the header as it uses inline functions
 // and simple data structures.
@@ -11,4 +12,4 @@ namespace phynity::physics {
 // - Diagnostics helpers (print statistics, detect anomalies)
 // - Performance profiling integration
 
-}  // namespace phynity::physics
+} // namespace phynity::physics

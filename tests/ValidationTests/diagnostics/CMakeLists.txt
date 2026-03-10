@@ -6,6 +6,7 @@ phynity_apply_warnings(profiler_overhead_benchmark)
 phynity_apply_sanitizers(profiler_overhead_benchmark)
 target_link_libraries(profiler_overhead_benchmark PRIVATE phynity::tests Catch2::Catch2WithMain)
 add_test(NAME validation.diagnostics.profiler_overhead COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:profiler_overhead_benchmark>)
+set_tests_properties(validation.diagnostics.profiler_overhead PROPERTIES LABELS "validation;performance")
 
 
 # Diagnostics golden tests

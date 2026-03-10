@@ -1,18 +1,20 @@
 #pragma once
 
-#include <core/math/vectors/vec_n.hpp>
 #include <core/math/matrices/mat_n.hpp>
 #include <core/math/utilities/float_comparison.hpp>
+#include <core/math/vectors/vec_n.hpp>
+
+#include <cmath>
 #include <cstddef>
 #include <functional>
-#include <cmath>
 #include <type_traits>
 
-namespace phynity::math::calculus {
+namespace phynity::math::calculus
+{
 
-using phynity::math::vectors::VecN;
 using phynity::math::matrices::MatN;
 using phynity::math::utilities::epsilon;
+using phynity::math::vectors::VecN;
 
 /// ============================================================================
 /// FINITE DIFFERENCES
@@ -30,17 +32,13 @@ using phynity::math::utilities::epsilon;
 /// @param x Point at which to compute derivative
 /// @param h Step size (default chosen for good numerical stability)
 /// @return Approximate first derivative f'(x)
-template<typename F, typename T>
-inline T forward_difference_first(
-    const F& f,
-    T x,
-    T h = T(1e-4)
-) {
+template <typename F, typename T> inline T forward_difference_first(const F &f, T x, T h = T(1e-4))
+{
     static_assert(std::is_floating_point_v<T>, "forward_difference_first requires floating-point type");
-    
+
     T f_x = f(x);
     T f_xph = f(x + h);
-    
+
     return (f_xph - f_x) / h;
 }
 
@@ -53,17 +51,13 @@ inline T forward_difference_first(
 /// @param x Point at which to compute derivative
 /// @param h Step size (default chosen for good numerical stability)
 /// @return Approximate first derivative f'(x)
-template<typename F, typename T>
-inline T central_difference_first(
-    const F& f,
-    T x,
-    T h = T(1e-4)
-) {
+template <typename F, typename T> inline T central_difference_first(const F &f, T x, T h = T(1e-4))
+{
     static_assert(std::is_floating_point_v<T>, "central_difference_first requires floating-point type");
-    
+
     T f_xmh = f(x - h);
     T f_xph = f(x + h);
-    
+
     return (f_xph - f_xmh) / (T(2) * h);
 }
 
@@ -76,18 +70,14 @@ inline T central_difference_first(
 /// @param x Point at which to compute derivative
 /// @param h Step size
 /// @return Approximate second derivative f''(x)
-template<typename F, typename T>
-inline T forward_difference_second(
-    const F& f,
-    T x,
-    T h = T(1e-3)
-) {
+template <typename F, typename T> inline T forward_difference_second(const F &f, T x, T h = T(1e-3))
+{
     static_assert(std::is_floating_point_v<T>, "forward_difference_second requires floating-point type");
-    
+
     T f_x = f(x);
     T f_xph = f(x + h);
     T f_x2ph = f(x + T(2) * h);
-    
+
     T h_sq = h * h;
     return (f_x2ph - T(2) * f_xph + f_x) / h_sq;
 }
@@ -101,18 +91,14 @@ inline T forward_difference_second(
 /// @param x Point at which to compute derivative
 /// @param h Step size
 /// @return Approximate second derivative f''(x)
-template<typename F, typename T>
-inline T central_difference_second(
-    const F& f,
-    T x,
-    T h = T(1e-3)
-) {
+template <typename F, typename T> inline T central_difference_second(const F &f, T x, T h = T(1e-3))
+{
     static_assert(std::is_floating_point_v<T>, "central_difference_second requires floating-point type");
-    
+
     T f_xmh = f(x - h);
     T f_x = f(x);
     T f_xph = f(x + h);
-    
+
     T h_sq = h * h;
     return (f_xph - T(2) * f_x + f_xmh) / h_sq;
 }
@@ -127,17 +113,14 @@ inline T central_difference_second(
 /// @param x Scalar input
 /// @param h Step size
 /// @return Vector of partial derivatives [∂f₀/∂x, ∂f₁/∂x, ..., ∂f_{N-1}/∂x]
-template<std::size_t N, typename F, typename T = float>
-inline VecN<N, T> central_difference_vector(
-    const F& f,
-    T x,
-    T h = T(1e-4)
-) {
+template <std::size_t N, typename F, typename T = float>
+inline VecN<N, T> central_difference_vector(const F &f, T x, T h = T(1e-4))
+{
     static_assert(std::is_floating_point_v<T>, "central_difference_vector requires floating-point type");
-    
+
     VecN<N, T> f_xmh = f(x - h);
     VecN<N, T> f_xph = f(x + h);
-    
+
     return (f_xph - f_xmh) / (T(2) * h);
 }
 
@@ -152,35 +135,33 @@ inline VecN<N, T> central_difference_vector(
 /// @param x Input point
 /// @param h Step size for finite differences
 /// @return M×N Jacobian matrix (each row is gradient of one output component)
-template<std::size_t M, std::size_t N, typename F, typename T = float>
-inline MatN<M, N, T> numerical_jacobian(
-    const F& f,
-    const VecN<N, T>& x,
-    T h = T(1e-4)
-) {
+template <std::size_t M, std::size_t N, typename F, typename T = float>
+inline MatN<M, N, T> numerical_jacobian(const F &f, const VecN<N, T> &x, T h = T(1e-4))
+{
     static_assert(std::is_floating_point_v<T>, "numerical_jacobian requires floating-point type");
-    
+
     using phynity::math::matrices::MatN;
-    
+
     MatN<M, N, T> jacobian(T(0));
-    
-    for (std::size_t j = 0; j < N; ++j) {
+
+    for (std::size_t j = 0; j < N; ++j)
+    {
         // Create perturbed points: x ± h*e_j
         VecN<N, T> x_minus = x;
         VecN<N, T> x_plus = x;
-        
+
         x_minus[j] -= h;
         x_plus[j] += h;
-        
+
         // Compute central difference for column j
         VecN<M, T> f_minus = f(x_minus);
         VecN<M, T> f_plus = f(x_plus);
         VecN<M, T> df = (f_plus - f_minus) / (T(2) * h);
-        
+
         // Set column j of Jacobian
         jacobian.setColumn(j, df);
     }
-    
+
     return jacobian;
 }
 
@@ -190,18 +171,19 @@ inline MatN<M, N, T> numerical_jacobian(
 /// @tparam T Floating-point type
 /// @param x Point at which to compute derivative
 /// @return Recommended step size h
-template<typename T>
-inline T optimal_step_size_first_derivative(T x) {
+template <typename T> inline T optimal_step_size_first_derivative(T x)
+{
     static_assert(std::is_floating_point_v<T>, "optimal_step_size_first_derivative requires floating-point type");
-    
+
     T eps = epsilon<T>();
     T abs_x = std::abs(x);
-    
+
     // Avoid h = 0 if x is very small
-    if (abs_x < T(1e-6)) {
+    if (abs_x < T(1e-6))
+    {
         abs_x = T(1e-6);
     }
-    
+
     // h ≈ sqrt(eps) * |x|
     return std::sqrt(eps) * abs_x;
 }
@@ -211,18 +193,19 @@ inline T optimal_step_size_first_derivative(T x) {
 /// @tparam T Floating-point type
 /// @param x Point at which to compute derivative
 /// @return Recommended step size h
-template<typename T>
-inline T optimal_step_size_second_derivative(T x) {
+template <typename T> inline T optimal_step_size_second_derivative(T x)
+{
     static_assert(std::is_floating_point_v<T>, "optimal_step_size_second_derivative requires floating-point type");
-    
+
     T eps = epsilon<T>();
     T abs_x = std::abs(x);
-    
+
     // Avoid h = 0 if x is very small
-    if (abs_x < T(1e-6)) {
+    if (abs_x < T(1e-6))
+    {
         abs_x = T(1e-6);
     }
-    
+
     // h ≈ eps^(1/3) * |x|
     return std::cbrt(eps) * abs_x;
 }
@@ -239,21 +222,16 @@ inline T optimal_step_size_second_derivative(T x) {
 /// @param h Step size for finite differences
 /// @param tolerance Acceptable error tolerance
 /// @return true if |numerical - analytical| <= tolerance
-template<typename F, typename G, typename T>
-inline bool validate_derivative(
-    const F& f,
-    const G& f_prime,
-    T x,
-    T h = T(1e-4),
-    T tolerance = T(1e-3)
-) {
+template <typename F, typename G, typename T>
+inline bool validate_derivative(const F &f, const G &f_prime, T x, T h = T(1e-4), T tolerance = T(1e-3))
+{
     static_assert(std::is_floating_point_v<T>, "validate_derivative requires floating-point type");
-    
+
     T numerical = central_difference_first(f, x, h);
     T analytical = f_prime(x);
     T error = std::abs(numerical - analytical);
-    
+
     return error <= tolerance;
 }
 
-}  // namespace phynity::math::calculus
+} // namespace phynity::math::calculus

@@ -3,33 +3,34 @@
 #include <algorithm>
 #include <cmath>
 
-namespace phynity::physics::collision::ccd {
+namespace phynity::physics::collision::ccd
+{
 
-TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
-    const SweptSphereSolver::Sphere& sphere_a,
-    const SweptSphereSolver::Sphere& sphere_b,
-    float max_time,
-    int max_iterations,
-    float separation_tolerance,
-    int root_refinement_iterations
-) {
+TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(const SweptSphereSolver::Sphere &sphere_a,
+                                                                const SweptSphereSolver::Sphere &sphere_b,
+                                                                float max_time,
+                                                                int max_iterations,
+                                                                float separation_tolerance,
+                                                                int root_refinement_iterations)
+{
     constexpr float kEpsilon = 1e-6f;
 
-    auto finite_vec = [](const Vec3f& v) {
-        return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
-    };
+    auto finite_vec = [](const Vec3f &v) { return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); };
 
-    if (!std::isfinite(max_time) || max_time <= 0.0f) {
+    if (!std::isfinite(max_time) || max_time <= 0.0f)
+    {
         return TimeOfImpactResult();
     }
 
-    if (!std::isfinite(sphere_a.radius) || !std::isfinite(sphere_b.radius) ||
-        sphere_a.radius <= 0.0f || sphere_b.radius <= 0.0f) {
+    if (!std::isfinite(sphere_a.radius) || !std::isfinite(sphere_b.radius) || sphere_a.radius <= 0.0f ||
+        sphere_b.radius <= 0.0f)
+    {
         return TimeOfImpactResult();
     }
 
-    if (!finite_vec(sphere_a.position) || !finite_vec(sphere_b.position) ||
-        !finite_vec(sphere_a.velocity) || !finite_vec(sphere_b.velocity)) {
+    if (!finite_vec(sphere_a.position) || !finite_vec(sphere_b.position) || !finite_vec(sphere_a.velocity) ||
+        !finite_vec(sphere_b.velocity))
+    {
         return TimeOfImpactResult();
     }
 
@@ -44,14 +45,16 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
     float normalized_time = 0.0f;
     float previous_normalized_time = 0.0f;
 
-    auto signed_distance = [&](float query_normalized_time) -> float {
+    auto signed_distance = [&](float query_normalized_time) -> float
+    {
         float physical_time = query_normalized_time * clamped_max_time;
         Vec3f pos_a = sphere_a.position + sphere_a.velocity * physical_time;
         Vec3f pos_b = sphere_b.position + sphere_b.velocity * physical_time;
         return (pos_b - pos_a).length() - combined_radius;
     };
 
-    for (int iter = 0; iter < clamped_iterations; ++iter) {
+    for (int iter = 0; iter < clamped_iterations; ++iter)
+    {
         float physical_time = normalized_time * clamped_max_time;
         Vec3f pos_a = sphere_a.position + sphere_a.velocity * physical_time;
         Vec3f pos_b = sphere_b.position + sphere_b.velocity * physical_time;
@@ -62,20 +65,26 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
 
         Vec3f normal = (distance > kEpsilon) ? (delta / distance) : Vec3f(1.0f, 0.0f, 0.0f);
 
-        if (separation <= tolerance) {
+        if (separation <= tolerance)
+        {
             float refined_normalized_time = normalized_time;
 
-            if (refinement_iterations > 0 && previous_normalized_time < normalized_time) {
+            if (refinement_iterations > 0 && previous_normalized_time < normalized_time)
+            {
                 float lo = previous_normalized_time;
                 float hi = normalized_time;
 
-                for (int root_iter = 0; root_iter < refinement_iterations; ++root_iter) {
+                for (int root_iter = 0; root_iter < refinement_iterations; ++root_iter)
+                {
                     float mid = 0.5f * (lo + hi);
                     float f_mid = signed_distance(mid);
 
-                    if (f_mid > 0.0f) {
+                    if (f_mid > 0.0f)
+                    {
                         lo = mid;
-                    } else {
+                    }
+                    else
+                    {
                         hi = mid;
                     }
                 }
@@ -96,7 +105,8 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
         }
 
         float rel_normal_speed = relative_velocity.dot(normal);
-        if (rel_normal_speed >= -kEpsilon) {
+        if (rel_normal_speed >= -kEpsilon)
+        {
             return TimeOfImpactResult();
         }
 
@@ -107,7 +117,8 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
         previous_normalized_time = normalized_time;
         normalized_time += advance_normalized;
 
-        if (normalized_time > 1.0f + kEpsilon) {
+        if (normalized_time > 1.0f + kEpsilon)
+        {
             return TimeOfImpactResult();
         }
     }
@@ -115,4 +126,4 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(
     return TimeOfImpactResult();
 }
 
-}  // namespace phynity::physics::collision::ccd
+} // namespace phynity::physics::collision::ccd

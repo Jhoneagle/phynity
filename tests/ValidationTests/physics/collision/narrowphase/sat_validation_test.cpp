@@ -1,17 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-
-#include <core/physics/collision/narrowphase/sat_solver.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/collision/narrowphase/sat_solver.hpp>
+#include <core/physics/collision/shapes/shape_factory.hpp>
 
 using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;
 using Catch::Matchers::WithinAbs;
 
-TEST_CASE("SAT Validation: 2D square-square axis-aligned collision", "[collision][sat][validation]") {
-    SECTION("Separated squares") {
+TEST_CASE("SAT Validation: 2D square-square axis-aligned collision", "[collision][sat][validation]")
+{
+    SECTION("Separated squares")
+    {
         auto square_a = ShapeFactory::create_box_2d(1.0f, 1.0f);
         auto square_b = ShapeFactory::create_box_2d(1.0f, 1.0f);
 
@@ -20,7 +21,8 @@ TEST_CASE("SAT Validation: 2D square-square axis-aligned collision", "[collision
         REQUIRE(!result.is_colliding);
     }
 
-    SECTION("Overlapping squares") {
+    SECTION("Overlapping squares")
+    {
         auto square_a = ShapeFactory::create_box_2d(1.0f, 1.0f);
         auto square_b = ShapeFactory::create_box_2d(1.0f, 1.0f);
 
@@ -36,7 +38,8 @@ TEST_CASE("SAT Validation: 2D square-square axis-aligned collision", "[collision
         REQUIRE_THAT(result.collision_normal.y, WithinAbs(0.0f, 0.01f));
     }
 
-    SECTION("Perfectly overlapping squares") {
+    SECTION("Perfectly overlapping squares")
+    {
         auto square_a = ShapeFactory::create_box_2d(1.0f, 1.0f);
         auto square_b = ShapeFactory::create_box_2d(1.0f, 1.0f);
 
@@ -47,8 +50,10 @@ TEST_CASE("SAT Validation: 2D square-square axis-aligned collision", "[collision
     }
 }
 
-TEST_CASE("SAT Validation: 2D rotated collision", "[collision][sat][validation]") {
-    SECTION("45-degree rotated square collision") {
+TEST_CASE("SAT Validation: 2D rotated collision", "[collision][sat][validation]")
+{
+    SECTION("45-degree rotated square collision")
+    {
         // Create a diamond shape (square rotated 45 degrees)
         auto diamond = ShapeFactory::create_regular_polygon_2d(4, 0.7071f, 45.0f);
         auto square = ShapeFactory::create_box_2d(0.5f, 0.5f);
@@ -61,8 +66,10 @@ TEST_CASE("SAT Validation: 2D rotated collision", "[collision][sat][validation]"
     }
 }
 
-TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation]") {
-    SECTION("Separated cubes") {
+TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation]")
+{
+    SECTION("Separated cubes")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -71,7 +78,8 @@ TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation
         REQUIRE(!result.is_colliding);
     }
 
-    SECTION("Overlapping cubes along X-axis") {
+    SECTION("Overlapping cubes along X-axis")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -84,7 +92,8 @@ TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation
         REQUIRE_THAT(std::abs(result.collision_normal.x), WithinAbs(1.0f, 0.01f));
     }
 
-    SECTION("Overlapping cubes along Y-axis") {
+    SECTION("Overlapping cubes along Y-axis")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -97,7 +106,8 @@ TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation
         REQUIRE_THAT(std::abs(result.collision_normal.y), WithinAbs(1.0f, 0.01f));
     }
 
-    SECTION("Overlapping cubes along Z-axis") {
+    SECTION("Overlapping cubes along Z-axis")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -111,8 +121,10 @@ TEST_CASE("SAT Validation: 3D cube-cube collision", "[collision][sat][validation
     }
 }
 
-TEST_CASE("SAT Validation: Edge case handling", "[collision][sat][validation]") {
-    SECTION("Touching but not penetrating") {
+TEST_CASE("SAT Validation: Edge case handling", "[collision][sat][validation]")
+{
+    SECTION("Touching but not penetrating")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -123,7 +135,8 @@ TEST_CASE("SAT Validation: Edge case handling", "[collision][sat][validation]") 
         REQUIRE(!result.is_colliding);
     }
 
-    SECTION("Very small penetration") {
+    SECTION("Very small penetration")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -135,7 +148,8 @@ TEST_CASE("SAT Validation: Edge case handling", "[collision][sat][validation]") 
         REQUIRE(result.penetration_depth < 0.1f);
     }
 
-    SECTION("Large penetration") {
+    SECTION("Large penetration")
+    {
         auto cube_a = ShapeFactory::create_box_3d(2.0f, 2.0f, 2.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -147,8 +161,10 @@ TEST_CASE("SAT Validation: Edge case handling", "[collision][sat][validation]") 
     }
 }
 
-TEST_CASE("SAT Validation: Collision normal direction", "[collision][sat][validation]") {
-    SECTION("Normal points from A to B") {
+TEST_CASE("SAT Validation: Collision normal direction", "[collision][sat][validation]")
+{
+    SECTION("Normal points from A to B")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
@@ -161,20 +177,23 @@ TEST_CASE("SAT Validation: Collision normal direction", "[collision][sat][valida
         REQUIRE(result.collision_normal.x > 0.0f);
     }
 
-    SECTION("Collision normal is normalized") {
+    SECTION("Collision normal is normalized")
+    {
         auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
         auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
         auto result = SATSolver::test_convex_hull_3d(cube_a, cube_b, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.5f, 0.5f, 0.0f));
 
-        if (result.is_colliding) {
+        if (result.is_colliding)
+        {
             float normal_length = result.collision_normal.length();
             REQUIRE_THAT(normal_length, WithinAbs(1.0f, 0.01f));
         }
     }
 }
 
-TEST_CASE("SAT Validation: Performance characteristics", "[collision][sat][validation][!benchmark]") {
+TEST_CASE("SAT Validation: Performance characteristics", "[collision][sat][validation][!benchmark]")
+{
     // This test validates that SAT runs in reasonable time
     // Not an exact benchmark, just a sanity check
 
@@ -182,7 +201,8 @@ TEST_CASE("SAT Validation: Performance characteristics", "[collision][sat][valid
     auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
     // Run many iterations to ensure no obvious performance issues
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; ++i)
+    {
         auto result = SATSolver::test_convex_hull_3d(cube_a, cube_b, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.5f, 0.0f, 0.0f));
         REQUIRE(result.is_colliding);
     }
@@ -191,21 +211,27 @@ TEST_CASE("SAT Validation: Performance characteristics", "[collision][sat][valid
     SUCCEED("SAT performance is acceptable");
 }
 
-TEST_CASE("SAT Validation: Deterministic results", "[collision][sat][validation]") {
+TEST_CASE("SAT Validation: Deterministic results", "[collision][sat][validation]")
+{
     auto cube_a = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
     auto cube_b = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f);
 
     // Run same collision test multiple times
     SATCollisionResult first_result;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
         auto result = SATSolver::test_convex_hull_3d(cube_a, cube_b, Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.7f, 0.3f, 0.1f));
-        
-        if (i == 0) {
+
+        if (i == 0)
+        {
             first_result = result;
-        } else {
+        }
+        else
+        {
             // All subsequent results should match the first
             REQUIRE(result.is_colliding == first_result.is_colliding);
-            if (result.is_colliding) {
+            if (result.is_colliding)
+            {
                 REQUIRE_THAT(result.penetration_depth, WithinAbs(first_result.penetration_depth, 1e-7f));
                 REQUIRE_THAT(result.collision_normal.x, WithinAbs(first_result.collision_normal.x, 1e-7f));
                 REQUIRE_THAT(result.collision_normal.y, WithinAbs(first_result.collision_normal.y, 1e-7f));

@@ -1,34 +1,39 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/math/vectors/vec3.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/vectors/vec3.hpp>
+
 #include <cmath>
 #include <sstream>
 
-using phynity::math::vectors::Vec3f;
-using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
+using phynity::math::utilities::mathf;
+using phynity::math::vectors::Vec3f;
 
 // ============================================================================
 // Constructors and Basic Properties
 // ============================================================================
 
-TEST_CASE("Vec3f: Constructors", "[Vec3f][constructor]") {
-    SECTION("Default constructor initializes to zero") {
+TEST_CASE("Vec3f: Constructors", "[Vec3f][constructor]")
+{
+    SECTION("Default constructor initializes to zero")
+    {
         Vec3f v;
         REQUIRE_THAT(v.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Scalar constructor") {
+    SECTION("Scalar constructor")
+    {
         Vec3f v(5.0f);
         REQUIRE_THAT(v.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(5.0f, 1e-6f));
     }
 
-    SECTION("Component constructor") {
+    SECTION("Component constructor")
+    {
         Vec3f v(1.0f, 2.0f, 3.0f);
         REQUIRE_THAT(v.x, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(2.0f, 1e-6f));
@@ -40,7 +45,8 @@ TEST_CASE("Vec3f: Constructors", "[Vec3f][constructor]") {
 // Arithmetic Operators
 // ============================================================================
 
-TEST_CASE("Vec3f: Addition", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Addition", "[Vec3f][arithmetic]")
+{
     Vec3f a(1.0f, 2.0f, 3.0f);
     Vec3f b(4.0f, 5.0f, 6.0f);
     Vec3f c = a + b;
@@ -50,7 +56,8 @@ TEST_CASE("Vec3f: Addition", "[Vec3f][arithmetic]") {
     REQUIRE_THAT(c.z, WithinAbs(9.0f, 1e-6f));
 }
 
-TEST_CASE("Vec3f: Subtraction", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Subtraction", "[Vec3f][arithmetic]")
+{
     Vec3f a(5.0f, 7.0f, 9.0f);
     Vec3f b(2.0f, 3.0f, 4.0f);
     Vec3f c = a - b;
@@ -60,17 +67,20 @@ TEST_CASE("Vec3f: Subtraction", "[Vec3f][arithmetic]") {
     REQUIRE_THAT(c.z, WithinAbs(5.0f, 1e-6f));
 }
 
-TEST_CASE("Vec3f: Scalar multiplication", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Scalar multiplication", "[Vec3f][arithmetic]")
+{
     Vec3f v(1.0f, 2.0f, 3.0f);
-    
-    SECTION("Vector * scalar") {
+
+    SECTION("Vector * scalar")
+    {
         Vec3f result = v * 2.0f;
         REQUIRE_THAT(result.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(result.z, WithinAbs(6.0f, 1e-6f));
     }
 
-    SECTION("Scalar * vector") {
+    SECTION("Scalar * vector")
+    {
         Vec3f result = 2.0f * v;
         REQUIRE_THAT(result.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(4.0f, 1e-6f));
@@ -78,7 +88,8 @@ TEST_CASE("Vec3f: Scalar multiplication", "[Vec3f][arithmetic]") {
     }
 }
 
-TEST_CASE("Vec3f: Scalar division", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Scalar division", "[Vec3f][arithmetic]")
+{
     Vec3f v(2.0f, 4.0f, 6.0f);
     Vec3f result = v / 2.0f;
 
@@ -87,7 +98,8 @@ TEST_CASE("Vec3f: Scalar division", "[Vec3f][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(3.0f, 1e-6f));
 }
 
-TEST_CASE("Vec3f: Component-wise multiplication", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Component-wise multiplication", "[Vec3f][arithmetic]")
+{
     Vec3f a(2.0f, 3.0f, 4.0f);
     Vec3f b(5.0f, 6.0f, 7.0f);
     Vec3f result = a * b;
@@ -97,7 +109,8 @@ TEST_CASE("Vec3f: Component-wise multiplication", "[Vec3f][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(28.0f, 1e-6f));
 }
 
-TEST_CASE("Vec3f: Component-wise division", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Component-wise division", "[Vec3f][arithmetic]")
+{
     Vec3f a(10.0f, 18.0f, 28.0f);
     Vec3f b(2.0f, 3.0f, 4.0f);
     Vec3f result = a / b;
@@ -107,7 +120,8 @@ TEST_CASE("Vec3f: Component-wise division", "[Vec3f][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(7.0f, 1e-6f));
 }
 
-TEST_CASE("Vec3f: Negation", "[Vec3f][arithmetic]") {
+TEST_CASE("Vec3f: Negation", "[Vec3f][arithmetic]")
+{
     Vec3f v(1.0f, -2.0f, 3.0f);
     Vec3f result = -v;
 
@@ -120,45 +134,52 @@ TEST_CASE("Vec3f: Negation", "[Vec3f][arithmetic]") {
 // Assignment Operators
 // ============================================================================
 
-TEST_CASE("Vec3f: Assignment operators", "[Vec3f][assignment]") {
+TEST_CASE("Vec3f: Assignment operators", "[Vec3f][assignment]")
+{
     Vec3f v(1.0f, 2.0f, 3.0f);
 
-    SECTION("Addition assignment") {
+    SECTION("Addition assignment")
+    {
         v += Vec3f(4.0f, 5.0f, 6.0f);
         REQUIRE_THAT(v.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(7.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(9.0f, 1e-6f));
     }
 
-    SECTION("Subtraction assignment") {
+    SECTION("Subtraction assignment")
+    {
         v -= Vec3f(1.0f, 1.0f, 1.0f);
         REQUIRE_THAT(v.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(2.0f, 1e-6f));
     }
 
-    SECTION("Scalar multiplication assignment") {
+    SECTION("Scalar multiplication assignment")
+    {
         v *= 2.0f;
         REQUIRE_THAT(v.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(4.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(6.0f, 1e-6f));
     }
 
-    SECTION("Scalar division assignment") {
+    SECTION("Scalar division assignment")
+    {
         v /= 2.0f;
         REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(1.5f, 1e-6f));
     }
 
-    SECTION("Component-wise multiplication assignment") {
+    SECTION("Component-wise multiplication assignment")
+    {
         v *= Vec3f(2.0f, 3.0f, 4.0f);
         REQUIRE_THAT(v.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(6.0f, 1e-6f));
         REQUIRE_THAT(v.z, WithinAbs(12.0f, 1e-6f));
     }
 
-    SECTION("Component-wise division assignment") {
+    SECTION("Component-wise division assignment")
+    {
         v /= Vec3f(2.0f, 2.0f, 3.0f);
         REQUIRE_THAT(v.x, WithinAbs(0.5f, 1e-6f));
         REQUIRE_THAT(v.y, WithinAbs(1.0f, 1e-6f));
@@ -170,7 +191,8 @@ TEST_CASE("Vec3f: Assignment operators", "[Vec3f][assignment]") {
 // Comparison Operators
 // ============================================================================
 
-TEST_CASE("Vec3f: Comparison operators", "[Vec3f][comparison]") {
+TEST_CASE("Vec3f: Comparison operators", "[Vec3f][comparison]")
+{
     Vec3f a(1.0f, 2.0f, 3.0f);
     Vec3f b(1.0f, 2.0f, 3.0f);
     Vec3f c(2.0f, 3.0f, 4.0f);
@@ -185,16 +207,19 @@ TEST_CASE("Vec3f: Comparison operators", "[Vec3f][comparison]") {
 // Index Access
 // ============================================================================
 
-TEST_CASE("Vec3f: Index access", "[Vec3f][access]") {
+TEST_CASE("Vec3f: Index access", "[Vec3f][access]")
+{
     Vec3f v(5.0f, 10.0f, 15.0f);
 
-    SECTION("Read access") {
+    SECTION("Read access")
+    {
         REQUIRE_THAT(v[0], WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(v[1], WithinAbs(10.0f, 1e-6f));
         REQUIRE_THAT(v[2], WithinAbs(15.0f, 1e-6f));
     }
 
-    SECTION("Write access") {
+    SECTION("Write access")
+    {
         v[0] = 20.0f;
         v[1] = 30.0f;
         v[2] = 40.0f;
@@ -208,33 +233,40 @@ TEST_CASE("Vec3f: Index access", "[Vec3f][access]") {
 // Vector Operations: Magnitude and Normalization
 // ============================================================================
 
-TEST_CASE("Vec3f: Length operations", "[Vec3f][magnitude]") {
-    SECTION("1-2-2 triangle") {
+TEST_CASE("Vec3f: Length operations", "[Vec3f][magnitude]")
+{
+    SECTION("1-2-2 triangle")
+    {
         Vec3f v(2.0f, 3.0f, 6.0f);
         REQUIRE_THAT(v.squaredLength(), WithinAbs(49.0f, 1e-6f));
         REQUIRE_THAT(v.length(), WithinAbs(7.0f, 1e-6f));
     }
 
-    SECTION("Zero vector") {
+    SECTION("Zero vector")
+    {
         Vec3f v(0.0f, 0.0f, 0.0f);
         REQUIRE_THAT(v.length(), WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(v.squaredLength(), WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Unit vector") {
+    SECTION("Unit vector")
+    {
         Vec3f v(1.0f, 0.0f, 0.0f);
         REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-6f));
     }
 }
 
-TEST_CASE("Vec3f: Normalization", "[Vec3f][normalization]") {
-    SECTION("Normal vector becomes unit") {
+TEST_CASE("Vec3f: Normalization", "[Vec3f][normalization]")
+{
+    SECTION("Normal vector becomes unit")
+    {
         Vec3f v(2.0f, 3.0f, 6.0f);
         Vec3f n = v.normalized();
         REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
     }
 
-    SECTION("Direction is preserved") {
+    SECTION("Direction is preserved")
+    {
         Vec3f v(1.0f, 0.0f, 0.0f);
         Vec3f n = v.normalized();
         REQUIRE_THAT(n.x, WithinAbs(1.0f, 1e-6f));
@@ -242,7 +274,8 @@ TEST_CASE("Vec3f: Normalization", "[Vec3f][normalization]") {
         REQUIRE_THAT(n.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Zero vector normalization") {
+    SECTION("Zero vector normalization")
+    {
         Vec3f v(0.0f, 0.0f, 0.0f);
         Vec3f n = v.normalized();
         REQUIRE_THAT(n.x, WithinAbs(0.0f, 1e-6f));
@@ -250,7 +283,8 @@ TEST_CASE("Vec3f: Normalization", "[Vec3f][normalization]") {
         REQUIRE_THAT(n.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("In-place normalize") {
+    SECTION("In-place normalize")
+    {
         Vec3f v(2.0f, 3.0f, 6.0f);
         v.normalize();
         REQUIRE_THAT(v.length(), WithinAbs(1.0f, 1e-5f));
@@ -261,20 +295,24 @@ TEST_CASE("Vec3f: Normalization", "[Vec3f][normalization]") {
 // Dot Product
 // ============================================================================
 
-TEST_CASE("Vec3f: Dot product", "[Vec3f][dot]") {
-    SECTION("Orthogonal vectors") {
+TEST_CASE("Vec3f: Dot product", "[Vec3f][dot]")
+{
+    SECTION("Orthogonal vectors")
+    {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(0.0f, 1.0f, 0.0f);
         REQUIRE_THAT(a.dot(b), WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Parallel vectors") {
+    SECTION("Parallel vectors")
+    {
         Vec3f a(1.0f, 2.0f, 3.0f);
         Vec3f b(2.0f, 4.0f, 6.0f);
         REQUIRE_THAT(a.dot(b), WithinAbs(28.0f, 1e-6f));
     }
 
-    SECTION("Same vector (squared length)") {
+    SECTION("Same vector (squared length)")
+    {
         Vec3f v(1.0f, 2.0f, 3.0f);
         REQUIRE_THAT(v.dot(v), WithinAbs(14.0f, 1e-6f));
     }
@@ -284,8 +322,10 @@ TEST_CASE("Vec3f: Dot product", "[Vec3f][dot]") {
 // Cross Product
 // ============================================================================
 
-TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]") {
-    SECTION("Right hand rule: X × Y = Z") {
+TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]")
+{
+    SECTION("Right hand rule: X × Y = Z")
+    {
         Vec3f x(1.0f, 0.0f, 0.0f);
         Vec3f y(0.0f, 1.0f, 0.0f);
         Vec3f z = x.cross(y);
@@ -294,7 +334,8 @@ TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]") {
         REQUIRE_THAT(z.z, WithinAbs(1.0f, 1e-6f));
     }
 
-    SECTION("Anti-commutative: A × B = -(B × A)") {
+    SECTION("Anti-commutative: A × B = -(B × A)")
+    {
         Vec3f a(1.0f, 2.0f, 3.0f);
         Vec3f b(4.0f, 5.0f, 6.0f);
         Vec3f cross_ab = a.cross(b);
@@ -304,7 +345,8 @@ TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]") {
         REQUIRE_THAT(cross_ab.z, WithinAbs(-cross_ba.z, 1e-6f));
     }
 
-    SECTION("Cross product is perpendicular") {
+    SECTION("Cross product is perpendicular")
+    {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(0.0f, 1.0f, 0.0f);
         Vec3f cross = a.cross(b);
@@ -312,7 +354,8 @@ TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]") {
         REQUIRE_THAT(b.dot(cross), WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Parallel vectors have zero cross product") {
+    SECTION("Parallel vectors have zero cross product")
+    {
         Vec3f a(1.0f, 2.0f, 3.0f);
         Vec3f b(2.0f, 4.0f, 6.0f);
         Vec3f cross = a.cross(b);
@@ -324,20 +367,24 @@ TEST_CASE("Vec3f: Cross product", "[Vec3f][cross]") {
 // Distance
 // ============================================================================
 
-TEST_CASE("Vec3f: Distance", "[Vec3f][distance]") {
-    SECTION("Simple distance") {
+TEST_CASE("Vec3f: Distance", "[Vec3f][distance]")
+{
+    SECTION("Simple distance")
+    {
         Vec3f a(0.0f, 0.0f, 0.0f);
         Vec3f b(3.0f, 4.0f, 0.0f);
         REQUIRE_THAT(a.distance(b), WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(b.distance(a), WithinAbs(5.0f, 1e-6f));
     }
 
-    SECTION("Same point") {
+    SECTION("Same point")
+    {
         Vec3f a(5.0f, 5.0f, 5.0f);
         REQUIRE_THAT(a.distance(a), WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Squared distance") {
+    SECTION("Squared distance")
+    {
         Vec3f a(0.0f, 0.0f, 0.0f);
         Vec3f b(2.0f, 3.0f, 6.0f);
         REQUIRE_THAT(a.squaredDistance(b), WithinAbs(49.0f, 1e-6f));
@@ -348,20 +395,24 @@ TEST_CASE("Vec3f: Distance", "[Vec3f][distance]") {
 // Angle Between Vectors
 // ============================================================================
 
-TEST_CASE("Vec3f: Angle between vectors", "[Vec3f][angle]") {
-    SECTION("Same direction (angle = 0)") {
+TEST_CASE("Vec3f: Angle between vectors", "[Vec3f][angle]")
+{
+    SECTION("Same direction (angle = 0)")
+    {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(2.0f, 0.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(0.0f, 1e-5f));
     }
 
-    SECTION("Perpendicular (angle = π/2)") {
+    SECTION("Perpendicular (angle = π/2)")
+    {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(0.0f, 1.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(mathf::half_pi, 1e-4f));
     }
 
-    SECTION("Opposite direction (angle = π)") {
+    SECTION("Opposite direction (angle = π)")
+    {
         Vec3f a(1.0f, 0.0f, 0.0f);
         Vec3f b(-1.0f, 0.0f, 0.0f);
         REQUIRE_THAT(a.angle(b), WithinAbs(mathf::pi, 1e-4f));
@@ -372,8 +423,10 @@ TEST_CASE("Vec3f: Angle between vectors", "[Vec3f][angle]") {
 // Clamping
 // ============================================================================
 
-TEST_CASE("Vec3f: Clamping", "[Vec3f][clamp]") {
-    SECTION("Vector within limit") {
+TEST_CASE("Vec3f: Clamping", "[Vec3f][clamp]")
+{
+    SECTION("Vector within limit")
+    {
         Vec3f v(1.0f, 2.0f, 3.0f);
         Vec3f clamped = v.clamped(10.0f);
         REQUIRE_THAT(clamped.x, WithinAbs(1.0f, 1e-6f));
@@ -381,8 +434,9 @@ TEST_CASE("Vec3f: Clamping", "[Vec3f][clamp]") {
         REQUIRE_THAT(clamped.z, WithinAbs(3.0f, 1e-6f));
     }
 
-    SECTION("Vector exceeds limit") {
-        Vec3f v(2.0f, 3.0f, 6.0f);  // length = 7
+    SECTION("Vector exceeds limit")
+    {
+        Vec3f v(2.0f, 3.0f, 6.0f); // length = 7
         Vec3f clamped = v.clamped(3.5f);
         REQUIRE_THAT(clamped.length(), WithinAbs(3.5f, 1e-5f));
     }
@@ -392,25 +446,29 @@ TEST_CASE("Vec3f: Clamping", "[Vec3f][clamp]") {
 // Linear Interpolation
 // ============================================================================
 
-TEST_CASE("Vec3f: Linear interpolation (lerp)", "[Vec3f][lerp]") {
+TEST_CASE("Vec3f: Linear interpolation (lerp)", "[Vec3f][lerp]")
+{
     Vec3f a(0.0f, 0.0f, 0.0f);
     Vec3f b(10.0f, 20.0f, 30.0f);
 
-    SECTION("t = 0") {
+    SECTION("t = 0")
+    {
         Vec3f result = a.lerp(b, 0.0f);
         REQUIRE_THAT(result.x, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(0.0f, 1e-6f));
         REQUIRE_THAT(result.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("t = 1") {
+    SECTION("t = 1")
+    {
         Vec3f result = a.lerp(b, 1.0f);
         REQUIRE_THAT(result.x, WithinAbs(10.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(20.0f, 1e-6f));
         REQUIRE_THAT(result.z, WithinAbs(30.0f, 1e-6f));
     }
 
-    SECTION("t = 0.5 (midpoint)") {
+    SECTION("t = 0.5 (midpoint)")
+    {
         Vec3f result = a.lerp(b, 0.5f);
         REQUIRE_THAT(result.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(10.0f, 1e-6f));
@@ -422,8 +480,10 @@ TEST_CASE("Vec3f: Linear interpolation (lerp)", "[Vec3f][lerp]") {
 // Projection
 // ============================================================================
 
-TEST_CASE("Vec3f: Projection", "[Vec3f][project]") {
-    SECTION("Project onto parallel vector") {
+TEST_CASE("Vec3f: Projection", "[Vec3f][project]")
+{
+    SECTION("Project onto parallel vector")
+    {
         Vec3f v(4.0f, 0.0f, 0.0f);
         Vec3f onto(2.0f, 0.0f, 0.0f);
         Vec3f proj = v.project(onto);
@@ -432,7 +492,8 @@ TEST_CASE("Vec3f: Projection", "[Vec3f][project]") {
         REQUIRE_THAT(proj.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Project onto perpendicular vector") {
+    SECTION("Project onto perpendicular vector")
+    {
         Vec3f v(1.0f, 0.0f, 0.0f);
         Vec3f onto(0.0f, 2.0f, 0.0f);
         Vec3f proj = v.project(onto);
@@ -444,26 +505,31 @@ TEST_CASE("Vec3f: Projection", "[Vec3f][project]") {
 // Perpendicular
 // ============================================================================
 
-TEST_CASE("Vec3f: Perpendicular vector generation", "[Vec3f][perpendicular]") {
-    SECTION("Perpendicular is orthogonal") {
+TEST_CASE("Vec3f: Perpendicular vector generation", "[Vec3f][perpendicular]")
+{
+    SECTION("Perpendicular is orthogonal")
+    {
         Vec3f v(1.0f, 2.0f, 3.0f);
         Vec3f perp = v.perpendicular();
         REQUIRE_THAT(v.dot(perp), WithinAbs(0.0f, 1e-5f));
     }
 
-    SECTION("Perpendicular is normalized") {
+    SECTION("Perpendicular is normalized")
+    {
         Vec3f v(3.0f, 4.0f, 5.0f);
         Vec3f perp = v.perpendicular();
         REQUIRE_THAT(perp.length(), WithinAbs(1.0f, 1e-5f));
     }
 
-    SECTION("Perpendicular to X-axis") {
+    SECTION("Perpendicular to X-axis")
+    {
         Vec3f x(1.0f, 0.0f, 0.0f);
         Vec3f perp = x.perpendicular();
         REQUIRE_THAT(x.dot(perp), WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Perpendicular to Y-axis") {
+    SECTION("Perpendicular to Y-axis")
+    {
         Vec3f y(0.0f, 1.0f, 0.0f);
         Vec3f perp = y.perpendicular();
         REQUIRE_THAT(y.dot(perp), WithinAbs(0.0f, 1e-6f));
@@ -474,8 +540,10 @@ TEST_CASE("Vec3f: Perpendicular vector generation", "[Vec3f][perpendicular]") {
 // Reflection
 // ============================================================================
 
-TEST_CASE("Vec3f: Reflection", "[Vec3f][reflect]") {
-    SECTION("Reflect off plane") {
+TEST_CASE("Vec3f: Reflection", "[Vec3f][reflect]")
+{
+    SECTION("Reflect off plane")
+    {
         Vec3f v(1.0f, 1.0f, 0.0f);
         Vec3f normal(0.0f, 1.0f, 0.0f);
         Vec3f reflected = v.reflect(normal);
@@ -489,18 +557,21 @@ TEST_CASE("Vec3f: Reflection", "[Vec3f][reflect]") {
 // Min/Max
 // ============================================================================
 
-TEST_CASE("Vec3f: Min/Max component-wise", "[Vec3f][minmax]") {
+TEST_CASE("Vec3f: Min/Max component-wise", "[Vec3f][minmax]")
+{
     Vec3f a(2.0f, 8.0f, 5.0f);
     Vec3f b(5.0f, 3.0f, 7.0f);
 
-    SECTION("Min") {
+    SECTION("Min")
+    {
         Vec3f result = a.min(b);
         REQUIRE_THAT(result.x, WithinAbs(2.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(3.0f, 1e-6f));
         REQUIRE_THAT(result.z, WithinAbs(5.0f, 1e-6f));
     }
 
-    SECTION("Max") {
+    SECTION("Max")
+    {
         Vec3f result = a.max(b);
         REQUIRE_THAT(result.x, WithinAbs(5.0f, 1e-6f));
         REQUIRE_THAT(result.y, WithinAbs(8.0f, 1e-6f));
@@ -512,18 +583,22 @@ TEST_CASE("Vec3f: Min/Max component-wise", "[Vec3f][minmax]") {
 // Queries
 // ============================================================================
 
-TEST_CASE("Vec3f: Query functions", "[Vec3f][query]") {
-    SECTION("isZero") {
+TEST_CASE("Vec3f: Query functions", "[Vec3f][query]")
+{
+    SECTION("isZero")
+    {
         REQUIRE(Vec3f(0.0f, 0.0f, 0.0f).isZero());
         REQUIRE(!Vec3f(0.001f, 0.0f, 0.0f).isZero());
     }
 
-    SECTION("isNormalized") {
+    SECTION("isNormalized")
+    {
         REQUIRE(Vec3f(1.0f, 0.0f, 0.0f).isNormalized());
         REQUIRE(!Vec3f(2.0f, 0.0f, 0.0f).isNormalized());
     }
 
-    SECTION("approxEqual") {
+    SECTION("approxEqual")
+    {
         Vec3f a(1.0f, 2.0f, 3.0f);
         Vec3f b(1.00001f, 2.00001f, 3.00001f);
         Vec3f c(1.1f, 2.0f, 3.0f);
@@ -531,7 +606,8 @@ TEST_CASE("Vec3f: Query functions", "[Vec3f][query]") {
         REQUIRE(!a.approxEqual(c, 1e-4f));
     }
 
-    SECTION("abs") {
+    SECTION("abs")
+    {
         Vec3f v(-3.0f, 4.0f, -5.0f);
         Vec3f result = v.abs();
         REQUIRE_THAT(result.x, WithinAbs(3.0f, 1e-6f));
@@ -544,27 +620,32 @@ TEST_CASE("Vec3f: Query functions", "[Vec3f][query]") {
 // Edge Cases
 // ============================================================================
 
-TEST_CASE("Vec3f: Edge cases", "[Vec3f][edge]") {
-    SECTION("Division by zero scalar") {
+TEST_CASE("Vec3f: Edge cases", "[Vec3f][edge]")
+{
+    SECTION("Division by zero scalar")
+    {
         Vec3f v(1.0f, 2.0f, 3.0f);
         Vec3f result = v / 0.0f;
         REQUIRE((std::isinf(result.x) || std::isnan(result.x)));
     }
 
-    SECTION("Normalization of very small vector") {
+    SECTION("Normalization of very small vector")
+    {
         Vec3f v(1e-20f, 1e-20f, 1e-20f);
         Vec3f n = v.normalized();
         REQUIRE_THAT(n.length(), WithinAbs(1.0f, 1e-5f));
     }
 
-    SECTION("Cross product of parallel vectors") {
+    SECTION("Cross product of parallel vectors")
+    {
         Vec3f a(1.0f, 2.0f, 3.0f);
         Vec3f b(2.0f, 4.0f, 6.0f);
         Vec3f cross = a.cross(b);
         REQUIRE_THAT(cross.length(), WithinAbs(0.0f, 1e-4f));
     }
 
-    SECTION("Angle between zero vectors") {
+    SECTION("Angle between zero vectors")
+    {
         Vec3f a(0.0f, 0.0f, 0.0f);
         Vec3f b(1.0f, 0.0f, 0.0f);
         float angle = a.angle(b);
@@ -576,7 +657,8 @@ TEST_CASE("Vec3f: Edge cases", "[Vec3f][edge]") {
 // Static Utility Vectors
 // ============================================================================
 
-TEST_CASE("Vec3f: Static utility vectors", "[Vec3f][static]") {
+TEST_CASE("Vec3f: Static utility vectors", "[Vec3f][static]")
+{
     REQUIRE(Vec3f::zero() == Vec3f(0.0f, 0.0f, 0.0f));
     REQUIRE(Vec3f::one() == Vec3f(1.0f, 1.0f, 1.0f));
     REQUIRE(Vec3f::up() == Vec3f(0.0f, 1.0f, 0.0f));
@@ -587,7 +669,8 @@ TEST_CASE("Vec3f: Static utility vectors", "[Vec3f][static]") {
     REQUIRE(Vec3f::back() == Vec3f(0.0f, 0.0f, -1.0f));
 }
 
-TEST_CASE("Vec3f: Stream output", "[Vec3f][stream]") {
+TEST_CASE("Vec3f: Stream output", "[Vec3f][stream]")
+{
     Vec3f v(1.5f, 2.5f, 3.5f);
     std::ostringstream oss;
     oss << v;

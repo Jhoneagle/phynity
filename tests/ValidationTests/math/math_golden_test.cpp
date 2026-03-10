@@ -1,55 +1,54 @@
 #include <catch2/catch_test_macros.hpp>
-
-#include <core/math/vectors/vec2.hpp>
-#include <core/math/vectors/vec3.hpp>
-#include <core/math/vectors/vec4.hpp>
-#include <core/math/vectors/vec_n.hpp>
+#include <core/math/calculus/finite_differences.hpp>
+#include <core/math/calculus/integrators.hpp>
+#include <core/math/linear_algebra/lu_decomposition.hpp>
+#include <core/math/linear_algebra/solver.hpp>
 #include <core/math/matrices/mat2.hpp>
 #include <core/math/matrices/mat3.hpp>
 #include <core/math/matrices/mat4.hpp>
 #include <core/math/matrices/mat_n.hpp>
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/quaternions/quat_interpolation.hpp>
-#include <core/math/linear_algebra/solver.hpp>
-#include <core/math/linear_algebra/lu_decomposition.hpp>
-#include <core/math/calculus/integrators.hpp>
-#include <core/math/calculus/finite_differences.hpp>
 #include <core/math/utilities/constants.hpp>
+#include <core/math/vectors/vec2.hpp>
+#include <core/math/vectors/vec3.hpp>
+#include <core/math/vectors/vec4.hpp>
+#include <core/math/vectors/vec_n.hpp>
 
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-#include <cstdlib>
 #include <array>
 #include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 
-using phynity::math::vectors::Vec2f;
-using phynity::math::vectors::Vec3f;
-using phynity::math::vectors::Vec4f;
-using phynity::math::vectors::VecN;
+using phynity::math::calculus::central_difference_first;
+using phynity::math::calculus::central_difference_second;
+using phynity::math::calculus::forward_difference_first;
+using phynity::math::calculus::forward_difference_second;
+using phynity::math::calculus::integrate_forward_euler;
+using phynity::math::calculus::integrate_rk4;
+using phynity::math::calculus::integrate_semi_implicit_euler;
+using phynity::math::calculus::integrate_velocity_verlet;
+using phynity::math::calculus::IntegrationState;
+using phynity::math::calculus::numerical_jacobian;
+using phynity::math::linear_algebra::LUDecomposition;
+using phynity::math::linear_algebra::solve;
+using phynity::math::linear_algebra::SolveMethod;
 using phynity::math::matrices::Mat2f;
 using phynity::math::matrices::Mat3f;
 using phynity::math::matrices::Mat4f;
 using phynity::math::matrices::MatN;
-using phynity::math::quaternions::Quatf;
-using phynity::math::linear_algebra::SolveMethod;
-using phynity::math::linear_algebra::solve;
-using phynity::math::linear_algebra::LUDecomposition;
-using phynity::math::calculus::IntegrationState;
-using phynity::math::calculus::integrate_forward_euler;
-using phynity::math::calculus::integrate_semi_implicit_euler;
-using phynity::math::calculus::integrate_velocity_verlet;
-using phynity::math::calculus::integrate_rk4;
-using phynity::math::calculus::forward_difference_first;
-using phynity::math::calculus::central_difference_first;
-using phynity::math::calculus::forward_difference_second;
-using phynity::math::calculus::central_difference_second;
-using phynity::math::calculus::numerical_jacobian;
-using phynity::math::quaternions::nlerp;
-using phynity::math::quaternions::slerp;
 using phynity::math::quaternions::angleBetween;
+using phynity::math::quaternions::nlerp;
+using phynity::math::quaternions::Quatf;
+using phynity::math::quaternions::slerp;
 using phynity::math::utilities::mathf;
+using phynity::math::vectors::Vec2f;
+using phynity::math::vectors::Vec3f;
+using phynity::math::vectors::Vec4f;
+using phynity::math::vectors::VecN;
 
 namespace fs = std::filesystem;
 
@@ -57,27 +56,28 @@ namespace fs = std::filesystem;
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 
-static std::string get_golden_dir() {
+static std::string get_golden_dir()
+{
 #ifdef GOLDEN_FILES_DIR
     return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
 #else
-    const char* env_dir = std::getenv("GOLDEN_FILES_DIR");
-    if (env_dir) {
-        return std::string(env_dir);
-    }
     return "tests/golden_outputs";
 #endif
 }
 
-static void ensure_golden_dir(const std::string& dir) {
-    if (!fs::exists(dir)) {
+static void ensure_golden_dir(const std::string &dir)
+{
+    if (!fs::exists(dir))
+    {
         fs::create_directories(dir);
     }
 }
 
-[[maybe_unused]] static std::string load_text_file(const std::string& filepath) {
+[[maybe_unused]] static std::string load_text_file(const std::string &filepath)
+{
     std::ifstream file(filepath);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         throw std::runtime_error("Failed to open golden file: " + filepath);
     }
     std::stringstream buffer;
@@ -85,84 +85,113 @@ static void ensure_golden_dir(const std::string& dir) {
     return buffer.str();
 }
 
-[[maybe_unused]] static void save_text_file(const std::string& filepath, const std::string& content) {
+[[maybe_unused]] static void save_text_file(const std::string &filepath, const std::string &content)
+{
     std::ofstream file(filepath);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         throw std::runtime_error("Failed to open file for writing: " + filepath);
     }
     file << content;
 }
 
-class GoldenTextBuilder {
+class GoldenTextBuilder
+{
 public:
-    GoldenTextBuilder() {
+    GoldenTextBuilder()
+    {
         oss_ << std::fixed << std::setprecision(9);
     }
 
-    void add_header(const std::string& name) {
+    static float normalize_float(float value)
+    {
+        return (std::abs(value) < 1e-7f) ? 0.0f : value;
+    }
+
+    void add_header(const std::string &name)
+    {
         oss_ << "[" << name << "]\n";
     }
 
-    void add_scalar(const std::string& name, float value) {
-        oss_ << name << "=" << value << "\n";
+    void add_scalar(const std::string &name, float value)
+    {
+        oss_ << name << "=" << normalize_float(value) << "\n";
     }
 
-    void add_vec2(const std::string& name, const Vec2f& v) {
-        oss_ << name << "=" << v.x << " " << v.y << "\n";
+    void add_vec2(const std::string &name, const Vec2f &v)
+    {
+        oss_ << name << "=" << normalize_float(v.x) << " " << normalize_float(v.y) << "\n";
     }
 
-    void add_vec3(const std::string& name, const Vec3f& v) {
-        oss_ << name << "=" << v.x << " " << v.y << " " << v.z << "\n";
+    void add_vec3(const std::string &name, const Vec3f &v)
+    {
+        oss_ << name << "=" << normalize_float(v.x) << " " << normalize_float(v.y) << " " << normalize_float(v.z)
+             << "\n";
     }
 
-    void add_vec4(const std::string& name, const Vec4f& v) {
-        oss_ << name << "=" << v.x << " " << v.y << " " << v.z << " " << v.w << "\n";
+    void add_vec4(const std::string &name, const Vec4f &v)
+    {
+        oss_ << name << "=" << normalize_float(v.x) << " " << normalize_float(v.y) << " " << normalize_float(v.z) << " "
+             << normalize_float(v.w) << "\n";
     }
 
-    void add_quat(const std::string& name, const Quatf& q) {
-        oss_ << name << "=" << q.w << " " << q.x << " " << q.y << " " << q.z << "\n";
+    void add_quat(const std::string &name, const Quatf &q)
+    {
+        oss_ << name << "=" << normalize_float(q.w) << " " << normalize_float(q.x) << " " << normalize_float(q.y) << " "
+             << normalize_float(q.z) << "\n";
     }
 
-    void add_mat2(const std::string& name, const Mat2f& m) {
+    void add_mat2(const std::string &name, const Mat2f &m)
+    {
         oss_ << name << "=\n";
-        for (int r = 0; r < 2; ++r) {
+        for (int r = 0; r < 2; ++r)
+        {
             oss_ << m(r, 0) << " " << m(r, 1) << "\n";
         }
     }
 
-    void add_mat3(const std::string& name, const Mat3f& m) {
+    void add_mat3(const std::string &name, const Mat3f &m)
+    {
         oss_ << name << "=\n";
-        for (int r = 0; r < 3; ++r) {
+        for (int r = 0; r < 3; ++r)
+        {
             oss_ << m(r, 0) << " " << m(r, 1) << " " << m(r, 2) << "\n";
         }
     }
 
-    void add_mat4(const std::string& name, const Mat4f& m) {
+    void add_mat4(const std::string &name, const Mat4f &m)
+    {
         oss_ << name << "=\n";
-        for (int r = 0; r < 4; ++r) {
+        for (int r = 0; r < 4; ++r)
+        {
             oss_ << m(r, 0) << " " << m(r, 1) << " " << m(r, 2) << " " << m(r, 3) << "\n";
         }
     }
 
-    template<std::size_t N>
-    void add_vecn(const std::string& name, const VecN<N, float>& v) {
+    template <std::size_t N> void add_vecn(const std::string &name, const VecN<N, float> &v)
+    {
         oss_ << name << "=";
-        for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t i = 0; i < N; ++i)
+        {
             oss_ << v[i];
-            if (i + 1 < N) {
+            if (i + 1 < N)
+            {
                 oss_ << " ";
             }
         }
         oss_ << "\n";
     }
 
-    template<std::size_t M, std::size_t N>
-    void add_matn(const std::string& name, const MatN<M, N, float>& m) {
+    template <std::size_t M, std::size_t N> void add_matn(const std::string &name, const MatN<M, N, float> &m)
+    {
         oss_ << name << "=\n";
-        for (std::size_t r = 0; r < M; ++r) {
-            for (std::size_t c = 0; c < N; ++c) {
+        for (std::size_t r = 0; r < M; ++r)
+        {
+            for (std::size_t c = 0; c < N; ++c)
+            {
                 oss_ << m(r, c);
-                if (c + 1 < N) {
+                if (c + 1 < N)
+                {
                     oss_ << " ";
                 }
             }
@@ -170,7 +199,8 @@ public:
         }
     }
 
-    std::string str() const {
+    std::string str() const
+    {
         return oss_.str();
     }
 
@@ -178,7 +208,8 @@ private:
     std::ostringstream oss_;
 };
 
-TEST_CASE("Golden math vectors") {
+TEST_CASE("Golden math vectors")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/vectors");
 
@@ -227,7 +258,8 @@ TEST_CASE("Golden math vectors") {
 #endif
 }
 
-TEST_CASE("Golden math matrices") {
+TEST_CASE("Golden math matrices")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/matrices");
 
@@ -243,12 +275,8 @@ TEST_CASE("Golden math matrices") {
     builder.add_mat2("inverse", m2a.inverse());
 
     builder.add_header("mat3");
-    Mat3f m3a(1.0f, 2.0f, 3.0f,
-              0.0f, 1.0f, 4.0f,
-              5.0f, 6.0f, 0.0f);
-    Mat3f m3b(2.0f, 0.0f, 1.0f,
-              3.0f, 0.0f, 0.0f,
-              5.0f, 1.0f, 1.0f);
+    Mat3f m3a(1.0f, 2.0f, 3.0f, 0.0f, 1.0f, 4.0f, 5.0f, 6.0f, 0.0f);
+    Mat3f m3b(2.0f, 0.0f, 1.0f, 3.0f, 0.0f, 0.0f, 5.0f, 1.0f, 1.0f);
     builder.add_mat3("mul", m3a * m3b);
     builder.add_scalar("det", m3a.determinant());
     builder.add_vec3("mul_vec", m3a * Vec3f(1.0f, 2.0f, 3.0f));
@@ -256,14 +284,8 @@ TEST_CASE("Golden math matrices") {
     builder.add_mat3("inverse", m3a.inverse());
 
     builder.add_header("mat4");
-    Mat4f m4a(1.0f, 0.0f, 0.0f, 2.0f,
-              0.0f, 1.0f, 0.0f, -3.0f,
-              0.0f, 0.0f, 1.0f, 4.0f,
-              0.0f, 0.0f, 0.0f, 1.0f);
-    Mat4f m4b(0.5f, 0.0f, 0.0f, 0.0f,
-              0.0f, 2.0f, 0.0f, 0.0f,
-              0.0f, 0.0f, -1.0f, 0.0f,
-              0.0f, 0.0f, 0.0f, 1.0f);
+    Mat4f m4a(1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 1.0f, 0.0f, -3.0f, 0.0f, 0.0f, 1.0f, 4.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+    Mat4f m4b(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
     builder.add_mat4("mul", m4a * m4b);
     builder.add_scalar("det", m4a.determinant());
     builder.add_vec3("mul_vec3", m4a * Vec3f(1.0f, 2.0f, 3.0f));
@@ -271,12 +293,8 @@ TEST_CASE("Golden math matrices") {
     builder.add_mat4("inverse", m4a.inverse());
 
     builder.add_header("matn_3x3");
-    MatN<3, 3, float> mn_a(std::array<float, 9>{4.0f, 7.0f, 2.0f,
-                                                3.0f, 6.0f, 1.0f,
-                                                2.0f, 5.0f, 1.0f});
-    MatN<3, 3, float> mn_b(std::array<float, 9>{1.0f, 0.0f, 2.0f,
-                                                -1.0f, 3.0f, 1.0f,
-                                                2.0f, 2.0f, 1.0f});
+    MatN<3, 3, float> mn_a(std::array<float, 9>{4.0f, 7.0f, 2.0f, 3.0f, 6.0f, 1.0f, 2.0f, 5.0f, 1.0f});
+    MatN<3, 3, float> mn_b(std::array<float, 9>{1.0f, 0.0f, 2.0f, -1.0f, 3.0f, 1.0f, 2.0f, 2.0f, 1.0f});
     builder.add_matn("add", mn_a + mn_b);
     builder.add_matn("mul", mn_a * mn_b);
     builder.add_matn("transpose", mn_a.transposed());
@@ -294,7 +312,8 @@ TEST_CASE("Golden math matrices") {
 #endif
 }
 
-TEST_CASE("Golden math quaternions") {
+TEST_CASE("Golden math quaternions")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/quaternions");
 
@@ -338,17 +357,14 @@ TEST_CASE("Golden math quaternions") {
 #endif
 }
 
-TEST_CASE("Golden math linear algebra") {
+TEST_CASE("Golden math linear algebra")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/linear_algebra");
 
     GoldenTextBuilder builder;
     builder.add_header("solve");
-    MatN<3, 3, float> A(std::array<float, 9>{
-        2.0f,  3.0f, -1.0f,
-        -1.0f, 4.0f,  2.0f,
-        3.0f, -1.0f,  1.0f
-    });
+    MatN<3, 3, float> A(std::array<float, 9>{2.0f, 3.0f, -1.0f, -1.0f, 4.0f, 2.0f, 3.0f, -1.0f, 1.0f});
     VecN<3, float> b(std::array<float, 3>{3.0f, 7.0f, 4.0f});
     VecN<3, float> x_lu = solve(A, b, SolveMethod::LU);
     VecN<3, float> x_qr = solve(A, b, SolveMethod::QR);
@@ -374,23 +390,23 @@ TEST_CASE("Golden math linear algebra") {
 #endif
 }
 
-TEST_CASE("Golden math calculus integrators") {
+TEST_CASE("Golden math calculus integrators")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/calculus");
 
     GoldenTextBuilder builder;
-    auto constant_accel = []([[maybe_unused]] const VecN<1, float>& pos,
-                              [[maybe_unused]] const VecN<1, float>& vel,
-                              [[maybe_unused]] float t) {
-        return VecN<1, float>(-9.81f);
-    };
+    auto constant_accel = []([[maybe_unused]] const VecN<1, float> &pos,
+                             [[maybe_unused]] const VecN<1, float> &vel,
+                             [[maybe_unused]] float t) { return VecN<1, float>(-9.81f); };
 
     const float dt = 0.01f;
     const int steps = 10;
 
     builder.add_header("forward_euler");
     IntegrationState<1, float> fe(VecN<1, float>(0.0f), VecN<1, float>(1.0f), 0.0f);
-    for (int i = 0; i < steps; ++i) {
+    for (int i = 0; i < steps; ++i)
+    {
         integrate_forward_euler(fe, constant_accel, dt);
         builder.add_scalar("t", fe.time);
         builder.add_vecn("pos", fe.position);
@@ -399,7 +415,8 @@ TEST_CASE("Golden math calculus integrators") {
 
     builder.add_header("semi_implicit");
     IntegrationState<1, float> si(VecN<1, float>(0.0f), VecN<1, float>(1.0f), 0.0f);
-    for (int i = 0; i < steps; ++i) {
+    for (int i = 0; i < steps; ++i)
+    {
         integrate_semi_implicit_euler(si, constant_accel, dt);
         builder.add_scalar("t", si.time);
         builder.add_vecn("pos", si.position);
@@ -408,7 +425,8 @@ TEST_CASE("Golden math calculus integrators") {
 
     builder.add_header("velocity_verlet");
     IntegrationState<1, float> vv(VecN<1, float>(0.0f), VecN<1, float>(1.0f), 0.0f);
-    for (int i = 0; i < steps; ++i) {
+    for (int i = 0; i < steps; ++i)
+    {
         integrate_velocity_verlet(vv, constant_accel, dt);
         builder.add_scalar("t", vv.time);
         builder.add_vecn("pos", vv.position);
@@ -417,7 +435,8 @@ TEST_CASE("Golden math calculus integrators") {
 
     builder.add_header("rk4");
     IntegrationState<1, float> rk(VecN<1, float>(0.0f), VecN<1, float>(1.0f), 0.0f);
-    for (int i = 0; i < steps; ++i) {
+    for (int i = 0; i < steps; ++i)
+    {
         integrate_rk4(rk, constant_accel, dt);
         builder.add_scalar("t", rk.time);
         builder.add_vecn("pos", rk.position);
@@ -436,7 +455,8 @@ TEST_CASE("Golden math calculus integrators") {
 #endif
 }
 
-TEST_CASE("Golden math finite differences") {
+TEST_CASE("Golden math finite differences")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/math/calculus");
 
@@ -451,9 +471,8 @@ TEST_CASE("Golden math finite differences") {
     builder.add_scalar("central_second", central_difference_second(f, x));
 
     builder.add_header("jacobian");
-    auto vector_func = [](const VecN<2, float>& v) {
-        return VecN<2, float>(std::array<float, 2>{v[0] * v[0] + v[1], std::sin(v[0]) + v[1] * v[1]});
-    };
+    auto vector_func = [](const VecN<2, float> &v)
+    { return VecN<2, float>(std::array<float, 2>{v[0] * v[0] + v[1], std::sin(v[0]) + v[1] * v[1]}); };
     VecN<2, float> x0(std::array<float, 2>{0.25f, -0.5f});
     auto J = numerical_jacobian<2, 2>(vector_func, x0);
     builder.add_matn("J", J);

@@ -1,20 +1,20 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-
+#include <core/math/vectors/vec3.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
-#include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/micro/particle.hpp>
-#include <core/math/vectors/vec3.hpp>
 
+using Catch::Matchers::WithinAbs;
+using phynity::math::vectors::Vec3f;
 using phynity::physics::Particle;
+using phynity::physics::collision::ContactManifold;
 using phynity::physics::constraints::ContactConstraint;
 using phynity::physics::constraints::FixedConstraint;
-using phynity::physics::collision::ContactManifold;
-using phynity::math::vectors::Vec3f;
-using Catch::Matchers::WithinAbs;
 
-TEST_CASE("Constraint Jacobian: ContactConstraint matches normal", "[constraint][jacobian]") {
+TEST_CASE("Constraint Jacobian: ContactConstraint matches normal", "[constraint][jacobian]")
+{
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     Particle p_b(Vec3f(1.0f, 0.0f, 0.0f));
 
@@ -34,7 +34,8 @@ TEST_CASE("Constraint Jacobian: ContactConstraint matches normal", "[constraint]
     REQUIRE_THAT(jacobian(0, 3), WithinAbs(1.0f, 1e-6f));
 }
 
-TEST_CASE("Constraint Jacobian: FixedConstraint direction normalized", "[constraint][jacobian]") {
+TEST_CASE("Constraint Jacobian: FixedConstraint direction normalized", "[constraint][jacobian]")
+{
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     Particle p_b(Vec3f(3.0f, 4.0f, 0.0f));
 
@@ -51,7 +52,8 @@ TEST_CASE("Constraint Jacobian: FixedConstraint direction normalized", "[constra
     REQUIRE_THAT(jacobian(0, 4), WithinAbs(0.8f, 1e-5f));
 }
 
-TEST_CASE("Constraint Jacobian: FixedConstraint degenerate case", "[constraint][jacobian]" ) {
+TEST_CASE("Constraint Jacobian: FixedConstraint degenerate case", "[constraint][jacobian]")
+{
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     Particle p_b(Vec3f(0.0f, 0.0f, 0.0f));
 

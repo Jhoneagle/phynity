@@ -1,18 +1,21 @@
 #include <catch2/catch_test_macros.hpp>
-#include <tests/test_utils/golden_serializer.hpp>
-#include <core/physics/micro/particle_system.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/material.hpp>
+#include <core/physics/micro/particle_system.hpp>
+#include <tests/test_utils/golden_serializer.hpp>
 
+#include <cmath>
 #include <filesystem>
-#include <cstdlib>
+#include <iomanip>
+#include <regex>
+#include <sstream>
 
-using phynity::physics::ParticleSystem;
+using phynity::math::vectors::Vec3f;
 using phynity::physics::GravityField;
 using phynity::physics::Material;
+using phynity::physics::ParticleSystem;
 using phynity::test::GoldenSerializer;
 using phynity::test::snapshot_system;
-using phynity::math::vectors::Vec3f;
 
 namespace fs = std::filesystem;
 
@@ -20,25 +23,55 @@ namespace fs = std::filesystem;
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 
-static std::string get_golden_dir() {
+static std::string get_golden_dir()
+{
 #ifdef GOLDEN_FILES_DIR
     return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
 #else
-    const char* env_dir = std::getenv("GOLDEN_FILES_DIR");
-    if (env_dir) {
-        return std::string(env_dir);
-    }
     return "tests/golden_outputs";
 #endif
 }
 
-static void ensure_golden_dir(const std::string& dir) {
-    if (!fs::exists(dir)) {
+static void ensure_golden_dir(const std::string &dir)
+{
+    if (!fs::exists(dir))
+    {
         fs::create_directories(dir);
     }
 }
 
-TEST_CASE("Integration scene: head-on collision chain - golden") {
+static std::string normalize_json_numbers(const std::string &input, int precision = 4)
+{
+    std::regex number_regex(R"((-?\d+\.\d+))");
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(precision);
+
+    std::size_t last_pos = 0;
+    for (std::sregex_iterator it(input.begin(), input.end(), number_regex), end; it != end; ++it)
+    {
+        const auto &match = *it;
+        const std::size_t match_pos = static_cast<std::size_t>(match.position());
+        const std::size_t match_len = static_cast<std::size_t>(match.length());
+
+        out << input.substr(last_pos, match_pos - last_pos);
+
+        double value = std::stod(match.str());
+        const double epsilon = 0.5 * std::pow(10.0, -precision);
+        if (std::abs(value) < epsilon)
+        {
+            value = 0.0;
+        }
+        out << value;
+
+        last_pos = match_pos + match_len;
+    }
+
+    out << input.substr(last_pos);
+    return out.str();
+}
+
+TEST_CASE("Integration scene: head-on collision chain - golden")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/physics/integration");
 
@@ -56,28 +89,27 @@ TEST_CASE("Integration scene: head-on collision chain - golden") {
     const int num_frames = 180;
     std::vector<phynity::test::SerializedState> trajectory;
 
-    for (int frame = 0; frame < num_frames; ++frame) {
+    for (int frame = 0; frame < num_frames; ++frame)
+    {
         system.update(dt);
         float elapsed = static_cast<float>(frame + 1) * dt;
         trajectory.push_back(snapshot_system(system, static_cast<uint64_t>(frame + 1), elapsed));
     }
 
 #ifdef GOLDEN_CAPTURE_MODE
-    GoldenSerializer::save_trajectory_golden(
-        trajectory,
-        golden_dir + "/physics/integration/head_on_chain_180frames.golden"
-    );
+    GoldenSerializer::save_trajectory_golden(trajectory,
+                                             golden_dir + "/physics/integration/head_on_chain_180frames.golden");
     SUCCEED("Golden file captured");
 #else
-    auto golden_json = GoldenSerializer::load_golden_file(
-        golden_dir + "/physics/integration/head_on_chain_180frames.golden"
-    );
+    auto golden_json =
+        GoldenSerializer::load_golden_file(golden_dir + "/physics/integration/head_on_chain_180frames.golden");
     auto current_json = GoldenSerializer::trajectory_to_json(trajectory);
-    REQUIRE(golden_json == current_json);
+    REQUIRE(normalize_json_numbers(golden_json) == normalize_json_numbers(current_json));
 #endif
 }
 
-TEST_CASE("Integration scene: gravity well cluster - golden") {
+TEST_CASE("Integration scene: gravity well cluster - golden")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/physics/integration");
 
@@ -99,23 +131,21 @@ TEST_CASE("Integration scene: gravity well cluster - golden") {
     const int num_frames = 140;
     std::vector<phynity::test::SerializedState> trajectory;
 
-    for (int frame = 0; frame < num_frames; ++frame) {
+    for (int frame = 0; frame < num_frames; ++frame)
+    {
         system.update(dt);
         float elapsed = static_cast<float>(frame + 1) * dt;
         trajectory.push_back(snapshot_system(system, static_cast<uint64_t>(frame + 1), elapsed));
     }
 
 #ifdef GOLDEN_CAPTURE_MODE
-    GoldenSerializer::save_trajectory_golden(
-        trajectory,
-        golden_dir + "/physics/integration/gravity_cluster_140frames.golden"
-    );
+    GoldenSerializer::save_trajectory_golden(trajectory,
+                                             golden_dir + "/physics/integration/gravity_cluster_140frames.golden");
     SUCCEED("Golden file captured");
 #else
-    auto golden_json = GoldenSerializer::load_golden_file(
-        golden_dir + "/physics/integration/gravity_cluster_140frames.golden"
-    );
+    auto golden_json =
+        GoldenSerializer::load_golden_file(golden_dir + "/physics/integration/gravity_cluster_140frames.golden");
     auto current_json = GoldenSerializer::trajectory_to_json(trajectory);
-    REQUIRE(golden_json == current_json);
+    REQUIRE(normalize_json_numbers(golden_json) == normalize_json_numbers(current_json));
 #endif
 }

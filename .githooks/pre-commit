@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+################################################################################
+# Pre-commit hook for Phynity Physics Engine
+# Ensures all C++ code is formatted with clang-format before commit
+#
+# This hook automatically formats staged C++ files and re-stages them.
+# To bypass this check temporarily, use: git commit --no-verify
+#
+# Installation:
+#   git config core.hooksPath .githooks
+################################################################################
+
+set -e
+
+# Check if clang-format is available
+if ! command -v clang-format >/dev/null 2>&1; then
+    echo "Error: clang-format not found. Please install clang-format 18."
+    exit 1
+fi
+
+# Get list of staged C++ files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cpp|hpp|h|cc|cxx)$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    # No C++ files staged, allow commit
+    exit 0
+fi
+
+echo "Checking code formatting of staged files..."
+
+# Track if any files need reformatting
+NEEDS_FORMAT=false
+FORMATTED_FILES=""
+
+# Process each staged file
+for FILE in $STAGED_FILES; do
+    # Skip deleted files
+    if [ ! -f "$FILE" ]; then
+        continue
+    fi
+
+    # Check if file needs formatting
+    if ! clang-format --style=file --dry-run -Werror "$FILE" 2>&1 >/dev/null; then
+        NEEDS_FORMAT=true
+        
+        # Auto-format the file
+        clang-format --style=file -i "$FILE"
+        
+        # Re-stage the formatted file
+        git add "$FILE"
+        
+        FORMATTED_FILES="${FORMATTED_FILES}  - ${FILE}\n"
+    fi
+done
+
+if [ "$NEEDS_FORMAT" = true ]; then
+    echo ""
+    echo "✓ The following files were auto-formatted and re-staged:"
+    echo -e "$FORMATTED_FILES"
+    echo ""
+    echo "Your commit will proceed with the formatted versions."
+    echo "Review the changes with: git diff --staged"
+fi
+
+echo "✓ All staged C++ files are properly formatted."
+exit 0

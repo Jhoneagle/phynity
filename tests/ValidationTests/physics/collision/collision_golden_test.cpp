@@ -1,29 +1,28 @@
 #include <catch2/catch_test_macros.hpp>
-
-#include <core/physics/collision/broadphase/spatial_grid.hpp>
-#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
-#include <core/physics/collision/contact/impulse_resolver.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
-#include <core/physics/collision/shapes/aabb.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/contact/impulse_resolver.hpp>
+#include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
+#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
+#include <core/physics/collision/shapes/aabb.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
 
+#include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
-#include <cstdlib>
-#include <algorithm>
+#include <sstream>
 #include <stdexcept>
 
+using phynity::math::vectors::Vec3f;
+using phynity::physics::collision::AABB;
+using phynity::physics::collision::AABBNarrowphase;
+using phynity::physics::collision::ContactManifold;
+using phynity::physics::collision::ImpulseResolver;
 using phynity::physics::collision::SpatialGrid;
 using phynity::physics::collision::SphereCollider;
 using phynity::physics::collision::SphereSpherNarrowphase;
-using phynity::physics::collision::AABBNarrowphase;
-using phynity::physics::collision::ImpulseResolver;
-using phynity::physics::collision::AABB;
-using phynity::physics::collision::ContactManifold;
-using phynity::math::vectors::Vec3f;
 
 namespace fs = std::filesystem;
 
@@ -31,27 +30,28 @@ namespace fs = std::filesystem;
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 
-static std::string get_golden_dir() {
+static std::string get_golden_dir()
+{
 #ifdef GOLDEN_FILES_DIR
     return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
 #else
-    const char* env_dir = std::getenv("GOLDEN_FILES_DIR");
-    if (env_dir) {
-        return std::string(env_dir);
-    }
     return "tests/golden_outputs";
 #endif
 }
 
-static void ensure_golden_dir(const std::string& dir) {
-    if (!fs::exists(dir)) {
+static void ensure_golden_dir(const std::string &dir)
+{
+    if (!fs::exists(dir))
+    {
         fs::create_directories(dir);
     }
 }
 
-[[maybe_unused]] static std::string load_text_file(const std::string& filepath) {
+[[maybe_unused]] static std::string load_text_file(const std::string &filepath)
+{
     std::ifstream file(filepath);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         throw std::runtime_error("Failed to open golden file: " + filepath);
     }
     std::stringstream buffer;
@@ -59,44 +59,55 @@ static void ensure_golden_dir(const std::string& dir) {
     return buffer.str();
 }
 
-[[maybe_unused]] static void save_text_file(const std::string& filepath, const std::string& content) {
+[[maybe_unused]] static void save_text_file(const std::string &filepath, const std::string &content)
+{
     std::ofstream file(filepath);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         throw std::runtime_error("Failed to open file for writing: " + filepath);
     }
     file << content;
 }
 
-class GoldenTextBuilder {
+class GoldenTextBuilder
+{
 public:
-    GoldenTextBuilder() {
+    GoldenTextBuilder()
+    {
         oss_ << std::fixed << std::setprecision(9);
     }
 
-    void header(const std::string& name) {
+    void header(const std::string &name)
+    {
         oss_ << "[" << name << "]\n";
     }
 
-    void scalar(const std::string& name, double value) {
+    void scalar(const std::string &name, double value)
+    {
         oss_ << name << "=" << value << "\n";
     }
 
-    void vec3(const std::string& name, const Vec3f& v) {
+    void vec3(const std::string &name, const Vec3f &v)
+    {
         oss_ << name << "=" << v.x << " " << v.y << " " << v.z << "\n";
     }
 
-    void list(const std::string& name, const std::vector<uint32_t>& values) {
+    void list(const std::string &name, const std::vector<uint32_t> &values)
+    {
         oss_ << name << "=";
-        for (size_t i = 0; i < values.size(); ++i) {
+        for (size_t i = 0; i < values.size(); ++i)
+        {
             oss_ << values[i];
-            if (i + 1 < values.size()) {
+            if (i + 1 < values.size())
+            {
                 oss_ << " ";
             }
         }
         oss_ << "\n";
     }
 
-    std::string str() const {
+    std::string str() const
+    {
         return oss_.str();
     }
 
@@ -104,7 +115,8 @@ private:
     std::ostringstream oss_;
 };
 
-TEST_CASE("Collision golden: spatial grid and narrowphase") {
+TEST_CASE("Collision golden: spatial grid and narrowphase")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/physics/collision");
 
@@ -139,9 +151,7 @@ TEST_CASE("Collision golden: spatial grid and narrowphase") {
     sphere_b.inverse_mass = 1.0f;
     sphere_b.restitution = 1.0f;
 
-    ContactManifold sphere_contact = SphereSpherNarrowphase::detect(
-        sphere_a, sphere_b, 1, 2
-    );
+    ContactManifold sphere_contact = SphereSpherNarrowphase::detect(sphere_a, sphere_b, 1, 2);
 
     builder.scalar("valid", sphere_contact.is_valid() ? 1.0 : 0.0);
     builder.vec3("contact_pos", sphere_contact.contact.position);
@@ -154,16 +164,14 @@ TEST_CASE("Collision golden: spatial grid and narrowphase") {
     AABB aabb_a(Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(1.0f, 1.0f, 1.0f));
     AABB aabb_b(Vec3f(0.5f, -0.5f, -0.5f), Vec3f(2.5f, 0.5f, 0.5f));
 
-    ContactManifold aabb_contact = AABBNarrowphase::detect(
-        aabb_a,
-        aabb_b,
-        Vec3f(0.0f, 0.0f, 0.0f),
-        Vec3f(1.5f, 0.0f, 0.0f),
-        Vec3f(1.0f, 0.0f, 0.0f),
-        Vec3f(-1.0f, 0.0f, 0.0f),
-        10,
-        11
-    );
+    ContactManifold aabb_contact = AABBNarrowphase::detect(aabb_a,
+                                                           aabb_b,
+                                                           Vec3f(0.0f, 0.0f, 0.0f),
+                                                           Vec3f(1.5f, 0.0f, 0.0f),
+                                                           Vec3f(1.0f, 0.0f, 0.0f),
+                                                           Vec3f(-1.0f, 0.0f, 0.0f),
+                                                           10,
+                                                           11);
 
     builder.scalar("valid", aabb_contact.is_valid() ? 1.0 : 0.0);
     builder.vec3("contact_pos", aabb_contact.contact.position);
@@ -194,7 +202,8 @@ TEST_CASE("Collision golden: spatial grid and narrowphase") {
 #endif
 }
 
-TEST_CASE("Collision golden: broader scenarios") {
+TEST_CASE("Collision golden: broader scenarios")
+{
     std::string golden_dir = get_golden_dir();
     ensure_golden_dir(golden_dir + "/physics/collision");
 
@@ -229,16 +238,14 @@ TEST_CASE("Collision golden: broader scenarios") {
     AABB edge_a(Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(1.0f, 1.0f, 1.0f));
     AABB edge_b(Vec3f(1.0f, -1.0f, -1.0f), Vec3f(3.0f, 1.0f, 1.0f));
 
-    ContactManifold edge_contact = AABBNarrowphase::detect(
-        edge_a,
-        edge_b,
-        Vec3f(0.0f, 0.0f, 0.0f),
-        Vec3f(2.0f, 0.0f, 0.0f),
-        Vec3f(0.0f, 0.0f, 0.0f),
-        Vec3f(0.0f, 0.0f, 0.0f),
-        12,
-        13
-    );
+    ContactManifold edge_contact = AABBNarrowphase::detect(edge_a,
+                                                           edge_b,
+                                                           Vec3f(0.0f, 0.0f, 0.0f),
+                                                           Vec3f(2.0f, 0.0f, 0.0f),
+                                                           Vec3f(0.0f, 0.0f, 0.0f),
+                                                           Vec3f(0.0f, 0.0f, 0.0f),
+                                                           12,
+                                                           13);
     builder.scalar("valid", edge_contact.is_valid() ? 1.0 : 0.0);
 
     builder.header("impulse_restitution");

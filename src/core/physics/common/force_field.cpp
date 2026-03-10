@@ -1,6 +1,7 @@
 #include "force_field.hpp"
 
-namespace phynity::physics {
+namespace phynity::physics
+{
 
 // ForceField and concrete implementations are defined in the header as inline/constexpr
 // for compile-time evaluation and efficient inlining.
@@ -11,4 +12,4 @@ namespace phynity::physics {
 // - Field validation and debugging helpers
 // - Performance profiling hooks
 
-}  // namespace phynity::physics
+} // namespace phynity::physics

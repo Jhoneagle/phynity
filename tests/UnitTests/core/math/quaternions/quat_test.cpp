@@ -2,19 +2,21 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/utilities/constants.hpp>
+
 #include <cmath>
 
-using phynity::math::quaternions::Quatf;
-using phynity::math::vectors::Vec3f;
-using phynity::math::utilities::mathf;
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRelMatcher;
+using phynity::math::quaternions::Quatf;
+using phynity::math::utilities::mathf;
+using phynity::math::vectors::Vec3f;
 
 // ============================================================================
 // Constructors
 // ============================================================================
 
-TEST_CASE("Quatf: Default constructor", "[Quatf][constructor]") {
+TEST_CASE("Quatf: Default constructor", "[Quatf][constructor]")
+{
     Quatf q;
     REQUIRE_THAT(q.w, WithinAbs(1.0f, 1e-6f));
     REQUIRE_THAT(q.x, WithinAbs(0.0f, 1e-6f));
@@ -22,7 +24,8 @@ TEST_CASE("Quatf: Default constructor", "[Quatf][constructor]") {
     REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Component constructor", "[Quatf][constructor]") {
+TEST_CASE("Quatf: Component constructor", "[Quatf][constructor]")
+{
     Quatf q(0.707f, 0.707f, 0.0f, 0.0f);
     REQUIRE_THAT(q.w, WithinAbs(0.707f, 1e-6f));
     REQUIRE_THAT(q.x, WithinAbs(0.707f, 1e-6f));
@@ -30,10 +33,12 @@ TEST_CASE("Quatf: Component constructor", "[Quatf][constructor]") {
     REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Axis-angle constructor", "[Quatf][constructor]") {
-    SECTION("90° rotation around Z-axis") {
+TEST_CASE("Quatf: Axis-angle constructor", "[Quatf][constructor]")
+{
+    SECTION("90° rotation around Z-axis")
+    {
         Vec3f axis(0.0f, 0.0f, 1.0f);
-        float angle = static_cast<float>(mathf::pi / 2.0);  // 90 degrees
+        float angle = static_cast<float>(mathf::pi / 2.0); // 90 degrees
         Quatf q(axis, angle);
 
         float expectedW = std::cos(angle / 2.0f);
@@ -45,7 +50,8 @@ TEST_CASE("Quatf: Axis-angle constructor", "[Quatf][constructor]") {
         REQUIRE_THAT(q.z, WithinAbs(expectedXYZ, 1e-6f));
     }
 
-    SECTION("180° rotation around X-axis") {
+    SECTION("180° rotation around X-axis")
+    {
         Vec3f axis(1.0f, 0.0f, 0.0f);
         float angle = static_cast<float>(mathf::pi);
         Quatf q(axis, angle);
@@ -56,7 +62,8 @@ TEST_CASE("Quatf: Axis-angle constructor", "[Quatf][constructor]") {
         REQUIRE_THAT(q.z, WithinAbs(0.0f, 1e-6f));
     }
 
-    SECTION("Zero rotation") {
+    SECTION("Zero rotation")
+    {
         Vec3f axis(1.0f, 0.0f, 0.0f);
         float angle = 0.0f;
         Quatf q(axis, angle);
@@ -72,7 +79,8 @@ TEST_CASE("Quatf: Axis-angle constructor", "[Quatf][constructor]") {
 // Arithmetic Operators
 // ============================================================================
 
-TEST_CASE("Quatf: Addition", "[Quatf][arithmetic]") {
+TEST_CASE("Quatf: Addition", "[Quatf][arithmetic]")
+{
     Quatf q1(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf q2(5.0f, 6.0f, 7.0f, 8.0f);
     Quatf result = q1 + q2;
@@ -83,7 +91,8 @@ TEST_CASE("Quatf: Addition", "[Quatf][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(12.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Subtraction", "[Quatf][arithmetic]") {
+TEST_CASE("Quatf: Subtraction", "[Quatf][arithmetic]")
+{
     Quatf q1(5.0f, 8.0f, 10.0f, 12.0f);
     Quatf q2(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf result = q1 - q2;
@@ -94,8 +103,10 @@ TEST_CASE("Quatf: Subtraction", "[Quatf][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(8.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Scalar multiplication", "[Quatf][arithmetic]") {
-    SECTION("Direct multiplication") {
+TEST_CASE("Quatf: Scalar multiplication", "[Quatf][arithmetic]")
+{
+    SECTION("Direct multiplication")
+    {
         Quatf q(2.0f, 3.0f, 4.0f, 5.0f);
         Quatf result = q * 2.0f;
 
@@ -105,7 +116,8 @@ TEST_CASE("Quatf: Scalar multiplication", "[Quatf][arithmetic]") {
         REQUIRE_THAT(result.z, WithinAbs(10.0f, 1e-6f));
     }
 
-    SECTION("Reverse multiplication") {
+    SECTION("Reverse multiplication")
+    {
         Quatf q(2.0f, 3.0f, 4.0f, 5.0f);
         Quatf result = 3.0f * q;
 
@@ -116,7 +128,8 @@ TEST_CASE("Quatf: Scalar multiplication", "[Quatf][arithmetic]") {
     }
 }
 
-TEST_CASE("Quatf: Scalar division", "[Quatf][arithmetic]") {
+TEST_CASE("Quatf: Scalar division", "[Quatf][arithmetic]")
+{
     Quatf q(4.0f, 6.0f, 8.0f, 10.0f);
     Quatf result = q / 2.0f;
 
@@ -126,7 +139,8 @@ TEST_CASE("Quatf: Scalar division", "[Quatf][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(5.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Negation", "[Quatf][arithmetic]") {
+TEST_CASE("Quatf: Negation", "[Quatf][arithmetic]")
+{
     Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf result = -q;
 
@@ -136,8 +150,10 @@ TEST_CASE("Quatf: Negation", "[Quatf][arithmetic]") {
     REQUIRE_THAT(result.z, WithinAbs(-4.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Quaternion multiplication (basic)", "[Quatf][arithmetic]") {
-    SECTION("Identity quaternion is multiplicative identity") {
+TEST_CASE("Quatf: Quaternion multiplication (basic)", "[Quatf][arithmetic]")
+{
+    SECTION("Identity quaternion is multiplicative identity")
+    {
         Quatf identity(1.0f, 0.0f, 0.0f, 0.0f);
         Quatf q(0.5f, 0.5f, 0.5f, 0.5f);
         Quatf result = identity * q;
@@ -148,7 +164,8 @@ TEST_CASE("Quatf: Quaternion multiplication (basic)", "[Quatf][arithmetic]") {
         REQUIRE_THAT(result.z, WithinAbs(q.z, 1e-6f));
     }
 
-    SECTION("q * q⁻¹ ≈ identity") {
+    SECTION("q * q⁻¹ ≈ identity")
+    {
         Quatf q(0.5f, 0.5f, 0.5f, 0.5f);
         Quatf qInv = q.inverse();
         Quatf result = q * qInv;
@@ -159,15 +176,16 @@ TEST_CASE("Quatf: Quaternion multiplication (basic)", "[Quatf][arithmetic]") {
         REQUIRE_THAT(result.z, WithinAbs(0.0f, 1e-5f));
     }
 
-    SECTION("Non-commutative: q1 * q2 ≠ q2 * q1 (in general)") {
+    SECTION("Non-commutative: q1 * q2 ≠ q2 * q1 (in general)")
+    {
         Quatf q1(1.0f, 1.0f, 0.0f, 0.0f);
         Quatf q2(1.0f, 0.0f, 1.0f, 0.0f);
         Quatf result1 = q1 * q2;
         Quatf result2 = q2 * q1;
 
         // They should differ (not always identity)
-        bool different = (result1.w != result2.w) || (result1.x != result2.x) ||
-                         (result1.y != result2.y) || (result1.z != result2.z);
+        bool different = (result1.w != result2.w) || (result1.x != result2.x) || (result1.y != result2.y) ||
+                         (result1.z != result2.z);
         REQUIRE(different);
     }
 }
@@ -176,7 +194,8 @@ TEST_CASE("Quatf: Quaternion multiplication (basic)", "[Quatf][arithmetic]") {
 // Compound Assignment Operators
 // ============================================================================
 
-TEST_CASE("Quatf: Compound addition (+=)", "[Quatf][compound]") {
+TEST_CASE("Quatf: Compound addition (+=)", "[Quatf][compound]")
+{
     Quatf q1(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf q2(5.0f, 6.0f, 7.0f, 8.0f);
     q1 += q2;
@@ -187,7 +206,8 @@ TEST_CASE("Quatf: Compound addition (+=)", "[Quatf][compound]") {
     REQUIRE_THAT(q1.z, WithinAbs(12.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Compound subtraction (-=)", "[Quatf][compound]") {
+TEST_CASE("Quatf: Compound subtraction (-=)", "[Quatf][compound]")
+{
     Quatf q1(5.0f, 8.0f, 10.0f, 12.0f);
     Quatf q2(1.0f, 2.0f, 3.0f, 4.0f);
     q1 -= q2;
@@ -198,7 +218,8 @@ TEST_CASE("Quatf: Compound subtraction (-=)", "[Quatf][compound]") {
     REQUIRE_THAT(q1.z, WithinAbs(8.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Compound multiplication (*=)", "[Quatf][compound]") {
+TEST_CASE("Quatf: Compound multiplication (*=)", "[Quatf][compound]")
+{
     Quatf q1(0.707f, 0.707f, 0.0f, 0.0f);
     Quatf q2(0.707f, 0.707f, 0.0f, 0.0f);
     Quatf expected = q1 * q2;
@@ -210,7 +231,8 @@ TEST_CASE("Quatf: Compound multiplication (*=)", "[Quatf][compound]") {
     REQUIRE_THAT(q1.z, WithinAbs(expected.z, 1e-5f));
 }
 
-TEST_CASE("Quatf: Compound scalar multiplication (*=)", "[Quatf][compound]") {
+TEST_CASE("Quatf: Compound scalar multiplication (*=)", "[Quatf][compound]")
+{
     Quatf q(2.0f, 3.0f, 4.0f, 5.0f);
     q *= 2.0f;
 
@@ -220,7 +242,8 @@ TEST_CASE("Quatf: Compound scalar multiplication (*=)", "[Quatf][compound]") {
     REQUIRE_THAT(q.z, WithinAbs(10.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Compound scalar division (/=)", "[Quatf][compound]") {
+TEST_CASE("Quatf: Compound scalar division (/=)", "[Quatf][compound]")
+{
     Quatf q(4.0f, 6.0f, 8.0f, 10.0f);
     q /= 2.0f;
 
@@ -234,7 +257,8 @@ TEST_CASE("Quatf: Compound scalar division (/=)", "[Quatf][compound]") {
 // Comparison Operators
 // ============================================================================
 
-TEST_CASE("Quatf: Equality comparison", "[Quatf][comparison]") {
+TEST_CASE("Quatf: Equality comparison", "[Quatf][comparison]")
+{
     Quatf a(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf b(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf c(5.0f, 6.0f, 7.0f, 8.0f);
@@ -243,7 +267,8 @@ TEST_CASE("Quatf: Equality comparison", "[Quatf][comparison]") {
     REQUIRE_FALSE(a == c);
 }
 
-TEST_CASE("Quatf: Inequality comparison", "[Quatf][comparison]") {
+TEST_CASE("Quatf: Inequality comparison", "[Quatf][comparison]")
+{
     Quatf a(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf b(5.0f, 6.0f, 7.0f, 8.0f);
     Quatf c(1.0f, 2.0f, 3.0f, 4.0f);
@@ -256,22 +281,26 @@ TEST_CASE("Quatf: Inequality comparison", "[Quatf][comparison]") {
 // Magnitude and Normalization
 // ============================================================================
 
-TEST_CASE("Quatf: Magnitude squared", "[Quatf][magnitude]") {
-    Quatf q(1.0f, 2.0f, 2.0f, 0.0f);  // 1 + 4 + 4 + 0 = 9
+TEST_CASE("Quatf: Magnitude squared", "[Quatf][magnitude]")
+{
+    Quatf q(1.0f, 2.0f, 2.0f, 0.0f); // 1 + 4 + 4 + 0 = 9
     REQUIRE_THAT(q.magnitudeSquared(), WithinAbs(9.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Magnitude", "[Quatf][magnitude]") {
-    Quatf q(1.0f, 2.0f, 2.0f, 0.0f);  // √(1 + 4 + 4 + 0) = 3
+TEST_CASE("Quatf: Magnitude", "[Quatf][magnitude]")
+{
+    Quatf q(1.0f, 2.0f, 2.0f, 0.0f); // √(1 + 4 + 4 + 0) = 3
     REQUIRE_THAT(q.magnitude(), WithinAbs(3.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Norm (alias for magnitude)", "[Quatf][magnitude]") {
+TEST_CASE("Quatf: Norm (alias for magnitude)", "[Quatf][magnitude]")
+{
     Quatf q(1.0f, 2.0f, 2.0f, 0.0f);
     REQUIRE_THAT(q.norm(), WithinAbs(3.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Normalized", "[Quatf][magnitude]") {
+TEST_CASE("Quatf: Normalized", "[Quatf][magnitude]")
+{
     Quatf q(1.0f, 2.0f, 2.0f, 0.0f);
     Quatf normalized = q.normalized();
 
@@ -285,7 +314,8 @@ TEST_CASE("Quatf: Normalized", "[Quatf][magnitude]") {
     REQUIRE_THAT(normalized.z, WithinAbs(0.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Normalize in-place", "[Quatf][magnitude]") {
+TEST_CASE("Quatf: Normalize in-place", "[Quatf][magnitude]")
+{
     Quatf q(1.0f, 2.0f, 2.0f, 0.0f);
     q.normalize();
 
@@ -293,7 +323,8 @@ TEST_CASE("Quatf: Normalize in-place", "[Quatf][magnitude]") {
     REQUIRE_THAT(mag, WithinAbs(1.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Near-zero magnitude handling", "[Quatf][magnitude]") {
+TEST_CASE("Quatf: Near-zero magnitude handling", "[Quatf][magnitude]")
+{
     Quatf q(1e-7f, 1e-7f, 1e-7f, 1e-7f);
     Quatf normalized = q.normalized();
 
@@ -308,7 +339,8 @@ TEST_CASE("Quatf: Near-zero magnitude handling", "[Quatf][magnitude]") {
 // Conjugate and Inverse
 // ============================================================================
 
-TEST_CASE("Quatf: Conjugate", "[Quatf][conjugate]") {
+TEST_CASE("Quatf: Conjugate", "[Quatf][conjugate]")
+{
     Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf conj = q.conjugate();
 
@@ -318,7 +350,8 @@ TEST_CASE("Quatf: Conjugate", "[Quatf][conjugate]") {
     REQUIRE_THAT(conj.z, WithinAbs(-4.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Conjugate of conjugate is original", "[Quatf][conjugate]") {
+TEST_CASE("Quatf: Conjugate of conjugate is original", "[Quatf][conjugate]")
+{
     Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf original = q.conjugate().conjugate();
 
@@ -328,7 +361,8 @@ TEST_CASE("Quatf: Conjugate of conjugate is original", "[Quatf][conjugate]") {
     REQUIRE_THAT(original.z, WithinAbs(q.z, 1e-6f));
 }
 
-TEST_CASE("Quatf: Inverse", "[Quatf][inverse]") {
+TEST_CASE("Quatf: Inverse", "[Quatf][inverse]")
+{
     Quatf q = Quatf(Vec3f(0.0f, 0.0f, 1.0f), static_cast<float>(mathf::pi / 2.0)).normalized();
     Quatf inv = q.inverse();
 
@@ -341,7 +375,8 @@ TEST_CASE("Quatf: Inverse", "[Quatf][inverse]") {
     REQUIRE_THAT(product.z, WithinAbs(0.0f, 1e-5f));
 }
 
-TEST_CASE("Quatf: Inverse of unit quaternion is conjugate", "[Quatf][inverse]") {
+TEST_CASE("Quatf: Inverse of unit quaternion is conjugate", "[Quatf][inverse]")
+{
     // Create a unit quaternion
     Quatf q = Quatf(Vec3f(1.0f, 0.0f, 0.0f), static_cast<float>(mathf::pi / 4.0f)).normalized();
     Quatf inv = q.inverse();
@@ -358,7 +393,8 @@ TEST_CASE("Quatf: Inverse of unit quaternion is conjugate", "[Quatf][inverse]") 
 // Dot Product
 // ============================================================================
 
-TEST_CASE("Quatf: Dot product", "[Quatf][dot]") {
+TEST_CASE("Quatf: Dot product", "[Quatf][dot]")
+{
     Quatf q1(1.0f, 2.0f, 3.0f, 4.0f);
     Quatf q2(2.0f, 3.0f, 4.0f, 5.0f);
 
@@ -367,7 +403,8 @@ TEST_CASE("Quatf: Dot product", "[Quatf][dot]") {
     REQUIRE_THAT(result, WithinAbs(40.0f, 1e-6f));
 }
 
-TEST_CASE("Quatf: Dot product with self equals magnitude squared", "[Quatf][dot]") {
+TEST_CASE("Quatf: Dot product with self equals magnitude squared", "[Quatf][dot]")
+{
     Quatf q(1.0f, 2.0f, 2.0f, 0.0f);
     float dotProduct = dot(q, q);
     float magSq = q.magnitudeSquared();
@@ -379,7 +416,8 @@ TEST_CASE("Quatf: Dot product with self equals magnitude squared", "[Quatf][dot]
 // Output Stream
 // ============================================================================
 
-TEST_CASE("Quatf: Stream output", "[Quatf][output]") {
+TEST_CASE("Quatf: Stream output", "[Quatf][output]")
+{
     Quatf q(1.0f, 2.0f, 3.0f, 4.0f);
     std::ostringstream oss;
     oss << q;
@@ -396,7 +434,8 @@ TEST_CASE("Quatf: Stream output", "[Quatf][output]") {
 // Vector Rotation
 // ============================================================================
 
-TEST_CASE("Quatf: Rotate vector by identity", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Rotate vector by identity", "[Quatf][rotation]")
+{
     Quatf identity;
     Vec3f v(1.0f, 2.0f, 3.0f);
     Vec3f rotated = identity.rotateVector(v);
@@ -406,7 +445,8 @@ TEST_CASE("Quatf: Rotate vector by identity", "[Quatf][rotation]") {
     REQUIRE_THAT(rotated.z, WithinAbs(v.z, 1e-5f));
 }
 
-TEST_CASE("Quatf: 90° rotation around X-axis", "[Quatf][rotation]") {
+TEST_CASE("Quatf: 90° rotation around X-axis", "[Quatf][rotation]")
+{
     // 90° rotation around X-axis: (1, 0, 0)
     Vec3f axis(1.0f, 0.0f, 0.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
@@ -421,7 +461,8 @@ TEST_CASE("Quatf: 90° rotation around X-axis", "[Quatf][rotation]") {
     REQUIRE_THAT(rotated.z, WithinAbs(1.0f, 1e-5f));
 }
 
-TEST_CASE("Quatf: 90° rotation around Y-axis", "[Quatf][rotation]") {
+TEST_CASE("Quatf: 90° rotation around Y-axis", "[Quatf][rotation]")
+{
     // 90° rotation around Y-axis: (0, 1, 0)
     Vec3f axis(0.0f, 1.0f, 0.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
@@ -436,7 +477,8 @@ TEST_CASE("Quatf: 90° rotation around Y-axis", "[Quatf][rotation]") {
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-5f));
 }
 
-TEST_CASE("Quatf: 90° rotation around Z-axis", "[Quatf][rotation]") {
+TEST_CASE("Quatf: 90° rotation around Z-axis", "[Quatf][rotation]")
+{
     // 90° rotation around Z-axis: (0, 0, 1)
     Vec3f axis(0.0f, 0.0f, 1.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
@@ -451,7 +493,8 @@ TEST_CASE("Quatf: 90° rotation around Z-axis", "[Quatf][rotation]") {
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-5f));
 }
 
-TEST_CASE("Quatf: 180° rotation around axis", "[Quatf][rotation]") {
+TEST_CASE("Quatf: 180° rotation around axis", "[Quatf][rotation]")
+{
     // 180° rotation around Z-axis: (0, 0, 1)
     Vec3f axis(0.0f, 0.0f, 1.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi)).normalized();
@@ -466,7 +509,8 @@ TEST_CASE("Quatf: 180° rotation around axis", "[Quatf][rotation]") {
     REQUIRE_THAT(rotated.z, WithinAbs(0.0f, 1e-4f));
 }
 
-TEST_CASE("Quatf: Rotate then unrotate returns original", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Rotate then unrotate returns original", "[Quatf][rotation]")
+{
     Vec3f axis(1.0f, 2.0f, 3.0f);
     axis = axis.normalized();
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 3.0)).normalized();
@@ -480,7 +524,8 @@ TEST_CASE("Quatf: Rotate then unrotate returns original", "[Quatf][rotation]") {
     REQUIRE_THAT(unrotated.z, WithinAbs(original.z, 1e-4f));
 }
 
-TEST_CASE("Quatf: Unrotate reverses rotate", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Unrotate reverses rotate", "[Quatf][rotation]")
+{
     Vec3f axis(0.707f, 0.707f, 0.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 4.0)).normalized();
 
@@ -496,7 +541,8 @@ TEST_CASE("Quatf: Unrotate reverses rotate", "[Quatf][rotation]") {
     REQUIRE_THAT(backward.z, WithinAbs(expected.z, 1e-5f));
 }
 
-TEST_CASE("Quatf: Vector magnitude preserved under rotation", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Vector magnitude preserved under rotation", "[Quatf][rotation]")
+{
     Vec3f axis(1.0f, 0.0f, 1.0f);
     axis = axis.normalized();
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 6.0)).normalized();
@@ -510,7 +556,8 @@ TEST_CASE("Quatf: Vector magnitude preserved under rotation", "[Quatf][rotation]
     REQUIRE_THAT(rotatedMag, WithinAbs(originalMag, 1e-4f));
 }
 
-TEST_CASE("Quatf: Composition of rotations via quaternion multiplication", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Composition of rotations via quaternion multiplication", "[Quatf][rotation]")
+{
     // Create two rotations
     Vec3f axis1(1.0f, 0.0f, 0.0f);
     Quatf q1 = Quatf(axis1, static_cast<float>(mathf::pi / 4.0)).normalized();
@@ -522,7 +569,7 @@ TEST_CASE("Quatf: Composition of rotations via quaternion multiplication", "[Qua
     Quatf qComposed = q2 * q1;
 
     Vec3f v(1.0f, 0.0f, 0.0f);
-    
+
     // Apply composed rotation
     Vec3f composedResult = qComposed.rotateVector(v);
 
@@ -535,7 +582,8 @@ TEST_CASE("Quatf: Composition of rotations via quaternion multiplication", "[Qua
     REQUIRE_THAT(composedResult.z, WithinAbs(sequentialResult.z, 1e-4f));
 }
 
-TEST_CASE("Quatf: Full rotation (360°) returns to original", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Full rotation (360°) returns to original", "[Quatf][rotation]")
+{
     Vec3f axis(1.0f, 2.0f, 3.0f);
     axis = axis.normalized();
     Quatf q = Quatf(axis, static_cast<float>(2.0 * mathf::pi)).normalized();
@@ -549,7 +597,8 @@ TEST_CASE("Quatf: Full rotation (360°) returns to original", "[Quatf][rotation]
     REQUIRE_THAT(rotated.z, WithinAbs(v.z, 1e-4f));
 }
 
-TEST_CASE("Quatf: Rotating orthogonal vectors", "[Quatf][rotation]") {
+TEST_CASE("Quatf: Rotating orthogonal vectors", "[Quatf][rotation]")
+{
     Vec3f axis(0.0f, 1.0f, 0.0f);
     Quatf q = Quatf(axis, static_cast<float>(mathf::pi / 2.0)).normalized();
 

@@ -1,20 +1,23 @@
 #pragma once
 
-#include <core/math/vectors/vec3.hpp>
 #include <core/math/matrices/mat_dynamic.hpp>
+#include <core/math/vectors/vec3.hpp>
 #include <core/physics/micro/particle.hpp>
-#include <vector>
+
 #include <cstdint>
+#include <vector>
 
-namespace phynity::physics::constraints {
+namespace phynity::physics::constraints
+{
 
-using phynity::math::vectors::Vec3f;
 using phynity::math::matrices::MatDynamic;
+using phynity::math::vectors::Vec3f;
 
 /// Abstract base class for all constraints.
 /// A constraint enforces a relationship between one or more bodies.
 /// Examples: contact constraints (collision), fixed joints, hinge joints, etc.
-class Constraint {
+class Constraint
+{
 public:
     virtual ~Constraint() = default;
 
@@ -54,13 +57,15 @@ public:
     /// Set warm-start impulse from previous frame (for faster convergence).
     /// @param impulse The impulse applied in the previous frame
     /// @note Default implementation does nothing; override if your constraint supports warm-start
-    virtual void set_warm_start_impulse(float impulse) {
-        (void)impulse;  // Unused by default
+    virtual void set_warm_start_impulse(float impulse)
+    {
+        (void) impulse; // Unused by default
     }
 
     /// Get the current accumulated impulse (for caching to next frame).
     /// @return Current impulse magnitude for warm-starting
-    virtual float get_accumulated_impulse() const {
+    virtual float get_accumulated_impulse() const
+    {
         return 0.0f;
     }
 
@@ -73,38 +78,43 @@ public:
     /// For contact with friction (normal + tangent): 2
     /// For fixed joint (position + rotation): 6
     /// @return Number of constraint rows
-    virtual int num_constraint_rows() const {
-        return 1;  // Default: single constraint equation
+    virtual int num_constraint_rows() const
+    {
+        return 1; // Default: single constraint equation
     }
 
     /// Check if this constraint is active (should be solved).
     /// Deactivate constraints that are satisfied or have aged out.
     /// @return True if constraint should be processed by solver, false if inactive
-    virtual bool is_active() const {
-        return true;  // Default: all constraints are active
+    virtual bool is_active() const
+    {
+        return true; // Default: all constraints are active
     }
 
     /// Check if impulses for this constraint should be clamped to non-negative.
     /// Contact constraints are unilateral (can only push, not pull).
     /// Fixed/joint constraints are bilateral (can push or pull).
     /// @return True if impulse should be clamped to >= 0, false for bilateral constraints
-    virtual bool is_unilateral() const {
-        return false;  // Default: bilateral (allow negative impulses)
+    virtual bool is_unilateral() const
+    {
+        return false; // Default: bilateral (allow negative impulses)
     }
 
     /// Get the coefficient of restitution for this constraint.
     /// Used by the solver to compute bounce/restitution velocity.
     /// @return Restitution coefficient (0.0 = inelastic, 1.0 = perfectly elastic)
-    virtual float get_restitution() const {
-        return 0.0f;  // Default: no restitution
+    virtual float get_restitution() const
+    {
+        return 0.0f; // Default: no restitution
     }
 
     /// Get the initial approach velocity for contact constraints.
     /// Used for computing restitution target based on original impact velocity.
     /// @return Initial relative velocity along contact normal (negative if approaching)
-    virtual float get_initial_approach_velocity() const {
-        return 0.0f;  // Default: no initial velocity (non-contact constraints)
+    virtual float get_initial_approach_velocity() const
+    {
+        return 0.0f; // Default: no initial velocity (non-contact constraints)
     }
 };
 
-}  // namespace phynity::physics::constraints
+} // namespace phynity::physics::constraints

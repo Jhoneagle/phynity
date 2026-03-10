@@ -6,28 +6,36 @@
 #include <deque>
 #include <mutex>
 
-namespace phynity::jobs {
+namespace phynity::jobs
+{
 
 // Simple work-stealing deque for bootstrap phase.
 // Uses a single mutex for all operations (no lock-free yet).
-class JobQueue {
+class JobQueue
+{
 public:
-    explicit JobQueue(uint32_t capacity = 1024) : capacity_(capacity) {}
-    JobQueue(const JobQueue&) = delete;
-    JobQueue& operator=(const JobQueue&) = delete;
+    explicit JobQueue(uint32_t capacity = 1024) : capacity_(capacity)
+    {
+    }
+    JobQueue(const JobQueue &) = delete;
+    JobQueue &operator=(const JobQueue &) = delete;
 
-    bool push(JobHandle job) {
+    bool push(JobHandle job)
+    {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (queue_.size() >= capacity_) {
+        if (queue_.size() >= capacity_)
+        {
             return false;
         }
         queue_.push_back(job);
         return true;
     }
 
-    bool pop(JobHandle& job) {
+    bool pop(JobHandle &job)
+    {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (queue_.empty()) {
+        if (queue_.empty())
+        {
             return false;
         }
         job = queue_.back();
@@ -35,9 +43,11 @@ public:
         return true;
     }
 
-    bool steal(JobHandle& job) {
+    bool steal(JobHandle &job)
+    {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (queue_.empty()) {
+        if (queue_.empty())
+        {
             return false;
         }
         job = queue_.front();
@@ -45,12 +55,14 @@ public:
         return true;
     }
 
-    size_t size() const {
+    size_t size() const
+    {
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.size();
     }
 
-    void clear() {
+    void clear()
+    {
         std::lock_guard<std::mutex> lock(mutex_);
         queue_.clear();
     }
@@ -61,4 +73,4 @@ private:
     uint32_t capacity_;
 };
 
-}  // namespace phynity::jobs
+} // namespace phynity::jobs

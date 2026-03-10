@@ -1,57 +1,62 @@
 #pragma once
 
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/physics_constants.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
-#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/contact/impulse_resolver.hpp>
-#include <core/physics/collision/contact/pgs_solver.hpp>
-#include <core/physics/collision/broadphase/spatial_grid.hpp>
-#include <core/physics/collision/contact/contact_cache.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/constraints/contact/contact_constraint.hpp>
-#include <core/physics/constraints/joints/fixed_constraint.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/math/utilities/float_comparison.hpp>
-#include <core/diagnostics/profiling_macros.hpp>
-#include <core/jobs/job_system.hpp>
+#include <core/diagnostics/collision_monitor.hpp>
 #include <core/diagnostics/energy_monitor.hpp>
 #include <core/diagnostics/momentum_monitor.hpp>
-#include <core/diagnostics/collision_monitor.hpp>
+#include <core/diagnostics/profiling_macros.hpp>
+#include <core/jobs/job_system.hpp>
+#include <core/math/utilities/float_comparison.hpp>
+#include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/contact/contact_cache.hpp>
+#include <core/physics/collision/contact/impulse_resolver.hpp>
+#include <core/physics/collision/contact/pgs_solver.hpp>
+#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
+#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/common/ccd_config.hpp>
+#include <core/physics/common/force_field.hpp>
+#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/constraints/contact/contact_constraint.hpp>
+#include <core/physics/constraints/joints/fixed_constraint.hpp>
+#include <core/physics/constraints/solver/constraint.hpp>
+#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/micro/particle.hpp>
+
 #include <algorithm>
 #include <memory>
-#include <vector>
 #include <unordered_set>
+#include <vector>
 
-namespace phynity::physics {
+namespace phynity::physics
+{
 
 using namespace phynity::physics::constants;
 
 /// Manages a collection of particles and force fields, providing simulation stepping.
 /// Integrates Material system, ForceField system, and provides energy/momentum diagnostics.
-class ParticleSystem {
+class ParticleSystem
+{
 public:
     /// Collision solver modes for dual-solver architecture (Phase 4)
-    enum class SolverMode {
-        SimpleImpulse,  ///< Single-pass impulse-based collision resolution (fast, less stable)
-        PGS             ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
+    enum class SolverMode
+    {
+        SimpleImpulse, ///< Single-pass impulse-based collision resolution (fast, less stable)
+        PGS ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
     };
 
     /// Diagnostic information about the particle system
-    struct Diagnostics {
-        float total_kinetic_energy = 0.0f;  ///< Sum of all particle kinetic energies
+    struct Diagnostics
+    {
+        float total_kinetic_energy = 0.0f; ///< Sum of all particle kinetic energies
         Vec3f total_momentum = Vec3f(0.0f); ///< Sum of all particle momenta (mass * velocity)
-        size_t particle_count = 0;          ///< Number of active particles
+        size_t particle_count = 0; ///< Number of active particles
     };
 
     ParticleSystem() = default;
 
-    
+
     // Move semantics
-    ParticleSystem(ParticleSystem&& other) noexcept = default;
-    ParticleSystem& operator=(ParticleSystem&& other) noexcept = default;
+    ParticleSystem(ParticleSystem &&other) noexcept = default;
+    ParticleSystem &operator=(ParticleSystem &&other) noexcept = default;
 
     // ========================================================================
     // Particle Management
@@ -62,15 +67,11 @@ public:
     /// @param velocity Starting velocity
     /// @param mass Particle mass (default: 1.0)
     /// @param lifetime Particle lifetime (-1 = infinite, > 0 = finite)
-    void spawn(
-        const Vec3f& position,
-        const Vec3f& velocity,
-        float mass = 1.0f,
-        float lifetime = -1.0f,
-        float radius = -1.0f
-    ) {
+    void
+    spawn(const Vec3f &position, const Vec3f &velocity, float mass = 1.0f, float lifetime = -1.0f, float radius = -1.0f)
+    {
         particles_.emplace_back();
-        Particle& p = particles_.back();
+        Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
         p.material.mass = mass;
@@ -83,15 +84,14 @@ public:
     /// @param velocity Starting velocity
     /// @param material Complete material definition
     /// @param lifetime Particle lifetime (-1 = infinite, > 0 = finite)
-    void spawn(
-        const Vec3f& position,
-        const Vec3f& velocity,
-        const Material& material,
-        float lifetime = -1.0f,
-        float radius = -1.0f
-    ) {
+    void spawn(const Vec3f &position,
+               const Vec3f &velocity,
+               const Material &material,
+               float lifetime = -1.0f,
+               float radius = -1.0f)
+    {
         particles_.emplace_back();
-        Particle& p = particles_.back();
+        Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
         p.material = material;
@@ -100,20 +100,20 @@ public:
     }
 
     /// Clear all particles.
-    void clear() { 
-        particles_.clear(); 
+    void clear()
+    {
+        particles_.clear();
     }
 
     /// Remove dead particles from the system.
     /// WARNING: This invalidates any outstanding iterators or references to particles.
     /// Do not keep references to particles obtained via particles() before calling this method.
     /// The internal particle storage may be reordered or resized during removal.
-    void remove_dead_particles() {
+    void remove_dead_particles()
+    {
         particles_.erase(
-            std::remove_if(particles_.begin(), particles_.end(),
-                          [](const Particle& p) { return !p.is_alive(); }),
-            particles_.end()
-        );
+            std::remove_if(particles_.begin(), particles_.end(), [](const Particle &p) { return !p.is_alive(); }),
+            particles_.end());
     }
 
     // ========================================================================
@@ -123,17 +123,20 @@ public:
     /// Add a force field to the system.
     /// The system takes ownership of the field.
     /// @param field Unique pointer to force field
-    void add_force_field(std::unique_ptr<ForceField> field) {
+    void add_force_field(std::unique_ptr<ForceField> field)
+    {
         force_fields_.push_back(std::move(field));
     }
 
     /// Remove all force fields from the system.
-    void clear_force_fields() {
+    void clear_force_fields()
+    {
         force_fields_.clear();
     }
 
     /// Get the number of active force fields.
-    size_t force_field_count() const {
+    size_t force_field_count() const
+    {
         return force_fields_.size();
     }
 
@@ -142,24 +145,29 @@ public:
     // ========================================================================
 
     /// Enable or disable simple sphere-sphere collision handling.
-    void enable_collisions(bool enabled) {
+    void enable_collisions(bool enabled)
+    {
         collisions_enabled_ = enabled;
     }
 
     /// Check whether collisions are enabled.
-    bool collisions_enabled() const {
+    bool collisions_enabled() const
+    {
         return collisions_enabled_;
     }
 
     /// Set default collision radius used by spawn() when radius is not specified.
-    void set_default_collision_radius(float radius) {
-        if (radius > 0.0f) {
+    void set_default_collision_radius(float radius)
+    {
+        if (radius > 0.0f)
+        {
             default_collision_radius_ = radius;
         }
     }
 
     /// Get the current default collision radius.
-    float default_collision_radius() const {
+    float default_collision_radius() const
+    {
         return default_collision_radius_;
     }
 
@@ -167,15 +175,18 @@ public:
     /// Larger cells = fewer cells, faster insertion but more candidates per query.
     /// Smaller cells = more cells, slower insertion but fewer candidates.
     /// Recommended: 2x to 4x the average particle diameter.
-    void set_broadphase_cell_size(float cell_size) {
-        if (cell_size > 0.0f) {
+    void set_broadphase_cell_size(float cell_size)
+    {
+        if (cell_size > 0.0f)
+        {
             broadphase_cell_size_ = cell_size;
             spatial_grid_.set_cell_size(cell_size);
         }
     }
 
     /// Get the current broadphase grid cell size.
-    float broadphase_cell_size() const {
+    float broadphase_cell_size() const
+    {
         return broadphase_cell_size_;
     }
 
@@ -186,8 +197,10 @@ public:
     /// Add a rigid constraint to the system (e.g., fixed joint, hinge).
     /// The system takes ownership of the constraint.
     /// @param constraint Unique pointer to constraint
-    void add_constraint(std::unique_ptr<constraints::Constraint> constraint) {
-        if (constraint) {
+    void add_constraint(std::unique_ptr<constraints::Constraint> constraint)
+    {
+        if (constraint)
+        {
             constraints_.push_back(std::move(constraint));
         }
     }
@@ -196,48 +209,54 @@ public:
     /// @param particle_a_index Index of first particle
     /// @param particle_b_index Index of second particle
     /// @return Pointer to the created constraint (for reference/modification)
-    constraints::FixedConstraint* add_fixed_constraint(size_t particle_a_index, size_t particle_b_index) {
-        if (particle_a_index >= particles_.size() || particle_b_index >= particles_.size()) {
+    constraints::FixedConstraint *add_fixed_constraint(size_t particle_a_index, size_t particle_b_index)
+    {
+        if (particle_a_index >= particles_.size() || particle_b_index >= particles_.size())
+        {
             return nullptr;
         }
 
-        auto constraint = std::make_unique<constraints::FixedConstraint>(
-            particles_[particle_a_index],
-            particles_[particle_b_index]
-        );
-        auto* ptr = constraint.get();
+        auto constraint =
+            std::make_unique<constraints::FixedConstraint>(particles_[particle_a_index], particles_[particle_b_index]);
+        auto *ptr = constraint.get();
         constraints_.push_back(std::move(constraint));
         return ptr;
     }
 
     /// Remove all constraints from the system.
-    void clear_constraints() {
+    void clear_constraints()
+    {
         constraints_.clear();
     }
 
     /// Get the number of active constraints.
-    size_t constraint_count() const {
+    size_t constraint_count() const
+    {
         return constraints_.size();
     }
 
     /// Enable or disable constraint solving.
     /// When disabled, only collision constraints are used.
-    void enable_constraints(bool enabled) {
+    void enable_constraints(bool enabled)
+    {
         constraints_enabled_ = enabled;
     }
 
     /// Check whether constraint solving is enabled.
-    bool constraints_enabled() const {
+    bool constraints_enabled() const
+    {
         return constraints_enabled_;
     }
 
     /// Set constraint solver configuration.
-    void set_constraint_solver_config(const constraints::ConstraintSolverConfig& config) {
+    void set_constraint_solver_config(const constraints::ConstraintSolverConfig &config)
+    {
         constraint_solver_.set_config(config);
     }
 
     /// Get constraint solver configuration.
-    const constraints::ConstraintSolverConfig& constraint_solver_config() const {
+    const constraints::ConstraintSolverConfig &constraint_solver_config() const
+    {
         return constraint_solver_.config();
     }
 
@@ -248,30 +267,35 @@ public:
     /// Set continuous collision detection configuration.
     /// Controls when CCD is triggered and how many substeps are used.
     /// @param config CCD configuration struct
-    void set_ccd_config(const CCDConfig& config) {
+    void set_ccd_config(const CCDConfig &config)
+    {
         ccd_config_ = config;
     }
 
     /// Get current continuous collision detection configuration.
-    const CCDConfig& ccd_config() const {
+    const CCDConfig &ccd_config() const
+    {
         return ccd_config_;
     }
 
     /// Enable or disable CCD globally.
     /// @param enabled True to enable CCD, false to disable
-    void set_ccd_enabled(bool enabled) {
+    void set_ccd_enabled(bool enabled)
+    {
         ccd_config_.enabled = enabled;
     }
 
     /// Check if CCD is currently enabled.
-    bool is_ccd_enabled() const {
+    bool is_ccd_enabled() const
+    {
         return ccd_config_.enabled;
     }
 
     /// Set the velocity threshold for CCD triggering.
     /// Objects moving faster than this will use CCD.
     /// @param threshold Minimum speed in m/s (0.0 = always use CCD)
-    void set_ccd_velocity_threshold(float threshold) {
+    void set_ccd_velocity_threshold(float threshold)
+    {
         ccd_config_.velocity_threshold = threshold;
     }
 
@@ -281,35 +305,41 @@ public:
 
     /// Set the collision solver mode (SimpleImpulse or PGS).
     /// @param mode The solver mode to use
-    void set_solver_mode(SolverMode mode) {
+    void set_solver_mode(SolverMode mode)
+    {
         solver_mode_ = mode;
     }
 
     /// Get the current collision solver mode.
-    SolverMode solver_mode() const {
+    SolverMode solver_mode() const
+    {
         return solver_mode_;
     }
 
     /// Set PGS solver configuration (only used when solver_mode == PGS).
     /// @param config PGS solver configuration struct
-    void set_pgs_config(const collision::PGSConfig& config) {
+    void set_pgs_config(const collision::PGSConfig &config)
+    {
         pgs_config_ = config;
     }
 
     /// Get the current PGS solver configuration.
-    const collision::PGSConfig& pgs_config() const {
+    const collision::PGSConfig &pgs_config() const
+    {
         return pgs_config_;
     }
 
     /// Enable/disable adaptive iteration for PGS solver.
     /// When enabled, iterates more for larger contact sets.
     /// @param adaptive True to use adaptive iterations, false for fixed iterations
-    void set_pgs_adaptive(bool adaptive) {
+    void set_pgs_adaptive(bool adaptive)
+    {
         pgs_adaptive_ = adaptive;
     }
 
     /// Check if adaptive iteration is enabled for PGS solver.
-    bool pgs_adaptive() const {
+    bool pgs_adaptive() const
+    {
         return pgs_adaptive_;
     }
 
@@ -318,13 +348,15 @@ public:
     /// - SimpleImpulse if contact count <= threshold
     /// - PGS if contact count > threshold
     /// @return The current contact count threshold
-    int contact_count_threshold() const {
+    int contact_count_threshold() const
+    {
         return contact_count_threshold_;
     }
 
     /// Set the contact threshold for automatic solver selection.
     /// @param threshold Contact count above which to use PGS (default: 10)
-    void set_contact_count_threshold(int threshold) {
+    void set_contact_count_threshold(int threshold)
+    {
         contact_count_threshold_ = std::max(1, threshold);
     }
 
@@ -340,53 +372,76 @@ public:
     /// 4. Integrate particle positions/velocities
     /// 5. Remove dead particles
     /// @param dt Time step in seconds
-    void update(float dt) {
+    void update(float dt)
+    {
         PROFILE_FUNCTION();
-        
+
         // Store timestep for CCD calculations
         dt_ = dt;
 
-        auto for_each_alive = [this](auto&& fn) {
+        auto for_each_alive = [this](auto &&fn)
+        {
             const size_t count = particles_.size();
-            if (job_system_ && job_system_->is_running()) {
-                job_system_->parallel_for(0, static_cast<uint32_t>(count), 1, [&](uint32_t i) {
-                    Particle& p = particles_[i];
-                    if (p.is_alive()) {
-                        fn(p);
-                    }
-                });
-            } else {
-                for (auto& p : particles_) {
-                    if (p.is_alive()) {
+            if (job_system_ && job_system_->is_running())
+            {
+                job_system_->parallel_for(0,
+                                          static_cast<uint32_t>(count),
+                                          1,
+                                          [&](uint32_t i)
+                                          {
+                                              Particle &p = particles_[i];
+                                              if (p.is_alive())
+                                              {
+                                                  fn(p);
+                                              }
+                                          });
+            }
+            else
+            {
+                for (auto &p : particles_)
+                {
+                    if (p.is_alive())
+                    {
                         fn(p);
                     }
                 }
             }
         };
-        
+
         // Step 1: Clear forces from previous frame
         {
             PROFILE_SCOPE("clear_forces");
-            for_each_alive([](Particle& p) { p.clear_forces(); });
+            for_each_alive([](Particle &p) { p.clear_forces(); });
         }
 
         // Step 2: Apply all force fields to all particles
         {
             PROFILE_SCOPE("apply_force_fields");
-            for (const auto& field : force_fields_) {
-                if (job_system_ && job_system_->is_running()) {
+            for (const auto &field : force_fields_)
+            {
+                if (job_system_ && job_system_->is_running())
+                {
                     const size_t count = particles_.size();
-                    job_system_->parallel_for(0, static_cast<uint32_t>(count), 1, [&](uint32_t i) {
-                        Particle& p = particles_[i];
-                        if (!p.is_alive()) {
-                            return;
-                        }
-                        Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
-                        p.apply_force(force);
-                    });
-                } else {
-                    for (auto& p : particles_) {
-                        if (p.is_alive()) {
+                    job_system_->parallel_for(0,
+                                              static_cast<uint32_t>(count),
+                                              1,
+                                              [&](uint32_t i)
+                                              {
+                                                  Particle &p = particles_[i];
+                                                  if (!p.is_alive())
+                                                  {
+                                                      return;
+                                                  }
+                                                  Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                                                  p.apply_force(force);
+                                              });
+                }
+                else
+                {
+                    for (auto &p : particles_)
+                    {
+                        if (p.is_alive())
+                        {
                             Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
                             p.apply_force(force);
                         }
@@ -398,23 +453,25 @@ public:
         // Step 3: Update accelerations from accumulated forces
         {
             PROFILE_SCOPE("update_accelerations");
-            for_each_alive([](Particle& p) { p.update_acceleration(); });
+            for_each_alive([](Particle &p) { p.update_acceleration(); });
         }
 
         // Step 4: Integrate particle state
         {
             PROFILE_SCOPE("integration");
-            for_each_alive([dt](Particle& p) { p.integrate(dt); });
+            for_each_alive([dt](Particle &p) { p.integrate(dt); });
         }
 
         // Step 5: Resolve collisions (optional)
-        if (collisions_enabled_) {
+        if (collisions_enabled_)
+        {
             PROFILE_SCOPE("collision_resolution");
             resolve_collisions();
         }
 
         // Step 6: Monitor physics (energy, momentum)
-        if (energy_monitor_enabled_ && energy_monitor_) {
+        if (energy_monitor_enabled_ && energy_monitor_)
+        {
             PROFILE_SCOPE("energy_monitoring");
             const Diagnostics diag = compute_diagnostics();
             // Include potential energy from gravity fields if present
@@ -422,7 +479,8 @@ public:
             energy_monitor_->update(static_cast<double>(total_energy));
         }
 
-        if (momentum_monitor_enabled_ && momentum_monitor_) {
+        if (momentum_monitor_enabled_ && momentum_monitor_)
+        {
             PROFILE_SCOPE("momentum_monitoring");
             const Diagnostics diag = compute_diagnostics();
             diagnostics::Vec3 momentum(diag.total_momentum.x, diag.total_momentum.y, diag.total_momentum.z);
@@ -438,15 +496,19 @@ public:
 
     /// Legacy step method for backwards compatibility.
     /// @deprecated Use update() instead
-    void step(float dt) {
+    void step(float dt)
+    {
         update(dt);
     }
 
     /// Apply gravity to all particles (legacy method).
     /// @deprecated Add a GravityField instead
-    void applyGravity(const Vec3f& gravity) {
-        for (auto& p : particles_) {
-            if (p.is_alive()) {
+    void applyGravity(const Vec3f &gravity)
+    {
+        for (auto &p : particles_)
+        {
+            if (p.is_alive())
+            {
                 p.apply_force(gravity * p.material.mass);
             }
         }
@@ -458,14 +520,17 @@ public:
 
     /// Compute current system diagnostics (energy, momentum).
     /// @return Diagnostics struct with current values
-    Diagnostics compute_diagnostics() const {
+    Diagnostics compute_diagnostics() const
+    {
         Diagnostics diag;
         diag.particle_count = particles_.size();
         diag.total_kinetic_energy = 0.0f;
         diag.total_momentum = Vec3f(0.0f);
 
-        for (const auto& p : particles_) {
-            if (p.is_alive()) {
+        for (const auto &p : particles_)
+        {
+            if (p.is_alive())
+            {
                 diag.total_kinetic_energy += p.kinetic_energy();
                 diag.total_momentum += p.velocity * p.material.mass;
             }
@@ -480,37 +545,43 @@ public:
 
     /// Enable energy conservation monitoring.
     /// Monitors total system energy and detects violations (excess loss/gain).
-    void enable_energy_monitor(std::shared_ptr<diagnostics::EnergyMonitor> monitor) {
+    void enable_energy_monitor(std::shared_ptr<diagnostics::EnergyMonitor> monitor)
+    {
         energy_monitor_ = monitor;
         energy_monitor_enabled_ = true;
     }
 
     /// Disable energy monitoring.
-    void disable_energy_monitor() {
+    void disable_energy_monitor()
+    {
         energy_monitor_enabled_ = false;
     }
 
     /// Enable momentum conservation monitoring.
     /// Monitors total system momentum and detects unexpected changes.
-    void enable_momentum_monitor(std::shared_ptr<diagnostics::MomentumMonitor> monitor) {
+    void enable_momentum_monitor(std::shared_ptr<diagnostics::MomentumMonitor> monitor)
+    {
         momentum_monitor_ = monitor;
         momentum_monitor_enabled_ = true;
     }
 
     /// Disable momentum monitoring.
-    void disable_momentum_monitor() {
+    void disable_momentum_monitor()
+    {
         momentum_monitor_enabled_ = false;
     }
 
     /// Enable collision efficiency monitoring.
     /// Tracks broadphase/narrowphase efficiency to detect poor grid configuration.
-    void enable_collision_monitor(std::shared_ptr<diagnostics::CollisionMonitor> monitor) {
+    void enable_collision_monitor(std::shared_ptr<diagnostics::CollisionMonitor> monitor)
+    {
         collision_monitor_ = monitor;
         collision_monitor_enabled_ = true;
     }
 
     /// Disable collision monitoring.
-    void disable_collision_monitor() {
+    void disable_collision_monitor()
+    {
         collision_monitor_enabled_ = false;
     }
 
@@ -520,7 +591,8 @@ public:
 
     /// Provide a job system for optional parallel update passes.
     /// The system is not owned by ParticleSystem.
-    void set_job_system(phynity::jobs::JobSystem* job_system) {
+    void set_job_system(phynity::jobs::JobSystem *job_system)
+    {
         job_system_ = job_system;
     }
 
@@ -529,20 +601,29 @@ public:
     // ========================================================================
 
     /// Get particle count.
-    size_t particleCount() const { return particles_.size(); }
+    size_t particleCount() const
+    {
+        return particles_.size();
+    }
 
     /// Get all particles (const access).
-    const std::vector<Particle>& particles() const { return particles_; }
+    const std::vector<Particle> &particles() const
+    {
+        return particles_;
+    }
 
     /// Get all particles (mutable access).
-    std::vector<Particle>& particles() { return particles_; }
+    std::vector<Particle> &particles()
+    {
+        return particles_;
+    }
 
 private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
-    phynity::jobs::JobSystem* job_system_ = nullptr;
-    collision::SpatialGrid spatial_grid_{2.0f};  // Default cell size: 2x particle radius
-    collision::ContactCache contact_cache_;      // Contact cache for frame-to-frame tracking (Phase 3)
+    phynity::jobs::JobSystem *job_system_ = nullptr;
+    collision::SpatialGrid spatial_grid_{2.0f}; // Default cell size: 2x particle radius
+    collision::ContactCache contact_cache_; // Contact cache for frame-to-frame tracking (Phase 3)
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
     float broadphase_cell_size_ = 2.0f;
@@ -551,11 +632,11 @@ private:
     SolverMode solver_mode_ = SolverMode::SimpleImpulse;
     collision::PGSConfig pgs_config_;
     bool pgs_adaptive_ = true;
-    int contact_count_threshold_ = 10;  ///< Use PGS if contact count exceeds this threshold
+    int contact_count_threshold_ = 10; ///< Use PGS if contact count exceeds this threshold
 
     // Continuous Collision Detection (CCD) configuration
     CCDConfig ccd_config_;
-    float dt_ = 0.016f;  ///< Current timestep (1/60 Hz default)
+    float dt_ = 0.016f; ///< Current timestep (1/60 Hz default)
 
     // Constraint framework (Phase 5: Unified Constraint Solving)
     std::vector<std::unique_ptr<constraints::Constraint>> constraints_;
@@ -571,7 +652,8 @@ private:
     bool collision_monitor_enabled_ = false;
 
     /// Convert a Particle to a SphereCollider for generic collision handling
-    static collision::SphereCollider particle_to_collider(const Particle& p) {
+    static collision::SphereCollider particle_to_collider(const Particle &p)
+    {
         collision::SphereCollider collider;
         collider.position = p.position;
         collider.velocity = p.velocity;
@@ -582,7 +664,8 @@ private:
     }
 
     /// Apply collision results back to a Particle
-    static void apply_collider_to_particle(const collision::SphereCollider& collider, Particle& p) {
+    static void apply_collider_to_particle(const collision::SphereCollider &collider, Particle &p)
+    {
         p.position = collider.position;
         p.velocity = collider.velocity;
     }
@@ -606,18 +689,21 @@ private:
     /// - Broadphase: O(n) grid insertion + O(n * k) neighbor queries, k = avg neighbors
     /// - Narrowphase: O(m) where m = unique candidate pairs (typically m << n²)
     /// - Advantage over brute force: k << n, so total is O(n * k) vs O(n²)
-    void resolve_collisions() {
+    void resolve_collisions()
+    {
         using namespace phynity::physics::collision;
-        
+
         // Phase 1: Build broadphase spatial grid
         // Clear previous frame's spatial structure and re-insert all alive particles
         {
             PROFILE_SCOPE("broadphase_grid_build");
             spatial_grid_.clear();
             const size_t count = particles_.size();
-            for (size_t i = 0; i < count; ++i) {
-                const Particle& p = particles_[i];
-                if (p.is_alive()) {
+            for (size_t i = 0; i < count; ++i)
+            {
+                const Particle &p = particles_[i];
+                if (p.is_alive())
+                {
                     spatial_grid_.insert(static_cast<uint32_t>(i), p.position);
                 }
             }
@@ -635,9 +721,11 @@ private:
         // Phase 3: Collect all detected manifolds (instead of resolving immediately)
         std::vector<ContactManifold> detected_manifolds;
 
-        for (size_t i = 0; i < count; ++i) {
-            Particle& a = particles_[i];
-            if (!a.is_alive()) {
+        for (size_t i = 0; i < count; ++i)
+        {
+            Particle &a = particles_[i];
+            if (!a.is_alive())
+            {
                 continue;
             }
 
@@ -645,25 +733,29 @@ private:
             const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
             broadphase_candidates += static_cast<uint32_t>(candidates.size());
 
-            for (uint32_t j_index : candidates) {
+            for (uint32_t j_index : candidates)
+            {
                 const auto j = static_cast<size_t>(j_index);
-                
+
                 // Canonical ordering: only process pairs where i < j
                 // This ensures each pair is considered exactly once
-                if (i >= j) {
-                    continue;  // Skip self-collisions (i==j) and reversed pairs (i>j)
+                if (i >= j)
+                {
+                    continue; // Skip self-collisions (i==j) and reversed pairs (i>j)
                 }
 
-                Particle& b = particles_[j];
-                if (!b.is_alive()) {
+                Particle &b = particles_[j];
+                if (!b.is_alive())
+                {
                     continue;
                 }
 
                 // Create unique pair ID for deduplication (i is guaranteed < j)
                 // Encoding: high 32 bits = i, low 32 bits = j
                 const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
-                if (processed_pairs.count(pair_id) > 0) {
-                    continue;  // Already processed this pair from a different grid cell query
+                if (processed_pairs.count(pair_id) > 0)
+                {
+                    continue; // Already processed this pair from a different grid cell query
                 }
                 processed_pairs.insert(pair_id);
 
@@ -673,12 +765,12 @@ private:
 
                 // Detect collision using generic narrowphase with CCD support
                 ++narrowphase_tests;
-                ContactManifold manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
-                    collider_a, collider_b, i, j, dt_, ccd_config_
-                );
+                ContactManifold manifold =
+                    collision::SphereSpherNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt_, ccd_config_);
 
                 // Collect valid manifolds for caching
-                if (manifold.is_valid()) {
+                if (manifold.is_valid())
+                {
                     detected_manifolds.push_back(manifold);
                 }
             }
@@ -686,17 +778,22 @@ private:
 
         // Phase 2.5: CCD fallback scan for fast movers that may tunnel past
         // broadphase cells within one frame and therefore miss neighbor queries.
-        if (ccd_config_.enabled && dt_ > 1e-8f) {
+        if (ccd_config_.enabled && dt_ > 1e-8f)
+        {
             PROFILE_SCOPE("ccd_fallback_scan");
 
             // Optimization: Pre-compute and cache velocity magnitudes for all particles
             // to avoid redundant length() calls in the nested loop
             std::vector<float> particle_speeds;
             particle_speeds.reserve(count);
-            for (size_t i = 0; i < count; ++i) {
-                if (particles_[i].is_alive()) {
+            for (size_t i = 0; i < count; ++i)
+            {
+                if (particles_[i].is_alive())
+                {
                     particle_speeds.push_back(particles_[i].velocity.length());
-                } else {
+                }
+                else
+                {
                     particle_speeds.push_back(0.0f);
                 }
             }
@@ -704,34 +801,41 @@ private:
             // Precompute threshold once instead of in lambda
             const float ultra_fast_threshold = std::max(ccd_config_.velocity_threshold * 5.0f, 50.0f);
 
-            for (size_t i = 0; i < count; ++i) {
-                Particle& a = particles_[i];
-                if (!a.is_alive()) {
+            for (size_t i = 0; i < count; ++i)
+            {
+                Particle &a = particles_[i];
+                if (!a.is_alive())
+                {
                     continue;
                 }
 
                 float speed_a = particle_speeds[i];
                 // Early skip: if particle A is not fast enough, no pairs with it will qualify
-                if (speed_a < ultra_fast_threshold) {
+                if (speed_a < ultra_fast_threshold)
+                {
                     continue;
                 }
 
-                for (size_t j = i + 1; j < count; ++j) {
-                    Particle& b = particles_[j];
-                    if (!b.is_alive()) {
+                for (size_t j = i + 1; j < count; ++j)
+                {
+                    Particle &b = particles_[j];
+                    if (!b.is_alive())
+                    {
                         continue;
                     }
 
                     float speed_b = particle_speeds[j];
                     float max_speed = std::max(speed_a, speed_b);
-                    
+
                     // Keep this fallback targeted to tunneling-risk projectiles only
-                    if (max_speed < ultra_fast_threshold) {
+                    if (max_speed < ultra_fast_threshold)
+                    {
                         continue;
                     }
 
                     const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
-                    if (processed_pairs.count(pair_id) > 0) {
+                    if (processed_pairs.count(pair_id) > 0)
+                    {
                         continue;
                     }
 
@@ -742,9 +846,10 @@ private:
                     float max_travel = (speed_a + speed_b) * dt_;
                     float combined_radius = a.radius + b.radius;
                     float max_reach = combined_radius + max_travel + ccd_config_.speculative_distance;
-                    
+
                     // Early out using squared distance (avoids sqrt)
-                    if (distance_sq > max_reach * max_reach) {
+                    if (distance_sq > max_reach * max_reach)
+                    {
                         continue;
                     }
 
@@ -755,11 +860,11 @@ private:
 
                     ++narrowphase_tests;
                     ContactManifold manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
-                        collider_a, collider_b, i, j, dt_, ccd_config_
-                    );
+                        collider_a, collider_b, i, j, dt_, ccd_config_);
 
                     processed_pairs.insert(pair_id);
-                    if (manifold.is_valid()) {
+                    if (manifold.is_valid())
+                    {
                         detected_manifolds.push_back(manifold);
                     }
                 }
@@ -772,36 +877,42 @@ private:
 
         // Phase 3.75: CCD Sub-stepping (if enabled)
         // Sort manifolds by TOI to resolve earliest collisions first
-        if (ccd_config_.enabled && ccd_config_.max_substeps > 0) {
+        if (ccd_config_.enabled && ccd_config_.max_substeps > 0)
+        {
             PROFILE_SCOPE("ccd_substepping");
             perform_ccd_substeps(cached_manifolds);
         }
 
         // Phase 4: Unified Constraint Solving (Phase 5)
         // Create contact constraints from manifolds and solve alongside rigid constraints
-        if (!cached_manifolds.empty() || !constraints_.empty()) {
+        if (!cached_manifolds.empty() || !constraints_.empty())
+        {
             PROFILE_SCOPE("constraint_solving");
 
             // Create a temporary constraint list from manifolds + add rigid constraints
             std::vector<std::unique_ptr<constraints::Constraint>> temp_constraints;
 
             // Convert contact manifolds to contact constraints
-            for (const ContactManifold& manifold : cached_manifolds) {
-                if (manifold.object_a_id < particles_.size() && manifold.object_b_id < particles_.size()) {
+            for (const ContactManifold &manifold : cached_manifolds)
+            {
+                if (manifold.object_a_id < particles_.size() && manifold.object_b_id < particles_.size())
+                {
                     auto contact_constraint = std::make_unique<constraints::ContactConstraint>(
                         manifold,
                         particles_[manifold.object_a_id],
                         particles_[manifold.object_b_id],
-                        constraints::ContactConstraint::ContactType::Normal
-                    );
+                        constraints::ContactConstraint::ContactType::Normal);
                     temp_constraints.push_back(std::move(contact_constraint));
                 }
             }
 
             // Add rigid constraints if constraint solving is enabled
-            if (constraints_enabled_) {
-                for (auto& constraint : constraints_) {
-                    if (constraint && constraint->is_active()) {
+            if (constraints_enabled_)
+            {
+                for (auto &constraint : constraints_)
+                {
+                    if (constraint && constraint->is_active())
+                    {
                         // We'll solve these directly in the constraint solver
                         // For now, we process them alongside contact constraints
                     }
@@ -812,21 +923,24 @@ private:
             constraint_solver_.solve(temp_constraints, particles_);
 
             // Cache impulses from contact constraints for warm-start
-            for (size_t i = 0; i < temp_constraints.size() && i < cached_manifolds.size(); ++i) {
-                const auto& constraint = temp_constraints[i];
-                const auto& manifold = cached_manifolds[i];
+            for (size_t i = 0; i < temp_constraints.size() && i < cached_manifolds.size(); ++i)
+            {
+                const auto &constraint = temp_constraints[i];
+                const auto &manifold = cached_manifolds[i];
                 float impulse = constraint->get_accumulated_impulse();
                 contact_cache_.store_impulse(manifold.contact_id, Vec3f(impulse, 0.0f, 0.0f));
             }
 
             // Also solve rigid constraints
-            if (constraints_enabled_) {
+            if (constraints_enabled_)
+            {
                 constraint_solver_.solve(constraints_, particles_);
             }
         }
 
         // Report collision statistics to monitor
-        if (collision_monitor_enabled_ && collision_monitor_) {
+        if (collision_monitor_enabled_ && collision_monitor_)
+        {
             collision_monitor_->set_broadphase_candidates(broadphase_candidates);
             collision_monitor_->set_narrowphase_tests(narrowphase_tests);
             collision_monitor_->set_actual_collisions(actual_collisions);
@@ -834,16 +948,16 @@ private:
         }
     }
 
-    // Private helper method for CCD sub-stepping  
+    // Private helper method for CCD sub-stepping
     // When a collision is detected with TOI < 1.0, we handle only that collision
     // in this iteration, re-detect after, and continue with remaining collisions.
-    // 
+    //
     // Note: Particles are always integrated to t=dt in the main integration step.
     // CCD reports when the collision would have occurred (toi * dt).
     // Sub-stepping is about resolution order: earliest collisions first, then re-detect.
     //
     // This method iteratively:
-    // 1. Finds earliest TOI collision in manifold  
+    // 1. Finds earliest TOI collision in manifold
     // 2. Keeps only that one for constraint solving (implicit in Phase 4)
     // 3. Re-detects after (to find subsequent collisions)
     // 4. Repeats until no early collisions remain
@@ -854,20 +968,22 @@ private:
     // - Solve constraints for just that manifold
     // - Re-detect collisions from new state
     // - Repeat until all TOI-based collisions are resolved
-    void perform_ccd_substeps(std::vector<collision::ContactManifold>& manifolds) noexcept {
+    void perform_ccd_substeps(std::vector<collision::ContactManifold> &manifolds) noexcept
+    {
         PROFILE_SCOPE("ccd_substeps");
-        
-        if (manifolds.empty() || !ccd_config_.enabled) {
+
+        if (manifolds.empty() || !ccd_config_.enabled)
+        {
             return;
         }
-        
+
         // Future: Implement recursive sub-stepping
         // For now, just ensure manifolds are sorted by TOI (earliest first)
-        std::sort(manifolds.begin(), manifolds.end(),
-            [](const collision::ContactManifold& a, const collision::ContactManifold& b) {
-                return a.toi < b.toi;
-            });
+        std::sort(manifolds.begin(),
+                  manifolds.end(),
+                  [](const collision::ContactManifold &a, const collision::ContactManifold &b)
+                  { return a.toi < b.toi; });
     }
 };
 
-}  // namespace phynity::physics
+} // namespace phynity::physics

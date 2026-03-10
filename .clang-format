@@ -1,0 +1,76 @@
+---
+Language: Cpp
+Standard: c++20
+
+################################################################################
+# This config follows industry standards (Unreal Engine, Godot, LLVM) for
+# cross-platform consistency. Priority is on stable, version-independent
+# formatting rules that won't vary between Windows/Linux CI environments.
+################################################################################
+
+# Indentation
+UseTab: Never
+TabWidth: 4
+IndentWidth: 4
+ContinuationIndentWidth: 4
+
+# Line breaking
+ColumnLimit: 120
+BreakBeforeBraces: Allman
+
+# Spacing
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyParentheses: false
+SpaceInEmptyBlock: false
+
+# Pointer alignment
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# Alignment - kept conservative to avoid version sensitivity
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: AlignAfterOperator
+# DISABLED: AlignTrailingComments causes inconsistencies across clang-format versions
+AlignTrailingComments: false
+
+# Comments - DISABLED for cross-platform stability
+# ReflowComments has known differences between clang-format versions and OS variants
+# Disabling ensures consistent behavior on CI (Linux) vs local (Windows)
+ReflowComments: false
+
+# Sorting and grouping - standard across all versions
+SortIncludes: CaseInsensitive
+SortUsingDeclarations: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*"'
+    Priority: 1
+  - Regex: '^<.*\.hpp>'
+    Priority: 2
+  - Regex: '^<.*>'
+    Priority: 3
+
+# Function definitions
+BinPackArguments: false
+BinPackParameters: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Other
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+DerivePointerAlignment: false
+IndentCaseLabels: true
+IndentPPDirectives: None
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+NamespaceMacros:
+  - 'PHYNITY_NAMESPACE_BEGIN'
+  - 'PHYNITY_NAMESPACE_END'
