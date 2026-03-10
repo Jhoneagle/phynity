@@ -1,0 +1,99 @@
+name: PR Performance Alert
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+      - develop
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "tools/**"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "vcpkg.json"
+  workflow_dispatch:
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+jobs:
+  pr-performance-alert:
+    name: PR Performance Alert (Linux)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld python3
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-linux-pr-perf-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+
+      - name: Configure CMake
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+
+      - name: Build
+        run: cmake --build build/release -j
+
+      - name: Run performance-labeled tests
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/release \
+            --config Release \
+            --label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/release/test-retries/performance-pr-linux.txt \
+            --output-on-failure
+
+      - name: Compare against perf baselines
+        shell: bash
+        run: |
+          set -o pipefail
+          python tools/performance_regression_check.py \
+            --threshold 0.05 \
+            --threshold-config tests/golden_outputs/performance/thresholds.json \
+            | tee build/release/perf-regression-summary.txt
+
+      - name: Publish PR performance summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## PR Performance Alert"
+            echo
+            cat build/release/perf-regression-summary.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload performance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-performance-alert-linux
+          path: |
+            tests/golden_outputs/performance/*.json
+            tests/golden_outputs/performance/*.current.json
+            tests/golden_outputs/performance/thresholds.json
+            build/release/test-retries/
+            build/release/perf-regression-summary.txt
+          retention-days: 30

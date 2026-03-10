@@ -4,4 +4,5 @@ add_subdirectory(math)
 add_subdirectory(physics)
 add_subdirectory(diagnostics)
 add_subdirectory(performance)
+add_subdirectory(serialization)
 

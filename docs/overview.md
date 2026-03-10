@@ -24,6 +24,7 @@ See [roadmap.md](roadmap.md) for detailed timeline.
 - [phynity_user_guide.md](phynity_user_guide.md) - Usage patterns and scale guidance
 - [roadmap.md](roadmap.md) - Feature timeline and milestones
 - [observability.md](observability.md) - Profiling and diagnostics
+- [project_infra_status.md](project_infra_status.md) - Tracked CI/CD and infrastructure status mirror
 - [test_organization.md](test_organization.md) - Test mapping and structure
 - [testing_best_practices.md](testing_best_practices.md) - Test standards
 - [golden_tests.md](golden_tests.md) - Golden test workflow

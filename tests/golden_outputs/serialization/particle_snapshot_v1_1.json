@@ -1,0 +1,45 @@
+{
+  "schema_version": {
+    "major": 1,
+    "minor": 1,
+    "patch": 0
+  },
+  "metadata": {
+    "frame_number": 9,
+    "simulated_time": 0.15,
+    "timestep": 0.0166667,
+    "rng_seed": 1337
+  },
+  "particles": [
+    {
+      "position": [1.0, 2.0, 3.0],
+      "velocity": [0.5, -0.25, 1.5],
+      "acceleration": [0.1, 0.2, 0.0],
+      "force_accumulator": [0.2, 0.0, -0.1],
+      "radius": 0.6,
+      "mass": 2.0,
+      "restitution": 0.25,
+      "friction": 0.45,
+      "linear_damping": 0.03,
+      "angular_damping": 0.04,
+      "drag_coefficient": 0.15,
+      "lifetime": -1.0,
+      "active": true
+    },
+    {
+      "position": [-1.0, 0.5, 2.5],
+      "velocity": [1.0, 0.0, -1.0],
+      "acceleration": [0.0, -0.1, 0.0],
+      "force_accumulator": [0.0, 1.0, 0.0],
+      "radius": 0.4,
+      "mass": 1.25,
+      "restitution": 0.4,
+      "friction": 0.35,
+      "linear_damping": 0.02,
+      "angular_damping": 0.03,
+      "drag_coefficient": 0.05,
+      "lifetime": 12.0,
+      "active": true
+    }
+  ]
+}

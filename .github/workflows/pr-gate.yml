@@ -121,12 +121,35 @@ jobs:
         run: cmake --build build/release --config ${{ matrix.build_type }} -j
 
       - name: Run Unit Tests
-        working-directory: build/release
-        run: ctest -C ${{ matrix.build_type }} -R "^UnitTests" --output-on-failure -j
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/release \
+            --config ${{ matrix.build_type }} \
+            --regex "^unit\\." \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/release/test-retries/unit-${{ matrix.os }}.txt \
+            --output-on-failure
 
       - name: Run Validation Tests
-        working-directory: build/release
-        run: ctest -C ${{ matrix.build_type }} -R "^ValidationTests" --output-on-failure -j
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/release \
+            --config ${{ matrix.build_type }} \
+            --regex "^validation\\." \
+            --exclude-label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/release/test-retries/validation-${{ matrix.os }}.txt \
+            --output-on-failure
+
+      - name: Upload retry reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retry-reports-${{ matrix.os }}
+          path: build/release/test-retries/
+          retention-days: 30
 
       - name: Archive test logs on failure
         if: failure()
@@ -208,14 +231,15 @@ jobs:
 
       - name: Run clang-tidy
         run: |
+          set -euo pipefail
           cd build/release
           # Generate compile_commands.json if not present
           [ -f compile_commands.json ] || cmake --build . --target all
-          
-          # Run clang-tidy on source files (not tests initially)
-          find ../../src -type f -name "*.cpp" | head -20 | while read file; do
+
+          # Run clang-tidy on the full source set with workflow-enforced failures.
+          find ../../src -type f -name "*.cpp" | sort | while read file; do
             echo "Analyzing: $file"
-            clang-tidy -p . "$file" || true
+            clang-tidy -p . "$file"
           done
 
       - name: Archive clang-tidy report
@@ -224,6 +248,84 @@ jobs:
         with:
           name: clang-tidy-report
           path: build/release/
+          retention-days: 30
+
+  # Job 3b: Coverage (non-blocking)
+  coverage:
+    name: Coverage (non-blocking)
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ gcovr ninja-build
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-linux-coverage-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+
+      - name: Configure CMake for coverage
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cmake --preset=debug \
+            -DPHYNITY_BUILD_TESTS=ON \
+            -DPHYNITY_ENABLE_SANITIZERS=OFF \
+            -DPHYNITY_WARNINGS_AS_ERRORS=OFF \
+            -DVCPKG_TARGET_TRIPLET=x64-linux \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
+            -DCMAKE_SHARED_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build/debug -j
+
+      - name: Run tests for coverage
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/debug \
+            --config Debug \
+            --regex "^(unit\\.|validation\\.)" \
+            --exclude-label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/debug/test-retries/coverage.txt \
+            --output-on-failure
+
+      - name: Generate coverage reports
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build/debug \
+            --xml-pretty --output build/debug/coverage.xml \
+            --html-details build/debug/coverage.html \
+            --exclude 'tests/.*'
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            build/debug/coverage.xml
+            build/debug/coverage.html
+            build/debug/test-retries/
           retention-days: 30
 
   # Job 4: Sanitizers (ASAN + UBSAN on Linux/macOS)

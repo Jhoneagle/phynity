@@ -1,0 +1,31 @@
+{
+  "default_threshold_percent": 5.0,
+  "tiers": {
+    "core-kernels": {
+      "threshold_percent": 2.0,
+      "description": "Math-heavy kernels and tight inner loops"
+    },
+    "mid-tier": {
+      "threshold_percent": 5.0,
+      "description": "Collision and constraint workloads"
+    },
+    "complex-scenes": {
+      "threshold_percent": 10.0,
+      "description": "Full-scene deterministic simulations"
+    }
+  },
+  "benchmarks": {
+    "broadphase": {
+      "tier": "mid-tier",
+      "threshold_percent": 5.0
+    },
+    "gjk": {
+      "tier": "mid-tier",
+      "threshold_percent": 5.0
+    },
+    "solver": {
+      "tier": "mid-tier",
+      "threshold_percent": 5.0
+    }
+  }
+}

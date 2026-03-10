@@ -118,6 +118,30 @@ public:
         return bodies_.size();
     }
 
+    /// Direct body storage access for serialization/helpers.
+    std::vector<RigidBody> &bodies()
+    {
+        return bodies_;
+    }
+
+    const std::vector<RigidBody> &bodies() const
+    {
+        return bodies_;
+    }
+
+    /// Remove all rigid bodies from the system.
+    void clear_bodies()
+    {
+        bodies_.clear();
+        next_body_id_ = 0;
+    }
+
+    /// Adjust next ID after external restoration logic sets explicit IDs.
+    void set_next_body_id(RigidBodyID next_id)
+    {
+        next_body_id_ = next_id;
+    }
+
     // ========================================================================
     // Force Fields
     // ========================================================================

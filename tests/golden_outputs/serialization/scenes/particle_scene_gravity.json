@@ -1,0 +1,46 @@
+{
+  "schema_version": {
+    "major": 1,
+    "minor": 1,
+    "patch": 0
+  },
+  "metadata": {
+    "frame_number": 120,
+    "simulated_time": 1,
+    "timestep": 0.0166666675,
+    "rng_seed": 20260310
+  },
+  "particles": [
+    {
+      "position": [0.989983678, 5, 0],
+      "velocity": [0.980198503, 0, 0],
+      "acceleration": [0, 0, 0],
+      "force_accumulator": [0, 0, 0],
+      "radius": 0.5,
+      "mass": 1.5,
+      "restitution": 0.25,
+      "friction": 0.400000006,
+      "linear_damping": 0.0199999996,
+      "angular_damping": 0.0199999996,
+      "drag_coefficient": 0.00999999978,
+      "lifetime": -1,
+      "active": true
+    },
+    {
+      "position": [-0.505008221, 2.80200315, 0],
+      "velocity": [0.490099251, -0.196039721, 0],
+      "acceleration": [0, 0, 0],
+      "force_accumulator": [0, 0, 0],
+      "radius": 0.400000006,
+      "mass": 1.5,
+      "restitution": 0.25,
+      "friction": 0.400000006,
+      "linear_damping": 0.0199999996,
+      "angular_damping": 0.0199999996,
+      "drag_coefficient": 0.00999999978,
+      "lifetime": -1,
+      "active": true
+    }
+  ],
+  "rigid_bodies": []
+}

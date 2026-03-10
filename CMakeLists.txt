@@ -19,8 +19,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(PHYNITY_ENABLE_WARNINGS "Enable project warnings" ON)
 option(PHYNITY_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(PHYNITY_ENABLE_SANITIZERS "Enable sanitizers when supported" OFF)
+set(PHYNITY_SANITIZER_MODE "address-undefined" CACHE STRING "Sanitizer mode: address-undefined or thread")
+set_property(CACHE PHYNITY_SANITIZER_MODE PROPERTY STRINGS "address-undefined" "thread")
 option(PHYNITY_ENABLE_LTO "Enable link-time optimization where supported" OFF)
 option(PHYNITY_BUILD_TESTS "Build tests" ON)
+
+if(NOT PHYNITY_SANITIZER_MODE STREQUAL "address-undefined" AND NOT PHYNITY_SANITIZER_MODE STREQUAL "thread")
+    message(FATAL_ERROR "Invalid PHYNITY_SANITIZER_MODE='${PHYNITY_SANITIZER_MODE}'. Allowed: address-undefined, thread")
+endif()
 
 # Platform-specific overrides
 if(MINGW AND PHYNITY_ENABLE_LTO)

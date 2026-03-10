@@ -1,0 +1,23 @@
+{
+  "schema_version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "metadata": {
+    "frame_number": 5,
+    "simulated_time": 0.0833333,
+    "timestep": 0.0166667,
+    "rng_seed": 4242
+  },
+  "particles": [
+    {
+      "position": [2.0, -1.0, 0.5],
+      "velocity": [-0.5, 0.25, 0.0],
+      "radius": 0.7,
+      "mass": 3.0,
+      "active": true,
+      "legacy_comment": "v0.9 fixture intentionally omits newer fields"
+    }
+  ]
+}

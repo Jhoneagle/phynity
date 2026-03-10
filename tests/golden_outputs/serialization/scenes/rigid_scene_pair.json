@@ -1,0 +1,62 @@
+{
+  "schema_version": {
+    "major": 1,
+    "minor": 1,
+    "patch": 0
+  },
+  "metadata": {
+    "frame_number": 90,
+    "simulated_time": 0.75000006,
+    "timestep": 0.0166666675,
+    "rng_seed": 20260310
+  },
+  "particles": [],
+  "rigid_bodies": [
+    {
+      "position": [-0.252836555, 1.81320906, 0],
+      "velocity": [0.99252826, -0.248132065, 0],
+      "force_accumulator": [0, 0, 0],
+      "orientation": [0.930345237, -2.0388205e-10, 0.364864856, 0.0364864878],
+      "angular_velocity": [0, 0.99252826, 0.0992528349],
+      "torque_accumulator": [0, 0, 0],
+      "shape_type": 1,
+      "shape_local_center": [0, 0, 0],
+      "shape_radius": 0.449999988,
+      "shape_half_extents": [0.5, 0.5, 0.5],
+      "shape_half_height": 0.5,
+      "collision_radius": 0.449999988,
+      "mass": 2,
+      "restitution": 0.5,
+      "friction": 0.300000012,
+      "linear_damping": 0.00999999978,
+      "angular_damping": 0.00999999978,
+      "drag_coefficient": 0,
+      "active": true,
+      "id": 0,
+      "lifetime": -1
+    },
+    {
+      "position": [0.626418352, 1.07471633, 0],
+      "velocity": [-0.49626413, 0.0992528349, 0],
+      "force_accumulator": [0, 0, 0],
+      "orientation": [0.982605338, 0, -0.185706332, 0],
+      "angular_velocity": [0, -0.49626413, 0],
+      "torque_accumulator": [0, 0, 0],
+      "shape_type": 2,
+      "shape_local_center": [0, 0.0500000007, 0],
+      "shape_radius": 0.5,
+      "shape_half_extents": [0.400000006, 0.200000003, 0.300000012],
+      "shape_half_height": 0.5,
+      "collision_radius": 0.538516521,
+      "mass": 3.49999976,
+      "restitution": 0.200000003,
+      "friction": 0.699999988,
+      "linear_damping": 0.00999999978,
+      "angular_damping": 0.00999999978,
+      "drag_coefficient": 0,
+      "active": true,
+      "id": 1,
+      "lifetime": -1
+    }
+  ]
+}
