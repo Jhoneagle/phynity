@@ -40,6 +40,7 @@ static void ensure_golden_dir(const std::string &dir)
     }
 }
 
+#ifndef GOLDEN_CAPTURE_MODE
 static std::string normalize_json_numbers(const std::string &input, int precision = 4)
 {
     std::regex number_regex(R"((-?\d+\.\d+))");
@@ -69,6 +70,7 @@ static std::string normalize_json_numbers(const std::string &input, int precisio
     out << input.substr(last_pos);
     return out.str();
 }
+#endif
 
 TEST_CASE("Integration scene: head-on collision chain - golden")
 {

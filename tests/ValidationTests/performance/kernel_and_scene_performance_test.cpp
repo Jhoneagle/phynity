@@ -171,7 +171,10 @@ PerfResult benchmark_particle_integration_kernel(int particle_count, int frames,
     result.scenario = "particle_integration_kernel";
     result.workload = particle_count;
     result.notes = "Pure particle integration kernel (position + velocity update per timestep)";
-    result.samples_ms.reserve(num_samples);
+    if (num_samples > 0)
+    {
+        result.samples_ms.reserve(static_cast<std::vector<double>::size_type>(num_samples));
+    }
 
     // Collect multiple samples
     for (int sample = 0; sample < num_samples; ++sample)
@@ -268,7 +271,10 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
     notes_stream << "Full scene simulation (" << rigid_body_count << " rigid bodies + " << particle_count
                  << " particles) with periodic snapshots";
     result.notes = notes_stream.str();
-    result.samples_ms.reserve(num_samples);
+    if (num_samples > 0)
+    {
+        result.samples_ms.reserve(static_cast<std::vector<double>::size_type>(num_samples));
+    }
 
     // Collect multiple samples
     for (int sample = 0; sample < num_samples; ++sample)
@@ -287,8 +293,8 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
             if (frame % 10 == 0)
             {
                 PhysicsSnapshot snapshot;
-                snapshot.frame_number = frame;
-                snapshot.simulated_time = frame * DETERMINISTIC_TIMESTEP;
+                snapshot.frame_number = static_cast<uint64_t>(frame);
+                snapshot.simulated_time = static_cast<double>(frame) * static_cast<double>(DETERMINISTIC_TIMESTEP);
                 snapshot.timestep = DETERMINISTIC_TIMESTEP;
                 snapshot.rng_seed = 123;
 
