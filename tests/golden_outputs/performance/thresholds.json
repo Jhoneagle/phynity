@@ -16,16 +16,19 @@
   },
   "benchmarks": {
     "broadphase": {
-      "tier": "mid-tier",
-      "threshold_percent": 5.0
+      "tier": "mid-tier"
     },
     "gjk": {
-      "tier": "mid-tier",
-      "threshold_percent": 5.0
+      "tier": "mid-tier"
     },
     "solver": {
-      "tier": "mid-tier",
-      "threshold_percent": 5.0
+      "tier": "mid-tier"
+    },
+    "particle_integration_kernel": {
+      "tier": "core-kernels"
+    },
+    "complex_deterministic_scene": {
+      "tier": "complex-scenes"
     }
   }
 }

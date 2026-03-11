@@ -20,6 +20,7 @@ target_sources(phynity_core PRIVATE
 # Serialization sources
 target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_schema.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_migration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_serializer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_helpers.cpp
 )

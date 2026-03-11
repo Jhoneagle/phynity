@@ -8,11 +8,13 @@
 #include <core/physics/macro/rigid_body.hpp>
 #include <core/physics/macro/rigid_body_system.hpp>
 #include <core/physics/macro/shape.hpp>
+#include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <cmath>
 
 using namespace phynity::physics;
 using namespace phynity::math::vectors;
+using namespace phynity::test::helpers::constants;
 using namespace phynity::math::matrices;
 using namespace phynity::math::quaternions;
 using Catch::Matchers::WithinAbs;
@@ -354,7 +356,7 @@ TEST_CASE("RigidBodySystem linear CCD prevents tunneling", "[system][collision][
 
     bullet->velocity = Vec3f(600.0f, 0.0f, 0.0f);
 
-    sys.update(1.0f / 60.0f);
+    sys.update(DETERMINISTIC_TIMESTEP);
 
     bullet = sys.get_body(bullet_id);
     target = sys.get_body(target_id);
@@ -391,7 +393,7 @@ TEST_CASE("RigidBodySystem convex CCD prevents box tunneling", "[system][collisi
 
     moving->velocity = Vec3f(200.0f, 0.0f, 0.0f);
 
-    sys.update(1.0f / 60.0f);
+    sys.update(DETERMINISTIC_TIMESTEP);
 
     moving = sys.get_body(moving_id);
     target = sys.get_body(target_id);

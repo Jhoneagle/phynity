@@ -1,3 +1,4 @@
+#include <core/serialization/snapshot_migration.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
 
 #include <cctype>
@@ -20,6 +21,17 @@ using phynity::serialization::SerializationError;
 using phynity::serialization::SerializationResult;
 using phynity::serialization::SnapshotFileHeader;
 using phynity::serialization::SnapshotShapeType;
+
+struct SnapshotFileHeaderV1
+{
+    uint32_t magic = SnapshotFileHeader::MAGIC_NUMBER;
+    uint32_t format_version = 1;
+    uint32_t schema_major = 1;
+    uint32_t schema_minor = 0;
+    uint32_t schema_patch = 0;
+    uint32_t num_particles = 0;
+    uint64_t file_size = 0;
+};
 
 class JsonCursor
 {
@@ -764,12 +776,8 @@ std::string SerializationResult::to_string() const
     return "Error: " + error_message;
 }
 
-SerializationResult SnapshotSerializer::save_binary(const PhysicsSnapshot &snapshot,
-                                                    const std::string &file_path,
-                                                    bool include_json_metadata)
+SerializationResult SnapshotSerializer::save_binary(const PhysicsSnapshot &snapshot, const std::string &file_path)
 {
-    (void) include_json_metadata;
-
     SerializationResult result;
     if (!snapshot.is_valid())
     {
@@ -793,6 +801,8 @@ SerializationResult SnapshotSerializer::save_binary(const PhysicsSnapshot &snaps
         header.schema_minor = snapshot.schema_version.minor;
         header.schema_patch = snapshot.schema_version.patch;
         header.num_particles = static_cast<uint32_t>(snapshot.particles.size());
+        header.num_rigid_bodies = static_cast<uint32_t>(snapshot.rigid_bodies.size());
+        header.metadata_json_bytes = 0;
         header.file_size = snapshot.serialized_size();
 
         file.write(reinterpret_cast<const char *>(&header), sizeof(SnapshotFileHeader));
@@ -811,10 +821,16 @@ SerializationResult SnapshotSerializer::save_binary(const PhysicsSnapshot &snaps
             result.bytes_processed += sizeof(ParticleSnapshot);
         }
 
+        for (const auto &rigid_body : snapshot.rigid_bodies)
+        {
+            file.write(reinterpret_cast<const char *>(&rigid_body), sizeof(RigidBodySnapshot));
+            result.bytes_processed += sizeof(RigidBodySnapshot);
+        }
+
         if (!file.good())
         {
             result.error = SerializationError::WriteError;
-            result.error_message = "Error writing particle data to file";
+            result.error_message = "Error writing snapshot body to file";
             return result;
         }
 
@@ -842,34 +858,88 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
 
     try
     {
-        SnapshotFileHeader header;
-        file.read(reinterpret_cast<char *>(&header), sizeof(SnapshotFileHeader));
-        result.bytes_processed += sizeof(SnapshotFileHeader);
+        uint32_t magic = 0;
+        uint32_t format_version = 0;
+        file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
+        file.read(reinterpret_cast<char *>(&format_version), sizeof(format_version));
+        result.bytes_processed += sizeof(magic) + sizeof(format_version);
 
-        if (header.magic != SnapshotFileHeader::MAGIC_NUMBER)
+        if (!file.good())
+        {
+            result.error = SerializationError::CorruptedData;
+            result.error_message = "Unable to read snapshot file header";
+            return result;
+        }
+
+        if (magic != SnapshotFileHeader::MAGIC_NUMBER)
         {
             result.error = SerializationError::InvalidFileFormat;
             result.error_message = "Invalid magic number in file header";
             return result;
         }
 
-        if (header.format_version != SnapshotFileHeader::FORMAT_VERSION)
+        uint32_t schema_major = 0;
+        uint32_t schema_minor = 0;
+        uint32_t schema_patch = 0;
+        uint32_t num_particles = 0;
+        uint32_t num_rigid_bodies = 0;
+
+        if (format_version == 1)
+        {
+            SnapshotFileHeaderV1 legacy_header;
+            legacy_header.magic = magic;
+            legacy_header.format_version = format_version;
+
+            file.read(reinterpret_cast<char *>(&legacy_header.schema_major),
+                      sizeof(SnapshotFileHeaderV1) - (sizeof(uint32_t) * 2));
+            result.bytes_processed += sizeof(SnapshotFileHeaderV1) - (sizeof(uint32_t) * 2);
+
+            if (!file.good())
+            {
+                result.error = SerializationError::CorruptedData;
+                result.error_message = "Incomplete legacy snapshot header";
+                return result;
+            }
+
+            schema_major = legacy_header.schema_major;
+            schema_minor = legacy_header.schema_minor;
+            schema_patch = legacy_header.schema_patch;
+            num_particles = legacy_header.num_particles;
+            num_rigid_bodies = 0;
+        }
+        else if (format_version == SnapshotFileHeader::FORMAT_VERSION)
+        {
+            SnapshotFileHeader header;
+            header.magic = magic;
+            header.format_version = format_version;
+            file.read(reinterpret_cast<char *>(&header.schema_major),
+                      sizeof(SnapshotFileHeader) - (sizeof(uint32_t) * 2));
+            result.bytes_processed += sizeof(SnapshotFileHeader) - (sizeof(uint32_t) * 2);
+
+            if (!file.good())
+            {
+                result.error = SerializationError::CorruptedData;
+                result.error_message = "Incomplete snapshot header";
+                return result;
+            }
+
+            schema_major = header.schema_major;
+            schema_minor = header.schema_minor;
+            schema_patch = header.schema_patch;
+            num_particles = header.num_particles;
+            num_rigid_bodies = header.num_rigid_bodies;
+        }
+        else
         {
             result.error = SerializationError::SchemaVersionMismatch;
-            result.error_message = "Unsupported file format version: " + std::to_string(header.format_version);
+            result.error_message = "Unsupported file format version: " + std::to_string(format_version);
             return result;
         }
 
         snapshot = PhysicsSnapshot{};
-        snapshot.schema_version.major = header.schema_major;
-        snapshot.schema_version.minor = header.schema_minor;
-        snapshot.schema_version.patch = header.schema_patch;
-        if (!snapshot.schema_version.is_compatible_with(current_schema_version()))
-        {
-            result.error = SerializationError::SchemaVersionMismatch;
-            result.error_message = "Snapshot schema is not compatible with current runtime";
-            return result;
-        }
+        snapshot.schema_version.major = schema_major;
+        snapshot.schema_version.minor = schema_minor;
+        snapshot.schema_version.patch = schema_patch;
 
         file.read(reinterpret_cast<char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
         file.read(reinterpret_cast<char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
@@ -878,19 +948,33 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
         result.bytes_processed += sizeof(snapshot.frame_number) + sizeof(snapshot.simulated_time) +
                                   sizeof(snapshot.timestep) + sizeof(snapshot.rng_seed);
 
-        snapshot.particles.resize(header.num_particles);
-        for (uint32_t index = 0; index < header.num_particles; ++index)
+        snapshot.particles.resize(num_particles);
+        for (uint32_t index = 0; index < num_particles; ++index)
         {
             file.read(reinterpret_cast<char *>(&snapshot.particles[index]), sizeof(ParticleSnapshot));
             result.bytes_processed += sizeof(ParticleSnapshot);
         }
 
+        snapshot.rigid_bodies.resize(num_rigid_bodies);
+        for (uint32_t index = 0; index < num_rigid_bodies; ++index)
+        {
+            file.read(reinterpret_cast<char *>(&snapshot.rigid_bodies[index]), sizeof(RigidBodySnapshot));
+            result.bytes_processed += sizeof(RigidBodySnapshot);
+        }
+
         if (!file.good() && !file.eof())
         {
             result.error = SerializationError::CorruptedData;
-            result.error_message = "Incomplete read of particle data";
+            result.error_message = "Incomplete read of snapshot data";
             return result;
         }
+
+        const auto migration_result = migrate_snapshot_to_schema(snapshot, current_schema_version());
+        if (!migration_result.is_success())
+        {
+            return migration_result;
+        }
+        result.bytes_processed += migration_result.bytes_processed;
 
         if (!snapshot.is_valid())
         {
@@ -1555,18 +1639,17 @@ SerializationResult SnapshotSerializer::load_json(const std::string &file_path, 
         }
     }
 
-    if (!snapshot.schema_version.is_compatible_with(current_schema_version()))
-    {
-        result.error = SerializationError::SchemaVersionMismatch;
-        result.error_message = "JSON snapshot schema is not compatible with current runtime";
-        return result;
-    }
-
     if (!cursor.eof())
     {
         result.error = SerializationError::JsonError;
         result.error_message = "Unexpected trailing content in JSON file";
         return result;
+    }
+
+    const auto migration_result = migrate_snapshot_to_schema(snapshot, current_schema_version());
+    if (!migration_result.is_success())
+    {
+        return migration_result;
     }
 
     if (!snapshot.is_valid())
@@ -1577,7 +1660,7 @@ SerializationResult SnapshotSerializer::load_json(const std::string &file_path, 
     }
 
     result.error = SerializationError::Success;
-    result.bytes_processed = content.size();
+    result.bytes_processed = content.size() + migration_result.bytes_processed;
     return result;
 }
 
@@ -1590,7 +1673,7 @@ SerializationResult SnapshotSerializer::save_both(const PhysicsSnapshot &snapsho
 
 bool SnapshotSerializer::can_migrate(const SchemaVersion &legacy_version, const SchemaVersion &current_version)
 {
-    return legacy_version.is_compatible_with(current_version);
+    return can_migrate_snapshot_schema(legacy_version, current_version);
 }
 
 std::string SnapshotSerializer::describe_snapshot(const PhysicsSnapshot &snapshot)

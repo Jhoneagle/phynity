@@ -45,13 +45,11 @@ public:
     // ========================================================================
 
     /// Save snapshot to binary file
-    /// Format: [SnapshotFileHeader][ParticleSnapshot*num_particles][JSON metadata (optional)]
+    /// Format: [SnapshotFileHeader][metadata][ParticleSnapshot*num_particles][RigidBodySnapshot*num_rigid_bodies]
     /// @param snapshot Physics state to save
     /// @param file_path Output file path
-    /// @param include_json_metadata If true, append JSON representation after binary data
     /// @return SaveResult with success status and bytes written
-    static SerializationResult
-    save_binary(const PhysicsSnapshot &snapshot, const std::string &file_path, bool include_json_metadata = false);
+    static SerializationResult save_binary(const PhysicsSnapshot &snapshot, const std::string &file_path);
 
     /// Load snapshot from binary file
     /// @param file_path Input binary file

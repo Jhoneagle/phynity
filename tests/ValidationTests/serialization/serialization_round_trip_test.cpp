@@ -5,6 +5,7 @@
 #include <core/serialization/snapshot_helpers.hpp>
 #include <core/serialization/snapshot_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
+#include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -12,6 +13,7 @@
 using namespace phynity::physics;
 using namespace phynity::serialization;
 using namespace phynity::math::vectors;
+using namespace phynity::test::helpers::constants;
 
 namespace fs = std::filesystem;
 
@@ -50,7 +52,7 @@ struct SerializationFixture
         snapshot.schema_version = current_schema_version();
         snapshot.frame_number = 42;
         snapshot.simulated_time = 0.5;
-        snapshot.timestep = 1.0f / 60.0f;
+        snapshot.timestep = DETERMINISTIC_TIMESTEP;
         snapshot.rng_seed = 12345;
 
         for (int index = 0; index < particle_count; ++index)
@@ -76,13 +78,71 @@ struct SerializationFixture
         return snapshot;
     }
 
+    PhysicsSnapshot create_snapshot_with_rigid_bodies() const
+    {
+        PhysicsSnapshot snapshot = create_snapshot(3);
+
+        RigidBodySnapshot rigid_a;
+        rigid_a.position = Vec3f(1.0f, 2.0f, -1.0f);
+        rigid_a.velocity = Vec3f(0.25f, -0.5f, 0.1f);
+        rigid_a.force_accumulator = Vec3f(0.0f, 9.81f, 0.0f);
+        rigid_a.orientation_w = 1.0f;
+        rigid_a.orientation_x = 0.0f;
+        rigid_a.orientation_y = 0.0f;
+        rigid_a.orientation_z = 0.0f;
+        rigid_a.angular_velocity = Vec3f(0.0f, 0.4f, 0.2f);
+        rigid_a.torque_accumulator = Vec3f(0.0f, 0.05f, 0.0f);
+        rigid_a.shape_type = SnapshotShapeType::Sphere;
+        rigid_a.shape_radius = 0.45f;
+        rigid_a.collision_radius = 0.45f;
+        rigid_a.mass = 2.0f;
+        rigid_a.restitution = 0.35f;
+        rigid_a.friction = 0.55f;
+        rigid_a.linear_damping = 0.02f;
+        rigid_a.angular_damping = 0.03f;
+        rigid_a.drag_coefficient = 0.01f;
+        rigid_a.active = true;
+        rigid_a.id = 7;
+        rigid_a.lifetime = -1.0f;
+
+        RigidBodySnapshot rigid_b;
+        rigid_b.position = Vec3f(-2.0f, 1.0f, 0.5f);
+        rigid_b.velocity = Vec3f(-0.4f, 0.0f, 0.3f);
+        rigid_b.force_accumulator = Vec3f(0.0f);
+        rigid_b.orientation_w = 0.9238795f;
+        rigid_b.orientation_x = 0.0f;
+        rigid_b.orientation_y = 0.3826834f;
+        rigid_b.orientation_z = 0.0f;
+        rigid_b.angular_velocity = Vec3f(0.0f, -0.2f, 0.0f);
+        rigid_b.torque_accumulator = Vec3f(0.01f, 0.0f, -0.02f);
+        rigid_b.shape_type = SnapshotShapeType::Box;
+        rigid_b.shape_local_center = Vec3f(0.0f, 0.1f, 0.0f);
+        rigid_b.shape_half_extents = Vec3f(0.3f, 0.2f, 0.4f);
+        rigid_b.shape_half_height = 0.25f;
+        rigid_b.shape_radius = 0.4f;
+        rigid_b.collision_radius = 0.6f;
+        rigid_b.mass = 3.5f;
+        rigid_b.restitution = 0.2f;
+        rigid_b.friction = 0.7f;
+        rigid_b.linear_damping = 0.015f;
+        rigid_b.angular_damping = 0.025f;
+        rigid_b.drag_coefficient = 0.005f;
+        rigid_b.active = true;
+        rigid_b.id = 11;
+        rigid_b.lifetime = 12.0f;
+
+        snapshot.rigid_bodies.push_back(rigid_a);
+        snapshot.rigid_bodies.push_back(rigid_b);
+        return snapshot;
+    }
+
     PhysicsSnapshot expected_legacy_snapshot() const
     {
         PhysicsSnapshot snapshot;
-        snapshot.schema_version = SchemaVersion{1, 0, 0};
+        snapshot.schema_version = current_schema_version();
         snapshot.frame_number = 7;
         snapshot.simulated_time = 0.1166667;
-        snapshot.timestep = 1.0f / 60.0f;
+        snapshot.timestep = DETERMINISTIC_TIMESTEP;
         snapshot.rng_seed = 9001;
 
         ParticleSnapshot particle_a;
@@ -107,10 +167,10 @@ struct SerializationFixture
     PhysicsSnapshot expected_n2_legacy_snapshot() const
     {
         PhysicsSnapshot snapshot;
-        snapshot.schema_version = SchemaVersion{1, 0, 0};
+        snapshot.schema_version = current_schema_version();
         snapshot.frame_number = 5;
         snapshot.simulated_time = 0.0833333;
-        snapshot.timestep = 1.0f / 60.0f;
+        snapshot.timestep = DETERMINISTIC_TIMESTEP;
         snapshot.rng_seed = 4242;
 
         ParticleSnapshot particle;
@@ -146,11 +206,13 @@ TEST_CASE("Schema Version - to_string", "[serialization][schema]")
 TEST_CASE("Schema Version - compatibility", "[serialization][schema]")
 {
     const auto current = current_schema_version();
+    const SchemaVersion n2_legacy{0, 9, 0};
     const SchemaVersion legacy{1, 0, 0};
     const SchemaVersion future_major{2, 0, 0};
 
-    REQUIRE(legacy.is_compatible_with(current));
+    REQUIRE(n2_legacy != current);
     REQUIRE(SnapshotSerializer::can_migrate(legacy, current));
+    REQUIRE(SnapshotSerializer::can_migrate(n2_legacy, current));
     REQUIRE_FALSE(SnapshotSerializer::can_migrate(future_major, current));
 }
 
@@ -166,6 +228,24 @@ TEST_CASE("Binary Serialization - round-trip with valid snapshot", "[serializati
     PhysicsSnapshot loaded;
     const auto load_result = SnapshotSerializer::load_binary(file_path, loaded);
     REQUIRE(load_result.is_success());
+
+    std::string diff_report;
+    REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(original, loaded, 1e-6f, 1e-6f, &diff_report));
+}
+
+TEST_CASE("Binary Serialization - round-trip preserves rigid body snapshots", "[serialization][roundtrip][rigid-body]")
+{
+    SerializationFixture fixture;
+    const PhysicsSnapshot original = fixture.create_snapshot_with_rigid_bodies();
+    const std::string file_path = (fixture.temp_dir / "snapshot_rigid.bin").string();
+
+    const auto save_result = SnapshotSerializer::save_binary(original, file_path);
+    REQUIRE(save_result.is_success());
+
+    PhysicsSnapshot loaded;
+    const auto load_result = SnapshotSerializer::load_binary(file_path, loaded);
+    REQUIRE(load_result.is_success());
+    REQUIRE(loaded.rigid_bodies.size() == original.rigid_bodies.size());
 
     std::string diff_report;
     REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(original, loaded, 1e-6f, 1e-6f, &diff_report));
@@ -302,7 +382,7 @@ TEST_CASE("Golden Serialization Fixture - legacy schema remains compatible", "[s
     PhysicsSnapshot loaded;
     const auto result = SnapshotHelpers::load_golden(golden_path, loaded);
     REQUIRE(result.is_success());
-    REQUIRE(loaded.schema_version == SchemaVersion{1, 0, 0});
+    REQUIRE(loaded.schema_version == current_schema_version());
 
     std::string diff_report;
     REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(
@@ -335,12 +415,39 @@ TEST_CASE("Golden Serialization Fixture - N-2 legacy schema migrates with defaul
     PhysicsSnapshot loaded;
     const auto result = SnapshotHelpers::load_golden(golden_path, loaded);
     REQUIRE(result.is_success());
-    REQUIRE(loaded.schema_version == SchemaVersion{1, 0, 0});
-    REQUIRE(SnapshotSerializer::can_migrate(loaded.schema_version, current_schema_version()));
+    REQUIRE(loaded.schema_version == current_schema_version());
+    REQUIRE(SnapshotSerializer::can_migrate(SchemaVersion{0, 9, 0}, current_schema_version()));
 
     std::string diff_report;
     REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(
         fixture.expected_n2_legacy_snapshot(), loaded, 1e-6f, 1e-6f, &diff_report));
+}
+
+TEST_CASE("Serialization - unsupported forward-major schema fails with clear error",
+          "[serialization][schema][migration]")
+{
+    SerializationFixture fixture;
+    const std::string file_path = (fixture.temp_dir / "unsupported_schema.json").string();
+
+    std::ofstream file(file_path);
+    REQUIRE(file.is_open());
+    file << R"({
+    "schema_version": { "major": 2, "minor": 0, "patch": 0 },
+    "metadata": {
+        "frame_number": 1,
+        "simulated_time": 0.0166667,
+        "timestep": 0.0166667,
+        "rng_seed": 99
+    },
+    "particles": []
+})";
+    file.close();
+
+    PhysicsSnapshot loaded;
+    const auto result = SnapshotSerializer::load_json(file_path, loaded);
+    REQUIRE_FALSE(result.is_success());
+    REQUIRE(result.error == SerializationError::SchemaVersionMismatch);
+    REQUIRE(result.error_message.find("No migration path") != std::string::npos);
 }
 
 void ensure_golden_dir(const std::string &dir)

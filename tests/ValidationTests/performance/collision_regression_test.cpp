@@ -19,6 +19,7 @@ using namespace phynity::physics::collision;
 using namespace phynity::math::vectors;
 using namespace phynity::test;
 using namespace phynity::test::helpers;
+using namespace phynity::test::helpers::constants;
 
 namespace
 {
@@ -102,7 +103,7 @@ PerfResult run_broadphase_scenario(int particle_count, int frames)
         system.spawn(pos, vel, 1.0f, -1.0f, 0.25f);
     }
 
-    const float dt = 0.016f;
+    const float dt = DETERMINISTIC_TIMESTEP;
     const auto start = std::chrono::high_resolution_clock::now();
 
     for (int frame = 0; frame < frames; ++frame)

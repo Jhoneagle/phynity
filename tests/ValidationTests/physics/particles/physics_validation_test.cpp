@@ -40,7 +40,7 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]")
     // Analytical solution: y(t) = 100 - 0.5*g*t², v(t) = -g*t
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f); // 60 FPS
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP); // 60 FPS
 
     // Setup: particle at rest at y=100
     system.spawn(Vec3f(0.0f, 100.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
@@ -50,7 +50,7 @@ TEST_CASE("Physics Validation - Free fall from rest", "[physics_validation]")
 
     // Simulate for 2 seconds
     float simulation_time = 2.0f;
-    float dt_frame = 0.016f; // 60 FPS frame time
+    float dt_frame = phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP; // 60 FPS frame time
     int frames = static_cast<int>(simulation_time / dt_frame);
 
     for (int i = 0; i < frames; ++i)
@@ -318,7 +318,7 @@ TEST_CASE("Physics Validation - Momentum conservation in zero gravity", "[physic
     // Expected: Total momentum remains constant
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f);
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP);
 
     // Spawn particles with different velocities (no damping)
     system.spawn(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f),
@@ -362,7 +362,7 @@ TEST_CASE("Physics Validation - Energy conservation with gravity", "[physics_val
     // Expected: E_total = KE + PE = constant
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f);
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP);
 
     // Setup: particle at y=50 with upward velocity
     float mass = 1.0f;
@@ -414,7 +414,7 @@ TEST_CASE("Physics Validation - Projectile motion range", "[physics_validation]"
     // Expected: Range ≈ v²sin(2θ)/g = 400*sin(90°)/9.80665 ≈ 40.77m
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f);
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP);
 
     // Launch angle: 45 degrees
     float v0 = 20.0f;
@@ -471,7 +471,7 @@ TEST_CASE("Physics Validation - Linear drag force", "[physics_validation]")
     // With k=0.1: v(t) = v0*exp(-0.1*t)
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f);
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP);
 
     float v0 = 10.0f;
     float k = 0.1f; // drag coefficient
@@ -521,7 +521,9 @@ TEST_CASE("Physics Validation - Deterministic simulation reproducibility", "[phy
     auto run_simulation = []() -> ParticleSystem
     {
         ParticleSystem system;
-        TimestepController controller(1.0f / 60.0f, 1.0f / 30.0f, TimestepController::OverflowMode::SUBDIVIDE);
+        TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP,
+                                      1.0f / 30.0f,
+                                      TimestepController::OverflowMode::SUBDIVIDE);
 
         // Setup: 3 particles with various initial conditions
         system.spawn(Vec3f(-2.0f, 10.0f, 0.0f), Vec3f(1.0f, 0.0f, 0.0f), 1.0f);
@@ -581,7 +583,7 @@ TEST_CASE("Physics Validation - System energy conservation (multi-particle)", "[
     // Expected: Total system energy (KE + PE) remains constant
 
     ParticleSystem system;
-    TimestepController controller(1.0f / 60.0f);
+    TimestepController controller(phynity::test::helpers::constants::DETERMINISTIC_TIMESTEP);
 
     // Spawn multiple particles with different masses and initial conditions
     system.spawn(Vec3f(-5.0f, 20.0f, 0.0f), Vec3f(5.0f, 10.0f, 0.0f), make_no_damping_material(1.0f));

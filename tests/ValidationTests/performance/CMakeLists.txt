@@ -34,3 +34,27 @@ target_link_libraries(ccd_performance_test PRIVATE phynity::tests Catch2::Catch2
 add_test(NAME validation.performance.ccd COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:ccd_performance_test>)
 set_tests_properties(validation.performance.ccd PROPERTIES LABELS "validation;performance")
 
+# Core kernel and complex scene performance benchmarks
+add_executable(kernel_and_scene_performance_test kernel_and_scene_performance_test.cpp)
+phynity_target_defaults(kernel_and_scene_performance_test)
+phynity_apply_warnings(kernel_and_scene_performance_test)
+phynity_apply_sanitizers(kernel_and_scene_performance_test)
+target_link_libraries(kernel_and_scene_performance_test PRIVATE phynity::tests Catch2::Catch2WithMain)
+
+get_filename_component(GOLDEN_FILES_DIR_ABS "${CMAKE_CURRENT_SOURCE_DIR}/../../golden_outputs" ABSOLUTE)
+target_compile_definitions(kernel_and_scene_performance_test PRIVATE
+	GOLDEN_FILES_DIR=${GOLDEN_FILES_DIR_ABS}
+)
+
+if(GOLDEN_CAPTURE_MODE)
+	target_compile_definitions(kernel_and_scene_performance_test PRIVATE GOLDEN_CAPTURE_MODE)
+endif()
+
+add_test(NAME validation.performance.kernel_and_scene
+	COMMAND ${CMAKE_COMMAND} -E env
+	GOLDEN_FILES_DIR="${GOLDEN_FILES_DIR_ABS}"
+	$<TARGET_FILE:kernel_and_scene_performance_test>
+)
+
+set_tests_properties(validation.performance.kernel_and_scene PROPERTIES LABELS "validation;performance")
+

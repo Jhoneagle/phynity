@@ -267,6 +267,14 @@ bool SnapshotHelpers::snapshots_equal_with_tolerance(const PhysicsSnapshot &expe
         return false;
     }
 
+    if (expected.rigid_bodies.size() != actual.rigid_bodies.size())
+    {
+        if (error_report)
+            *error_report = "Rigid body count mismatch: expected " + std::to_string(expected.rigid_bodies.size()) +
+                            ", got " + std::to_string(actual.rigid_bodies.size());
+        return false;
+    }
+
     // Check schema version compatibility
     if (expected.schema_version != actual.schema_version &&
         !expected.schema_version.is_compatible_with(actual.schema_version))
@@ -334,6 +342,67 @@ bool SnapshotHelpers::snapshots_equal_with_tolerance(const PhysicsSnapshot &expe
                 report << "    expected: " << exp.active << "\n";
                 report << "    actual:   " << act.active << "\n";
             }
+        }
+    }
+
+    for (size_t i = 0; i < expected.rigid_bodies.size(); ++i)
+    {
+        const auto &exp = expected.rigid_bodies[i];
+        const auto &act = actual.rigid_bodies[i];
+
+        auto check_vec = [&report, &all_match](const std::string &name,
+                                               const phynity::math::vectors::Vec3f &exp_vec,
+                                               const phynity::math::vectors::Vec3f &act_vec,
+                                               float tolerance,
+                                               size_t index)
+        {
+            const float diff = (exp_vec - act_vec).length();
+            if (diff > tolerance)
+            {
+                all_match = false;
+                report << "RigidBody " << index << " " << name << " diff: " << std::scientific << std::setprecision(6)
+                       << diff << "\n";
+            }
+        };
+
+        auto check_scalar =
+            [&report, &all_match](
+                const std::string &name, float expected_value, float actual_value, float tolerance, size_t index)
+        {
+            const float diff = std::abs(expected_value - actual_value);
+            if (diff > tolerance)
+            {
+                all_match = false;
+                report << "RigidBody " << index << " " << name << " diff: " << std::scientific << std::setprecision(6)
+                       << diff << "\n";
+            }
+        };
+
+        check_vec("position", exp.position, act.position, position_tolerance, i);
+        check_vec("velocity", exp.velocity, act.velocity, position_tolerance, i);
+        check_vec("force_accumulator", exp.force_accumulator, act.force_accumulator, impulse_tolerance, i);
+        check_scalar("orientation_w", exp.orientation_w, act.orientation_w, position_tolerance, i);
+        check_scalar("orientation_x", exp.orientation_x, act.orientation_x, position_tolerance, i);
+        check_scalar("orientation_y", exp.orientation_y, act.orientation_y, position_tolerance, i);
+        check_scalar("orientation_z", exp.orientation_z, act.orientation_z, position_tolerance, i);
+        check_vec("angular_velocity", exp.angular_velocity, act.angular_velocity, position_tolerance, i);
+        check_vec("torque_accumulator", exp.torque_accumulator, act.torque_accumulator, impulse_tolerance, i);
+        check_scalar("shape_radius", exp.shape_radius, act.shape_radius, impulse_tolerance, i);
+        check_vec("shape_half_extents", exp.shape_half_extents, act.shape_half_extents, impulse_tolerance, i);
+        check_scalar("shape_half_height", exp.shape_half_height, act.shape_half_height, impulse_tolerance, i);
+        check_scalar("collision_radius", exp.collision_radius, act.collision_radius, impulse_tolerance, i);
+        check_scalar("mass", exp.mass, act.mass, impulse_tolerance, i);
+        check_scalar("restitution", exp.restitution, act.restitution, impulse_tolerance, i);
+        check_scalar("friction", exp.friction, act.friction, impulse_tolerance, i);
+        check_scalar("linear_damping", exp.linear_damping, act.linear_damping, impulse_tolerance, i);
+        check_scalar("angular_damping", exp.angular_damping, act.angular_damping, impulse_tolerance, i);
+        check_scalar("drag_coefficient", exp.drag_coefficient, act.drag_coefficient, impulse_tolerance, i);
+        check_scalar("lifetime", exp.lifetime, act.lifetime, impulse_tolerance, i);
+
+        if (exp.shape_type != act.shape_type || exp.active != act.active || exp.id != act.id)
+        {
+            all_match = false;
+            report << "RigidBody " << i << " enum/bool/id mismatch\n";
         }
     }
 

@@ -1,0 +1,7 @@
+{
+  "scenario": "complex_deterministic_scene",
+  "milliseconds": 36.696000,
+  "iterations": 100,
+  "workload": 60,
+  "notes": "Full scene simulation (10 rigid bodies + 50 particles) with periodic snapshots"
+}

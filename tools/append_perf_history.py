@@ -22,6 +22,10 @@ HEADER = [
     "dt_seconds",
     "milliseconds_total",
     "milliseconds_per_frame",
+    "metric_type",  # "median", "mean", or "total" - indicates robust metric used
+    "median_milliseconds_per_frame",  # Robust estimate if available
+    "stddev_milliseconds_per_frame",  # Variance indicator
+    "cv_percent",  # Coefficient of variation (stddev / mean * 100)
     "golden_milliseconds_per_frame",
     "regression_percent",
     "threshold_percent",
@@ -41,10 +45,32 @@ def load_threshold_config(path: Path | None) -> dict:
     return load_json(path)
 
 
+def extract_metric_ms(data: dict) -> tuple[float, str]:
+    """Extract the appropriate metric from benchmark data.
+    
+    Returns (value_ms, metric_type) where metric_type is 'median', 'mean', or 'total'.
+    Prefers median (robust) over mean over total (single sample).
+    """
+    if "median_ms" in data and data["median_ms"] > 0.0:
+        return float(data["median_ms"]), "median"
+    elif "mean_ms" in data and data["mean_ms"] > 0.0:
+        return float(data["mean_ms"]), "mean"
+    else:
+        return float(data.get("milliseconds", 0.0)), "total"
+
+
 def resolve_threshold_percent(config: dict, benchmark_name: str, default_percent: float) -> float:
     bench_config = config.get("benchmarks", {}).get(benchmark_name, {})
     if "threshold_percent" in bench_config:
         return float(bench_config["threshold_percent"])
+    tier_name = bench_config.get("tier")
+    if tier_name:
+        tier_config = config.get("tiers", {}).get(str(tier_name))
+        if tier_config is None:
+            raise ValueError(f"Benchmark '{benchmark_name}' references unknown tier '{tier_name}'")
+        if "threshold_percent" not in tier_config:
+            raise ValueError(f"Tier '{tier_name}' for benchmark '{benchmark_name}' is missing threshold_percent")
+        return float(tier_config["threshold_percent"])
     if "default_threshold_percent" in config:
         return float(config["default_threshold_percent"])
     return default_percent
@@ -52,7 +78,7 @@ def resolve_threshold_percent(config: dict, benchmark_name: str, default_percent
 
 def find_benchmark_pairs(perf_dir: Path) -> Iterable[tuple[Path, Path]]:
     for golden_path in sorted(perf_dir.glob("*.json")):
-        if golden_path.name.endswith(".current.json"):
+        if golden_path.name.endswith(".current.json") or golden_path.name == "thresholds.json":
             continue
         current_path = golden_path.with_suffix(".current.json")
         if current_path.exists():
@@ -123,11 +149,25 @@ def main() -> int:
             milliseconds_total = float(current.get("milliseconds", 0.0) or 0.0)
             golden_total = float(golden.get("milliseconds", 0.0) or 0.0)
 
+            # Extract robust metrics if available
+            metric_ms, metric_type = extract_metric_ms(current)
+            golden_metric_ms, _ = extract_metric_ms(golden)
+
             ms_per_frame = safe_div(milliseconds_total, float(frames)) if frames > 0 else milliseconds_total
-            golden_ms_per_frame = safe_div(golden_total, float(frames)) if frames > 0 else golden_total
+            metric_per_frame = safe_div(metric_ms, float(frames)) if frames > 0 else metric_ms
+            golden_ms_per_frame = safe_div(golden_metric_ms, float(frames)) if frames > 0 else golden_metric_ms
+
+            # Extract variance data if available
+            stddev_ms = float(current.get("stddev_ms", 0.0) or 0.0)
+            stddev_per_frame = safe_div(stddev_ms, float(frames)) if frames > 0 else stddev_ms
+            
+            # Coefficient of variation (normalized standard deviation)
+            cv_percent = 0.0
+            if metric_per_frame > 0.0:
+                cv_percent = (stddev_per_frame / metric_per_frame) * 100.0 if stddev_per_frame > 0.0 else 0.0
 
             if golden_ms_per_frame > 0.0:
-                regression_percent = (ms_per_frame - golden_ms_per_frame) / golden_ms_per_frame * 100.0
+                regression_percent = (metric_per_frame - golden_ms_per_frame) / golden_ms_per_frame * 100.0
             else:
                 regression_percent = 0.0
 
@@ -149,6 +189,10 @@ def main() -> int:
                 f"{args.dt_seconds:.7f}",
                 f"{milliseconds_total:.6f}",
                 f"{ms_per_frame:.6f}",
+                metric_type,
+                f"{metric_per_frame:.6f}",
+                f"{stddev_per_frame:.6f}",
+                f"{cv_percent:.2f}",
                 f"{golden_ms_per_frame:.6f}",
                 f"{regression_percent:.2f}",
                 f"{threshold_percent:.2f}",

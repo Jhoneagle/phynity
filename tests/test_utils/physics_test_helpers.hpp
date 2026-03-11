@@ -91,6 +91,10 @@ constexpr float EARTH_GRAVITY = physicsf::gravity_earth;
 
 /// Moon gravity acceleration (m/s²)
 constexpr float MOON_GRAVITY = 1.62f;
+
+/// Canonical deterministic timestep for all performance and determinism tests
+/// Matches the 60 FPS frame time standard used in physics contract documentation
+constexpr float DETERMINISTIC_TIMESTEP = 1.0f / 60.0f;
 } // namespace constants
 
 } // namespace phynity::test::helpers

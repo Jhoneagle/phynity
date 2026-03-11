@@ -145,7 +145,7 @@ struct PhysicsSnapshot
 struct SnapshotFileHeader
 {
     static constexpr uint32_t MAGIC_NUMBER = 0x5F435953; // "_CYS" in hex (Phynity Snapshot)
-    static constexpr uint32_t FORMAT_VERSION = 1; // File format, distinct from schema version
+    static constexpr uint32_t FORMAT_VERSION = 2; // File format, distinct from schema version
 
     uint32_t magic = MAGIC_NUMBER;
     uint32_t format_version = FORMAT_VERSION;
@@ -153,6 +153,8 @@ struct SnapshotFileHeader
     uint32_t schema_minor = 1;
     uint32_t schema_patch = 0;
     uint32_t num_particles = 0;
+    uint32_t num_rigid_bodies = 0;
+    uint32_t metadata_json_bytes = 0;
     uint64_t file_size = 0; // Total size including this header
 };
 

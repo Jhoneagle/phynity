@@ -1,0 +1,7 @@
+{
+  "scenario": "particle_integration_kernel",
+  "milliseconds": 1.409000,
+  "iterations": 200,
+  "workload": 100,
+  "notes": "Pure particle integration kernel (position + velocity update per timestep)"
+}

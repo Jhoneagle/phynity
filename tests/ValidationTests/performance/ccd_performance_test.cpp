@@ -2,6 +2,7 @@
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/macro/rigid_body_system.hpp>
 #include <core/physics/micro/particle_system.hpp>
+#include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <chrono>
 #include <cmath>
@@ -9,6 +10,7 @@
 
 using namespace phynity::physics;
 using namespace phynity::math::vectors;
+using namespace phynity::test::helpers::constants;
 
 namespace
 {
@@ -60,7 +62,7 @@ PerfResult benchmark_particle_ccd(int particle_count, int frames, const CCDConfi
         system.spawn(pos, vel, 1.0f, -1.0f, 0.25f);
     }
 
-    const float dt = 0.016f;
+    const float dt = DETERMINISTIC_TIMESTEP;
     const auto start = std::chrono::high_resolution_clock::now();
 
     for (int frame = 0; frame < frames; ++frame)
@@ -117,7 +119,7 @@ PerfResult benchmark_rigidbody_ccd(int body_count, int frames, bool ccd_enabled,
         }
     }
 
-    const float dt = 0.016f;
+    const float dt = DETERMINISTIC_TIMESTEP;
     const auto start = std::chrono::high_resolution_clock::now();
 
     for (int frame = 0; frame < frames; ++frame)

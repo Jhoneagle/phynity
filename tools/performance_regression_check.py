@@ -15,13 +15,18 @@ def load_threshold_config(path: Path | None) -> dict:
     return load_json(path)
 
 
-def resolve_threshold_percent(config: dict, benchmark_name: str, default_percent: float) -> float:
-    bench_config = config.get("benchmarks", {}).get(benchmark_name, {})
-    if "threshold_percent" in bench_config:
-        return float(bench_config["threshold_percent"])
-    if "default_threshold_percent" in config:
-        return float(config["default_threshold_percent"])
-    return default_percent
+def extract_metric_ms(data: dict) -> tuple[float, str]:
+    """Extract the appropriate metric from benchmark data.
+    
+    Returns (value_ms, metric_type) where metric_type is 'median', 'mean', or 'total'.
+    Prefers median (robust) over mean over total (single sample).
+    """
+    if "median_ms" in data and data["median_ms"] > 0.0:
+        return float(data["median_ms"]), "median"
+    elif "mean_ms" in data and data["mean_ms"] > 0.0:
+        return float(data["mean_ms"]), "mean"
+    else:
+        return float(data.get("milliseconds", 0.0)), "total"
 
 
 def main() -> int:
@@ -43,7 +48,10 @@ def main() -> int:
         print(f"Golden directory not found: {golden_dir}")
         return 2
 
-    golden_files = sorted(p for p in golden_dir.glob("*.json") if not p.name.endswith(".current.json"))
+    golden_files = sorted(
+        p for p in golden_dir.glob("*.json")
+        if not p.name.endswith(".current.json") and p.name != "thresholds.json"
+    )
     if not golden_files:
         print(f"No golden files found in {golden_dir}")
         return 2
@@ -60,8 +68,8 @@ def main() -> int:
         current = load_json(current_path)
         benchmark_name = str(current.get("scenario") or golden.get("scenario") or golden_path.stem)
 
-        golden_ms = float(golden.get("milliseconds", 0.0))
-        current_ms = float(current.get("milliseconds", 0.0))
+        golden_ms, golden_metric = extract_metric_ms(golden)
+        current_ms, current_metric = extract_metric_ms(current)
         threshold_percent = resolve_threshold_percent(threshold_config, benchmark_name, args.threshold * 100.0)
 
         if golden_ms <= 0.0:
@@ -73,10 +81,10 @@ def main() -> int:
         allowed = 1.0 + threshold_percent / 100.0
 
         if ratio > allowed:
-            print(f"REGRESSION: {golden_path.name} current={current_ms:.3f}ms baseline={golden_ms:.3f}ms (x{ratio:.2f}, threshold={threshold_percent:.2f}%)")
+            print(f"REGRESSION: {golden_path.name} current={current_ms:.3f}ms({current_metric}) baseline={golden_ms:.3f}ms({golden_metric}) (x{ratio:.2f}, threshold={threshold_percent:.2f}%)")
             failures += 1
         else:
-            print(f"OK: {golden_path.name} current={current_ms:.3f}ms baseline={golden_ms:.3f}ms (x{ratio:.2f}, threshold={threshold_percent:.2f}%)")
+            print(f"OK: {golden_path.name} current={current_ms:.3f}ms({current_metric}) baseline={golden_ms:.3f}ms({golden_metric}) (x{ratio:.2f}, threshold={threshold_percent:.2f}%)")
 
     if failures:
         print(f"Performance regression check failed: {failures} issue(s)")
