@@ -20,6 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - os: windows
+            runner: windows-2022
+            cc: clang-cl
+            cxx: clang-cl
+            triplet: x64-windows
           - os: linux
             runner: ubuntu-22.04
             cc: clang
@@ -38,8 +43,20 @@ jobs:
           submodules: recursive
 
       - name: Bootstrap vcpkg
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Bootstrap vcpkg
         if: runner.os != 'Windows'
         run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja --no-progress -y
+          ninja --version
 
       - name: Setup Ninja (Linux)
         if: runner.os == 'Linux'
@@ -50,11 +67,13 @@ jobs:
         run: brew install ninja
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
             ~/.cache/vcpkg/src
+            ${{ env.VCPKG_ROOT }}/archives
+            ${{ env.VCPKG_ROOT }}/src
           key: vcpkg-${{ matrix.os }}-nightly-asan-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
             vcpkg-${{ matrix.os }}-
@@ -87,6 +106,9 @@ jobs:
 
   sanitizer-tsan:
     name: Nightly TSAN (${{ matrix.os }})
+    # Windows is intentionally excluded: LLVM ThreadSanitizer does not list Windows as a
+    # supported target platform in current Clang docs.
+    # Reference: https://clang.llvm.org/docs/ThreadSanitizer.html
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -120,7 +142,7 @@ jobs:
         run: brew install ninja
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -178,7 +200,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -297,7 +319,7 @@ jobs:
         run: brew install ninja python3
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives

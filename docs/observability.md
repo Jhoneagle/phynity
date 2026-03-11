@@ -258,6 +258,37 @@ system.disable_collision_monitor();
 
 ## Best Practices
 
+## Runner Stability and Benchmark Reproducibility
+
+Performance metrics on GitHub-hosted runners can vary due to shared hardware contention,
+dynamic CPU frequency behavior, and background I/O noise.
+
+Guidance:
+
+- Always compare performance using `median_ms` as the primary signal for thresholding.
+- Keep benchmark seeds fixed and scenario setup deterministic.
+- Tag results with `machine_tag` so dashboards can separate hosted and self-hosted trends.
+- Treat single-run outliers as suspect until reproduced.
+
+### Self-Hosted Runner `machine_tag`
+
+When appending performance history (`tools/append_perf_history.py`), set a stable machine tag,
+for example:
+
+- `selfhosted-linux-x64-zen4`
+- `selfhosted-windows-x64-12900k`
+
+This ensures trends from reproducible hosts are not mixed with noisy hosted-runner baselines.
+
+### Runner Warm-Up Recommendations
+
+Before collecting benchmark baselines or release-signoff measurements:
+
+- Run one warm-up benchmark pass and discard it.
+- Avoid concurrent heavy jobs on the same machine.
+- Ensure storage and antivirus scans are not saturating I/O.
+- On Linux self-hosted machines, prefer a fixed-performance CPU governor when available.
+
 ### When to Use Profiling
 
 ✅ **DO:**

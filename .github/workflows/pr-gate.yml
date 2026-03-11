@@ -70,7 +70,7 @@ jobs:
 
       - name: Restore vcpkg cache (Linux/macOS)
         if: runner.os != 'Windows'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -81,7 +81,7 @@ jobs:
 
       - name: Restore vcpkg cache (Windows)
         if: runner.os == 'Windows'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ env.VCPKG_ROOT }}/archives
@@ -217,7 +217,7 @@ jobs:
           sudo apt-get install -y clang-tidy ninja-build
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -270,7 +270,7 @@ jobs:
           sudo apt-get install -y gcc g++ gcovr ninja-build
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -374,7 +374,7 @@ jobs:
         run: brew install ninja
 
       - name: Setup vcpkg cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/vcpkg/archives
@@ -407,7 +407,50 @@ jobs:
           path: build/debug-asan/
           retention-days: 90
 
-  # Job 5: PR Quality Gate Summary
+  # Job 5: Flaky budget check (non-blocking)
+  flaky-check:
+    name: Flaky Budget Check (non-blocking)
+    runs-on: ubuntu-22.04
+    needs: [build-and-test]
+    if: always()
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch flaky history from perf-history branch
+        shell: bash
+        run: |
+          mkdir -p infra/history
+          git fetch origin perf-history || true
+          if git show origin/perf-history:infra/history/flaky_test_history.csv > infra/history/flaky_test_history.csv 2>/dev/null; then
+            echo "Fetched flaky history from perf-history"
+          else
+            echo "No flaky history found in perf-history; proceeding with empty history window"
+          fi
+
+      - name: Evaluate flaky budget (14d, threshold 3)
+        shell: bash
+        run: |
+          python3 tools/check_flaky_budget.py \
+            --history-csv infra/history/flaky_test_history.csv \
+            --days 14 \
+            --threshold 3 \
+            --output-markdown infra/history/flaky_summary.md
+
+      - name: Publish flaky budget summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Flaky Budget Status"
+            echo
+            cat infra/history/flaky_summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Job 6: PR Quality Gate Summary
   quality-gate:
     name: Quality Gate Summary
     runs-on: ubuntu-22.04

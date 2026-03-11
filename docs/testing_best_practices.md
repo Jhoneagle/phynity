@@ -153,6 +153,13 @@ Recommended local flow:
 2. Run `python tools/performance_regression_check.py`.
 3. If intentional change, recapture baselines and re-check.
 
+## PR Flaky Budget Policy (Non-Blocking)
+
+- The PR gate includes a flaky-budget check over a 14-day window.
+- Current threshold is `3` incidents per test.
+- This check is intentionally non-blocking (`continue-on-error: true`) so it informs triage without blocking urgent fixes.
+- Flaky budget status is always published in the PR job summary under `## Flaky Budget Status`.
+
 ## Writing Physics Scenarios
 
 ### Setup checklist
