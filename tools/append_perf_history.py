@@ -26,6 +26,7 @@ HEADER = [
     "median_milliseconds_per_frame",  # Robust estimate if available
     "stddev_milliseconds_per_frame",  # Variance indicator
     "cv_percent",  # Coefficient of variation (stddev / mean * 100)
+    "peak_rss_kb",
     "golden_milliseconds_per_frame",
     "regression_percent",
     "threshold_percent",
@@ -166,6 +167,8 @@ def main() -> int:
             if metric_per_frame > 0.0:
                 cv_percent = (stddev_per_frame / metric_per_frame) * 100.0 if stddev_per_frame > 0.0 else 0.0
 
+            peak_rss_kb = float(current.get("peak_rss_kb", 0.0) or 0.0)
+
             if golden_ms_per_frame > 0.0:
                 regression_percent = (metric_per_frame - golden_ms_per_frame) / golden_ms_per_frame * 100.0
             else:
@@ -193,6 +196,7 @@ def main() -> int:
                 f"{metric_per_frame:.6f}",
                 f"{stddev_per_frame:.6f}",
                 f"{cv_percent:.2f}",
+                f"{peak_rss_kb:.0f}",
                 f"{golden_ms_per_frame:.6f}",
                 f"{regression_percent:.2f}",
                 f"{threshold_percent:.2f}",

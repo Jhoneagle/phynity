@@ -52,6 +52,13 @@ def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
         per_frame = [float(row["milliseconds_per_frame"]) for row in trimmed]
         latest = trimmed[-1]
         regression = float(latest["regression_percent"])
+        peak_rss_kb_raw = latest.get("peak_rss_kb", "")
+        peak_rss_display = "n/a"
+        if peak_rss_kb_raw not in ("", None):
+            try:
+                peak_rss_display = f"{int(float(peak_rss_kb_raw))} KB"
+            except ValueError:
+                peak_rss_display = html.escape(str(peak_rss_kb_raw))
         state_class = "fail" if latest["pass_fail"] == "FAIL" else "pass"
         state_label = html.escape(latest["pass_fail"])
 
@@ -65,6 +72,7 @@ def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
                     f"    <div><dt>Latest</dt><dd>{float(latest['milliseconds_per_frame']):.4f} ms/frame</dd></div>",
                     f"    <div><dt>Baseline</dt><dd>{float(latest['golden_milliseconds_per_frame']):.4f} ms/frame</dd></div>",
                     f"    <div><dt>Regression</dt><dd>{regression:.2f}%</dd></div>",
+                    f"    <div><dt>Peak RSS</dt><dd>{peak_rss_display}</dd></div>",
                     f"    <div><dt>Status</dt><dd class='{state_class}'>{state_label}</dd></div>",
                     "  </dl>",
                     f"  <p class='meta'>Latest run: {html.escape(latest['recorded_at_utc'])} on {html.escape(latest['machine_tag'])}</p>",

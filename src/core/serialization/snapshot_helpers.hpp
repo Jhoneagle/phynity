@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/serialization/replay_writer.hpp>
 #include <core/serialization/snapshot_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
 
@@ -17,6 +18,31 @@ namespace phynity::serialization
 class SnapshotHelpers
 {
 public:
+    // ========================================================================
+    // Replay Capture: Multi-frame snapshot stream
+    // ========================================================================
+
+    /// Start writing replay frames to path.
+    static SerializationResult start_replay_capture(const std::string &replay_file);
+
+    /// Append an already captured snapshot frame into active replay capture.
+    static SerializationResult append_replay_frame(const PhysicsSnapshot &snapshot);
+
+    /// Capture and append particle-system state in one call.
+    static SerializationResult append_replay_frame(const phynity::physics::ParticleSystem &system,
+                                                   uint64_t frame_number,
+                                                   double simulated_time,
+                                                   uint32_t rng_seed);
+
+    /// Capture and append rigid-body-system state in one call.
+    static SerializationResult append_replay_frame(const phynity::physics::RigidBodySystem &system,
+                                                   uint64_t frame_number,
+                                                   double simulated_time,
+                                                   uint32_t rng_seed);
+
+    /// Finish replay capture and flush file to disk.
+    static SerializationResult stop_replay_capture();
+
     // ========================================================================
     // Snapshot Capture: Live System -> Snapshot
     // ========================================================================

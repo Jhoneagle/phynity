@@ -83,7 +83,8 @@ public:
     /// Creates: file_path.bin and file_path.json
     /// @param snapshot Physics state to save
     /// @param file_path_base Base path (extensions .bin and .json will be added)
-    /// @return SerializationResult with status; only the binary write error is reported
+    /// @return SerializationResult with status; returns the first non-success
+    ///         result (binary first, then JSON)
     static SerializationResult save_both(const PhysicsSnapshot &snapshot, const std::string &file_path_base);
 
     // ========================================================================

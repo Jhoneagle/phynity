@@ -5,10 +5,81 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <memory>
+#include <mutex>
 #include <sstream>
 
 namespace phynity::serialization
 {
+
+namespace
+{
+
+std::unique_ptr<ReplayWriter> g_replay_writer;
+std::mutex g_replay_mutex;
+
+} // namespace
+
+SerializationResult SnapshotHelpers::start_replay_capture(const std::string &replay_file)
+{
+    std::lock_guard<std::mutex> lock(g_replay_mutex);
+    if (g_replay_writer)
+    {
+        return {SerializationError::IOError, "Replay capture already active", 0};
+    }
+
+    auto writer = std::make_unique<ReplayWriter>();
+    const auto open_result = writer->open(replay_file);
+    if (!open_result.is_success())
+    {
+        return open_result;
+    }
+
+    g_replay_writer = std::move(writer);
+    return {SerializationError::Success, "", 0};
+}
+
+SerializationResult SnapshotHelpers::append_replay_frame(const PhysicsSnapshot &snapshot)
+{
+    std::lock_guard<std::mutex> lock(g_replay_mutex);
+    if (!g_replay_writer)
+    {
+        return {SerializationError::IOError, "Replay capture is not active", 0};
+    }
+
+    return g_replay_writer->append_frame(snapshot);
+}
+
+SerializationResult SnapshotHelpers::append_replay_frame(const phynity::physics::ParticleSystem &system,
+                                                         uint64_t frame_number,
+                                                         double simulated_time,
+                                                         uint32_t rng_seed)
+{
+    const auto snapshot = capture_particle_system(system, frame_number, simulated_time, rng_seed);
+    return append_replay_frame(snapshot);
+}
+
+SerializationResult SnapshotHelpers::append_replay_frame(const phynity::physics::RigidBodySystem &system,
+                                                         uint64_t frame_number,
+                                                         double simulated_time,
+                                                         uint32_t rng_seed)
+{
+    const auto snapshot = capture_rigid_body_system(system, frame_number, simulated_time, rng_seed);
+    return append_replay_frame(snapshot);
+}
+
+SerializationResult SnapshotHelpers::stop_replay_capture()
+{
+    std::lock_guard<std::mutex> lock(g_replay_mutex);
+    if (!g_replay_writer)
+    {
+        return {SerializationError::IOError, "Replay capture is not active", 0};
+    }
+
+    const auto close_result = g_replay_writer->close();
+    g_replay_writer.reset();
+    return close_result;
+}
 
 // ============================================================================
 // Snapshot Capture

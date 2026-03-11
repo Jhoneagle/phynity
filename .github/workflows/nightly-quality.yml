@@ -207,6 +207,24 @@ jobs:
             --report-file build/release/test-retries/determinism-linux.txt \
             --output-on-failure
 
+      - name: Capture determinism replay
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DGOLDEN_CAPTURE_MODE=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+          cmake --build build/release -j --target replay_round_trip_test
+          ctest --build-dir build/release --output-on-failure -R "^validation\.serialization\.replay_round_trip$"
+
+      - name: Upload determinism replay artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-determinism-replay
+          path: |
+            tests/golden_outputs/serialization/replays/*.replay
+          retention-days: 90
+
       - name: Upload determinism artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -313,7 +331,7 @@ jobs:
 
       - name: Run performance regression check
         shell: bash
-        run: python tools/performance_regression_check.py --threshold 0.05 --threshold-config tests/golden_outputs/performance/thresholds.json
+        run: python tools/performance_regression_check.py --threshold 0.05 --threshold-config tests/golden_outputs/performance/thresholds.json --strict-orphans
 
       - name: Upload perf JSON and logs
         if: always()

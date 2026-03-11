@@ -195,6 +195,60 @@ struct SerializationFixture
     }
 };
 
+struct SnapshotFileHeaderV1Test
+{
+    uint32_t magic = SnapshotFileHeader::MAGIC_NUMBER;
+    uint32_t format_version = 1;
+    uint32_t schema_major = 1;
+    uint32_t schema_minor = 0;
+    uint32_t schema_patch = 0;
+    uint32_t num_particles = 0;
+    uint64_t file_size = 0;
+};
+
+SerializationResult write_legacy_format_v1_fixture(const std::string &path, const PhysicsSnapshot &snapshot)
+{
+    SerializationResult result;
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output.is_open())
+    {
+        result.error = SerializationError::WriteError;
+        result.error_message = "Cannot open legacy fixture for writing: " + path;
+        return result;
+    }
+
+    SnapshotFileHeaderV1Test header;
+    header.schema_major = snapshot.schema_version.major;
+    header.schema_minor = snapshot.schema_version.minor;
+    header.schema_patch = snapshot.schema_version.patch;
+    header.num_particles = static_cast<uint32_t>(snapshot.particles.size());
+    header.file_size = sizeof(SnapshotFileHeaderV1Test) + sizeof(snapshot.frame_number) +
+                       sizeof(snapshot.simulated_time) + sizeof(snapshot.timestep) + sizeof(snapshot.rng_seed) +
+                       snapshot.particles.size() * sizeof(ParticleSnapshot);
+
+    output.write(reinterpret_cast<const char *>(&header), sizeof(header));
+    output.write(reinterpret_cast<const char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
+    output.write(reinterpret_cast<const char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
+    output.write(reinterpret_cast<const char *>(&snapshot.timestep), sizeof(snapshot.timestep));
+    output.write(reinterpret_cast<const char *>(&snapshot.rng_seed), sizeof(snapshot.rng_seed));
+
+    for (const auto &particle : snapshot.particles)
+    {
+        output.write(reinterpret_cast<const char *>(&particle), sizeof(ParticleSnapshot));
+    }
+
+    if (!output.good())
+    {
+        result.error = SerializationError::IOError;
+        result.error_message = "Failed to write full legacy fixture bytes";
+        return result;
+    }
+
+    result.error = SerializationError::Success;
+    result.bytes_processed = static_cast<size_t>(header.file_size);
+    return result;
+}
+
 } // namespace
 
 TEST_CASE("Schema Version - to_string", "[serialization][schema]")
@@ -271,6 +325,24 @@ TEST_CASE("JSON Serialization - round-trip preserves full snapshot", "[serializa
 
     std::string diff_report;
     REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(original, loaded, 1e-6f, 1e-6f, &diff_report));
+}
+
+TEST_CASE("Save both - surfaces JSON write errors", "[serialization][roundtrip][save-both]")
+{
+    SerializationFixture fixture;
+    const PhysicsSnapshot snapshot = fixture.create_snapshot(3);
+
+    const fs::path base_path = fixture.temp_dir / "snapshot_save_both";
+    const fs::path json_path = fs::path(base_path.string() + ".json");
+    fs::create_directories(json_path);
+
+    const auto result = SnapshotSerializer::save_both(snapshot, base_path.string());
+    REQUIRE_FALSE(result.is_success());
+    REQUIRE(result.error == SerializationError::WriteError);
+    REQUIRE(result.error_message.find("Cannot open JSON file for writing") != std::string::npos);
+
+    // Binary write should still complete successfully before JSON failure is returned.
+    REQUIRE(fs::exists(fs::path(base_path.string() + ".bin")));
 }
 
 TEST_CASE("Snapshot Helpers - capture and restore particle system", "[serialization][helpers]")
@@ -421,6 +493,27 @@ TEST_CASE("Golden Serialization Fixture - N-2 legacy schema migrates with defaul
     std::string diff_report;
     REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(
         fixture.expected_n2_legacy_snapshot(), loaded, 1e-6f, 1e-6f, &diff_report));
+}
+
+TEST_CASE("Binary migration: format v1 -> v2", "[serialization][golden][compat][migration][binary]")
+{
+    SerializationFixture fixture;
+    const auto expected = fixture.expected_legacy_snapshot();
+    const std::string fixture_path = get_golden_dir() + "/serialization/snapshot_v1_format1.bin";
+
+    if (!fs::exists(fixture_path))
+    {
+        fs::create_directories(fs::path(fixture_path).parent_path());
+        const auto write_result = write_legacy_format_v1_fixture(fixture_path, expected);
+        REQUIRE(write_result.is_success());
+    }
+
+    PhysicsSnapshot loaded;
+    const auto load_result = SnapshotSerializer::load_binary(fixture_path, loaded);
+    REQUIRE(load_result.is_success());
+
+    std::string diff_report;
+    REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(expected, loaded, 1e-6f, 1e-6f, &diff_report));
 }
 
 TEST_CASE("Serialization - unsupported forward-major schema fails with clear error",

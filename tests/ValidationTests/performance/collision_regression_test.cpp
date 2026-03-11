@@ -4,10 +4,12 @@
 #include <core/physics/collision/narrowphase/support_function.hpp>
 #include <core/physics/collision/shapes/shape_factory.hpp>
 #include <core/physics/micro/particle_system.hpp>
+#include <platform/memory_usage.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <sstream>
@@ -35,6 +37,8 @@ struct PerfResult
     int iterations = 0;
     int workload = 0;
     std::string notes;
+    uint64_t peak_rss_kb = 0;
+    int64_t allocator_delta_bytes = 0;
 };
 
 std::string get_golden_dir()
@@ -56,7 +60,9 @@ std::string to_json(const PerfResult &result)
     oss << "  \"milliseconds\": " << result.milliseconds << ",\n";
     oss << "  \"iterations\": " << result.iterations << ",\n";
     oss << "  \"workload\": " << result.workload << ",\n";
-    oss << "  \"notes\": \"" << result.notes << "\"\n";
+    oss << "  \"notes\": \"" << result.notes << "\",\n";
+    oss << "  \"peak_rss_kb\": " << result.peak_rss_kb << ",\n";
+    oss << "  \"allocator_delta_bytes\": " << result.allocator_delta_bytes << "\n";
     oss << "}\n";
     return oss.str();
 }
@@ -120,6 +126,8 @@ PerfResult run_broadphase_scenario(int particle_count, int frames)
     result.iterations = frames;
     result.workload = particle_count;
     result.notes = "ParticleSystem broadphase update";
+    result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
+    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
     return result;
 }
 
@@ -152,6 +160,8 @@ PerfResult run_gjk_scenario(int iterations)
     result.iterations = iterations;
     result.workload = 2;
     result.notes = "GJK distance between convex shapes";
+    result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
+    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
     return result;
 }
 
@@ -210,6 +220,8 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
     result.iterations = iterations;
     result.workload = contact_count;
     result.notes = "PGS solver with synthetic contacts";
+    result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
+    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
     return result;
 }
 

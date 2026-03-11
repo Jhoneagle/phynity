@@ -1667,7 +1667,17 @@ SerializationResult SnapshotSerializer::load_json(const std::string &file_path, 
 SerializationResult SnapshotSerializer::save_both(const PhysicsSnapshot &snapshot, const std::string &file_path_base)
 {
     const auto binary_result = save_binary(snapshot, file_path_base + ".bin");
-    save_json(snapshot, file_path_base + ".json");
+    if (!binary_result.is_success())
+    {
+        return binary_result;
+    }
+
+    const auto json_result = save_json(snapshot, file_path_base + ".json");
+    if (!json_result.is_success())
+    {
+        return json_result;
+    }
+
     return binary_result;
 }
 

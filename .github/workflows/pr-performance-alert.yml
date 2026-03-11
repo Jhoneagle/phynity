@@ -22,19 +22,56 @@ env:
 
 jobs:
   pr-performance-alert:
-    name: PR Performance Alert (Linux)
-    runs-on: ubuntu-22.04
+    name: PR Performance Alert (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-22.04
+            cc: clang
+            cxx: clang++
+            triplet: x64-linux
+          - os: windows
+            runner: windows-2022
+            cc: clang-cl
+            cxx: clang-cl
+            triplet: x64-windows
+          - os: macos
+            runner: macos-14
+            cc: clang
+            cxx: clang++
+            triplet: arm64-osx
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Bootstrap vcpkg
+      - name: Bootstrap vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Bootstrap vcpkg (Linux/macOS)
+        if: runner.os != 'Windows'
         run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
 
-      - name: Setup dependencies
+      - name: Setup Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja --no-progress -y
+          ninja --version
+
+      - name: Setup dependencies (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld python3
+
+      - name: Setup dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja python3
 
       - name: Setup vcpkg cache
         uses: actions/cache@v3
@@ -42,15 +79,17 @@ jobs:
           path: |
             ~/.cache/vcpkg/archives
             ~/.cache/vcpkg/src
-          key: vcpkg-linux-pr-perf-${{ hashFiles('vcpkg.json') }}
+            ${{ env.VCPKG_ROOT }}/archives
+            ${{ env.VCPKG_ROOT }}/src
+          key: vcpkg-${{ matrix.os }}-pr-perf-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
-            vcpkg-linux-
+            vcpkg-${{ matrix.os }}-
 
       - name: Configure CMake
         env:
-          CC: clang
-          CXX: clang++
-        run: cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
 
       - name: Build
         run: cmake --build build/release -j
@@ -63,7 +102,7 @@ jobs:
             --label performance \
             --parallel 2 \
             --max-retries 2 \
-            --report-file build/release/test-retries/performance-pr-linux.txt \
+            --report-file build/release/test-retries/performance-pr-${{ matrix.os }}.txt \
             --output-on-failure
 
       - name: Compare against perf baselines
@@ -73,6 +112,7 @@ jobs:
           python tools/performance_regression_check.py \
             --threshold 0.05 \
             --threshold-config tests/golden_outputs/performance/thresholds.json \
+            --strict-orphans \
             | tee build/release/perf-regression-summary.txt
 
       - name: Publish PR performance summary
@@ -80,7 +120,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## PR Performance Alert"
+            echo "## PR Performance Alert (${{ matrix.os }})"
             echo
             cat build/release/perf-regression-summary.txt
           } >> "$GITHUB_STEP_SUMMARY"
@@ -89,7 +129,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pr-performance-alert-linux
+          name: pr-performance-alert-${{ matrix.os }}
           path: |
             tests/golden_outputs/performance/*.json
             tests/golden_outputs/performance/*.current.json

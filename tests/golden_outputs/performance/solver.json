@@ -1,7 +1,9 @@
 {
   "scenario": "solver",
-  "milliseconds": 2.946000,
+  "milliseconds": 2.932000,
   "iterations": 200,
   "workload": 64,
-  "notes": "PGS solver with synthetic contacts"
+  "notes": "PGS solver with synthetic contacts",
+  "peak_rss_kb": 5564,
+  "allocator_delta_bytes": 0
 }

@@ -23,6 +23,8 @@ target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_migration.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_serializer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_helpers.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_writer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_reader.cpp
 )
 
 target_link_libraries(phynity_core PUBLIC phynity::platform)

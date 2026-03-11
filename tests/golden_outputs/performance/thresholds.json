@@ -3,14 +3,20 @@
   "tiers": {
     "core-kernels": {
       "threshold_percent": 2.0,
+      "cv_threshold_percent": 5.0,
+      "memory_threshold_kb": 262144,
       "description": "Math-heavy kernels and tight inner loops"
     },
     "mid-tier": {
       "threshold_percent": 5.0,
+      "cv_threshold_percent": 10.0,
+      "memory_threshold_kb": 393216,
       "description": "Collision and constraint workloads"
     },
     "complex-scenes": {
       "threshold_percent": 10.0,
+      "cv_threshold_percent": 15.0,
+      "memory_threshold_kb": 524288,
       "description": "Full-scene deterministic simulations"
     }
   },
