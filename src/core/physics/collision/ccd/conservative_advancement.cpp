@@ -6,6 +6,7 @@
 namespace phynity::physics::collision::ccd
 {
 
+// NOLINTBEGIN(readability-function-cognitive-complexity,bugprone-easily-swappable-parameters)
 TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(const SweptSphereSolver::Sphere &sphere_a,
                                                                 const SweptSphereSolver::Sphere &sphere_b,
                                                                 float max_time,
@@ -13,28 +14,28 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(const SweptSpher
                                                                 float separation_tolerance,
                                                                 int root_refinement_iterations)
 {
-    constexpr float kEpsilon = 1e-6f;
+    constexpr float k_epsilon = 1e-6f;
 
     auto finite_vec = [](const Vec3f &v) { return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); };
 
     if (!std::isfinite(max_time) || max_time <= 0.0f)
     {
-        return TimeOfImpactResult();
+        return {};
     }
 
     if (!std::isfinite(sphere_a.radius) || !std::isfinite(sphere_b.radius) || sphere_a.radius <= 0.0f ||
         sphere_b.radius <= 0.0f)
     {
-        return TimeOfImpactResult();
+        return {};
     }
 
     if (!finite_vec(sphere_a.position) || !finite_vec(sphere_b.position) || !finite_vec(sphere_a.velocity) ||
         !finite_vec(sphere_b.velocity))
     {
-        return TimeOfImpactResult();
+        return {};
     }
 
-    float clamped_max_time = std::max(max_time, kEpsilon);
+    float clamped_max_time = std::max(max_time, k_epsilon);
     int clamped_iterations = std::max(max_iterations, 1);
     int refinement_iterations = std::max(root_refinement_iterations, 0);
     float tolerance = std::max(separation_tolerance, 1e-6f);
@@ -63,7 +64,7 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(const SweptSpher
         float distance = delta.length();
         float separation = distance - combined_radius;
 
-        Vec3f normal = (distance > kEpsilon) ? (delta / distance) : Vec3f(1.0f, 0.0f, 0.0f);
+        Vec3f normal = (distance > k_epsilon) ? (delta / distance) : Vec3f(1.0f, 0.0f, 0.0f);
 
         if (separation <= tolerance)
         {
@@ -98,32 +99,33 @@ TimeOfImpactResult ConservativeAdvancement::solve_sphere_sphere(const SweptSpher
             Vec3f refined_delta = refined_pos_b - refined_pos_a;
             float refined_distance = refined_delta.length();
             Vec3f refined_normal =
-                (refined_distance > kEpsilon) ? (refined_delta / refined_distance) : Vec3f(1.0f, 0.0f, 0.0f);
+                (refined_distance > k_epsilon) ? (refined_delta / refined_distance) : Vec3f(1.0f, 0.0f, 0.0f);
 
             Vec3f contact_point = refined_pos_a + refined_normal * sphere_a.radius;
-            return TimeOfImpactResult(refined_normalized_time, contact_point, refined_normal, relative_velocity);
+            return {refined_normalized_time, contact_point, refined_normal, relative_velocity};
         }
 
         float rel_normal_speed = relative_velocity.dot(normal);
-        if (rel_normal_speed >= -kEpsilon)
+        if (rel_normal_speed >= -k_epsilon)
         {
-            return TimeOfImpactResult();
+            return {};
         }
 
         float advance_physical = separation / (-rel_normal_speed);
-        advance_physical = std::max(advance_physical, kEpsilon);
+        advance_physical = std::max(advance_physical, k_epsilon);
         float advance_normalized = advance_physical / clamped_max_time;
 
         previous_normalized_time = normalized_time;
         normalized_time += advance_normalized;
 
-        if (normalized_time > 1.0f + kEpsilon)
+        if (normalized_time > 1.0f + k_epsilon)
         {
-            return TimeOfImpactResult();
+            return {};
         }
     }
 
-    return TimeOfImpactResult();
+    return {};
 }
+// NOLINTEND(readability-function-cognitive-complexity,bugprone-easily-swappable-parameters)
 
 } // namespace phynity::physics::collision::ccd
