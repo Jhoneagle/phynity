@@ -67,7 +67,7 @@ private:
     std::mutex jobs_mutex_;
     std::map<uint32_t,
              std::unique_ptr<JobEntry>,
-             std::less<uint32_t>,
+             std::less<>,
              phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::unique_ptr<JobEntry>>>>
         jobs_;
     uint32_t next_job_id_{1};

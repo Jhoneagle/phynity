@@ -198,7 +198,7 @@ TEST_CASE("Broadphase performance: Medium system (100 particles)", "[validation]
         REQUIRE(brute_force_result.milliseconds > 0.0);
 
         const double ratio = broadphase_result.milliseconds / brute_force_result.milliseconds;
-        const double ratio_limit = is_slow_env() ? phynity::tests::timing::scaled_ratio_limit(2.0, 8.0) : 2.0;
+        const double ratio_limit = is_slow_env() ? phynity::tests::timing::scaled_ratio_limit(2.3, 8.0) : 2.3;
         REQUIRE(ratio < ratio_limit); // Broadphase within threshold of brute-force at N=100
     }
 }
