@@ -35,7 +35,7 @@ public:
         {
             return nullptr;
         }
-        void *ptr = buffer_.data() + aligned;
+        void *ptr = &buffer_[aligned];
         offset_ = aligned + size;
         return ptr;
     }

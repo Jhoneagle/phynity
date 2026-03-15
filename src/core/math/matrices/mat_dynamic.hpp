@@ -457,7 +457,6 @@ private:
     std::size_t cols{0};
     std::vector<T> data{};
 
-private:
     void validate_same_shape(const MatDynamic &other, const char *op) const
     {
         if (rows != other.rows || cols != other.cols)

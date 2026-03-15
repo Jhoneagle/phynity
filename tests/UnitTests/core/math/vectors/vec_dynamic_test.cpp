@@ -393,7 +393,7 @@ TEST_CASE("VecDynamicf: Edge cases", "[VecDynamicf][edge]")
     {
         VecDynamicf v;
         REQUIRE(v.empty());
-        REQUIRE(v.size() == 0);
+        REQUIRE(v.empty()); // size is zero
         REQUIRE_THAT(v.length(), WithinAbs(0.0f, 1e-6f));
     }
 

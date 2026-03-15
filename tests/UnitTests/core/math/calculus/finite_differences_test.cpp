@@ -95,8 +95,9 @@ TEST_CASE("Finite Differences: First derivative - sine function", "[calculus][fi
 
     SECTION("Central difference at multiple points")
     {
-        for (float x_test = 0.0f; x_test <= 3.14f; x_test += 0.5f)
+        for (int x_step = 0; static_cast<float>(x_step) * 0.5f <= 3.14f; ++x_step)
         {
+            float x_test = static_cast<float>(x_step) * 0.5f;
             float deriv = central_difference_first(f, x_test, 1e-4f);
             float expected_val = f_prime(x_test);
             REQUIRE_THAT(deriv, WithinAbs(expected_val, 1e-2f));

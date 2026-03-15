@@ -28,7 +28,7 @@ public:
     AABB bound; ///< Bounding box in 3D (z=0)
 
     ConvexHull2D() = default;
-    ~ConvexHull2D()
+    ~ConvexHull2D() override
     {
         phynity::platform::track_vector_capacity_release(vertices);
         phynity::platform::track_vector_capacity_release(normals);
@@ -224,7 +224,7 @@ public:
     AABB bound; ///< Axis-aligned bounding box
 
     ConvexHull3D() = default;
-    ~ConvexHull3D()
+    ~ConvexHull3D() override
     {
         phynity::platform::track_vector_capacity_release(vertices);
         phynity::platform::track_vector_capacity_release(face_normals);

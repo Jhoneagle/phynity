@@ -36,14 +36,14 @@ struct SnapshotFileHeaderV1
 
 constexpr size_t k_v2_metadata_bytes = sizeof(uint64_t) + sizeof(double) + sizeof(float) + sizeof(uint32_t);
 constexpr size_t k_particle_wire_bytes =
-    (4U * 3U * sizeof(float)) + // position, velocity, acceleration, force_accumulator
-    (8U * sizeof(float)) + // radius, mass, restitution, friction, linear/angular damping, drag, lifetime
+    (size_t{4} * 3U * sizeof(float)) + // position, velocity, acceleration, force_accumulator
+    (size_t{8} * sizeof(float)) + // radius, mass, restitution, friction, linear/angular damping, drag, lifetime
     sizeof(uint8_t); // active
 constexpr size_t k_rigid_body_wire_bytes =
-    (2U * 3U * sizeof(float)) + // position, velocity
-    (3U * sizeof(float)) + // force_accumulator
-    (4U * sizeof(float)) + // orientation
-    (2U * 3U * sizeof(float)) + // angular_velocity, torque_accumulator
+    (size_t{2} * 3U * sizeof(float)) + // position, velocity
+    (size_t{3} * sizeof(float)) + // force_accumulator
+    (size_t{4} * sizeof(float)) + // orientation
+    (size_t{2} * 3U * sizeof(float)) + // angular_velocity, torque_accumulator
     sizeof(uint32_t) + // shape_type
     (3U * sizeof(float)) + // shape_local_center
     sizeof(float) + // shape_radius
@@ -416,7 +416,7 @@ public:
     double parse_number(SerializationResult &result)
     {
         skip_whitespace();
-        const char *begin = input_.c_str() + pos_;
+        const char *begin = &input_[pos_];
         char *end = nullptr;
         const double value = std::strtod(begin, &end);
         if (begin == end)

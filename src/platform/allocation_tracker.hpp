@@ -111,8 +111,9 @@ public:
 
     TrackedAllocator() noexcept = default;
 
-    template <typename U> TrackedAllocator(const TrackedAllocator<U> &) noexcept
+    template <typename U> TrackedAllocator(const TrackedAllocator<U> &other) noexcept
     {
+        (void) other;
     }
 
     [[nodiscard]] T *allocate(const size_t count)
@@ -136,14 +137,18 @@ public:
 };
 
 template <typename T, typename U>
-inline bool operator==(const TrackedAllocator<T> &, const TrackedAllocator<U> &) noexcept
+inline bool operator==(const TrackedAllocator<T> &lhs, const TrackedAllocator<U> &rhs) noexcept
 {
+    (void) lhs;
+    (void) rhs;
     return true;
 }
 
 template <typename T, typename U>
-inline bool operator!=(const TrackedAllocator<T> &, const TrackedAllocator<U> &) noexcept
+inline bool operator!=(const TrackedAllocator<T> &lhs, const TrackedAllocator<U> &rhs) noexcept
 {
+    (void) lhs;
+    (void) rhs;
     return false;
 }
 

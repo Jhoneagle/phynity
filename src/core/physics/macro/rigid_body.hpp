@@ -70,7 +70,7 @@ public:
               std::shared_ptr<Shape> shape_ptr,
               const Material &mat = Material{},
               float mass = 1.0f)
-        : position(pos), orientation(orient), shape(shape_ptr), material(mat), id(-1), lifetime(-1.0f)
+        : position(pos), orientation(orient), shape(std::move(shape_ptr)), material(mat), id(-1), lifetime(-1.0f)
     {
         set_mass(mass);
     }

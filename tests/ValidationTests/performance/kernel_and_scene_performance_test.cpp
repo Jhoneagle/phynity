@@ -96,11 +96,11 @@ std::string to_json(const PerfResult &result)
     oss.setf(std::ios::fixed);
     oss.precision(6);
     oss << "{\n";
-    oss << "  \"scenario\": \"" << result.scenario << "\",\n";
+    oss << R"(  "scenario": ")" << result.scenario << "\",\n";
     oss << "  \"milliseconds\": " << result.milliseconds << ",\n";
     oss << "  \"iterations\": " << result.iterations << ",\n";
     oss << "  \"workload\": " << result.workload << ",\n";
-    oss << "  \"notes\": \"" << result.notes << "\",\n";
+    oss << R"(  "notes": ")" << result.notes << "\",\n";
 
     // Samples array
     oss << "  \"samples_ms\": [";

@@ -43,11 +43,10 @@ inline VecN<N, T> solve(const MatN<N, N, T> &A, const VecN<N, T> &b, SolveMethod
         LUDecomposition<N, T> lu(A);
         return solve_lu(lu, b);
     }
-    else
-    { // QR
-        QRDecomposition<N, T> qr(A);
-        return solve_qr(qr, b);
-    }
+
+    // QR
+    QRDecomposition<N, T> qr(A);
+    return solve_qr(qr, b);
 }
 
 /// Compute matrix inverse using LU decomposition

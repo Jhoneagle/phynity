@@ -992,7 +992,7 @@ private:
     // - Solve constraints for just that manifold
     // - Re-detect collisions from new state
     // - Repeat until all TOI-based collisions are resolved
-    void perform_ccd_substeps(phynity::platform::TrackedVector<collision::ContactManifold> &manifolds) noexcept
+    void perform_ccd_substeps(phynity::platform::TrackedVector<collision::ContactManifold> &manifolds) const noexcept
     {
         PROFILE_SCOPE("ccd_substeps");
 

@@ -77,7 +77,7 @@ struct SlabInterval
 };
 
 // Returns the entry/exit t-interval for a single axis slab, handling the ray-parallel case.
-static SlabInterval axis_slab_interval(float origin, float dir, float slab_min, float slab_max)
+SlabInterval axis_slab_interval(float origin, float dir, float slab_min, float slab_max)
 {
     if (std::abs(dir) < 1e-10f)
         return {0.0f, 0.0f, origin >= slab_min && origin <= slab_max};
@@ -88,13 +88,13 @@ static SlabInterval axis_slab_interval(float origin, float dir, float slab_min, 
 }
 
 // Ray-AABB slab intersection. Returns false when misses or exceeds ray_len.
-static bool intersect_ray_aabb(const Vec3f &origin,
-                               const Vec3f &dir,
-                               float ray_len,
-                               const Vec3f &box_min,
-                               const Vec3f &box_max,
-                               float &t_enter_out,
-                               float &t_exit_out)
+bool intersect_ray_aabb(const Vec3f &origin,
+                        const Vec3f &dir,
+                        float ray_len,
+                        const Vec3f &box_min,
+                        const Vec3f &box_max,
+                        float &t_enter_out,
+                        float &t_exit_out)
 {
     float t_enter = 0.0f;
     float t_exit = ray_len;

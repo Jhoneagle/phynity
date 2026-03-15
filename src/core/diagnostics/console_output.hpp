@@ -7,6 +7,8 @@
 #include "momentum_monitor.hpp"
 #include "profiler.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -44,13 +46,16 @@ public:
         for (const auto &zone : zones)
         {
             // Indent based on depth
-            const std::string indent(zone.depth * indent_size, ' ');
+            const auto indent_width =
+                static_cast<std::size_t>(zone.depth) * static_cast<std::size_t>(std::max(indent_size, 0));
+            const std::string indent(indent_width, ' ');
+            const int name_width = std::max(1, 30 - static_cast<int>(indent_width));
 
             // Format duration
-            const double ms = zone.duration_us / 1000.0;
+            const double ms = static_cast<double>(zone.duration_us) / 1000.0;
 
-            std::cout << indent << std::left << std::setw(30 - zone.depth * indent_size) << zone.name << std::right
-                      << std::setw(8) << std::fixed << std::setprecision(3) << ms << " ms\n";
+            std::cout << indent << std::left << std::setw(name_width) << zone.name << std::right << std::setw(8)
+                      << std::fixed << std::setprecision(3) << ms << " ms\n";
         }
         std::cout << "====================\n\n";
     }
@@ -65,7 +70,7 @@ public:
     static void print_frame_stats(const FrameProfiler &profiler)
     {
         // Get unique zone names from last frame
-        const auto last_frame = profiler.get_last_frame();
+        const auto &last_frame = profiler.get_last_frame();
         std::unordered_set<std::string_view> zone_names;
         for (const auto &zone : last_frame.zones)
         {
@@ -88,14 +93,14 @@ public:
             const auto stats = profiler.get_zone_stats(name);
 
             std::cout << std::left << std::setw(25) << name << std::right << std::setw(10) << std::fixed
-                      << std::setprecision(3) << (stats.average_duration_us() / 1000.0) << std::setw(10)
-                      << (stats.min_duration_us / 1000.0) << std::setw(10) << (stats.max_duration_us / 1000.0)
-                      << std::setw(10) << stats.call_count << "\n";
+                      << std::setprecision(3) << (static_cast<double>(stats.average_duration_us()) / 1000.0)
+                      << std::setw(10) << (static_cast<double>(stats.min_duration_us) / 1000.0) << std::setw(10)
+                      << (static_cast<double>(stats.max_duration_us) / 1000.0) << std::setw(10) << stats.call_count
+                      << "\n";
         }
 
         // Show total frame time from last frame
-        const auto last_frame = profiler.get_last_frame();
-        const double frame_ms = last_frame.total_frame_time_us / 1000.0;
+        const double frame_ms = static_cast<double>(last_frame.total_frame_time_us) / 1000.0;
 
         std::cout << std::string(65, '-') << "\n";
         std::cout << std::left << std::setw(25) << "Total Frame Time" << std::right << std::setw(10) << std::fixed
@@ -112,8 +117,8 @@ public:
      */
     static void print_frame_summary(const FrameProfiler &profiler)
     {
-        const auto last_frame = profiler.get_last_frame();
-        const double frame_ms = last_frame.total_frame_time_us / 1000.0;
+        const auto &last_frame = profiler.get_last_frame();
+        const double frame_ms = static_cast<double>(last_frame.total_frame_time_us) / 1000.0;
         const double fps = (frame_ms > 0.0) ? (1000.0 / frame_ms) : 0.0;
 
         std::cout << "Frame " << profiler.get_frame_count() << ": " << std::fixed << std::setprecision(2) << frame_ms
@@ -131,8 +136,8 @@ public:
     {
         std::cout << "\n=== Frame Budget Report ===\n";
         std::cout << "Target FPS: " << budget.get_target_fps() << "\n";
-        std::cout << "Frame budget: " << std::fixed << std::setprecision(2) << (budget.get_target_frame_time() / 1000.0)
-                  << " ms\n";
+        std::cout << "Frame budget: " << std::fixed << std::setprecision(2)
+                  << (static_cast<double>(budget.get_target_frame_time()) / 1000.0) << " ms\n";
         std::cout << "Enabled: " << (budget.is_enabled() ? "Yes" : "No") << "\n";
         std::cout << "===========================\n\n";
     }
@@ -207,27 +212,27 @@ public:
         std::cout << "║                    DIAGNOSTICS REPORT                          ║\n";
         std::cout << "╚════════════════════════════════════════════════════════════════╝\n";
 
-        if (frame_profiler)
+        if (frame_profiler != nullptr)
         {
             print_frame_stats(*frame_profiler);
         }
 
-        if (frame_budget)
+        if (frame_budget != nullptr)
         {
             print_budget_report(*frame_budget);
         }
 
-        if (energy_monitor)
+        if (energy_monitor != nullptr)
         {
             print_energy_status(*energy_monitor);
         }
 
-        if (momentum_monitor)
+        if (momentum_monitor != nullptr)
         {
             print_momentum_status(*momentum_monitor);
         }
 
-        if (collision_monitor)
+        if (collision_monitor != nullptr)
         {
             print_collision_status(*collision_monitor);
         }
