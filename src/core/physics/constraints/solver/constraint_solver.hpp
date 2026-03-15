@@ -5,6 +5,7 @@
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/micro/particle.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -81,7 +82,7 @@ public:
         PROFILE_FUNCTION();
 
         // Filter out inactive constraints
-        std::vector<Constraint *> active_constraints;
+        phynity::platform::TrackedVector<Constraint *> active_constraints;
         for (auto &constraint : constraints)
         {
             if (constraint && constraint->is_active())

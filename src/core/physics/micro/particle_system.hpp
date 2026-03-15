@@ -729,14 +729,14 @@ private:
         // Phase 2: Collision detection using broadphase culling + narrowphase
         // Track processed pairs to avoid duplicates (same pair from different queries)
         // Hash set provides O(1) lookup for pair deduplication
-        std::unordered_set<uint64_t> processed_pairs;
+        phynity::platform::TrackedUnorderedSet<uint64_t> processed_pairs;
         uint32_t broadphase_candidates = 0;
         uint32_t narrowphase_tests = 0;
         uint32_t actual_collisions = 0;
         const size_t count = particles_.size();
 
         // Phase 3: Collect all detected manifolds (instead of resolving immediately)
-        std::vector<ContactManifold> detected_manifolds;
+        phynity::platform::TrackedVector<ContactManifold> detected_manifolds;
 
         for (size_t i = 0; i < count; ++i)
         {
@@ -747,7 +747,7 @@ private:
             }
 
             // Get candidate neighbors from spatial grid (3x3x3 cell neighborhood)
-            const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
+            const auto candidates = spatial_grid_.get_neighbor_objects_tracked(a.position);
             broadphase_candidates += static_cast<uint32_t>(candidates.size());
 
             for (uint32_t j_index : candidates)
@@ -801,7 +801,7 @@ private:
 
             // Optimization: Pre-compute and cache velocity magnitudes for all particles
             // to avoid redundant length() calls in the nested loop
-            std::vector<float> particle_speeds;
+            phynity::platform::TrackedVector<float> particle_speeds;
             particle_speeds.reserve(count);
             for (size_t i = 0; i < count; ++i)
             {
@@ -889,7 +889,7 @@ private:
         }
 
         // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
-        std::vector<ContactManifold> cached_manifolds = contact_cache_.update(detected_manifolds);
+        auto cached_manifolds = contact_cache_.update_tracked(detected_manifolds);
         actual_collisions = static_cast<uint32_t>(cached_manifolds.size());
 
         // Phase 3.75: CCD Sub-stepping (if enabled)
@@ -908,6 +908,9 @@ private:
 
             // Create a temporary constraint list from manifolds + add rigid constraints
             std::vector<std::unique_ptr<constraints::Constraint>> temp_constraints;
+            const size_t initial_constraint_capacity = temp_constraints.capacity();
+            temp_constraints.reserve(cached_manifolds.size());
+            phynity::platform::track_vector_capacity_change(temp_constraints, initial_constraint_capacity);
 
             // Convert contact manifolds to contact constraints
             for (const ContactManifold &manifold : cached_manifolds)
@@ -919,7 +922,9 @@ private:
                         particles_[manifold.object_a_id],
                         particles_[manifold.object_b_id],
                         constraints::ContactConstraint::ContactType::Normal);
+                    const size_t previous_capacity = temp_constraints.capacity();
                     temp_constraints.push_back(std::move(contact_constraint));
+                    phynity::platform::track_vector_capacity_change(temp_constraints, previous_capacity);
                 }
             }
 
@@ -953,6 +958,8 @@ private:
             {
                 constraint_solver_.solve(constraints_, particles_);
             }
+
+            phynity::platform::track_vector_capacity_release(temp_constraints);
         }
 
         // Report collision statistics to monitor
@@ -985,7 +992,7 @@ private:
     // - Solve constraints for just that manifold
     // - Re-detect collisions from new state
     // - Repeat until all TOI-based collisions are resolved
-    void perform_ccd_substeps(std::vector<collision::ContactManifold> &manifolds) noexcept
+    void perform_ccd_substeps(phynity::platform::TrackedVector<collision::ContactManifold> &manifolds) noexcept
     {
         PROFILE_SCOPE("ccd_substeps");
 

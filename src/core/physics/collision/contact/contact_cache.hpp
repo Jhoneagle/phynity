@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/physics/collision/contact/contact_manifold.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <unordered_map>
 #include <vector>
@@ -27,11 +28,19 @@ public:
     /// @return Vector of manifolds with cached data applied (warm-start impulses, ages)
     std::vector<ContactManifold> update(const std::vector<ContactManifold> &new_manifolds)
     {
-        std::vector<ContactManifold> updated_manifolds;
+        phynity::platform::TrackedVector<ContactManifold> tracked_manifolds(new_manifolds.begin(), new_manifolds.end());
+        auto tracked_result = update_tracked(tracked_manifolds);
+        return std::vector<ContactManifold>(tracked_result.begin(), tracked_result.end());
+    }
+
+    phynity::platform::TrackedVector<ContactManifold>
+    update_tracked(const phynity::platform::TrackedVector<ContactManifold> &new_manifolds)
+    {
+        phynity::platform::TrackedVector<ContactManifold> updated_manifolds;
         updated_manifolds.reserve(new_manifolds.size());
 
         // Mark all cached contacts as "not seen this frame"
-        std::unordered_map<uint64_t, bool> seen_this_frame;
+        phynity::platform::TrackedUnorderedMap<uint64_t, bool> seen_this_frame;
         for (const auto &[id, _] : cache_)
         {
             seen_this_frame[id] = false;
@@ -127,9 +136,9 @@ public:
 
 private:
     /// Remove contacts that haven't been seen and are past their expiration age
-    void cleanup_expired_contacts(const std::unordered_map<uint64_t, bool> &seen_this_frame)
+    void cleanup_expired_contacts(const phynity::platform::TrackedUnorderedMap<uint64_t, bool> &seen_this_frame)
     {
-        std::vector<uint64_t> to_remove;
+        phynity::platform::TrackedVector<uint64_t> to_remove;
 
         for (auto &[id, manifold] : cache_)
         {
@@ -150,7 +159,7 @@ private:
         }
     }
 
-    std::unordered_map<uint64_t, ContactManifold> cache_; ///< Map of contact_id -> manifold
+    phynity::platform::TrackedUnorderedMap<uint64_t, ContactManifold> cache_; ///< Map of contact_id -> manifold
     int max_age_; ///< Maximum age before removal
 };
 

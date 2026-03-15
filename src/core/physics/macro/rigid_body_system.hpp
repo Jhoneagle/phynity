@@ -21,6 +21,7 @@
 #include <platform/allocation_tracker.hpp>
 
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace phynity::physics
@@ -205,7 +206,7 @@ public:
             return;
         }
 
-        std::vector<Vec3f> frame_start_positions;
+        phynity::platform::TrackedVector<Vec3f> frame_start_positions;
         frame_start_positions.reserve(bodies_.size());
         for (const auto &body : bodies_)
         {
@@ -519,7 +520,7 @@ private:
         return base_radius + angular_sweep;
     }
 
-    void resolve_collisions(const std::vector<Vec3f> &frame_start_positions, float dt)
+    void resolve_collisions(std::span<const Vec3f> frame_start_positions, float dt)
     {
         if (bodies_.size() < 2)
         {

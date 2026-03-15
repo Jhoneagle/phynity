@@ -3,6 +3,7 @@
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/shapes/convex_hull.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <cmath>
 
@@ -25,6 +26,8 @@ public:
     create_box_2d(float half_width = 1.0f, float half_height = 1.0f, const Vec2f &center = Vec2f(0.0f))
     {
         std::vector<Vec2f> vertices;
+        vertices.reserve(4);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
 
         // Vertices in counter-clockwise order starting from bottom-left
         // Store in LOCAL space (relative to center)
@@ -34,7 +37,9 @@ public:
         vertices.push_back(Vec2f(-half_width, half_height)); // Top-left
 
         // Center position stored separately for world space
-        return ConvexHull2D(vertices, center);
+        ConvexHull2D hull(vertices, center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 
     /// Create a 2D regular polygon
@@ -55,6 +60,8 @@ public:
         }
 
         std::vector<Vec2f> vertices;
+        vertices.reserve(sides);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
         float angle_step = 2.0f * 3.14159265358979f / static_cast<float>(sides);
         float rotation_rad = rotation_degrees * 3.14159265358979f / 180.0f;
 
@@ -66,7 +73,9 @@ public:
             vertices.push_back(Vec2f(x, y)); // Store in local space
         }
 
-        return ConvexHull2D(vertices, center);
+        ConvexHull2D hull(vertices, center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 
     /// Create a 2D triangle
@@ -79,6 +88,7 @@ public:
     create_triangle_2d(const Vec2f &p0, const Vec2f &p1, const Vec2f &p2, const Vec2f & /*center*/ = Vec2f(0.0f))
     {
         std::vector<Vec2f> vertices = {p0, p1, p2};
+        phynity::platform::track_vector_capacity_change(vertices, 0);
 
         // Check if vertices are in CCW order
         float signed_area = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y);
@@ -90,7 +100,9 @@ public:
 
         // Compute centroid
         Vec2f computed_center = (p0 + p1 + p2) / 3.0f;
-        return ConvexHull2D(vertices, computed_center);
+        ConvexHull2D hull(vertices, computed_center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 
     /// Create a 3D axis-aligned box
@@ -105,6 +117,8 @@ public:
                                       const Vec3f &center = Vec3f(0.0f))
     {
         std::vector<Vec3f> vertices;
+        vertices.reserve(8);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
 
         // 8 vertices of the box in counter-clockwise order (when viewed from outside)
         float x = half_width;
@@ -134,6 +148,8 @@ public:
             Vec3f(0.0f, 0.0f, 1.0f), // +Z face normal
             Vec3f(0.0f, 0.0f, -1.0f) // -Z face normal
         };
+        phynity::platform::track_vector_capacity_change(hull.face_normals, 0);
+        phynity::platform::track_vector_capacity_release(vertices);
         return hull;
     }
 
@@ -145,6 +161,8 @@ public:
     {
         // Regular tetrahedron vertices
         std::vector<Vec3f> vertices;
+        vertices.reserve(4);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
         float a = edge_length / std::sqrt(8.0f / 3.0f); // Scale factor
 
         vertices.push_back(Vec3f(a, a, a));
@@ -152,7 +170,9 @@ public:
         vertices.push_back(Vec3f(-a, a, -a));
         vertices.push_back(Vec3f(-a, -a, a));
 
-        return ConvexHull3D(vertices, center);
+        ConvexHull3D hull(vertices, center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 
     /// Create a 3D regular octahedron
@@ -162,6 +182,8 @@ public:
     static ConvexHull3D create_octahedron_3d(float radius = 1.0f, const Vec3f &center = Vec3f(0.0f))
     {
         std::vector<Vec3f> vertices;
+        vertices.reserve(6);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
 
         // 6 vertices at (±r, 0, 0), (0, ±r, 0), (0, 0, ±r)
         vertices.push_back(Vec3f(radius, 0.0f, 0.0f)); // +X
@@ -171,7 +193,9 @@ public:
         vertices.push_back(Vec3f(0.0f, 0.0f, radius)); // +Z
         vertices.push_back(Vec3f(0.0f, 0.0f, -radius)); // -Z
 
-        return ConvexHull3D(vertices, center);
+        ConvexHull3D hull(vertices, center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 
     /// Create a 3D cylinder (approximated as a convex hull with regular polygon cross-section)
@@ -190,6 +214,8 @@ public:
         }
 
         std::vector<Vec3f> vertices;
+        vertices.reserve(sides * 2);
+        phynity::platform::track_vector_capacity_change(vertices, 0);
         float angle_step = 2.0f * 3.14159265358979f / static_cast<float>(sides);
         float half_height = height / 2.0f;
 
@@ -211,7 +237,9 @@ public:
             vertices.push_back(Vec3f(x, half_height, z));
         }
 
-        return ConvexHull3D(vertices, center);
+        ConvexHull3D hull(vertices, center);
+        phynity::platform::track_vector_capacity_release(vertices);
+        return hull;
     }
 };
 

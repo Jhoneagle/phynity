@@ -3,6 +3,7 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -43,7 +44,7 @@ public:
         }
 
         // Accumulated impulses for each contact (what we return)
-        std::vector<Vec3f> accumulated_impulses(manifolds.size(), Vec3f(0.0f));
+        phynity::platform::TrackedVector<Vec3f> accumulated_impulses(manifolds.size(), Vec3f(0.0f));
 
         // Phase 1: Apply warm-start impulses from previous frame
         for (size_t i = 0; i < manifolds.size(); ++i)
@@ -106,7 +107,7 @@ public:
             }
         }
 
-        return accumulated_impulses;
+        return std::vector<Vec3f>(accumulated_impulses.begin(), accumulated_impulses.end());
     }
 
     /// Solve with adaptive iterations based on constraint count

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -150,6 +151,9 @@ template <typename T> using TrackedVector = std::vector<T, TrackedAllocator<T>>;
 
 template <typename K, typename V, typename Hash = std::hash<K>, typename KeyEqual = std::equal_to<K>>
 using TrackedUnorderedMap = std::unordered_map<K, V, Hash, KeyEqual, TrackedAllocator<std::pair<const K, V>>>;
+
+template <typename K, typename Hash = std::hash<K>, typename KeyEqual = std::equal_to<K>>
+using TrackedUnorderedSet = std::unordered_set<K, Hash, KeyEqual, TrackedAllocator<K>>;
 
 template <typename T, typename Alloc>
 inline void track_vector_capacity_change(const std::vector<T, Alloc> &values, const size_t previous_capacity) noexcept

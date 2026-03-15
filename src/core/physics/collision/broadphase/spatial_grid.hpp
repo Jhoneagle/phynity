@@ -4,6 +4,8 @@
 #include "../../../math/vectors/vec3.hpp"
 #include "spatial_grid_hash.hpp"
 
+#include <platform/allocation_tracker.hpp>
+
 #include <algorithm>
 #include <cstdint>
 #include <unordered_map>
@@ -20,7 +22,7 @@ namespace phynity::physics::collision
  */
 struct GridCellData
 {
-    std::vector<uint32_t> object_indices;
+    phynity::platform::TrackedVector<uint32_t> object_indices;
 
     void clear() noexcept
     {
@@ -177,7 +179,7 @@ public:
         auto it = cells_.find(cell_hash);
         if (it != cells_.end())
         {
-            return it->second.object_indices;
+            return std::vector<uint32_t>(it->second.object_indices.begin(), it->second.object_indices.end());
         }
         return {};
     }
@@ -196,8 +198,15 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects(const math::vectors::Vec3f &position) const noexcept
     {
+        auto tracked = get_neighbor_objects_tracked(position);
+        return std::vector<uint32_t>(tracked.begin(), tracked.end());
+    }
+
+    [[nodiscard]] phynity::platform::TrackedVector<uint32_t>
+    get_neighbor_objects_tracked(const math::vectors::Vec3f &position) const noexcept
+    {
         const auto center_cell = hash_.get_cell_coords(position);
-        return get_neighbor_objects_from_cell(center_cell);
+        return get_neighbor_objects_from_cell_tracked(center_cell);
     }
 
     /**
@@ -210,7 +219,14 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects_from_cell(const GridCell &cell) const noexcept
     {
-        std::vector<uint32_t> neighbors;
+        auto tracked = get_neighbor_objects_from_cell_tracked(cell);
+        return std::vector<uint32_t>(tracked.begin(), tracked.end());
+    }
+
+    [[nodiscard]] phynity::platform::TrackedVector<uint32_t>
+    get_neighbor_objects_from_cell_tracked(const GridCell &cell) const noexcept
+    {
+        phynity::platform::TrackedVector<uint32_t> neighbors;
 
         auto safe_add = [](int32_t value, int delta) -> int32_t
         {
@@ -288,7 +304,7 @@ public:
 
 private:
     SpatialGridHash hash_;
-    std::unordered_map<uint64_t, GridCellData> cells_;
+    phynity::platform::TrackedUnorderedMap<uint64_t, GridCellData> cells_;
 };
 
 } // namespace phynity::physics::collision
