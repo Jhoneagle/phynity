@@ -3,5 +3,6 @@ target_link_libraries(test_job_system PRIVATE
     phynity::core
     Catch2::Catch2WithMain
 )
+phynity_target_defaults(test_job_system)
 
 add_test(NAME job_system_tests COMMAND test_job_system)
