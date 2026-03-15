@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <utility>
 
 namespace phynity::serialization
 {
@@ -17,6 +18,22 @@ namespace
 
 std::unique_ptr<ReplayWriter> g_replay_writer;
 std::mutex g_replay_mutex;
+SnapshotHelpers::AuditSink g_audit_sink;
+std::mutex g_audit_sink_mutex;
+
+void emit_audit_event(const std::string &message)
+{
+    SnapshotHelpers::AuditSink sink;
+    {
+        std::lock_guard<std::mutex> lock(g_audit_sink_mutex);
+        sink = g_audit_sink;
+    }
+
+    if (sink)
+    {
+        sink(message);
+    }
+}
 
 } // namespace
 
@@ -546,11 +563,32 @@ SerializationResult SnapshotHelpers::update_golden(const PhysicsSnapshot &snapsh
                                                    const std::string &golden_file,
                                                    const std::string &log_message)
 {
-    // Log the update reason
-    (void) log_message; // TODO: Log to audit trail
+    const auto save_result = save_golden(snapshot, golden_file);
 
-    // Save new golden
-    return save_golden(snapshot, golden_file);
+    std::ostringstream audit_message;
+    audit_message << "event=snapshot.update_golden"
+                  << " file=" << golden_file << " reason=" << (log_message.empty() ? "(empty)" : log_message)
+                  << " status=" << (save_result.is_success() ? "success" : "failure");
+
+    if (!save_result.is_success())
+    {
+        audit_message << " error=" << save_result.error_message;
+    }
+
+    emit_audit_event(audit_message.str());
+    return save_result;
+}
+
+void SnapshotHelpers::set_audit_sink(AuditSink sink)
+{
+    std::lock_guard<std::mutex> lock(g_audit_sink_mutex);
+    g_audit_sink = std::move(sink);
+}
+
+void SnapshotHelpers::clear_audit_sink()
+{
+    std::lock_guard<std::mutex> lock(g_audit_sink_mutex);
+    g_audit_sink = nullptr;
 }
 
 // ============================================================================

@@ -519,6 +519,15 @@ private:
 - `FrameBudget::set_zone_budget(name, us)` - Set zone budget
 - `FrameBudget::set_violation_callback(fn)` - Set callback
 
+### Serialization Audit Trail
+- `SnapshotHelpers::set_audit_sink(fn)` - Configure a dedicated serialization audit sink.
+- `SnapshotHelpers::clear_audit_sink()` - Remove the configured sink.
+- `SnapshotHelpers::update_golden(...)` emits one structured audit message per update attempt.
+
+Audit sink decision:
+- Use a dedicated sink owned by `SnapshotHelpers` instead of a global diagnostics manager.
+- Keep serialization golden-update auditing available in tests/tools without coupling to runtime physics diagnostics.
+
 ### Energy Monitor
 - `EnergyMonitor::update(energy)` - Update energy
 - `EnergyMonitor::set_max_loss_percent(pct)` - Set loss tolerance

@@ -9,6 +9,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <utility>
+#include <vector>
 
 using namespace phynity::physics;
 using namespace phynity::serialization;
@@ -217,6 +219,19 @@ struct SnapshotFileHeaderV2LegacyTest
     uint32_t num_rigid_bodies = 0;
     uint32_t metadata_json_bytes = 0;
     uint64_t file_size = 0;
+};
+
+struct ScopedSnapshotAuditSink
+{
+    explicit ScopedSnapshotAuditSink(SnapshotHelpers::AuditSink sink)
+    {
+        SnapshotHelpers::set_audit_sink(std::move(sink));
+    }
+
+    ~ScopedSnapshotAuditSink()
+    {
+        SnapshotHelpers::clear_audit_sink();
+    }
 };
 
 SerializationResult write_legacy_format_v1_fixture(const std::string &path, const PhysicsSnapshot &snapshot)
@@ -529,6 +544,26 @@ TEST_CASE("Serialization - validate golden exists", "[serialization][golden]")
 {
     const std::string golden_path = get_golden_dir() + "/serialization/particle_snapshot_v1_1.json";
     REQUIRE(SnapshotHelpers::validate_golden_exists(golden_path, current_schema_version()));
+}
+
+TEST_CASE("Snapshot Helpers - update_golden emits audit event", "[serialization][golden][audit]")
+{
+    SerializationFixture fixture;
+    const PhysicsSnapshot snapshot = fixture.create_snapshot(2);
+    const std::string golden_path = (fixture.temp_dir / "audit_event_snapshot.json").string();
+    std::vector<std::string> audit_events;
+
+    ScopedSnapshotAuditSink audit_scope([&audit_events](const std::string &message)
+                                        { audit_events.push_back(message); });
+
+    const auto update_result =
+        SnapshotHelpers::update_golden(snapshot, golden_path, "regenerate serialization fixture");
+    REQUIRE(update_result.is_success());
+    REQUIRE(audit_events.size() == 1);
+    REQUIRE(audit_events[0].find("event=snapshot.update_golden") != std::string::npos);
+    REQUIRE(audit_events[0].find("status=success") != std::string::npos);
+    REQUIRE(audit_events[0].find("regenerate serialization fixture") != std::string::npos);
+    REQUIRE(audit_events[0].find(golden_path) != std::string::npos);
 }
 
 TEST_CASE("Serialization - describe snapshot", "[serialization][util]")

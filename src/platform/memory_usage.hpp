@@ -13,8 +13,11 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <psapi.h>
+// windows.h must be included before psapi.h on MinGW; clang-format include sorting can break this order.
+// clang-format off
 #include <windows.h>
+#include <psapi.h>
+// clang-format on
 #ifdef STRICT
 #undef STRICT
 #endif

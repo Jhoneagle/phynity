@@ -4,6 +4,8 @@
 #include <core/serialization/snapshot_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
 
+#include <functional>
+
 namespace phynity::physics
 {
 class ParticleSystem;
@@ -18,6 +20,8 @@ namespace phynity::serialization
 class SnapshotHelpers
 {
 public:
+    using AuditSink = std::function<void(const std::string &message)>;
+
     // ========================================================================
     // Replay Capture: Multi-frame snapshot stream
     // ========================================================================
@@ -122,6 +126,13 @@ public:
     /// @return SerializationResult
     static SerializationResult
     update_golden(const PhysicsSnapshot &snapshot, const std::string &golden_file, const std::string &log_message);
+
+    /// Configure serialization audit sink used by update_golden.
+    /// The sink receives one structured message per update attempt.
+    static void set_audit_sink(AuditSink sink);
+
+    /// Remove the currently configured serialization audit sink.
+    static void clear_audit_sink();
 
     // ========================================================================
     // Debugging and Diagnostics
