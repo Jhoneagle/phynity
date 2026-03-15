@@ -198,9 +198,7 @@ TEST_CASE("Broadphase performance: Medium system (100 particles)", "[validation]
         REQUIRE(brute_force_result.milliseconds > 0.0);
 
         const double ratio = broadphase_result.milliseconds / brute_force_result.milliseconds;
-        // At N=100 the broadphase grid has non-trivial construction overhead; allow up to 6x.
-        // Scaling benefits show clearly at larger N (see the 500-particle test).
-        const double ratio_limit = 6.0;
+        const double ratio_limit = is_slow_env() ? phynity::tests::timing::scaled_ratio_limit(2.0, 8.0) : 2.0;
         REQUIRE(ratio < ratio_limit); // Broadphase within threshold of brute-force at N=100
     }
 }
