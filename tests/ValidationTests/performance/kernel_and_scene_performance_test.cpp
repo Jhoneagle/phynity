@@ -226,7 +226,7 @@ PerfResult benchmark_particle_integration_kernel(int particle_count, int frames,
 PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                                                  int particle_count,
                                                  int simulation_frames,
-                                                 int num_samples = 3)
+                                                 int num_samples = 5)
 {
     phynity::platform::AllocatorDeltaScope allocator_scope;
     constexpr float seed_max = 2147483647.0f;
@@ -286,14 +286,13 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
         result.samples_ms.reserve(static_cast<std::vector<double>::size_type>(num_samples));
     }
 
-    // Collect multiple samples
-    for (int sample = 0; sample < num_samples; ++sample)
+    const std::filesystem::path tmp_dir = std::filesystem::temp_directory_path();
+
+    auto run_scene_with_snapshots = [&](const std::filesystem::path &tmp_path)
     {
         auto [rb_system, particle_system] = setup_scene();
 
-        const auto start = std::chrono::high_resolution_clock::now();
-
-        // Simulate and periodically capture snapshots
+        // Simulate and periodically capture snapshots.
         for (int frame = 0; frame < simulation_frames; ++frame)
         {
             rb_system.update(DETERMINISTIC_TIMESTEP);
@@ -332,15 +331,25 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                 snapshot.rigid_bodies.push_back(rb);
                 phynity::platform::track_vector_capacity_change(snapshot.rigid_bodies, previous_rigid_capacity);
 
-                // Serialize to binary (measure round-trip cost)
-                std::filesystem::path tmp_dir = std::filesystem::temp_directory_path();
-                std::filesystem::path tmp_path = tmp_dir / "snapshot_perf_test.bin";
                 SnapshotSerializer::save_binary(snapshot, tmp_path.string());
 
                 phynity::platform::track_vector_capacity_release(snapshot.particles);
                 phynity::platform::track_vector_capacity_release(snapshot.rigid_bodies);
             }
         }
+    };
+
+    // Warm up code paths and file-system metadata before timing.
+    const std::filesystem::path warmup_path = tmp_dir / "snapshot_perf_test_warmup.bin";
+    run_scene_with_snapshots(warmup_path);
+
+    // Collect multiple samples
+    for (int sample = 0; sample < num_samples; ++sample)
+    {
+        const std::filesystem::path tmp_path = tmp_dir / ("snapshot_perf_test_" + std::to_string(sample) + ".bin");
+
+        const auto start = std::chrono::high_resolution_clock::now();
+        run_scene_with_snapshots(tmp_path);
 
         const auto end = std::chrono::high_resolution_clock::now();
         const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

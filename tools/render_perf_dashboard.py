@@ -40,6 +40,16 @@ def svg_polyline(values: list[float], width: int = 220, height: int = 64) -> str
     )
 
 
+def parse_series_value(row: dict[str, str], key: str) -> float | None:
+    raw = row.get(key, "")
+    if raw in ("", None):
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
 def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
     grouped: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
     for row in rows:
@@ -50,15 +60,26 @@ def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
         series = sorted(grouped[(benchmark_name, os_name)], key=lambda row: row["recorded_at_utc"])
         trimmed = series[-max_points:]
         per_frame = [float(row["milliseconds_per_frame"]) for row in trimmed]
+        peak_rss_series = [value for value in (parse_series_value(row, "peak_rss_kb") for row in trimmed) if value is not None]
+        allocator_delta_series = [
+          value for value in (parse_series_value(row, "allocator_delta_bytes") for row in trimmed) if value is not None
+        ]
         latest = trimmed[-1]
         regression = float(latest["regression_percent"])
         peak_rss_kb_raw = latest.get("peak_rss_kb", "")
+        allocator_delta_raw = latest.get("allocator_delta_bytes", "")
         peak_rss_display = "n/a"
         if peak_rss_kb_raw not in ("", None):
             try:
                 peak_rss_display = f"{int(float(peak_rss_kb_raw))} KB"
             except ValueError:
                 peak_rss_display = html.escape(str(peak_rss_kb_raw))
+        allocator_delta_display = "n/a"
+        if allocator_delta_raw not in ("", None):
+          try:
+            allocator_delta_display = f"{int(float(allocator_delta_raw))} B"
+          except ValueError:
+            allocator_delta_display = html.escape(str(allocator_delta_raw))
         state_class = "fail" if latest["pass_fail"] == "FAIL" else "pass"
         state_label = html.escape(latest["pass_fail"])
 
@@ -68,11 +89,14 @@ def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
                     "<article class='card'>",
                     f"  <h2>{html.escape(benchmark_name)} <span>{html.escape(os_name)}</span></h2>",
                     f"  <div class='trend'>{svg_polyline(per_frame)}</div>",
+                    f"  <div class='trend memory'>{svg_polyline(peak_rss_series, height=50)}</div>",
+                    f"  <div class='trend memory'>{svg_polyline(allocator_delta_series, height=50)}</div>",
                     "  <dl>",
                     f"    <div><dt>Latest</dt><dd>{float(latest['milliseconds_per_frame']):.4f} ms/frame</dd></div>",
                     f"    <div><dt>Baseline</dt><dd>{float(latest['golden_milliseconds_per_frame']):.4f} ms/frame</dd></div>",
                     f"    <div><dt>Regression</dt><dd>{regression:.2f}%</dd></div>",
                     f"    <div><dt>Peak RSS</dt><dd>{peak_rss_display}</dd></div>",
+                    f"    <div><dt>Allocator Delta</dt><dd>{allocator_delta_display}</dd></div>",
                     f"    <div><dt>Status</dt><dd class='{state_class}'>{state_label}</dd></div>",
                     "  </dl>",
                     f"  <p class='meta'>Latest run: {html.escape(latest['recorded_at_utc'])} on {html.escape(latest['machine_tag'])}</p>",
@@ -137,6 +161,9 @@ def build_dashboard(rows: list[dict[str, str]], max_points: int) -> str:
       gap: 12px;
       margin: 0 0 12px;
       font-size: 1.1rem;
+    }}
+    .trend.memory svg {{
+      height: 50px;
     }}
     h2 span {{
       color: var(--muted);
