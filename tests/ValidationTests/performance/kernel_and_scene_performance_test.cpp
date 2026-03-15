@@ -39,7 +39,7 @@ struct PerfResult
     int iterations = 0;
     int workload = 0;
     std::string notes;
-    std::vector<double> samples_ms; // Per-iteration sample times in milliseconds
+    phynity::platform::TrackedVector<double> samples_ms; // Per-iteration sample times in milliseconds
     double median_ms = 0.0;
     double mean_ms = 0.0;
     double stddev_ms = 0.0;
@@ -66,7 +66,7 @@ void compute_stats(PerfResult &result)
     }
 
     // Median
-    std::vector<double> sorted_samples = result.samples_ms;
+    std::vector<double> sorted_samples(result.samples_ms.begin(), result.samples_ms.end());
     std::sort(sorted_samples.begin(), sorted_samples.end());
     size_t n = sorted_samples.size();
     result.median_ms = (n % 2 == 0) ? (sorted_samples[n / 2 - 1] + sorted_samples[n / 2]) / 2.0 : sorted_samples[n / 2];
@@ -149,6 +149,7 @@ void write_perf_result(const PerfResult &result)
  */
 PerfResult benchmark_particle_integration_kernel(int particle_count, int frames, int num_samples = 3)
 {
+    phynity::platform::AllocatorDeltaScope allocator_scope;
     constexpr float seed_max = 2147483647.0f;
     auto make_system = [&]() -> ParticleSystem
     {
@@ -211,7 +212,7 @@ PerfResult benchmark_particle_integration_kernel(int particle_count, int frames,
     result.iterations = frames;
     compute_stats(result);
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
-    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
 
     return result;
 }
@@ -227,6 +228,7 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                                                  int simulation_frames,
                                                  int num_samples = 3)
 {
+    phynity::platform::AllocatorDeltaScope allocator_scope;
     constexpr float seed_max = 2147483647.0f;
 
     auto setup_scene = [&]() -> std::pair<RigidBodySystem, ParticleSystem>
@@ -307,14 +309,17 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                 snapshot.rng_seed = 123;
 
                 // Manually construct particle snapshots (benchmark uses synthesized data)
+                const size_t previous_particle_capacity = snapshot.particles.capacity();
                 snapshot.particles.clear();
                 ParticleSnapshot p;
                 p.position = Vec3f(1.0f, 2.0f, 3.0f);
                 p.velocity = Vec3f(0.1f, 0.2f, 0.3f);
                 p.mass = 1.0f;
                 snapshot.particles.push_back(p);
+                phynity::platform::track_vector_capacity_change(snapshot.particles, previous_particle_capacity);
 
                 // Similarly for rigid bodies
+                const size_t previous_rigid_capacity = snapshot.rigid_bodies.capacity();
                 snapshot.rigid_bodies.clear();
                 RigidBodySnapshot rb;
                 rb.position = Vec3f(5.0f, 6.0f, 7.0f);
@@ -325,11 +330,15 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                 rb.shape_type = SnapshotShapeType::Sphere;
                 rb.shape_radius = 0.5f;
                 snapshot.rigid_bodies.push_back(rb);
+                phynity::platform::track_vector_capacity_change(snapshot.rigid_bodies, previous_rigid_capacity);
 
                 // Serialize to binary (measure round-trip cost)
                 std::filesystem::path tmp_dir = std::filesystem::temp_directory_path();
                 std::filesystem::path tmp_path = tmp_dir / "snapshot_perf_test.bin";
                 SnapshotSerializer::save_binary(snapshot, tmp_path.string());
+
+                phynity::platform::track_vector_capacity_release(snapshot.particles);
+                phynity::platform::track_vector_capacity_release(snapshot.rigid_bodies);
             }
         }
 
@@ -349,7 +358,7 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
     result.iterations = simulation_frames;
     compute_stats(result);
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
-    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
 
     return result;
 }

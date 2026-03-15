@@ -206,6 +206,19 @@ struct SnapshotFileHeaderV1Test
     uint64_t file_size = 0;
 };
 
+struct SnapshotFileHeaderV2LegacyTest
+{
+    uint32_t magic = SnapshotFileHeader::MAGIC_NUMBER;
+    uint32_t format_version = SnapshotFileHeader::FORMAT_VERSION;
+    uint32_t schema_major = 1;
+    uint32_t schema_minor = 1;
+    uint32_t schema_patch = 0;
+    uint32_t num_particles = 0;
+    uint32_t num_rigid_bodies = 0;
+    uint32_t metadata_json_bytes = 0;
+    uint64_t file_size = 0;
+};
+
 SerializationResult write_legacy_format_v1_fixture(const std::string &path, const PhysicsSnapshot &snapshot)
 {
     SerializationResult result;
@@ -241,6 +254,57 @@ SerializationResult write_legacy_format_v1_fixture(const std::string &path, cons
     {
         result.error = SerializationError::IOError;
         result.error_message = "Failed to write full legacy fixture bytes";
+        return result;
+    }
+
+    result.error = SerializationError::Success;
+    result.bytes_processed = static_cast<size_t>(header.file_size);
+    return result;
+}
+
+SerializationResult write_legacy_format_v2_raw_fixture(const std::string &path, const PhysicsSnapshot &snapshot)
+{
+    SerializationResult result;
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output.is_open())
+    {
+        result.error = SerializationError::WriteError;
+        result.error_message = "Cannot open legacy v2 fixture for writing: " + path;
+        return result;
+    }
+
+    SnapshotFileHeaderV2LegacyTest header;
+    header.schema_major = snapshot.schema_version.major;
+    header.schema_minor = snapshot.schema_version.minor;
+    header.schema_patch = snapshot.schema_version.patch;
+    header.num_particles = static_cast<uint32_t>(snapshot.particles.size());
+    header.num_rigid_bodies = static_cast<uint32_t>(snapshot.rigid_bodies.size());
+    header.metadata_json_bytes = 0;
+    header.file_size = sizeof(SnapshotFileHeaderV2LegacyTest) + sizeof(snapshot.frame_number) +
+                       sizeof(snapshot.simulated_time) + sizeof(snapshot.timestep) + sizeof(snapshot.rng_seed) +
+                       snapshot.particles.size() * sizeof(ParticleSnapshot) +
+                       snapshot.rigid_bodies.size() * sizeof(RigidBodySnapshot);
+
+    output.write(reinterpret_cast<const char *>(&header), sizeof(header));
+    output.write(reinterpret_cast<const char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
+    output.write(reinterpret_cast<const char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
+    output.write(reinterpret_cast<const char *>(&snapshot.timestep), sizeof(snapshot.timestep));
+    output.write(reinterpret_cast<const char *>(&snapshot.rng_seed), sizeof(snapshot.rng_seed));
+
+    for (const auto &particle : snapshot.particles)
+    {
+        output.write(reinterpret_cast<const char *>(&particle), sizeof(ParticleSnapshot));
+    }
+
+    for (const auto &rigid_body : snapshot.rigid_bodies)
+    {
+        output.write(reinterpret_cast<const char *>(&rigid_body), sizeof(RigidBodySnapshot));
+    }
+
+    if (!output.good())
+    {
+        result.error = SerializationError::IOError;
+        result.error_message = "Failed to write full legacy v2 raw fixture bytes";
         return result;
     }
 
@@ -507,6 +571,24 @@ TEST_CASE("Binary migration: format v1 -> v2", "[serialization][golden][compat][
         const auto write_result = write_legacy_format_v1_fixture(fixture_path, expected);
         REQUIRE(write_result.is_success());
     }
+
+    PhysicsSnapshot loaded;
+    const auto load_result = SnapshotSerializer::load_binary(fixture_path, loaded);
+    REQUIRE(load_result.is_success());
+
+    std::string diff_report;
+    REQUIRE(SnapshotHelpers::snapshots_equal_with_tolerance(expected, loaded, 1e-6f, 1e-6f, &diff_report));
+}
+
+TEST_CASE("Binary migration: legacy v2 raw fixture remains compatible",
+          "[serialization][golden][compat][migration][binary]")
+{
+    SerializationFixture fixture;
+    const auto expected = fixture.create_snapshot_with_rigid_bodies();
+    const std::string fixture_path = (fixture.temp_dir / "snapshot_v2_legacy_raw.bin").string();
+
+    const auto write_result = write_legacy_format_v2_raw_fixture(fixture_path, expected);
+    REQUIRE(write_result.is_success());
 
     PhysicsSnapshot loaded;
     const auto load_result = SnapshotSerializer::load_binary(fixture_path, loaded);

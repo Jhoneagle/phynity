@@ -18,6 +18,7 @@
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/macro/inertia.hpp>
 #include <core/physics/macro/rigid_body.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <memory>
 #include <vector>
@@ -65,6 +66,16 @@ public:
     {
     }
 
+    ~RigidBodySystem()
+    {
+        phynity::platform::track_vector_capacity_release(bodies_);
+        phynity::platform::track_vector_capacity_release(force_fields_);
+        phynity::platform::track_vector_capacity_release(constraints_);
+    }
+
+    RigidBodySystem(RigidBodySystem &&other) noexcept = default;
+    RigidBodySystem &operator=(RigidBodySystem &&other) noexcept = default;
+
     // ========================================================================
     // Body Management
     // ========================================================================
@@ -84,7 +95,9 @@ public:
     {
         PROFILE_SCOPE("RigidBodySystem::spawn_body");
 
+        const size_t previous_capacity = bodies_.capacity();
         bodies_.emplace_back();
+        phynity::platform::track_vector_capacity_change(bodies_, previous_capacity);
         RigidBody &rb = bodies_.back();
 
         rb.position = position;
@@ -149,7 +162,9 @@ public:
     /// Add a force field (gravity, drag, wind, etc.)
     void add_force_field(std::shared_ptr<ForceField> field)
     {
+        const size_t previous_capacity = force_fields_.capacity();
         force_fields_.push_back(field);
+        phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
     }
 
     /// Remove all force fields
@@ -165,7 +180,9 @@ public:
     /// Register a constraint (fixed joint, hinge, etc.)
     void add_constraint(std::shared_ptr<Constraint> constraint)
     {
+        const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(constraint);
+        phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
     }
 
     /// Get all constraints

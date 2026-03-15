@@ -1,5 +1,7 @@
 #pragma once
 
+#include <platform/allocation_tracker.hpp>
+
 #include <cstdint>
 #include <fstream>
 #include <string>
@@ -7,6 +9,9 @@
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
 #endif
 #include <psapi.h>
 #include <windows.h>
@@ -76,8 +81,7 @@ inline uint64_t get_peak_rss_kb()
 
 inline int64_t get_allocator_delta_bytes()
 {
-    // Placeholder until allocator instrumentation hooks are added.
-    return 0;
+    return capture_allocator_usage().current_live_bytes;
 }
 
 } // namespace phynity::platform

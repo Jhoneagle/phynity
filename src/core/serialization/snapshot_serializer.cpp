@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -32,6 +33,258 @@ struct SnapshotFileHeaderV1
     uint32_t num_particles = 0;
     uint64_t file_size = 0;
 };
+
+constexpr size_t k_v2_metadata_bytes = sizeof(uint64_t) + sizeof(double) + sizeof(float) + sizeof(uint32_t);
+constexpr size_t k_particle_wire_bytes =
+    (4U * 3U * sizeof(float)) + // position, velocity, acceleration, force_accumulator
+    (8U * sizeof(float)) + // radius, mass, restitution, friction, linear/angular damping, drag, lifetime
+    sizeof(uint8_t); // active
+constexpr size_t k_rigid_body_wire_bytes =
+    (2U * 3U * sizeof(float)) + // position, velocity
+    (3U * sizeof(float)) + // force_accumulator
+    (4U * sizeof(float)) + // orientation
+    (2U * 3U * sizeof(float)) + // angular_velocity, torque_accumulator
+    sizeof(uint32_t) + // shape_type
+    (3U * sizeof(float)) + // shape_local_center
+    sizeof(float) + // shape_radius
+    (3U * sizeof(float)) + // shape_half_extents
+    sizeof(float) + // shape_half_height
+    sizeof(float) + // collision_radius
+    (6U * sizeof(float)) + // mass, restitution, friction, linear/angular damping, drag
+    sizeof(uint8_t) + // active
+    sizeof(int32_t) + // id
+    sizeof(float); // lifetime
+
+size_t v2_wire_payload_bytes(uint32_t num_particles, uint32_t num_rigid_bodies)
+{
+    return k_v2_metadata_bytes + static_cast<size_t>(num_particles) * k_particle_wire_bytes +
+           static_cast<size_t>(num_rigid_bodies) * k_rigid_body_wire_bytes;
+}
+
+size_t v2_legacy_payload_bytes(uint32_t num_particles, uint32_t num_rigid_bodies)
+{
+    return k_v2_metadata_bytes + static_cast<size_t>(num_particles) * sizeof(ParticleSnapshot) +
+           static_cast<size_t>(num_rigid_bodies) * sizeof(RigidBodySnapshot);
+}
+
+bool write_u8(std::ofstream &file, uint8_t value)
+{
+    file.put(static_cast<char>(value));
+    return file.good();
+}
+
+bool read_u8(std::ifstream &file, uint8_t &value)
+{
+    const int c = file.get();
+    if (c == std::char_traits<char>::eof())
+    {
+        return false;
+    }
+
+    value = static_cast<uint8_t>(c);
+    return true;
+}
+
+template <typename UInt> bool write_uint_le(std::ofstream &file, UInt value)
+{
+    static_assert(std::is_unsigned_v<UInt>, "write_uint_le requires unsigned type");
+
+    for (size_t byte = 0; byte < sizeof(UInt); ++byte)
+    {
+        const auto out = static_cast<uint8_t>((value >> (byte * 8U)) & 0xFFU);
+        if (!write_u8(file, out))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <typename UInt> bool read_uint_le(std::ifstream &file, UInt &value)
+{
+    static_assert(std::is_unsigned_v<UInt>, "read_uint_le requires unsigned type");
+
+    value = 0;
+    for (size_t byte = 0; byte < sizeof(UInt); ++byte)
+    {
+        uint8_t current = 0;
+        if (!read_u8(file, current))
+        {
+            return false;
+        }
+
+        value |= static_cast<UInt>(current) << (byte * 8U);
+    }
+
+    return true;
+}
+
+bool write_u32_le(std::ofstream &file, uint32_t value)
+{
+    return write_uint_le(file, value);
+}
+
+bool read_u32_le(std::ifstream &file, uint32_t &value)
+{
+    return read_uint_le(file, value);
+}
+
+bool write_u64_le(std::ofstream &file, uint64_t value)
+{
+    return write_uint_le(file, value);
+}
+
+bool read_u64_le(std::ifstream &file, uint64_t &value)
+{
+    return read_uint_le(file, value);
+}
+
+bool write_i32_le(std::ofstream &file, int32_t value)
+{
+    return write_u32_le(file, static_cast<uint32_t>(value));
+}
+
+bool read_i32_le(std::ifstream &file, int32_t &value)
+{
+    uint32_t raw = 0;
+    if (!read_u32_le(file, raw))
+    {
+        return false;
+    }
+
+    value = static_cast<int32_t>(raw);
+    return true;
+}
+
+bool write_bool_u8(std::ofstream &file, bool value)
+{
+    return write_u8(file, value ? static_cast<uint8_t>(1) : static_cast<uint8_t>(0));
+}
+
+bool read_bool_u8(std::ifstream &file, bool &value)
+{
+    uint8_t raw = 0;
+    if (!read_u8(file, raw))
+    {
+        return false;
+    }
+
+    value = (raw != 0);
+    return true;
+}
+
+bool write_f32_le(std::ofstream &file, float value)
+{
+    uint32_t bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return write_u32_le(file, bits);
+}
+
+bool read_f32_le(std::ifstream &file, float &value)
+{
+    uint32_t bits = 0;
+    if (!read_u32_le(file, bits))
+    {
+        return false;
+    }
+
+    std::memcpy(&value, &bits, sizeof(value));
+    return true;
+}
+
+bool write_f64_le(std::ofstream &file, double value)
+{
+    uint64_t bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return write_u64_le(file, bits);
+}
+
+bool read_f64_le(std::ifstream &file, double &value)
+{
+    uint64_t bits = 0;
+    if (!read_u64_le(file, bits))
+    {
+        return false;
+    }
+
+    std::memcpy(&value, &bits, sizeof(value));
+    return true;
+}
+
+bool write_vec3f_le(std::ofstream &file, const Vec3f &value)
+{
+    return write_f32_le(file, value.x) && write_f32_le(file, value.y) && write_f32_le(file, value.z);
+}
+
+bool read_vec3f_le(std::ifstream &file, Vec3f &value)
+{
+    return read_f32_le(file, value.x) && read_f32_le(file, value.y) && read_f32_le(file, value.z);
+}
+
+bool write_particle_wire(std::ofstream &file, const ParticleSnapshot &particle)
+{
+    return write_vec3f_le(file, particle.position) && write_vec3f_le(file, particle.velocity) &&
+           write_vec3f_le(file, particle.acceleration) && write_vec3f_le(file, particle.force_accumulator) &&
+           write_f32_le(file, particle.radius) && write_f32_le(file, particle.mass) &&
+           write_f32_le(file, particle.restitution) && write_f32_le(file, particle.friction) &&
+           write_f32_le(file, particle.linear_damping) && write_f32_le(file, particle.angular_damping) &&
+           write_f32_le(file, particle.drag_coefficient) && write_f32_le(file, particle.lifetime) &&
+           write_bool_u8(file, particle.active);
+}
+
+bool read_particle_wire(std::ifstream &file, ParticleSnapshot &particle)
+{
+    return read_vec3f_le(file, particle.position) && read_vec3f_le(file, particle.velocity) &&
+           read_vec3f_le(file, particle.acceleration) && read_vec3f_le(file, particle.force_accumulator) &&
+           read_f32_le(file, particle.radius) && read_f32_le(file, particle.mass) &&
+           read_f32_le(file, particle.restitution) && read_f32_le(file, particle.friction) &&
+           read_f32_le(file, particle.linear_damping) && read_f32_le(file, particle.angular_damping) &&
+           read_f32_le(file, particle.drag_coefficient) && read_f32_le(file, particle.lifetime) &&
+           read_bool_u8(file, particle.active);
+}
+
+bool write_rigid_body_wire(std::ofstream &file, const RigidBodySnapshot &rigid_body)
+{
+    return write_vec3f_le(file, rigid_body.position) && write_vec3f_le(file, rigid_body.velocity) &&
+           write_vec3f_le(file, rigid_body.force_accumulator) && write_f32_le(file, rigid_body.orientation_w) &&
+           write_f32_le(file, rigid_body.orientation_x) && write_f32_le(file, rigid_body.orientation_y) &&
+           write_f32_le(file, rigid_body.orientation_z) && write_vec3f_le(file, rigid_body.angular_velocity) &&
+           write_vec3f_le(file, rigid_body.torque_accumulator) &&
+           write_u32_le(file, static_cast<uint32_t>(rigid_body.shape_type)) &&
+           write_vec3f_le(file, rigid_body.shape_local_center) && write_f32_le(file, rigid_body.shape_radius) &&
+           write_vec3f_le(file, rigid_body.shape_half_extents) && write_f32_le(file, rigid_body.shape_half_height) &&
+           write_f32_le(file, rigid_body.collision_radius) && write_f32_le(file, rigid_body.mass) &&
+           write_f32_le(file, rigid_body.restitution) && write_f32_le(file, rigid_body.friction) &&
+           write_f32_le(file, rigid_body.linear_damping) && write_f32_le(file, rigid_body.angular_damping) &&
+           write_f32_le(file, rigid_body.drag_coefficient) && write_bool_u8(file, rigid_body.active) &&
+           write_i32_le(file, static_cast<int32_t>(rigid_body.id)) && write_f32_le(file, rigid_body.lifetime);
+}
+
+bool read_rigid_body_wire(std::ifstream &file, RigidBodySnapshot &rigid_body)
+{
+    uint32_t shape_type = 0;
+    int32_t id = 0;
+    if (!(read_vec3f_le(file, rigid_body.position) && read_vec3f_le(file, rigid_body.velocity) &&
+          read_vec3f_le(file, rigid_body.force_accumulator) && read_f32_le(file, rigid_body.orientation_w) &&
+          read_f32_le(file, rigid_body.orientation_x) && read_f32_le(file, rigid_body.orientation_y) &&
+          read_f32_le(file, rigid_body.orientation_z) && read_vec3f_le(file, rigid_body.angular_velocity) &&
+          read_vec3f_le(file, rigid_body.torque_accumulator) && read_u32_le(file, shape_type) &&
+          read_vec3f_le(file, rigid_body.shape_local_center) && read_f32_le(file, rigid_body.shape_radius) &&
+          read_vec3f_le(file, rigid_body.shape_half_extents) && read_f32_le(file, rigid_body.shape_half_height) &&
+          read_f32_le(file, rigid_body.collision_radius) && read_f32_le(file, rigid_body.mass) &&
+          read_f32_le(file, rigid_body.restitution) && read_f32_le(file, rigid_body.friction) &&
+          read_f32_le(file, rigid_body.linear_damping) && read_f32_le(file, rigid_body.angular_damping) &&
+          read_f32_le(file, rigid_body.drag_coefficient) && read_bool_u8(file, rigid_body.active) &&
+          read_i32_le(file, id) && read_f32_le(file, rigid_body.lifetime)))
+    {
+        return false;
+    }
+
+    rigid_body.shape_type = static_cast<SnapshotShapeType>(shape_type);
+    rigid_body.id = static_cast<int>(id);
+    return true;
+}
 
 class JsonCursor
 {
@@ -803,28 +1056,42 @@ SerializationResult SnapshotSerializer::save_binary(const PhysicsSnapshot &snaps
         header.num_particles = static_cast<uint32_t>(snapshot.particles.size());
         header.num_rigid_bodies = static_cast<uint32_t>(snapshot.rigid_bodies.size());
         header.metadata_json_bytes = 0;
-        header.file_size = snapshot.serialized_size();
+        header.file_size =
+            sizeof(SnapshotFileHeader) + v2_wire_payload_bytes(header.num_particles, header.num_rigid_bodies);
 
-        file.write(reinterpret_cast<const char *>(&header), sizeof(SnapshotFileHeader));
+        file.write(reinterpret_cast<const char *>(&header), sizeof(header));
         result.bytes_processed += sizeof(SnapshotFileHeader);
 
-        file.write(reinterpret_cast<const char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
-        file.write(reinterpret_cast<const char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
-        file.write(reinterpret_cast<const char *>(&snapshot.timestep), sizeof(snapshot.timestep));
-        file.write(reinterpret_cast<const char *>(&snapshot.rng_seed), sizeof(snapshot.rng_seed));
+        if (!(write_u64_le(file, snapshot.frame_number) && write_f64_le(file, snapshot.simulated_time) &&
+              write_f32_le(file, snapshot.timestep) && write_u32_le(file, snapshot.rng_seed)))
+        {
+            result.error = SerializationError::WriteError;
+            result.error_message = "Error writing snapshot metadata";
+            return result;
+        }
         result.bytes_processed += sizeof(snapshot.frame_number) + sizeof(snapshot.simulated_time) +
                                   sizeof(snapshot.timestep) + sizeof(snapshot.rng_seed);
 
         for (const auto &particle : snapshot.particles)
         {
-            file.write(reinterpret_cast<const char *>(&particle), sizeof(ParticleSnapshot));
-            result.bytes_processed += sizeof(ParticleSnapshot);
+            if (!write_particle_wire(file, particle))
+            {
+                result.error = SerializationError::WriteError;
+                result.error_message = "Error writing particle payload";
+                return result;
+            }
+            result.bytes_processed += k_particle_wire_bytes;
         }
 
         for (const auto &rigid_body : snapshot.rigid_bodies)
         {
-            file.write(reinterpret_cast<const char *>(&rigid_body), sizeof(RigidBodySnapshot));
-            result.bytes_processed += sizeof(RigidBodySnapshot);
+            if (!write_rigid_body_wire(file, rigid_body))
+            {
+                result.error = SerializationError::WriteError;
+                result.error_message = "Error writing rigid body payload";
+                return result;
+            }
+            result.bytes_processed += k_rigid_body_wire_bytes;
         }
 
         if (!file.good())
@@ -858,6 +1125,17 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
 
     try
     {
+        file.seekg(0, std::ios::end);
+        const auto total_size_pos = file.tellg();
+        if (total_size_pos < 0)
+        {
+            result.error = SerializationError::IOError;
+            result.error_message = "Unable to determine snapshot file size";
+            return result;
+        }
+        const size_t total_file_size = static_cast<size_t>(total_size_pos);
+        file.seekg(0, std::ios::beg);
+
         uint32_t magic = 0;
         uint32_t format_version = 0;
         file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
@@ -884,6 +1162,7 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
         uint32_t num_particles = 0;
         uint32_t num_rigid_bodies = 0;
 
+        bool read_v2_wire_payload = true;
         if (format_version == 1)
         {
             SnapshotFileHeaderV1 legacy_header;
@@ -928,6 +1207,32 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
             schema_patch = header.schema_patch;
             num_particles = header.num_particles;
             num_rigid_bodies = header.num_rigid_bodies;
+
+            if (total_file_size < sizeof(SnapshotFileHeader))
+            {
+                result.error = SerializationError::CorruptedData;
+                result.error_message = "Snapshot file shorter than v2 header";
+                return result;
+            }
+
+            const size_t payload_size = total_file_size - sizeof(SnapshotFileHeader);
+            const size_t expected_wire_size = v2_wire_payload_bytes(num_particles, num_rigid_bodies);
+            const size_t expected_legacy_size = v2_legacy_payload_bytes(num_particles, num_rigid_bodies);
+
+            if (payload_size == expected_wire_size)
+            {
+                read_v2_wire_payload = true;
+            }
+            else if (payload_size == expected_legacy_size)
+            {
+                read_v2_wire_payload = false;
+            }
+            else
+            {
+                result.error = SerializationError::CorruptedData;
+                result.error_message = "Snapshot payload size does not match known v2 layouts";
+                return result;
+            }
         }
         else
         {
@@ -941,25 +1246,82 @@ SerializationResult SnapshotSerializer::load_binary(const std::string &file_path
         snapshot.schema_version.minor = schema_minor;
         snapshot.schema_version.patch = schema_patch;
 
-        file.read(reinterpret_cast<char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
-        file.read(reinterpret_cast<char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
-        file.read(reinterpret_cast<char *>(&snapshot.timestep), sizeof(snapshot.timestep));
-        file.read(reinterpret_cast<char *>(&snapshot.rng_seed), sizeof(snapshot.rng_seed));
+        if (format_version == 1)
+        {
+            file.read(reinterpret_cast<char *>(&snapshot.frame_number), sizeof(snapshot.frame_number));
+            file.read(reinterpret_cast<char *>(&snapshot.simulated_time), sizeof(snapshot.simulated_time));
+            file.read(reinterpret_cast<char *>(&snapshot.timestep), sizeof(snapshot.timestep));
+            file.read(reinterpret_cast<char *>(&snapshot.rng_seed), sizeof(snapshot.rng_seed));
+        }
+        else
+        {
+            if (!(read_u64_le(file, snapshot.frame_number) && read_f64_le(file, snapshot.simulated_time) &&
+                  read_f32_le(file, snapshot.timestep) && read_u32_le(file, snapshot.rng_seed)))
+            {
+                result.error = SerializationError::CorruptedData;
+                result.error_message = "Incomplete read of snapshot metadata";
+                return result;
+            }
+        }
         result.bytes_processed += sizeof(snapshot.frame_number) + sizeof(snapshot.simulated_time) +
                                   sizeof(snapshot.timestep) + sizeof(snapshot.rng_seed);
 
         snapshot.particles.resize(num_particles);
-        for (uint32_t index = 0; index < num_particles; ++index)
+        if (format_version == 1)
         {
-            file.read(reinterpret_cast<char *>(&snapshot.particles[index]), sizeof(ParticleSnapshot));
-            result.bytes_processed += sizeof(ParticleSnapshot);
+            for (uint32_t index = 0; index < num_particles; ++index)
+            {
+                file.read(reinterpret_cast<char *>(&snapshot.particles[index]), sizeof(ParticleSnapshot));
+                result.bytes_processed += sizeof(ParticleSnapshot);
+            }
+        }
+        else if (read_v2_wire_payload)
+        {
+            for (uint32_t index = 0; index < num_particles; ++index)
+            {
+                if (!read_particle_wire(file, snapshot.particles[index]))
+                {
+                    result.error = SerializationError::CorruptedData;
+                    result.error_message = "Incomplete read of v2 particle payload";
+                    return result;
+                }
+                result.bytes_processed += k_particle_wire_bytes;
+            }
+        }
+        else
+        {
+            for (uint32_t index = 0; index < num_particles; ++index)
+            {
+                file.read(reinterpret_cast<char *>(&snapshot.particles[index]), sizeof(ParticleSnapshot));
+                result.bytes_processed += sizeof(ParticleSnapshot);
+            }
         }
 
         snapshot.rigid_bodies.resize(num_rigid_bodies);
-        for (uint32_t index = 0; index < num_rigid_bodies; ++index)
+        if (format_version == 1)
         {
-            file.read(reinterpret_cast<char *>(&snapshot.rigid_bodies[index]), sizeof(RigidBodySnapshot));
-            result.bytes_processed += sizeof(RigidBodySnapshot);
+            // v1 format had no rigid bodies.
+        }
+        else if (read_v2_wire_payload)
+        {
+            for (uint32_t index = 0; index < num_rigid_bodies; ++index)
+            {
+                if (!read_rigid_body_wire(file, snapshot.rigid_bodies[index]))
+                {
+                    result.error = SerializationError::CorruptedData;
+                    result.error_message = "Incomplete read of v2 rigid body payload";
+                    return result;
+                }
+                result.bytes_processed += k_rigid_body_wire_bytes;
+            }
+        }
+        else
+        {
+            for (uint32_t index = 0; index < num_rigid_bodies; ++index)
+            {
+                file.read(reinterpret_cast<char *>(&snapshot.rigid_bodies[index]), sizeof(RigidBodySnapshot));
+                result.bytes_processed += sizeof(RigidBodySnapshot);
+            }
         }
 
         if (!file.good() && !file.eof())

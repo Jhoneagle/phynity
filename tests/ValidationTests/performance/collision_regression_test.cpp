@@ -89,6 +89,7 @@ void write_perf_result(const PerfResult &result)
 
 PerfResult run_broadphase_scenario(int particle_count, int frames)
 {
+    phynity::platform::AllocatorDeltaScope allocator_scope;
     ParticleSystem system;
     system.enable_collisions(true);
     system.set_broadphase_cell_size(1.0f);
@@ -127,12 +128,13 @@ PerfResult run_broadphase_scenario(int particle_count, int frames)
     result.workload = particle_count;
     result.notes = "ParticleSystem broadphase update";
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
-    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
     return result;
 }
 
 PerfResult run_gjk_scenario(int iterations)
 {
+    phynity::platform::AllocatorDeltaScope allocator_scope;
     auto box = ShapeFactory::create_box_3d(1.0f, 1.0f, 1.0f, Vec3f(0.0f));
     auto tetra = ShapeFactory::create_tetrahedron_3d(1.0f, Vec3f(2.5f, 0.0f, 0.0f));
 
@@ -161,17 +163,23 @@ PerfResult run_gjk_scenario(int iterations)
     result.workload = 2;
     result.notes = "GJK distance between convex shapes";
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
-    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
     return result;
 }
 
 PerfResult run_solver_scenario(int contact_count, int iterations)
 {
+    phynity::platform::AllocatorDeltaScope allocator_scope;
     std::vector<ContactManifold> manifolds;
     std::vector<SphereCollider> colliders;
 
+    const size_t previous_manifold_capacity = manifolds.capacity();
     manifolds.reserve(static_cast<size_t>(contact_count));
+    phynity::platform::track_vector_capacity_change(manifolds, previous_manifold_capacity);
+
+    const size_t previous_collider_capacity = colliders.capacity();
     colliders.reserve(static_cast<size_t>(contact_count) * 2);
+    phynity::platform::track_vector_capacity_change(colliders, previous_collider_capacity);
 
     for (int i = 0; i < contact_count; ++i)
     {
@@ -221,7 +229,9 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
     result.workload = contact_count;
     result.notes = "PGS solver with synthetic contacts";
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
-    result.allocator_delta_bytes = phynity::platform::get_allocator_delta_bytes();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
+    phynity::platform::track_vector_capacity_release(manifolds);
+    phynity::platform::track_vector_capacity_release(colliders);
     return result;
 }
 

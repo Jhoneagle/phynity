@@ -20,6 +20,7 @@
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/micro/particle.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -52,6 +53,12 @@ public:
     };
 
     ParticleSystem() = default;
+    ~ParticleSystem()
+    {
+        phynity::platform::track_vector_capacity_release(particles_);
+        phynity::platform::track_vector_capacity_release(force_fields_);
+        phynity::platform::track_vector_capacity_release(constraints_);
+    }
 
 
     // Move semantics
@@ -70,7 +77,9 @@ public:
     void
     spawn(const Vec3f &position, const Vec3f &velocity, float mass = 1.0f, float lifetime = -1.0f, float radius = -1.0f)
     {
+        const size_t previous_capacity = particles_.capacity();
         particles_.emplace_back();
+        phynity::platform::track_vector_capacity_change(particles_, previous_capacity);
         Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
@@ -90,7 +99,9 @@ public:
                float lifetime = -1.0f,
                float radius = -1.0f)
     {
+        const size_t previous_capacity = particles_.capacity();
         particles_.emplace_back();
+        phynity::platform::track_vector_capacity_change(particles_, previous_capacity);
         Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
@@ -125,7 +136,9 @@ public:
     /// @param field Unique pointer to force field
     void add_force_field(std::unique_ptr<ForceField> field)
     {
+        const size_t previous_capacity = force_fields_.capacity();
         force_fields_.push_back(std::move(field));
+        phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
     }
 
     /// Remove all force fields from the system.
@@ -201,7 +214,9 @@ public:
     {
         if (constraint)
         {
+            const size_t previous_capacity = constraints_.capacity();
             constraints_.push_back(std::move(constraint));
+            phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
         }
     }
 
@@ -219,7 +234,9 @@ public:
         auto constraint =
             std::make_unique<constraints::FixedConstraint>(particles_[particle_a_index], particles_[particle_b_index]);
         auto *ptr = constraint.get();
+        const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(std::move(constraint));
+        phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
         return ptr;
     }
 
