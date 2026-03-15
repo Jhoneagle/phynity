@@ -13,7 +13,6 @@ PhysicsContext::PhysicsContext() : PhysicsContext(Config())
 
 PhysicsContext::PhysicsContext(const Config &config)
     : config_(config),
-      particle_system_(),
       timestep_controller_(1.0f / config.target_fps,
                            config.max_timestep,
                            config.use_determinism ? TimestepController::OverflowMode::SUBDIVIDE

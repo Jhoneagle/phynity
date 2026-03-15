@@ -121,6 +121,7 @@ jobs:
         run: cmake --build build/release --config ${{ matrix.build_type }} -j
 
       - name: Run Unit Tests
+        shell: bash
         run: |
           python tools/run_ctest_with_retries.py \
             --build-dir build/release \
@@ -132,6 +133,7 @@ jobs:
             --output-on-failure
 
       - name: Run Validation Tests
+        shell: bash
         run: |
           python tools/run_ctest_with_retries.py \
             --build-dir build/release \

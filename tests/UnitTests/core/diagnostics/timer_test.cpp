@@ -3,6 +3,7 @@
 #include <core/diagnostics/timer.hpp>
 
 #include <chrono>
+#include <cstdlib>
 #include <thread>
 
 using namespace phynity::diagnostics;
@@ -19,6 +20,10 @@ bool is_slow_env()
     return true;
 #endif
 #endif
+    if (std::getenv("GITHUB_ACTIONS") != nullptr)
+    {
+        return true;
+    }
     return false;
 }
 } // namespace
