@@ -95,6 +95,7 @@ jobs:
         run: cmake --build build/release -j
 
       - name: Run performance-labeled tests
+        shell: bash
         run: |
           python tools/run_ctest_with_retries.py \
             --build-dir build/release \
@@ -122,7 +123,11 @@ jobs:
           {
             echo "## PR Performance Alert (${{ matrix.os }})"
             echo
-            cat build/release/perf-regression-summary.txt
+            if [[ -f build/release/perf-regression-summary.txt ]]; then
+              cat build/release/perf-regression-summary.txt
+            else
+              echo "No performance summary generated (earlier step failed before producing build/release/perf-regression-summary.txt)."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload performance artifacts

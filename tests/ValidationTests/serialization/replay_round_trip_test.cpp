@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 
 namespace
 {
-
+#ifdef GOLDEN_CAPTURE_MODE
 std::string trim_wrapping_quotes(std::string value)
 {
     if (value.size() >= 2 && value.front() == '"' && value.back() == '"')
@@ -27,6 +27,7 @@ std::string trim_wrapping_quotes(std::string value)
     }
     return value;
 }
+#endif
 
 struct ReplayFixture
 {

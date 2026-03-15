@@ -4,6 +4,7 @@
 #include <core/math/utilities/constants.hpp>
 
 #include <cmath>
+#include <sstream>
 
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRelMatcher;

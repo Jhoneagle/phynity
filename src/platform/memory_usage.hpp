@@ -48,7 +48,11 @@ inline uint64_t get_peak_rss_kb()
         return 0;
     }
     // On macOS ru_maxrss is reported in bytes.
-    return static_cast<uint64_t>(usage.ru_maxrss / 1024ULL);
+    if (usage.ru_maxrss <= 0)
+    {
+        return 0;
+    }
+    return static_cast<uint64_t>(usage.ru_maxrss) / 1024ULL;
 #elif defined(__linux__)
     // Prefer VmHWM as peak RSS when available.
     std::ifstream status("/proc/self/status");

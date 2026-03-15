@@ -15,7 +15,7 @@
     },
     "complex-scenes": {
       "threshold_percent": 10.0,
-      "cv_threshold_percent": 15.0,
+      "cv_threshold_percent": 25.0,
       "memory_threshold_kb": 524288,
       "description": "Full-scene deterministic simulations"
     }

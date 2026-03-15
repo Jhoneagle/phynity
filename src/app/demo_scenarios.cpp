@@ -15,7 +15,7 @@ using phynity::physics::Material;
 
 Material make_no_damping_material(float mass, float restitution = 0.8f)
 {
-    return Material(mass, restitution, 0.3f, 0.0f, 0.0f, 0.0f);
+    return {mass, restitution, 0.3f, 0.0f, 0.0f, 0.0f};
 }
 } // namespace
 
