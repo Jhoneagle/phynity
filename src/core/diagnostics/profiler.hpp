@@ -2,6 +2,8 @@
 
 #include "timer.hpp"
 
+#include <platform/allocation_tracker.hpp>
+
 #include <cstdint>
 #include <string_view>
 #include <vector>
@@ -41,6 +43,12 @@ struct ProfileContext
     std::vector<uint32_t> scope_stack; ///< Stack of active zone indices
     bool enabled = false; ///< Runtime enable/disable flag
 
+    ~ProfileContext()
+    {
+        phynity::platform::track_vector_capacity_release(zones);
+        phynity::platform::track_vector_capacity_release(scope_stack);
+    }
+
     void clear() noexcept
     {
         zones.clear();
@@ -49,8 +57,13 @@ struct ProfileContext
 
     void reserve_zones(size_t count)
     {
+        const size_t zones_prev_capacity = zones.capacity();
         zones.reserve(count);
+        phynity::platform::track_vector_capacity_change(zones, zones_prev_capacity);
+
+        const size_t stack_prev_capacity = scope_stack.capacity();
         scope_stack.reserve(32); // Typical max nesting depth
+        phynity::platform::track_vector_capacity_change(scope_stack, stack_prev_capacity);
     }
 };
 
@@ -142,10 +155,14 @@ public:
         const uint32_t parent_index = ctx.scope_stack.empty() ? static_cast<uint32_t>(-1) : ctx.scope_stack.back();
 
         const uint32_t zone_index = static_cast<uint32_t>(ctx.zones.size());
+        const size_t zones_prev_capacity = ctx.zones.capacity();
         ctx.zones.emplace_back(name, depth, parent_index);
+        phynity::platform::track_vector_capacity_change(ctx.zones, zones_prev_capacity);
         ctx.zones.back().start_time_us = static_cast<uint64_t>(Timer::Clock::now().time_since_epoch().count() / 1000);
 
+        const size_t stack_prev_capacity = ctx.scope_stack.capacity();
         ctx.scope_stack.push_back(zone_index);
+        phynity::platform::track_vector_capacity_change(ctx.scope_stack, stack_prev_capacity);
 
         return zone_index;
     }

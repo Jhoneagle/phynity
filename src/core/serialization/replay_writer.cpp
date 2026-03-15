@@ -19,9 +19,8 @@ std::filesystem::path make_temp_frame_path(size_t frame_index)
     return std::filesystem::temp_directory_path() / file_name.str();
 }
 
-SerializationResult serialize_snapshot_to_bytes(const PhysicsSnapshot &snapshot,
-                                                size_t frame_index,
-                                                phynity::platform::TrackedVector<uint8_t> &bytes)
+SerializationResult
+serialize_snapshot_to_bytes(const PhysicsSnapshot &snapshot, size_t frame_index, std::vector<uint8_t> &bytes)
 {
     const auto temp_file = make_temp_frame_path(frame_index);
     const auto save_result = SnapshotSerializer::save_binary(snapshot, temp_file.string());
@@ -94,14 +93,14 @@ SerializationResult ReplayWriter::append_frame(const PhysicsSnapshot &snapshot)
         dt_locked_ = true;
     }
 
-    phynity::platform::TrackedVector<uint8_t> bytes;
+    std::vector<uint8_t> bytes;
     const auto serialize_result = serialize_snapshot_to_bytes(snapshot, frames_.size(), bytes);
     if (!serialize_result.is_success())
     {
         return serialize_result;
     }
 
-    frames_.push_back(std::move(bytes));
+    frames_.emplace_back(bytes.begin(), bytes.end());
     return {SerializationError::Success, "", serialize_result.bytes_processed};
 }
 
@@ -122,7 +121,7 @@ SerializationResult ReplayWriter::close()
     header.frame_count = static_cast<uint64_t>(frames_.size());
     header.frame_dt = frame_dt_;
 
-    phynity::platform::TrackedVector<ReplayFrameIndexEntry> frame_index(frames_.size());
+    std::vector<ReplayFrameIndexEntry> frame_index(frames_.size());
     const uint64_t table_size = static_cast<uint64_t>(frame_index.size() * sizeof(ReplayFrameIndexEntry));
     uint64_t frame_offset = static_cast<uint64_t>(sizeof(ReplayFileHeader)) + table_size;
 

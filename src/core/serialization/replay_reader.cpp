@@ -124,7 +124,9 @@ SerializationResult ReplayReader::open(const std::string &path)
 
     input_path_ = path;
     header_ = header;
+    const size_t previous_capacity = index_.capacity();
     index_ = std::move(index);
+    phynity::platform::track_vector_capacity_change(index_, previous_capacity);
     is_open_ = true;
     next_index_ = 0;
 

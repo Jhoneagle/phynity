@@ -2,6 +2,7 @@
 
 #include <core/serialization/replay_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <string>
 #include <vector>
@@ -12,6 +13,11 @@ namespace phynity::serialization
 class ReplayReader
 {
 public:
+    ~ReplayReader()
+    {
+        phynity::platform::track_vector_capacity_release(index_);
+    }
+
     SerializationResult open(const std::string &path);
     size_t frame_count() const;
 

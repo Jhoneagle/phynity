@@ -44,7 +44,7 @@ public:
         }
 
         // Accumulated impulses for each contact (what we return)
-        phynity::platform::TrackedVector<Vec3f> accumulated_impulses(manifolds.size(), Vec3f(0.0f));
+        std::vector<Vec3f> accumulated_impulses(manifolds.size(), Vec3f(0.0f));
 
         // Phase 1: Apply warm-start impulses from previous frame
         for (size_t i = 0; i < manifolds.size(); ++i)
@@ -107,7 +107,7 @@ public:
             }
         }
 
-        return std::vector<Vec3f>(accumulated_impulses.begin(), accumulated_impulses.end());
+        return accumulated_impulses;
     }
 
     /// Solve with adaptive iterations based on constraint count

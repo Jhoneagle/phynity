@@ -28,19 +28,17 @@ public:
     /// @return Vector of manifolds with cached data applied (warm-start impulses, ages)
     std::vector<ContactManifold> update(const std::vector<ContactManifold> &new_manifolds)
     {
-        phynity::platform::TrackedVector<ContactManifold> tracked_manifolds(new_manifolds.begin(), new_manifolds.end());
-        auto tracked_result = update_tracked(tracked_manifolds);
-        return std::vector<ContactManifold>(tracked_result.begin(), tracked_result.end());
+        return update_tracked(new_manifolds);
     }
 
-    phynity::platform::TrackedVector<ContactManifold>
-    update_tracked(const phynity::platform::TrackedVector<ContactManifold> &new_manifolds)
+    std::vector<ContactManifold> update_tracked(const std::vector<ContactManifold> &new_manifolds)
     {
-        phynity::platform::TrackedVector<ContactManifold> updated_manifolds;
+        std::vector<ContactManifold> updated_manifolds;
         updated_manifolds.reserve(new_manifolds.size());
 
         // Mark all cached contacts as "not seen this frame"
-        phynity::platform::TrackedUnorderedMap<uint64_t, bool> seen_this_frame;
+        std::unordered_map<uint64_t, bool> seen_this_frame;
+        seen_this_frame.reserve(cache_.size());
         for (const auto &[id, _] : cache_)
         {
             seen_this_frame[id] = false;
@@ -136,9 +134,9 @@ public:
 
 private:
     /// Remove contacts that haven't been seen and are past their expiration age
-    void cleanup_expired_contacts(const phynity::platform::TrackedUnorderedMap<uint64_t, bool> &seen_this_frame)
+    void cleanup_expired_contacts(const std::unordered_map<uint64_t, bool> &seen_this_frame)
     {
-        phynity::platform::TrackedVector<uint64_t> to_remove;
+        std::vector<uint64_t> to_remove;
 
         for (auto &[id, manifold] : cache_)
         {

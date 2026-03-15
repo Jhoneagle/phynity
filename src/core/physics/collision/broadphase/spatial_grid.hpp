@@ -4,8 +4,6 @@
 #include "../../../math/vectors/vec3.hpp"
 #include "spatial_grid_hash.hpp"
 
-#include <platform/allocation_tracker.hpp>
-
 #include <algorithm>
 #include <cstdint>
 #include <unordered_map>
@@ -22,7 +20,7 @@ namespace phynity::physics::collision
  */
 struct GridCellData
 {
-    phynity::platform::TrackedVector<uint32_t> object_indices;
+    std::vector<uint32_t> object_indices;
 
     void clear() noexcept
     {
@@ -198,11 +196,10 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects(const math::vectors::Vec3f &position) const noexcept
     {
-        auto tracked = get_neighbor_objects_tracked(position);
-        return std::vector<uint32_t>(tracked.begin(), tracked.end());
+        return get_neighbor_objects_tracked(position);
     }
 
-    [[nodiscard]] phynity::platform::TrackedVector<uint32_t>
+    [[nodiscard]] std::vector<uint32_t>
     get_neighbor_objects_tracked(const math::vectors::Vec3f &position) const noexcept
     {
         const auto center_cell = hash_.get_cell_coords(position);
@@ -219,14 +216,13 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects_from_cell(const GridCell &cell) const noexcept
     {
-        auto tracked = get_neighbor_objects_from_cell_tracked(cell);
-        return std::vector<uint32_t>(tracked.begin(), tracked.end());
+        return get_neighbor_objects_from_cell_tracked(cell);
     }
 
-    [[nodiscard]] phynity::platform::TrackedVector<uint32_t>
-    get_neighbor_objects_from_cell_tracked(const GridCell &cell) const noexcept
+    [[nodiscard]] std::vector<uint32_t> get_neighbor_objects_from_cell_tracked(const GridCell &cell) const noexcept
     {
-        phynity::platform::TrackedVector<uint32_t> neighbors;
+        std::vector<uint32_t> neighbors;
+        neighbors.reserve(64); // 27-cell neighborhood, ~2-3 objects/cell typical
 
         auto safe_add = [](int32_t value, int delta) -> int32_t
         {
@@ -304,7 +300,7 @@ public:
 
 private:
     SpatialGridHash hash_;
-    phynity::platform::TrackedUnorderedMap<uint64_t, GridCellData> cells_;
+    std::unordered_map<uint64_t, GridCellData> cells_;
 };
 
 } // namespace phynity::physics::collision

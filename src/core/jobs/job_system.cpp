@@ -1,5 +1,6 @@
 #include "job_system.hpp"
 
+#include <platform/allocation_tracker.hpp>
 #include <platform/threading.hpp>
 
 #include <atomic>
@@ -61,15 +62,19 @@ private:
     uint32_t worker_count_ = 0;
     SchedulingMode mode_ = SchedulingMode::Concurrent;
 
-    std::vector<platform::Thread> workers_;
+    phynity::platform::TrackedVector<platform::Thread> workers_;
 
     std::mutex jobs_mutex_;
-    std::map<uint32_t, std::unique_ptr<JobEntry>> jobs_;
+    std::map<uint32_t,
+             std::unique_ptr<JobEntry>,
+             std::less<uint32_t>,
+             phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::unique_ptr<JobEntry>>>>
+        jobs_;
     uint32_t next_job_id_{1};
 
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
-    std::vector<uint32_t> job_queue_;
+    phynity::platform::TrackedVector<uint32_t> job_queue_;
 };
 
 JobSystemImpl::JobSystemImpl(const JobSystemConfig &config)

@@ -2,6 +2,8 @@
 
 #include "frame_profiler.hpp"
 
+#include <platform/allocation_tracker.hpp>
+
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -263,7 +265,7 @@ public:
 
 private:
     uint64_t target_frame_time_us_; ///< Target frame time budget
-    std::unordered_map<std::string, uint64_t> zone_budgets_; ///< Per-zone budgets
+    phynity::platform::TrackedUnorderedMap<std::string, uint64_t> zone_budgets_; ///< Per-zone budgets
     BudgetViolationCallback violation_callback_; ///< Callback for violations
     bool enabled_; ///< Enable/disable flag
 

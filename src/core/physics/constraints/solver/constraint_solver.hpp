@@ -82,7 +82,7 @@ public:
         PROFILE_FUNCTION();
 
         // Filter out inactive constraints
-        phynity::platform::TrackedVector<Constraint *> active_constraints;
+        std::vector<Constraint *> active_constraints;
         for (auto &constraint : constraints)
         {
             if (constraint && constraint->is_active())

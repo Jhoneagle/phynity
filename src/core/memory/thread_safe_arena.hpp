@@ -1,5 +1,7 @@
 #pragma once
 
+#include <platform/allocation_tracker.hpp>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +18,12 @@ class ThreadSafeArena
 public:
     explicit ThreadSafeArena(size_t capacity_bytes) : buffer_(capacity_bytes, std::byte{0}), capacity_(capacity_bytes)
     {
+        phynity::platform::track_vector_capacity_change(buffer_, 0);
+    }
+
+    ~ThreadSafeArena()
+    {
+        phynity::platform::track_vector_capacity_release(buffer_);
     }
 
     ThreadSafeArena(const ThreadSafeArena &) = delete;

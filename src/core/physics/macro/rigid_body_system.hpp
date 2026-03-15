@@ -206,7 +206,7 @@ public:
             return;
         }
 
-        phynity::platform::TrackedVector<Vec3f> frame_start_positions;
+        std::vector<Vec3f> frame_start_positions;
         frame_start_positions.reserve(bodies_.size());
         for (const auto &body : bodies_)
         {
