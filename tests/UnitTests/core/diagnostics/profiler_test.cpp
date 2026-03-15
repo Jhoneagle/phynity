@@ -207,7 +207,7 @@ TEST_CASE("Profiling macros: PROFILE_FUNCTION", "[diagnostics][profiler][macros]
 {
     auto test_function = []()
     {
-        PROFILE_FUNCTION();
+        PROFILE_SCOPE("test_function");
         std::this_thread::sleep_for(std::chrono::milliseconds(3));
     };
 

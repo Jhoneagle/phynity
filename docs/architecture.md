@@ -187,9 +187,23 @@ This is validated through reference-based tests comparing against analytical sol
 - O(n^2) collision detection for brute-force fallback; spatial grid used for scale
 - Update loop can use the job system for data-parallel passes when configured
 
-### Future Extensions
+## Branch Protection Policy
 
-See [roadmap.md](roadmap.md) for planned additions:
-- Continuous collision detection (CCD)
-- Advanced rigid-body constraints (hinges, motors, limits)
-- Solver improvements and stability tuning
+CI/CD branch protection is enforced through repository settings for `main` (or `master` if used as the default branch).
+
+Enable:
+- `Require a pull request before merging`
+- `Require status checks to pass before merging`
+
+Required checks:
+- `Build & Test (windows)`
+- `Build & Test (linux)`
+- `Build & Test (macos)`
+- `Format Check (clang-format)`
+- `Static Analysis (clang-tidy)`
+- `Sanitizers (linux)`
+- `Sanitizers (macos)`
+- `Quality Gate Summary`
+
+These check names must match the PR workflow job names in `.github/workflows/pr-gate.yml`.
+If a job name changes, update branch protection required checks in GitHub settings in the same change.

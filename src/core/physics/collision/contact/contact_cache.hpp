@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/physics/collision/contact/contact_manifold.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <unordered_map>
 #include <vector>
@@ -27,11 +28,17 @@ public:
     /// @return Vector of manifolds with cached data applied (warm-start impulses, ages)
     std::vector<ContactManifold> update(const std::vector<ContactManifold> &new_manifolds)
     {
+        return update_tracked(new_manifolds);
+    }
+
+    std::vector<ContactManifold> update_tracked(const std::vector<ContactManifold> &new_manifolds)
+    {
         std::vector<ContactManifold> updated_manifolds;
         updated_manifolds.reserve(new_manifolds.size());
 
         // Mark all cached contacts as "not seen this frame"
         std::unordered_map<uint64_t, bool> seen_this_frame;
+        seen_this_frame.reserve(cache_.size());
         for (const auto &[id, _] : cache_)
         {
             seen_this_frame[id] = false;
@@ -150,7 +157,7 @@ private:
         }
     }
 
-    std::unordered_map<uint64_t, ContactManifold> cache_; ///< Map of contact_id -> manifold
+    phynity::platform::TrackedUnorderedMap<uint64_t, ContactManifold> cache_; ///< Map of contact_id -> manifold
     int max_age_; ///< Maximum age before removal
 };
 

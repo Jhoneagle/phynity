@@ -40,7 +40,7 @@ public:
 class Shape2D : public Shape
 {
 public:
-    virtual ~Shape2D() = default;
+    ~Shape2D() override = default;
 
     /// Get the support point in 2D (result has z=0)
     /// @param direction_2d The search direction in 2D
@@ -60,7 +60,7 @@ public:
 class Shape3D : public Shape
 {
 public:
-    virtual ~Shape3D() = default;
+    ~Shape3D() override = default;
 };
 
 } // namespace phynity::physics::collision

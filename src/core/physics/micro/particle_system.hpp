@@ -20,6 +20,7 @@
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/micro/particle.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -52,6 +53,12 @@ public:
     };
 
     ParticleSystem() = default;
+    ~ParticleSystem()
+    {
+        phynity::platform::track_vector_capacity_release(particles_);
+        phynity::platform::track_vector_capacity_release(force_fields_);
+        phynity::platform::track_vector_capacity_release(constraints_);
+    }
 
 
     // Move semantics
@@ -70,7 +77,9 @@ public:
     void
     spawn(const Vec3f &position, const Vec3f &velocity, float mass = 1.0f, float lifetime = -1.0f, float radius = -1.0f)
     {
+        const size_t previous_capacity = particles_.capacity();
         particles_.emplace_back();
+        phynity::platform::track_vector_capacity_change(particles_, previous_capacity);
         Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
@@ -90,7 +99,9 @@ public:
                float lifetime = -1.0f,
                float radius = -1.0f)
     {
+        const size_t previous_capacity = particles_.capacity();
         particles_.emplace_back();
+        phynity::platform::track_vector_capacity_change(particles_, previous_capacity);
         Particle &p = particles_.back();
         p.position = position;
         p.velocity = velocity;
@@ -125,7 +136,9 @@ public:
     /// @param field Unique pointer to force field
     void add_force_field(std::unique_ptr<ForceField> field)
     {
+        const size_t previous_capacity = force_fields_.capacity();
         force_fields_.push_back(std::move(field));
+        phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
     }
 
     /// Remove all force fields from the system.
@@ -201,7 +214,9 @@ public:
     {
         if (constraint)
         {
+            const size_t previous_capacity = constraints_.capacity();
             constraints_.push_back(std::move(constraint));
+            phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
         }
     }
 
@@ -219,7 +234,9 @@ public:
         auto constraint =
             std::make_unique<constraints::FixedConstraint>(particles_[particle_a_index], particles_[particle_b_index]);
         auto *ptr = constraint.get();
+        const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(std::move(constraint));
+        phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
         return ptr;
     }
 
@@ -712,11 +729,12 @@ private:
         // Phase 2: Collision detection using broadphase culling + narrowphase
         // Track processed pairs to avoid duplicates (same pair from different queries)
         // Hash set provides O(1) lookup for pair deduplication
+        const size_t count = particles_.size();
         std::unordered_set<uint64_t> processed_pairs;
+        processed_pairs.reserve(count * 2);
         uint32_t broadphase_candidates = 0;
         uint32_t narrowphase_tests = 0;
         uint32_t actual_collisions = 0;
-        const size_t count = particles_.size();
 
         // Phase 3: Collect all detected manifolds (instead of resolving immediately)
         std::vector<ContactManifold> detected_manifolds;
@@ -730,7 +748,7 @@ private:
             }
 
             // Get candidate neighbors from spatial grid (3x3x3 cell neighborhood)
-            const auto candidates = spatial_grid_.get_neighbor_objects(a.position);
+            const auto candidates = spatial_grid_.get_neighbor_objects_tracked(a.position);
             broadphase_candidates += static_cast<uint32_t>(candidates.size());
 
             for (uint32_t j_index : candidates)
@@ -872,7 +890,7 @@ private:
         }
 
         // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
-        std::vector<ContactManifold> cached_manifolds = contact_cache_.update(detected_manifolds);
+        auto cached_manifolds = contact_cache_.update_tracked(detected_manifolds);
         actual_collisions = static_cast<uint32_t>(cached_manifolds.size());
 
         // Phase 3.75: CCD Sub-stepping (if enabled)
@@ -891,6 +909,7 @@ private:
 
             // Create a temporary constraint list from manifolds + add rigid constraints
             std::vector<std::unique_ptr<constraints::Constraint>> temp_constraints;
+            temp_constraints.reserve(cached_manifolds.size());
 
             // Convert contact manifolds to contact constraints
             for (const ContactManifold &manifold : cached_manifolds)
@@ -968,7 +987,7 @@ private:
     // - Solve constraints for just that manifold
     // - Re-detect collisions from new state
     // - Repeat until all TOI-based collisions are resolved
-    void perform_ccd_substeps(std::vector<collision::ContactManifold> &manifolds) noexcept
+    void perform_ccd_substeps(std::vector<collision::ContactManifold> &manifolds) const noexcept
     {
         PROFILE_SCOPE("ccd_substeps");
 

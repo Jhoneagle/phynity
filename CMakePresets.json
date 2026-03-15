@@ -46,6 +46,18 @@
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug",
 				"PHYNITY_ENABLE_SANITIZERS": "ON",
+				"PHYNITY_SANITIZER_MODE": "address-undefined",
+				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+			}
+		},
+		{
+			"name": "debug-tsan",
+			"displayName": "Debug with TSAN (requires clang/gcc toolchain)",
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"PHYNITY_ENABLE_SANITIZERS": "ON",
+				"PHYNITY_SANITIZER_MODE": "thread",
 				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
 			}
 		},
@@ -75,6 +87,10 @@
 			"configurePreset": "debug-asan"
 		},
 		{
+			"name": "debug-tsan",
+			"configurePreset": "debug-tsan"
+		},
+		{
 			"name": "release-lto",
 			"configurePreset": "release-lto"
 		}
@@ -97,6 +113,13 @@
 		{
 			"name": "debug-asan",
 			"configurePreset": "debug-asan",
+			"output": {
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "debug-tsan",
+			"configurePreset": "debug-tsan",
 			"output": {
 				"outputOnFailure": true
 			}

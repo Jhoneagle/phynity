@@ -1,0 +1,42 @@
+{
+  "default_threshold_percent": 5.0,
+  "tiers": {
+    "core-kernels": {
+      "threshold_percent": 2.0,
+      "cv_threshold_percent": 5.0,
+      "memory_threshold_kb": 262144,
+      "description": "Math-heavy kernels and tight inner loops"
+    },
+    "mid-tier": {
+      "threshold_percent": 5.0,
+      "cv_threshold_percent": 10.0,
+      "memory_threshold_kb": 393216,
+      "description": "Collision and constraint workloads"
+    },
+    "complex-scenes": {
+      "threshold_percent": 10.0,
+      "cv_threshold_percent": 25.0,
+      "memory_threshold_kb": 524288,
+      "description": "Full-scene deterministic simulations"
+    }
+  },
+  "benchmarks": {
+    "broadphase": {
+      "tier": "mid-tier"
+    },
+    "gjk": {
+      "tier": "mid-tier"
+    },
+    "solver": {
+      "tier": "mid-tier"
+    },
+    "particle_integration_kernel": {
+      "tier": "core-kernels",
+      "cv_threshold_percent": 30.0
+    },
+    "complex_deterministic_scene": {
+      "tier": "complex-scenes",
+      "cv_threshold_percent": 40.0
+    }
+  }
+}

@@ -177,7 +177,7 @@ public:
         auto it = cells_.find(cell_hash);
         if (it != cells_.end())
         {
-            return it->second.object_indices;
+            return std::vector<uint32_t>(it->second.object_indices.begin(), it->second.object_indices.end());
         }
         return {};
     }
@@ -196,8 +196,14 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects(const math::vectors::Vec3f &position) const noexcept
     {
+        return get_neighbor_objects_tracked(position);
+    }
+
+    [[nodiscard]] std::vector<uint32_t>
+    get_neighbor_objects_tracked(const math::vectors::Vec3f &position) const noexcept
+    {
         const auto center_cell = hash_.get_cell_coords(position);
-        return get_neighbor_objects_from_cell(center_cell);
+        return get_neighbor_objects_from_cell_tracked(center_cell);
     }
 
     /**
@@ -210,7 +216,13 @@ public:
      */
     [[nodiscard]] std::vector<uint32_t> get_neighbor_objects_from_cell(const GridCell &cell) const noexcept
     {
+        return get_neighbor_objects_from_cell_tracked(cell);
+    }
+
+    [[nodiscard]] std::vector<uint32_t> get_neighbor_objects_from_cell_tracked(const GridCell &cell) const noexcept
+    {
         std::vector<uint32_t> neighbors;
+        neighbors.reserve(64); // 27-cell neighborhood, ~2-3 objects/cell typical
 
         auto safe_add = [](int32_t value, int delta) -> int32_t
         {

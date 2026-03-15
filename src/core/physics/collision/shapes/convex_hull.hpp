@@ -4,6 +4,7 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/shapes/aabb.hpp>
 #include <core/physics/collision/shapes/shape_base.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -27,6 +28,13 @@ public:
     AABB bound; ///< Bounding box in 3D (z=0)
 
     ConvexHull2D() = default;
+    ~ConvexHull2D() override
+    {
+        phynity::platform::track_vector_capacity_release(vertices);
+        phynity::platform::track_vector_capacity_release(normals);
+    }
+    ConvexHull2D(ConvexHull2D &&) noexcept = default;
+    ConvexHull2D &operator=(ConvexHull2D &&) noexcept = default;
 
     /// Construct from vertices (assumes CCW winding)
     /// @param verts Vertices in counter-clockwise order
@@ -34,6 +42,7 @@ public:
     explicit ConvexHull2D(const std::vector<Vec2f> &verts, const Vec2f &center = Vec2f(0.0f))
         : vertices(verts), position(center)
     {
+        phynity::platform::track_vector_capacity_change(vertices, 0);
         if (vertices.size() < 3)
         {
             assert(false && "ConvexHull2D requires at least 3 vertices");
@@ -48,7 +57,9 @@ public:
     /// @param vertex Vertex position
     void add_vertex(const Vec2f &vertex)
     {
+        const size_t previous_capacity = vertices.capacity();
         vertices.push_back(vertex);
+        phynity::platform::track_vector_capacity_change(vertices, previous_capacity);
         if (vertices.size() >= 3)
         {
             compute_normals();
@@ -134,7 +145,9 @@ private:
     void compute_normals()
     {
         normals.clear();
+        const size_t previous_capacity = normals.capacity();
         normals.reserve(vertices.size());
+        phynity::platform::track_vector_capacity_change(normals, previous_capacity);
 
         for (size_t i = 0; i < vertices.size(); ++i)
         {
@@ -211,6 +224,14 @@ public:
     AABB bound; ///< Axis-aligned bounding box
 
     ConvexHull3D() = default;
+    ~ConvexHull3D() override
+    {
+        phynity::platform::track_vector_capacity_release(vertices);
+        phynity::platform::track_vector_capacity_release(face_normals);
+        phynity::platform::track_vector_capacity_release(edge_normals);
+    }
+    ConvexHull3D(ConvexHull3D &&) noexcept = default;
+    ConvexHull3D &operator=(ConvexHull3D &&) noexcept = default;
 
     /// Construct from vertices (calls convex hull computation)
     /// @param verts Vertex positions
@@ -218,6 +239,7 @@ public:
     explicit ConvexHull3D(const std::vector<Vec3f> &verts, const Vec3f &center = Vec3f(0.0f))
         : vertices(verts), position(center)
     {
+        phynity::platform::track_vector_capacity_change(vertices, 0);
         if (vertices.size() < 4)
         {
             assert(false && "ConvexHull3D requires at least 4 vertices");
@@ -234,7 +256,9 @@ public:
     /// @param vertex Vertex position
     void add_vertex(const Vec3f &vertex)
     {
+        const size_t previous_capacity = vertices.capacity();
         vertices.push_back(vertex);
+        phynity::platform::track_vector_capacity_change(vertices, previous_capacity);
         if (vertices.size() >= 4)
         {
             compute_bounds();

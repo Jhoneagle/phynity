@@ -18,8 +18,10 @@
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/macro/inertia.hpp>
 #include <core/physics/macro/rigid_body.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace phynity::physics
@@ -65,6 +67,16 @@ public:
     {
     }
 
+    ~RigidBodySystem()
+    {
+        phynity::platform::track_vector_capacity_release(bodies_);
+        phynity::platform::track_vector_capacity_release(force_fields_);
+        phynity::platform::track_vector_capacity_release(constraints_);
+    }
+
+    RigidBodySystem(RigidBodySystem &&other) noexcept = default;
+    RigidBodySystem &operator=(RigidBodySystem &&other) noexcept = default;
+
     // ========================================================================
     // Body Management
     // ========================================================================
@@ -84,7 +96,9 @@ public:
     {
         PROFILE_SCOPE("RigidBodySystem::spawn_body");
 
+        const size_t previous_capacity = bodies_.capacity();
         bodies_.emplace_back();
+        phynity::platform::track_vector_capacity_change(bodies_, previous_capacity);
         RigidBody &rb = bodies_.back();
 
         rb.position = position;
@@ -118,6 +132,30 @@ public:
         return bodies_.size();
     }
 
+    /// Direct body storage access for serialization/helpers.
+    std::vector<RigidBody> &bodies()
+    {
+        return bodies_;
+    }
+
+    const std::vector<RigidBody> &bodies() const
+    {
+        return bodies_;
+    }
+
+    /// Remove all rigid bodies from the system.
+    void clear_bodies()
+    {
+        bodies_.clear();
+        next_body_id_ = 0;
+    }
+
+    /// Adjust next ID after external restoration logic sets explicit IDs.
+    void set_next_body_id(RigidBodyID next_id)
+    {
+        next_body_id_ = next_id;
+    }
+
     // ========================================================================
     // Force Fields
     // ========================================================================
@@ -125,7 +163,9 @@ public:
     /// Add a force field (gravity, drag, wind, etc.)
     void add_force_field(std::shared_ptr<ForceField> field)
     {
+        const size_t previous_capacity = force_fields_.capacity();
         force_fields_.push_back(field);
+        phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
     }
 
     /// Remove all force fields
@@ -141,7 +181,9 @@ public:
     /// Register a constraint (fixed joint, hinge, etc.)
     void add_constraint(std::shared_ptr<Constraint> constraint)
     {
+        const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(constraint);
+        phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
     }
 
     /// Get all constraints
@@ -478,7 +520,7 @@ private:
         return base_radius + angular_sweep;
     }
 
-    void resolve_collisions(const std::vector<Vec3f> &frame_start_positions, float dt)
+    void resolve_collisions(std::span<const Vec3f> frame_start_positions, float dt)
     {
         if (bodies_.size() < 2)
         {

@@ -34,6 +34,7 @@ cmake --build --preset debug
 This project uses clang-format 18 for code style consistency across all platforms.
 
 **First-time setup (enable pre-commit hook):**
+
 ```bash
 git config core.hooksPath .githooks
 ```
@@ -41,6 +42,7 @@ git config core.hooksPath .githooks
 The pre-commit hook automatically formats staged C++ files before each commit, ensuring consistent formatting. To bypass temporarily: `git commit --no-verify`
 
 **Manual formatting:**
+
 ```bash
 # Format all code
 ./tools/format.sh          # Linux/macOS
@@ -52,6 +54,7 @@ The pre-commit hook automatically formats staged C++ files before each commit, e
 ```
 
 **Installing clang-format 18:**
+
 ```bash
 # Linux (Ubuntu/Debian)
 wget https://apt.llvm.org/llvm.sh
@@ -66,3 +69,19 @@ sudo apt-get install clang-format-18
 # macOS
 brew install llvm@18
 ```
+
+### Static Analysis
+
+This project uses clang-tidy for local static analysis and in CI.
+
+```bash
+# Run the same style of static analysis used by CI
+./tools/static_analysis.sh       # Linux/macOS
+.\tools\static_analysis.bat      # Windows
+
+# Choose a different preset if needed
+./tools/static_analysis.sh debug
+.\tools\static_analysis.bat debug
+```
+
+The script configures the selected CMake preset, ensures `compile_commands.json` exists, and runs `clang-tidy` over `src` and `tests` (`*.cpp`, `*.hpp`, `*.h`) using the repository's `.clang-tidy` settings.

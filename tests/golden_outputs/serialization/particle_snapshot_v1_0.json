@@ -1,0 +1,29 @@
+{
+  "schema_version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "metadata": {
+    "frame_number": 7,
+    "simulated_time": 0.1166667,
+    "timestep": 0.0166667,
+    "rng_seed": 9001
+  },
+  "particles": [
+    {
+      "position": [0.0, 1.0, 2.0],
+      "velocity": [0.5, -0.25, 0.0],
+      "radius": 0.45,
+      "mass": 2.0,
+      "active": true
+    },
+    {
+      "position": [-1.0, 0.0, 1.0],
+      "velocity": [1.0, 0.0, -1.0],
+      "radius": 0.55,
+      "mass": 1.5,
+      "active": false
+    }
+  ]
+}

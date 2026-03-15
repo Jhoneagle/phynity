@@ -18,15 +18,13 @@ namespace
 
 bool system_is_finite(const ParticleSystem &system)
 {
-    for (const auto &p : system.particles())
-    {
-        if (!std::isfinite(p.position.x) || !std::isfinite(p.position.y) || !std::isfinite(p.position.z) ||
-            !std::isfinite(p.velocity.x) || !std::isfinite(p.velocity.y) || !std::isfinite(p.velocity.z))
-        {
-            return false;
-        }
-    }
-    return true;
+    return std::ranges::all_of(system.particles(),
+                               [](const auto &p)
+                               {
+                                   return std::isfinite(p.position.x) && std::isfinite(p.position.y) &&
+                                          std::isfinite(p.position.z) && std::isfinite(p.velocity.x) &&
+                                          std::isfinite(p.velocity.y) && std::isfinite(p.velocity.z);
+                               });
 }
 
 float total_energy(const ParticleSystem &system, float gravity)

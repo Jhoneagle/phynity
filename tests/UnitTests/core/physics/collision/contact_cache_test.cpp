@@ -46,7 +46,7 @@ TEST_CASE("ContactCache - Basic operations", "[collision][contact_cache]")
     SECTION("Empty cache")
     {
         REQUIRE(cache.empty());
-        REQUIRE(cache.size() == 0);
+        REQUIRE(cache.empty()); // size is zero
     }
 
     SECTION("Add and retrieve contact")
@@ -127,7 +127,7 @@ TEST_CASE("ContactCache - Contact persistence and age tracking", "[collision][co
 
         // Frame 3: Contact disappears (empty update)
         auto cached3 = cache.update({});
-        REQUIRE(cached3.size() == 0);
+        REQUIRE(cached3.empty());
 
         // Frame 4: Contact reappears (should be treated as new)
         auto cached4 = cache.update({manifold});
@@ -252,7 +252,7 @@ TEST_CASE("ContactCache - Multiple contacts and cleanup", "[collision][contact_c
 
         // Frame 3: No contacts
         cache.update({});
-        REQUIRE(cache.size() == 0);
+        REQUIRE(cache.empty());
     }
 }
 

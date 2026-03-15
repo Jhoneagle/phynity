@@ -89,7 +89,7 @@ public:
     /// Get the simplex vertices
     const Vertex *get_vertices() const
     {
-        return vertices;
+        return &vertices[0];
     }
 
     /// Get the number of vertices in the simplex
@@ -344,12 +344,11 @@ private:
 
         float v = (d11 * d20 - d01 * d21) / denom;
         float w = (d00 * d21 - d01 * d20) / denom;
-        float u = 1.0f - v - w;
 
         // Clamp to barycentric bounds
         v = std::max(0.0f, std::min(1.0f, v));
         w = std::max(0.0f, std::min(1.0f, w));
-        u = std::max(0.0f, std::min(1.0f, 1.0f - v - w));
+        const float u = std::max(0.0f, std::min(1.0f, 1.0f - v - w));
 
         return a * u + b * v + c * w;
     }

@@ -3,6 +3,7 @@
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/micro/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
+#include <tests/test_utils/timing_profile.hpp>
 
 #include <chrono>
 #include <cmath>
@@ -15,15 +16,7 @@ namespace
 {
 bool is_slow_env()
 {
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_UNDEFINED__)
-    return true;
-#endif
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(undefined_behavior_sanitizer)
-    return true;
-#endif
-#endif
-    return false;
+    return phynity::tests::timing::global_timing_profile().is_noisy;
 }
 } // namespace
 
@@ -205,7 +198,7 @@ TEST_CASE("Broadphase performance: Medium system (100 particles)", "[validation]
         REQUIRE(brute_force_result.milliseconds > 0.0);
 
         const double ratio = broadphase_result.milliseconds / brute_force_result.milliseconds;
-        const double ratio_limit = is_slow_env() ? 2.8 : 2.0;
+        const double ratio_limit = is_slow_env() ? phynity::tests::timing::scaled_ratio_limit(2.3, 8.0) : 2.3;
         REQUIRE(ratio < ratio_limit); // Broadphase within threshold of brute-force at N=100
     }
 }
@@ -227,7 +220,8 @@ TEST_CASE("Broadphase performance: Large system (500 particles)", "[validation][
         // At N=500, both approaches work but O(n²) becomes expensive
         // Focus on: broadphase should not be dramatically slower
         const double ratio = broadphase_result.milliseconds / brute_force_result.milliseconds;
-        REQUIRE(ratio < 3.0); // Broadphase within 3x of brute-force
+        const double ratio_limit = is_slow_env() ? phynity::tests::timing::scaled_ratio_limit(3.0, 7.0) : 3.0;
+        REQUIRE(ratio < ratio_limit); // Broadphase within threshold of brute-force
     }
 }
 

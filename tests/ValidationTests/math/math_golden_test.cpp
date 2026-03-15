@@ -146,7 +146,7 @@ public:
         oss_ << name << "=\n";
         for (int r = 0; r < 2; ++r)
         {
-            oss_ << m(r, 0) << " " << m(r, 1) << "\n";
+            oss_ << normalize_float(m(r, 0)) << " " << normalize_float(m(r, 1)) << "\n";
         }
     }
 
@@ -155,7 +155,8 @@ public:
         oss_ << name << "=\n";
         for (int r = 0; r < 3; ++r)
         {
-            oss_ << m(r, 0) << " " << m(r, 1) << " " << m(r, 2) << "\n";
+            oss_ << normalize_float(m(r, 0)) << " " << normalize_float(m(r, 1)) << " " << normalize_float(m(r, 2))
+                 << "\n";
         }
     }
 
@@ -164,7 +165,8 @@ public:
         oss_ << name << "=\n";
         for (int r = 0; r < 4; ++r)
         {
-            oss_ << m(r, 0) << " " << m(r, 1) << " " << m(r, 2) << " " << m(r, 3) << "\n";
+            oss_ << normalize_float(m(r, 0)) << " " << normalize_float(m(r, 1)) << " " << normalize_float(m(r, 2))
+                 << " " << normalize_float(m(r, 3)) << "\n";
         }
     }
 
@@ -173,7 +175,7 @@ public:
         oss_ << name << "=";
         for (std::size_t i = 0; i < N; ++i)
         {
-            oss_ << v[i];
+            oss_ << normalize_float(v[i]);
             if (i + 1 < N)
             {
                 oss_ << " ";
@@ -189,7 +191,7 @@ public:
         {
             for (std::size_t c = 0; c < N; ++c)
             {
-                oss_ << m(r, c);
+                oss_ << normalize_float(m(r, c));
                 if (c + 1 < N)
                 {
                     oss_ << " ";

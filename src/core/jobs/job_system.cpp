@@ -1,5 +1,6 @@
 #include "job_system.hpp"
 
+#include <platform/allocation_tracker.hpp>
 #include <platform/threading.hpp>
 
 #include <atomic>
@@ -10,6 +11,9 @@
 
 namespace phynity::jobs
 {
+
+// Internal PIMPL implementation intentionally uses compact naming and state layout.
+// NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
 struct JobEntry
 {
@@ -58,15 +62,19 @@ private:
     uint32_t worker_count_ = 0;
     SchedulingMode mode_ = SchedulingMode::Concurrent;
 
-    std::vector<platform::Thread> workers_;
+    phynity::platform::TrackedVector<platform::Thread> workers_;
 
     std::mutex jobs_mutex_;
-    std::map<uint32_t, std::unique_ptr<JobEntry>> jobs_;
+    std::map<uint32_t,
+             std::unique_ptr<JobEntry>,
+             std::less<>,
+             phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::unique_ptr<JobEntry>>>>
+        jobs_;
     uint32_t next_job_id_{1};
 
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
-    std::vector<uint32_t> job_queue_;
+    phynity::platform::TrackedVector<uint32_t> job_queue_;
 };
 
 JobSystemImpl::JobSystemImpl(const JobSystemConfig &config)
@@ -139,7 +147,7 @@ JobHandle JobSystemImpl::submit(JobFn job)
         return JobHandle{};
     }
 
-    uint32_t job_id;
+    uint32_t job_id = 0;
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         job_id = next_job_id_++;
@@ -223,7 +231,7 @@ void JobSystemImpl::worker_loop()
             }
         }
 
-        if (entry && entry->fn)
+        if (entry != nullptr && static_cast<bool>(entry->fn))
         {
             entry->fn();
             entry->completed.store(true);
@@ -295,5 +303,7 @@ void JobSystem::wait_all(std::span<const JobHandle> handles)
         wait(handle);
     }
 }
+
+// NOLINTEND(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
 } // namespace phynity::jobs

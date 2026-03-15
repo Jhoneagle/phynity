@@ -1,0 +1,541 @@
+name: Nightly Quality
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+permissions:
+  contents: write
+
+jobs:
+  sanitizer-asan-ubsan:
+    name: Nightly ASAN+UBSAN (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows
+            runner: windows-2022
+            cc: clang-cl
+            cxx: clang-cl
+            triplet: x64-windows
+          - os: linux
+            runner: ubuntu-22.04
+            cc: clang
+            cxx: clang++
+            triplet: x64-linux
+          - os: macos
+            runner: macos-14
+            cc: clang
+            cxx: clang++
+            triplet: arm64-osx
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Bootstrap vcpkg
+        if: runner.os != 'Windows'
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja --no-progress -y
+          ninja --version
+
+      - name: Setup Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
+
+      - name: Setup Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+            ${{ env.VCPKG_ROOT }}/archives
+            ${{ env.VCPKG_ROOT }}/src
+          key: vcpkg-${{ matrix.os }}-nightly-asan-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-
+
+      - name: Configure CMake with sanitizers
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset=debug-asan -DPHYNITY_BUILD_TESTS=ON -DPHYNITY_ENABLE_SANITIZERS=ON -DPHYNITY_WARNINGS_AS_ERRORS=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+
+      - name: Build
+        run: cmake --build build/debug-asan -j
+
+      - name: Run sanitizer tests
+        working-directory: build/debug-asan
+        env:
+          ASAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
+          UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
+        run: ctest -C Debug --output-on-failure -LE performance -j
+
+      - name: Upload sanitizer artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-sanitizers-${{ matrix.os }}
+          path: |
+            build/debug-asan/Testing/
+            build/debug-asan/**/*.log
+          retention-days: 90
+
+  sanitizer-tsan:
+    name: Nightly TSAN (${{ matrix.os }})
+    # Windows is intentionally excluded: LLVM ThreadSanitizer does not list Windows as a
+    # supported target platform in current Clang docs.
+    # Reference: https://clang.llvm.org/docs/ThreadSanitizer.html
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-22.04
+            cc: clang
+            cxx: clang++
+            triplet: x64-linux
+          - os: macos
+            runner: macos-14
+            cc: clang
+            cxx: clang++
+            triplet: arm64-osx
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
+
+      - name: Setup dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-${{ matrix.os }}-nightly-tsan-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-
+
+      - name: Configure CMake with TSAN flags
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset=debug-tsan -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+
+      - name: Build
+        run: cmake --build build/debug-tsan -j
+
+      - name: Run TSAN tests
+        env:
+          TSAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/debug-tsan \
+            --config Debug \
+            --exclude-label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/debug-tsan/test-retries/tsan-${{ matrix.os }}.txt \
+            --output-on-failure
+
+      - name: Upload TSAN artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-tsan-${{ matrix.os }}
+          path: |
+            build/debug-tsan/Testing/
+            build/debug-tsan/**/*.log
+            build/debug-tsan/test-retries/
+          retention-days: 90
+
+  determinism:
+    name: Nightly Determinism Validation
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-linux-nightly-determinism-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+
+      - name: Configure CMake
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+
+      - name: Build
+        run: cmake --build build/release -j
+
+      - name: Run replay/determinism suite
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/release \
+            --config Release \
+            --label golden \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/release/test-retries/determinism-linux.txt \
+            --output-on-failure
+
+      - name: Capture determinism replay
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DGOLDEN_CAPTURE_MODE=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+          cmake --build build/release -j --target replay_round_trip_test
+          ctest --build-dir build/release --output-on-failure -R "^validation\.serialization\.replay_round_trip$"
+
+      - name: Upload determinism replay artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-determinism-replay
+          path: |
+            tests/golden_outputs/serialization/replays/*.replay
+          retention-days: 90
+
+      - name: Upload determinism artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-determinism
+          path: |
+            build/release/Testing/
+            build/release/test-retries/
+          retention-days: 90
+
+  performance:
+    name: Nightly Performance Regression (${{ matrix.os }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-22.04
+            cc: clang
+            cxx: clang++
+            triplet: x64-linux
+            arch: x64
+            compiler: clang
+            machine_tag: ubuntu-22.04-gha
+          - os: windows
+            runner: windows-2022
+            cc: clang-cl
+            cxx: clang-cl
+            triplet: x64-windows
+            arch: x64
+            compiler: msvc
+            machine_tag: windows-2022-gha
+          - os: macos
+            runner: macos-14
+            cc: clang
+            cxx: clang++
+            triplet: arm64-osx
+            arch: arm64
+            compiler: clang
+            machine_tag: macos-14-gha
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Bootstrap vcpkg (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja --no-progress -y
+          ninja --version
+
+      - name: Setup dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld python3
+
+      - name: Setup dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja python3
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+            ${{ env.VCPKG_ROOT }}/archives
+            ${{ env.VCPKG_ROOT }}/src
+          key: vcpkg-${{ matrix.os }}-nightly-perf-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ matrix.os }}-
+
+      - name: Configure CMake
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+
+      - name: Build
+        run: cmake --build build/release -j
+
+      - name: Run performance-labeled tests
+        shell: bash
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/release \
+            --config Release \
+            --label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/release/test-retries/performance-${{ matrix.os }}.txt \
+            --output-on-failure
+
+      - name: Run performance regression check
+        shell: bash
+        run: python tools/performance_regression_check.py --threshold 0.05 --threshold-config tests/golden_outputs/performance/thresholds.json --strict-orphans
+
+      - name: Upload perf JSON and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-performance-${{ matrix.os }}
+          path: |
+            tests/golden_outputs/performance/*.json
+            tests/golden_outputs/performance/thresholds.json
+            tests/golden_outputs/performance/*.current.json
+            build/release/Testing/
+            build/release/test-retries/
+          retention-days: 90
+
+  perf-history-append:
+    name: Append Performance History (${{ matrix.os }})
+    needs: [performance]
+    if: needs.performance.result == 'success'
+    runs-on: ubuntu-22.04
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+            compiler: clang
+            machine_tag: ubuntu-22.04-gha
+          - os: windows
+            arch: x64
+            compiler: msvc
+            machine_tag: windows-2022-gha
+          - os: macos
+            arch: arm64
+            compiler: clang
+            machine_tag: macos-14-gha
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download perf artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nightly-performance-${{ matrix.os }}
+          path: perf-input
+
+      - name: Checkout perf-history branch worktree
+        shell: bash
+        run: |
+          git fetch origin perf-history || true
+          if git show-ref --verify --quiet refs/remotes/origin/perf-history; then
+            git worktree add perf-history-wt origin/perf-history
+          else
+            git worktree add --detach perf-history-wt
+            pushd perf-history-wt
+            git checkout --orphan perf-history
+            git rm -rf . >/dev/null 2>&1 || true
+            mkdir -p perf/history
+            touch perf/history/.gitkeep
+            git add perf/history/.gitkeep
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Initialize perf-history branch"
+            git push origin HEAD:perf-history
+            popd
+            git worktree remove perf-history-wt --force
+            git worktree add perf-history-wt origin/perf-history
+          fi
+
+      - name: Append performance rows
+        shell: bash
+        run: |
+          python3 tools/append_perf_history.py \
+            --history-csv perf-history-wt/perf/history/perf_history.csv \
+            --perf-dir perf-input/tests/golden_outputs/performance \
+            --git-sha "${GITHUB_SHA}" \
+            --git-ref "${GITHUB_REF}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --os "${{ matrix.os }}" \
+            --arch "${{ matrix.arch }}" \
+            --compiler "${{ matrix.compiler }}" \
+            --build-type "Release" \
+            --benchmark-suite "performance" \
+            --dt-seconds 0.0166667 \
+            --threshold-config perf-input/tests/golden_outputs/performance/thresholds.json \
+            --machine-tag "${{ matrix.machine_tag }}"
+
+      - name: Render performance dashboard
+        shell: bash
+        run: |
+          python3 tools/render_perf_dashboard.py \
+            --history-csv perf-history-wt/perf/history/perf_history.csv \
+            --output perf-history-wt/perf/history/dashboard.html
+
+      - name: Commit and push CSV update
+        shell: bash
+        run: |
+          pushd perf-history-wt
+          git add perf/history/perf_history.csv perf/history/dashboard.html
+          if git diff --cached --quiet; then
+            echo "No perf-history changes to commit"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Append perf history from ${GITHUB_RUN_ID} (${{ matrix.os }})"
+          git push origin HEAD:perf-history
+          popd
+
+      - name: Cleanup worktree
+        if: always()
+        shell: bash
+        run: git worktree remove perf-history-wt --force || true
+
+  flake-triage:
+    name: Nightly Flake Triage
+    needs: [sanitizer-tsan, determinism, performance]
+    if: always()
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download nightly artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nightly-*
+          path: flake-input
+          merge-multiple: false
+
+      - name: Checkout perf-history branch worktree
+        shell: bash
+        run: |
+          git fetch origin perf-history || true
+          if git show-ref --verify --quiet refs/remotes/origin/perf-history; then
+            git worktree add perf-history-wt origin/perf-history
+          else
+            git worktree add --detach perf-history-wt
+            pushd perf-history-wt
+            git checkout --orphan perf-history
+            git rm -rf . >/dev/null 2>&1 || true
+            mkdir -p perf/history infra/history
+            touch perf/history/.gitkeep infra/history/.gitkeep
+            git add perf/history/.gitkeep infra/history/.gitkeep
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Initialize perf-history branch"
+            git push origin HEAD:perf-history
+            popd
+            git worktree remove perf-history-wt --force
+            git worktree add perf-history-wt origin/perf-history
+          fi
+
+      - name: Append flaky history
+        shell: bash
+        run: |
+          python3 tools/append_flaky_history.py \
+            --history-csv perf-history-wt/infra/history/flaky_test_history.csv \
+            --reports-root flake-input \
+            --git-sha "${GITHUB_SHA}" \
+            --git-ref "${GITHUB_REF}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --workflow-name "nightly-quality"
+
+      - name: Evaluate flaky budget and publish summary
+        shell: bash
+        run: |
+          set +e
+          python3 tools/check_flaky_budget.py \
+            --history-csv perf-history-wt/infra/history/flaky_test_history.csv \
+            --days 14 \
+            --threshold 3 \
+            --output-markdown perf-history-wt/infra/history/flaky_summary.md
+          status=$?
+          cat perf-history-wt/infra/history/flaky_summary.md >> "$GITHUB_STEP_SUMMARY"
+          pushd perf-history-wt
+          git add infra/history/flaky_test_history.csv infra/history/flaky_summary.md
+          if ! git diff --cached --quiet; then
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update flaky history from ${GITHUB_RUN_ID}"
+            git push origin HEAD:perf-history
+          fi
+          popd
+          exit $status
+
+      - name: Cleanup worktree
+        if: always()
+        shell: bash
+        run: git worktree remove perf-history-wt --force || true

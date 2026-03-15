@@ -33,6 +33,7 @@ TEST_CASE("JobSystem multiple jobs", "[jobs]")
 
     std::atomic<int> counter{0};
     std::vector<JobHandle> handles;
+    handles.reserve(10);
 
     for (int i = 0; i < 10; ++i)
     {
@@ -54,6 +55,7 @@ TEST_CASE("JobSystem deterministic mode", "[jobs]")
 
     std::atomic<int> counter{0};
     std::vector<JobHandle> handles;
+    handles.reserve(5);
 
     for (int i = 0; i < 5; ++i)
     {

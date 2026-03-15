@@ -1,7 +1,9 @@
 {
   "scenario": "broadphase",
-  "milliseconds": 322.713000,
+  "milliseconds": 299.540000,
   "iterations": 200,
   "workload": 300,
-  "notes": "ParticleSystem broadphase update"
+  "notes": "ParticleSystem broadphase update",
+  "peak_rss_kb": 5544,
+  "allocator_delta_bytes": 64512
 }

@@ -6,6 +6,11 @@
 #include <core/physics/macro/rigid_body_system.hpp>
 #include <core/physics/macro/shape.hpp>
 
+#include <algorithm>
+#include <cmath>
+#include <iomanip>
+#include <iostream>
+
 namespace phynity::app::rigid_body_demos
 {
 
@@ -17,7 +22,7 @@ using namespace phynity::math::quaternions;
 class StackingDemoRB
 {
 public:
-    StackingDemoRB() : system_()
+    StackingDemoRB()
     {
         setup();
     }
@@ -84,14 +89,10 @@ private:
     {
         const auto &diag = system_.get_diagnostics();
 
-        printf("[%.2fs] Bodies: %zu, "
-               "KE_linear: %.3f J, KE_angular: %.3f J, "
-               "Total KE: %.3f J\n",
-               time,
-               diag.body_count,
-               diag.total_linear_ke,
-               diag.total_angular_ke,
-               diag.total_kinetic_energy);
+        std::cout << '[' << std::fixed << std::setprecision(2) << time << "s] Bodies: " << diag.body_count
+                  << ", KE_linear: " << std::setprecision(3) << diag.total_linear_ke
+                  << " J, KE_angular: " << diag.total_angular_ke << " J, Total KE: " << diag.total_kinetic_energy
+                  << " J\n";
     }
 };
 
@@ -112,7 +113,7 @@ public:
         // Find topmost body (last spawned)
         RigidBody *top_body = system.get_body(4); // Assuming body IDs 0-4
 
-        if (top_body)
+        if (top_body != nullptr)
         {
             // Apply horizontal impulse at top
             Vec3f impulse = Vec3f(10.0f, 0.0f, 0.0f); // 10 N-s to the right
@@ -125,7 +126,7 @@ public:
     {
         apply_topple_impulse();
 
-        printf("\n=== Toppling Simulation ===\n");
+        std::cout << "\n=== Toppling Simulation ===\n";
         stable_demo_.simulate(5.0f); // Watch it fall
     }
 
@@ -151,18 +152,18 @@ public:
         {
             system_.update(dt);
 
-            if (frame % 50 == 0 && door_body_)
+            if (frame % 50 == 0 && door_body_ != nullptr)
             {
-                printf("[%.2fs] Door angle: %.2f°\n",
-                       static_cast<float>(frame) * dt,
-                       std::acos(std::clamp(door_body_->orientation.w, -1.0f, 1.0f)) * 2.0f);
+                const float angle_rad = std::acos(std::clamp(door_body_->orientation.w, -1.0f, 1.0f)) * 2.0f;
+                std::cout << '[' << std::fixed << std::setprecision(2) << (static_cast<float>(frame) * dt)
+                          << "s] Door angle: " << angle_rad << " rad\n";
             }
         }
     }
 
 private:
     RigidBodySystem system_;
-    RigidBody *door_body_;
+    RigidBody *door_body_ = nullptr;
 
     void setup()
     {
@@ -192,7 +193,7 @@ private:
         system_.add_constraint(hinge);
 
         // Apply initial spin
-        if (door_body_)
+        if (door_body_ != nullptr)
         {
             door_body_->angular_velocity = Vec3f(0.0f, 2.0f, 0.0f);
         }

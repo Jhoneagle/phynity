@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <limits>
+#include <span>
 
 namespace phynity::math::calculus
 {
@@ -229,12 +230,13 @@ template <typename T> inline T position_error(T numerical, T analytical)
  * @return Root mean square error
  */
 template <typename T>
-inline T position_rms_error(const T *numerical_positions, const T *analytical_positions, int count)
+inline T position_rms_error(std::span<const T> numerical_positions, std::span<const T> analytical_positions, int count)
 {
     T sum_sq = T(0);
     for (int i = 0; i < count; ++i)
     {
-        T error = position_error(numerical_positions[i], analytical_positions[i]);
+        T error = position_error(numerical_positions[static_cast<std::size_t>(i)],
+                                 analytical_positions[static_cast<std::size_t>(i)]);
         sum_sq += error * error;
     }
     return std::sqrt(sum_sq / count);

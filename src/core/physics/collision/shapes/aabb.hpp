@@ -3,6 +3,7 @@
 #include <core/math/vectors/vec3.hpp>
 
 #include <algorithm>
+#include <vector>
 
 namespace phynity::physics::collision
 {

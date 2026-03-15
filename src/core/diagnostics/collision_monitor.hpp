@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <utility>
 
 namespace phynity::diagnostics
 {
@@ -244,7 +245,7 @@ public:
      */
     void set_violation_callback(ViolationCallback callback) noexcept
     {
-        violation_callback_ = callback;
+        violation_callback_ = std::move(callback);
     }
 
     /**

@@ -3,6 +3,7 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <cmath>

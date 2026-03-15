@@ -13,7 +13,6 @@ PhysicsContext::PhysicsContext() : PhysicsContext(Config())
 
 PhysicsContext::PhysicsContext(const Config &config)
     : config_(config),
-      particle_system_(),
       timestep_controller_(1.0f / config.target_fps,
                            config.max_timestep,
                            config.use_determinism ? TimestepController::OverflowMode::SUBDIVIDE
@@ -137,16 +136,16 @@ void PhysicsContext::print_diagnostics() const
     const auto ts_stats = timestep_statistics();
 
     std::cout << std::fixed << std::setprecision(6);
-    std::cout << "=== Physics Diagnostics ===" << std::endl;
-    std::cout << "Particles: " << diag.particle_count << std::endl;
-    std::cout << "Kinetic Energy: " << diag.total_kinetic_energy << " J" << std::endl;
+    std::cout << "=== Physics Diagnostics ===\n";
+    std::cout << "Particles: " << diag.particle_count << '\n';
+    std::cout << "Kinetic Energy: " << diag.total_kinetic_energy << " J\n";
     std::cout << "Momentum: [" << diag.total_momentum.x << ", " << diag.total_momentum.y << ", "
-              << diag.total_momentum.z << "]" << std::endl;
-    std::cout << "Physics Steps: " << ts_stats.total_steps << std::endl;
-    std::cout << "Accumulated Time: " << ts_stats.accumulated_time << "s" << std::endl;
-    std::cout << "Max Accumulated: " << ts_stats.max_accumulated_time << "s" << std::endl;
-    std::cout << "Overflows: " << ts_stats.overflow_count << std::endl;
-    std::cout << "Subdivisions: " << ts_stats.subdivision_count << std::endl;
+              << diag.total_momentum.z << "]\n";
+    std::cout << "Physics Steps: " << ts_stats.total_steps << '\n';
+    std::cout << "Accumulated Time: " << ts_stats.accumulated_time << "s\n";
+    std::cout << "Max Accumulated: " << ts_stats.max_accumulated_time << "s\n";
+    std::cout << "Overflows: " << ts_stats.overflow_count << '\n';
+    std::cout << "Subdivisions: " << ts_stats.subdivision_count << '\n';
 }
 
 float PhysicsContext::target_timestep() const

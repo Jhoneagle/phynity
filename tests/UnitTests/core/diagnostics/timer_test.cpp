@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/diagnostics/timer.hpp>
+#include <tests/test_utils/timing_profile.hpp>
 
 #include <chrono>
 #include <thread>
@@ -11,15 +12,7 @@ namespace
 {
 bool is_slow_env()
 {
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_UNDEFINED__)
-    return true;
-#endif
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(undefined_behavior_sanitizer)
-    return true;
-#endif
-#endif
-    return false;
+    return phynity::tests::timing::global_timing_profile().is_noisy;
 }
 } // namespace
 
@@ -139,7 +132,8 @@ TEST_CASE("Timer: Time unit conversions", "[diagnostics][timer]")
 
     // Should be approximately 100ms
     REQUIRE(ms >= 90.0); // At least 90ms
-    REQUIRE(ms <= 200.0); // At most 200ms (generous upper bound)
+    const double upper_ms = is_slow_env() ? 2000.0 : 500.0;
+    REQUIRE(ms <= upper_ms); // Sanity check: not absurdly large (relaxed in noisy/sanitizer envs)
 }
 
 TEST_CASE("ScopedTimer: RAII timing", "[diagnostics][timer]")

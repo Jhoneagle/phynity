@@ -91,8 +91,9 @@ TEST_CASE("NLERP: Result is always normalized", "[interpolation][nlerp]")
     Quatf q1(axis, static_cast<float>(mathf::pi / 6.0)); // 30°
     Quatf q2(axis, static_cast<float>(mathf::pi / 3.0)); // 60°
 
-    for (float t = 0.0f; t <= 1.0f; t += 0.1f)
+    for (int step = 0; step <= 10; ++step)
     {
+        float t = static_cast<float>(step) * 0.1f;
         Quatf result = nlerp(q1, q2, t);
         REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
     }
@@ -300,8 +301,9 @@ TEST_CASE("NLERP: Multiple t values produce smooth progression", "[interpolation
 
     Quatf prev = q1;
 
-    for (float t = 0.0f; t <= 1.0f; t += 0.1f)
+    for (int step = 0; step <= 10; ++step)
     {
+        float t = static_cast<float>(step) * 0.1f;
         Quatf current = nlerp(q1, q2, t);
 
         // Each result should be normalized
@@ -583,8 +585,9 @@ TEST_CASE("SLERP: Result is always normalized", "[interpolation][slerp]")
     Quatf q1(axis, static_cast<float>(mathf::pi / 6.0)); // 30°
     Quatf q2(axis, static_cast<float>(mathf::pi / 3.0)); // 60°
 
-    for (float t = 0.0f; t <= 1.0f; t += 0.1f)
+    for (int step = 0; step <= 10; ++step)
     {
+        float t = static_cast<float>(step) * 0.1f;
         Quatf result = slerp(q1, q2, t);
         REQUIRE_THAT(result.magnitude(), WithinAbs(1.0f, 1e-6f));
     }

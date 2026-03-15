@@ -1,0 +1,161 @@
+name: Perf History Append
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: Branch containing fresh *.current.json outputs
+        required: true
+        default: main
+      runner_os:
+        description: OS tag for CSV rows
+        required: true
+        default: linux
+      runner_arch:
+        description: Arch tag for CSV rows
+        required: true
+        default: x64
+      compiler:
+        description: Compiler tag for CSV rows
+        required: true
+        default: clang
+      build_type:
+        description: Build type tag for CSV rows
+        required: true
+        default: Release
+      benchmark_suite:
+        description: Benchmark suite label
+        required: true
+        default: performance
+      threshold_percent:
+        description: Regression threshold percent
+        required: true
+        default: "5.0"
+      machine_tag:
+        description: Runner or machine profile tag
+        required: true
+        default: ubuntu-22.04-gha
+  workflow_call:
+    inputs:
+      source_branch:
+        required: false
+        type: string
+        default: main
+      runner_os:
+        required: false
+        type: string
+        default: linux
+      runner_arch:
+        required: false
+        type: string
+        default: x64
+      compiler:
+        required: false
+        type: string
+        default: clang
+      build_type:
+        required: false
+        type: string
+        default: Release
+      benchmark_suite:
+        required: false
+        type: string
+        default: performance
+      threshold_percent:
+        required: false
+        type: number
+        default: 5.0
+      machine_tag:
+        required: false
+        type: string
+        default: ubuntu-22.04-gha
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    name: Append CSV Row(s)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_branch || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Validate perf input files
+        shell: bash
+        run: |
+          if ! ls tests/golden_outputs/performance/*.json >/dev/null 2>&1; then
+            echo "No performance JSON files found in tests/golden_outputs/performance"
+            exit 2
+          fi
+          if ! ls tests/golden_outputs/performance/*.current.json >/dev/null 2>&1; then
+            echo "No performance current JSON files found in tests/golden_outputs/performance"
+            exit 2
+          fi
+
+      - name: Checkout perf-history branch worktree
+        shell: bash
+        run: |
+          git fetch origin perf-history || true
+          if git show-ref --verify --quiet refs/remotes/origin/perf-history; then
+            git worktree add perf-history-wt origin/perf-history
+          else
+            git worktree add --detach perf-history-wt
+            pushd perf-history-wt
+            git checkout --orphan perf-history
+            git rm -rf . >/dev/null 2>&1 || true
+            mkdir -p perf/history
+            touch perf/history/.gitkeep
+            git add perf/history/.gitkeep
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Initialize perf-history branch"
+            git push origin HEAD:perf-history
+            popd
+            git worktree remove perf-history-wt --force
+            git worktree add perf-history-wt origin/perf-history
+          fi
+
+      - name: Append performance rows
+        shell: bash
+        run: |
+          python3 tools/append_perf_history.py \
+            --history-csv perf-history-wt/perf/history/perf_history.csv \
+            --perf-dir tests/golden_outputs/performance \
+            --git-sha "${GITHUB_SHA}" \
+            --git-ref "${GITHUB_REF}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            --os "${{ inputs.runner_os || 'linux' }}" \
+            --arch "${{ inputs.runner_arch || 'x64' }}" \
+            --compiler "${{ inputs.compiler || 'clang' }}" \
+            --build-type "${{ inputs.build_type || 'Release' }}" \
+            --benchmark-suite "${{ inputs.benchmark_suite || 'performance' }}" \
+            --dt-seconds 0.0166667 \
+            --threshold-config tests/golden_outputs/performance/thresholds.json \
+            --machine-tag "${{ inputs.machine_tag || 'ubuntu-22.04-gha' }}"
+
+      - name: Render performance dashboard
+        shell: bash
+        run: |
+          python3 tools/render_perf_dashboard.py \
+            --history-csv perf-history-wt/perf/history/perf_history.csv \
+            --output perf-history-wt/perf/history/dashboard.html
+
+      - name: Commit and push CSV update
+        shell: bash
+        run: |
+          pushd perf-history-wt
+          git add perf/history/perf_history.csv perf/history/dashboard.html
+          if git diff --cached --quiet; then
+            echo "No perf-history changes to commit"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Append perf history from run ${GITHUB_RUN_ID}"
+          git push origin HEAD:perf-history
+          popd
+
+      - name: Cleanup worktree
+        if: always()
+        shell: bash
+        run: git worktree remove perf-history-wt --force || true

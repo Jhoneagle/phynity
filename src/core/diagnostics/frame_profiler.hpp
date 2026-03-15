@@ -2,6 +2,8 @@
 
 #include "profiler.hpp"
 
+#include <platform/allocation_tracker.hpp>
+
 #include <algorithm>
 #include <cstdint>
 #include <limits>
@@ -23,6 +25,11 @@ struct FrameProfile
     std::vector<ProfileZone> zones; ///< All profile zones recorded in this frame
 
     FrameProfile() = default;
+
+    ~FrameProfile()
+    {
+        phynity::platform::track_vector_capacity_release(zones);
+    }
 
     explicit FrameProfile(uint64_t frame_num) : frame_number(frame_num)
     {
@@ -104,7 +111,14 @@ public:
     explicit FrameProfiler(size_t history_size = 60)
         : history_size_(history_size), current_frame_index_(0), frame_counter_(0), frame_start_time_us_(0)
     {
+        const size_t previous_capacity = frame_history_.capacity();
         frame_history_.resize(history_size_);
+        phynity::platform::track_vector_capacity_change(frame_history_, previous_capacity);
+    }
+
+    ~FrameProfiler()
+    {
+        phynity::platform::track_vector_capacity_release(frame_history_);
     }
 
     /**
@@ -135,7 +149,9 @@ public:
         frame.total_frame_time_us = frame_end_time_us - frame_start_time_us_;
 
         // Copy zones from profiler
+        const size_t previous_capacity = frame.zones.capacity();
         frame.zones = Profiler::get_zones();
+        phynity::platform::track_vector_capacity_change(frame.zones, previous_capacity);
 
         // Advance to next frame
         current_frame_index_ = (current_frame_index_ + 1) % history_size_;
