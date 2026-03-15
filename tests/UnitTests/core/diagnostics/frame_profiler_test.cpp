@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <core/diagnostics/frame_profiler.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
+#include <tests/test_utils/timing_profile.hpp>
 
 #include <chrono>
 #include <thread>
@@ -11,15 +12,7 @@ namespace
 {
 bool is_slow_env()
 {
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_UNDEFINED__)
-    return true;
-#endif
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(undefined_behavior_sanitizer)
-    return true;
-#endif
-#endif
-    return false;
+    return phynity::tests::timing::global_timing_profile().is_noisy;
 }
 } // namespace
 

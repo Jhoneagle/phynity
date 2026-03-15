@@ -11,6 +11,9 @@
 namespace phynity::jobs
 {
 
+// Internal PIMPL implementation intentionally uses compact naming and state layout.
+// NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
+
 struct JobEntry
 {
     JobFn fn;
@@ -139,7 +142,7 @@ JobHandle JobSystemImpl::submit(JobFn job)
         return JobHandle{};
     }
 
-    uint32_t job_id;
+    uint32_t job_id = 0;
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         job_id = next_job_id_++;
@@ -223,7 +226,7 @@ void JobSystemImpl::worker_loop()
             }
         }
 
-        if (entry && entry->fn)
+        if (entry != nullptr && static_cast<bool>(entry->fn))
         {
             entry->fn();
             entry->completed.store(true);
@@ -295,5 +298,7 @@ void JobSystem::wait_all(std::span<const JobHandle> handles)
         wait(handle);
     }
 }
+
+// NOLINTEND(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
 } // namespace phynity::jobs
