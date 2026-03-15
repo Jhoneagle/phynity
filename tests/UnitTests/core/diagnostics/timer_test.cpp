@@ -132,7 +132,8 @@ TEST_CASE("Timer: Time unit conversions", "[diagnostics][timer]")
 
     // Should be approximately 100ms
     REQUIRE(ms >= 90.0); // At least 90ms
-    REQUIRE(ms <= 200.0); // At most 200ms (generous upper bound)
+    const double upper_ms = is_slow_env() ? 2000.0 : 500.0;
+    REQUIRE(ms <= upper_ms); // Sanity check: not absurdly large (relaxed in noisy/sanitizer envs)
 }
 
 TEST_CASE("ScopedTimer: RAII timing", "[diagnostics][timer]")

@@ -66,6 +66,58 @@ RaySpherIntersection LinearCast::raycast_sphere(const Vec3f &ray_origin,
     return result;
 }
 
+namespace
+{
+
+struct SlabInterval
+{
+    float t_enter;
+    float t_exit;
+    bool valid;
+};
+
+// Returns the entry/exit t-interval for a single axis slab, handling the ray-parallel case.
+static SlabInterval axis_slab_interval(float origin, float dir, float slab_min, float slab_max)
+{
+    if (std::abs(dir) < 1e-10f)
+        return {0.0f, 0.0f, origin >= slab_min && origin <= slab_max};
+    const float inv_d = 1.0f / dir;
+    const float t1 = (slab_min - origin) * inv_d;
+    const float t2 = (slab_max - origin) * inv_d;
+    return {std::min(t1, t2), std::max(t1, t2), true};
+}
+
+// Ray-AABB slab intersection. Returns false when misses or exceeds ray_len.
+static bool intersect_ray_aabb(const Vec3f &origin,
+                               const Vec3f &dir,
+                               float ray_len,
+                               const Vec3f &box_min,
+                               const Vec3f &box_max,
+                               float &t_enter_out,
+                               float &t_exit_out)
+{
+    float t_enter = 0.0f;
+    float t_exit = ray_len;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        const auto slab = axis_slab_interval(origin[axis], dir[axis], box_min[axis], box_max[axis]);
+        if (!slab.valid)
+            return false;
+        t_enter = std::max(t_enter, slab.t_enter);
+        t_exit = std::min(t_exit, slab.t_exit);
+        if (t_enter > t_exit)
+            return false;
+    }
+    if (t_enter >= ray_len)
+        return false;
+    t_enter_out = t_enter;
+    t_exit_out = t_exit;
+    return true;
+}
+
+} // namespace
+
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 RaySpherIntersection LinearCast::sweep_sphere_vs_sphere_static(const Vec3f &moving_sphere_center,
                                                                const Vec3f &moving_sphere_velocity,
                                                                float moving_sphere_radius,
@@ -106,7 +158,9 @@ RaySpherIntersection LinearCast::sweep_sphere_vs_sphere_static(const Vec3f &movi
     // Raycast against enlarged sphere
     return raycast_sphere(moving_sphere_center, ray_direction, ray_max_t, static_sphere_center, combined_radius);
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 RaySpherIntersection LinearCast::sweep_sphere_vs_aabb(const Vec3f &sphere_center,
                                                       const Vec3f &sphere_velocity,
                                                       float sphere_radius,
@@ -151,49 +205,13 @@ RaySpherIntersection LinearCast::sweep_sphere_vs_aabb(const Vec3f &sphere_center
         return result;
     }
 
-    Vec3f ray_direction = sphere_velocity / speed;
-    float ray_length = speed * max_time;
+    const Vec3f ray_direction = sphere_velocity / speed;
+    const float ray_length = speed * max_time;
 
-    // Ray-AABB slab intersection (optimized DDA-like algorithm)
     float t_enter = 0.0f;
-    float t_exit = ray_length;
-
-    for (int axis = 0; axis < 3; ++axis)
-    {
-        float ray_start = sphere_center[axis];
-        float ray_dir = ray_direction[axis];
-
-        if (std::abs(ray_dir) < 1e-10f)
-        {
-            // Ray parallel to slab
-            if (ray_start < expanded_min[axis] || ray_start > expanded_max[axis])
-            {
-                return result; // No intersection
-            }
-        }
-        else
-        {
-            float t1 = (expanded_min[axis] - ray_start) / ray_dir;
-            float t2 = (expanded_max[axis] - ray_start) / ray_dir;
-
-            if (t1 > t2)
-                std::swap(t1, t2);
-
-            t_enter = std::max(t_enter, t1);
-            t_exit = std::min(t_exit, t2);
-
-            if (t_enter > t_exit)
-            {
-                return result; // No intersection
-            }
-        }
-    }
-
-    // Intersection found
-    if (t_enter >= ray_length)
-    {
-        return result; // Beyond max_time
-    }
+    float t_exit = 0.0f;
+    if (!intersect_ray_aabb(sphere_center, ray_direction, ray_length, expanded_min, expanded_max, t_enter, t_exit))
+        return result;
 
     result.hit = true;
     result.t_near = std::max(0.0f, t_enter) / ray_length; // Normalize to [0, 1]
@@ -212,7 +230,9 @@ RaySpherIntersection LinearCast::sweep_sphere_vs_aabb(const Vec3f &sphere_center
 
     return result;
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 float LinearCast::compute_closest_approach_time(const Vec3f &pos1,
                                                 const Vec3f &vel1,
                                                 const Vec3f &pos2,
@@ -234,7 +254,9 @@ float LinearCast::compute_closest_approach_time(const Vec3f &pos1,
     float t = -(rel_pos.dot(rel_vel)) / vel_sq;
     return clamp_time(t, 1.0f);
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 bool LinearCast::are_spheres_approaching(const Vec3f &pos1, const Vec3f &vel1, const Vec3f &pos2, const Vec3f &vel2)
 {
     // Check if relative velocity points toward contact
@@ -245,5 +267,6 @@ bool LinearCast::are_spheres_approaching(const Vec3f &pos1, const Vec3f &vel1, c
     float approaching = rel_pos.dot(rel_vel);
     return approaching < -1e-6f;
 }
+// NOLINTEND(bugprone-easily-swappable-parameters)
 
 } // namespace phynity::physics::collision::ccd
