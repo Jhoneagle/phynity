@@ -236,7 +236,7 @@ jobs:
         run: |
           cmake --preset=release -DPHYNITY_BUILD_TESTS=ON -DGOLDEN_CAPTURE_MODE=ON -DVCPKG_TARGET_TRIPLET=x64-linux
           cmake --build build/release -j --target replay_round_trip_test
-          ctest --build-dir build/release --output-on-failure -R "^validation\.serialization\.replay_round_trip$"
+          ctest --test-dir build/release --output-on-failure -R "^validation\.serialization\.replay_round_trip$"
 
       - name: Upload determinism replay artifacts
         if: always()

@@ -66,9 +66,9 @@ private:
 
     std::mutex jobs_mutex_;
     std::map<uint32_t,
-             std::unique_ptr<JobEntry>,
+             std::shared_ptr<JobEntry>,
              std::less<>,
-             phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::unique_ptr<JobEntry>>>>
+             phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::shared_ptr<JobEntry>>>>
         jobs_;
     uint32_t next_job_id_{1};
 
@@ -151,7 +151,7 @@ JobHandle JobSystemImpl::submit(JobFn job)
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         job_id = next_job_id_++;
-        jobs_[job_id] = std::make_unique<JobEntry>(std::move(job));
+        jobs_[job_id] = std::make_shared<JobEntry>(std::move(job));
     }
 
     {
@@ -170,7 +170,7 @@ void JobSystemImpl::wait(JobHandle handle)
         return;
     }
 
-    JobEntry *entry = nullptr;
+    std::shared_ptr<JobEntry> entry;
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         auto it = jobs_.find(handle.id);
@@ -178,16 +178,18 @@ void JobSystemImpl::wait(JobHandle handle)
         {
             return;
         }
-        entry = it->second.get();
+        entry = it->second;
     }
 
     // Wait for job completion
     {
         std::unique_lock<std::mutex> lock(entry->done_mutex);
-        entry->done_cv.wait(lock, [entry] { return entry->completed.load(); });
+        entry->done_cv.wait(lock, [&entry] { return entry->completed.load(); });
     }
 
-    // Clean up after waiting
+    // Clean up after waiting. The shared_ptr keeps the entry alive until this
+    // function returns, so ~JobEntry() (pthread_cond_destroy) cannot run while
+    // the worker thread's notify_all() is still executing.
     {
         std::lock_guard<std::mutex> lock(jobs_mutex_);
         jobs_.erase(handle.id);
@@ -221,17 +223,20 @@ void JobSystemImpl::worker_loop()
             continue;
         }
 
-        JobEntry *entry = nullptr;
+        // Hold a shared_ptr for the duration of execution and notify_all() so
+        // that ~JobEntry() cannot run (via jobs_.erase in wait()) until after
+        // notify_all() has fully returned.
+        std::shared_ptr<JobEntry> entry;
         {
             std::lock_guard<std::mutex> lock(jobs_mutex_);
             auto it = jobs_.find(job_id);
             if (it != jobs_.end())
             {
-                entry = it->second.get();
+                entry = it->second;
             }
         }
 
-        if (entry != nullptr && static_cast<bool>(entry->fn))
+        if (entry && static_cast<bool>(entry->fn))
         {
             entry->fn();
             entry->completed.store(true);
