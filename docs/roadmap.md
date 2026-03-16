@@ -17,9 +17,9 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Collision and constraints (M): SAT for convex hulls, GJK/EPA for general shapes, contact caching, impulse-based and PGS solvers.✅
 - Rigid body MVP (M): inertia tensors, angular integration, basic constraints (fixed, hinge), Baumgarte stabilization; simple stacking demo.✅
 - Continuous physics (M): CCD sweeps for fast movers, time-of-impact resolution, restitution and friction modeling.✅
-- Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.
-- Performance monitoring (M): automated benchmark regression detection with per-test thresholds, historical tracking (CSV/DB), performance dashboard for frame time/memory trends, alerts for > 5% regressions.
-- CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.
+- Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.✅
+- Performance monitoring (M): automated benchmark regression detection with per-test thresholds, historical tracking (CSV/DB), performance dashboard for frame time/memory trends, alerts for > 5% regressions.✅
+- CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.✅
 - Platform and concurrency (M): task graph builder, fiber-backed jobs, pinned tasks for cache locality; deterministic replay of job schedules.
 - Tooling and UI (M): in-engine debug HUD, timeline scrubber for stepping, detachable inspectors for bodies/constraints.
 - Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.

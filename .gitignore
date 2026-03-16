@@ -55,7 +55,6 @@ build
 vcpkg_installed
 
 # Temp
-HARDENING_PLAN.txt
 AI-conversation.txt
 log.txt
 docs/*.txt
