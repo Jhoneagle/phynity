@@ -12,3 +12,4 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-03-23T04:35:34Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23421552161,nightly-quality,windows,performance-windows,validation.diagnostics.profiler_overhead,FLAKY_RECOVERED,2
 1,2026-03-23T04:35:34Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23421552161,nightly-quality,windows,performance-windows,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,2
 1,2026-03-27T04:40:38Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23631381767,nightly-quality,windows,performance-windows,validation.physics.collision.broadphase_performance,FAILED_AFTER_RETRY,3
+1,2026-03-28T05:17:08Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23677396714,nightly-quality,linux,tsan-linux,job_system_tests,FLAKY_RECOVERED,3
