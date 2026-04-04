@@ -19,3 +19,4 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-04-01T05:17:26Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23832468730,nightly-quality,linux,tsan-linux,job_system_tests,FLAKY_RECOVERED,2
 1,2026-04-02T05:00:09Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23883954388,nightly-quality,linux,performance-linux,validation.physics.collision.broadphase_performance,FAILED_AFTER_RETRY,3
 1,2026-04-02T05:00:09Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23883954388,nightly-quality,linux,tsan-linux,job_system_tests,FLAKY_RECOVERED,2
+1,2026-04-04T04:25:35Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,23971203073,nightly-quality,linux,performance-linux,validation.physics.collision.broadphase_performance,FAILED_AFTER_RETRY,3
