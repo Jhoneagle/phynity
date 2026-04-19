@@ -321,10 +321,12 @@ public:
                             continue;
                         }
 
-                        float impulse = std::min(beta * error, config_.max_constraint_impulse);
+                        // Scale impulse by dt to convert positional error into
+                        // a velocity correction appropriate for one timestep
+                        float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
 
                         constraint->apply_impulse(impulse);
-                        max_impulse = std::max(max_impulse, impulse);
+                        max_impulse = std::max(max_impulse, std::abs(impulse));
                     }
 
                     if (max_impulse < convergence_threshold)
