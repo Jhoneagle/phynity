@@ -54,9 +54,10 @@ public:
         }
 
         uint32_t count = end - begin;
+        uint32_t effective_grain = (grain > 0) ? grain : count;
 
         // Serial fallback: system not running, small range, or deterministic mode
-        if (!is_running() || count <= grain || scheduling_mode() == SchedulingMode::Deterministic)
+        if (!is_running() || count <= effective_grain || scheduling_mode() == SchedulingMode::Deterministic)
         {
             for (uint32_t i = begin; i < end; ++i)
             {
@@ -67,11 +68,11 @@ public:
 
         // Divide [begin, end) into chunks of size `grain` and submit each as a job
         std::vector<JobHandle> handles;
-        handles.reserve((count + grain - 1) / grain);
+        handles.reserve((count + effective_grain - 1) / effective_grain);
 
-        for (uint32_t chunk_begin = begin; chunk_begin < end; chunk_begin += grain)
+        for (uint32_t chunk_begin = begin; chunk_begin < end; chunk_begin += effective_grain)
         {
-            uint32_t chunk_end = std::min(chunk_begin + grain, end);
+            uint32_t chunk_end = std::min(chunk_begin + effective_grain, end);
             handles.push_back(submit([chunk_begin, chunk_end, &fn]()
                                      {
                                          for (uint32_t i = chunk_begin; i < chunk_end; ++i)
