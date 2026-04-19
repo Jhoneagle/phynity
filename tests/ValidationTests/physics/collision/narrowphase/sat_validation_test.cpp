@@ -3,9 +3,10 @@
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/narrowphase/sat_solver.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 
 using namespace phynity::physics::collision;
+using phynity::physics::shapes::ShapeFactory;
 using namespace phynity::math::vectors;
 using Catch::Matchers::WithinAbs;
 

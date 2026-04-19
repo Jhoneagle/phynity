@@ -1,5 +1,5 @@
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
 
 #include <algorithm>
@@ -183,29 +183,29 @@ PhysicsSnapshot SnapshotHelpers::capture_rigid_body_system(const phynity::physic
 
         if (body.shape)
         {
-            rigid_snapshot.shape_local_center = body.shape->local_center;
+            rigid_snapshot.shape_local_center = body.shape->get_local_center();
 
-            if (body.shape->shape_type == phynity::physics::ShapeType::Sphere)
+            if (body.shape->get_type() == phynity::physics::shapes::ShapeType::Sphere)
             {
-                const auto *sphere = dynamic_cast<const phynity::physics::SphereShape *>(body.shape.get());
+                const auto *sphere = dynamic_cast<const phynity::physics::shapes::SphereShape *>(body.shape.get());
                 if (sphere)
                 {
                     rigid_snapshot.shape_type = SnapshotShapeType::Sphere;
                     rigid_snapshot.shape_radius = sphere->radius;
                 }
             }
-            else if (body.shape->shape_type == phynity::physics::ShapeType::Box)
+            else if (body.shape->get_type() == phynity::physics::shapes::ShapeType::Box)
             {
-                const auto *box = dynamic_cast<const phynity::physics::BoxShape *>(body.shape.get());
+                const auto *box = dynamic_cast<const phynity::physics::shapes::BoxShape *>(body.shape.get());
                 if (box)
                 {
                     rigid_snapshot.shape_type = SnapshotShapeType::Box;
                     rigid_snapshot.shape_half_extents = box->half_extents;
                 }
             }
-            else if (body.shape->shape_type == phynity::physics::ShapeType::Capsule)
+            else if (body.shape->get_type() == phynity::physics::shapes::ShapeType::Capsule)
             {
-                const auto *capsule = dynamic_cast<const phynity::physics::CapsuleShape *>(body.shape.get());
+                const auto *capsule = dynamic_cast<const phynity::physics::shapes::CapsuleShape *>(body.shape.get());
                 if (capsule)
                 {
                     rigid_snapshot.shape_type = SnapshotShapeType::Capsule;
@@ -265,17 +265,17 @@ bool SnapshotHelpers::restore_rigid_body_system(const PhysicsSnapshot &snapshot,
         std::shared_ptr<phynity::physics::Shape> shape = nullptr;
         if (rigid_snapshot.shape_type == SnapshotShapeType::Sphere)
         {
-            shape = std::make_shared<phynity::physics::SphereShape>(rigid_snapshot.shape_radius,
-                                                                    rigid_snapshot.shape_local_center);
+            shape = std::make_shared<phynity::physics::shapes::SphereShape>(rigid_snapshot.shape_radius,
+                                                                            rigid_snapshot.shape_local_center);
         }
         else if (rigid_snapshot.shape_type == SnapshotShapeType::Box)
         {
-            shape = std::make_shared<phynity::physics::BoxShape>(rigid_snapshot.shape_half_extents,
-                                                                 rigid_snapshot.shape_local_center);
+            shape = std::make_shared<phynity::physics::shapes::BoxShape>(rigid_snapshot.shape_half_extents,
+                                                                         rigid_snapshot.shape_local_center);
         }
         else if (rigid_snapshot.shape_type == SnapshotShapeType::Capsule)
         {
-            shape = std::make_shared<phynity::physics::CapsuleShape>(
+            shape = std::make_shared<phynity::physics::shapes::CapsuleShape>(
                 rigid_snapshot.shape_radius, rigid_snapshot.shape_half_height, rigid_snapshot.shape_local_center);
         }
 

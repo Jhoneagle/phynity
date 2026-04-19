@@ -119,9 +119,9 @@ for (int i = 0; i < 1000; ++i) {
 Both scales share fundamental components:
 
 ```cpp
-#include <core/physics/common/material.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/timestep_controller.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/config/timestep_controller.hpp>
 ```
 
 **Material**: Physical properties (mass, restitution, friction)  
@@ -132,8 +132,8 @@ Both scales share fundamental components:
 ### Micro-Scale Components
 
 ```cpp
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_system.hpp>
 ```
 
 **Particle**: Point mass with position, velocity, forces  
@@ -143,10 +143,10 @@ Both scales share fundamental components:
 ### Macro-Scale Components
 
 ```cpp
-#include <core/physics/macro/rigid_body.hpp>
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/macro/shape.hpp>
-#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
+#include <core/physics/rigid_bodies/rigid_body.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/physics/shapes/shape.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
 ```
 
 **RigidBody**: 6-DOF with inertia tensor  
@@ -159,7 +159,7 @@ Both scales share fundamental components:
 ```cpp
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
 ```
 
 Both scales use the same collision and constraint infrastructure:
@@ -173,8 +173,8 @@ Both scales use the same collision and constraint infrastructure:
 ### Pattern 1: Pure Micro-Scale Simulation
 
 ```cpp
-#include <core/physics/micro/particle_system.hpp>
-#include <core/physics/common/force_field.hpp>
+#include <core/physics/particles/particle_system.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 
 // Water simulation with 10,000 particles
 ParticleSystem water;
@@ -199,9 +199,9 @@ for (int frame = 0; frame < 600; ++frame) {
 ### Pattern 2: Pure Macro-Scale Simulation
 
 ```cpp
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/macro/shape.hpp>
-#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/physics/shapes/shape.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
 
 // Vehicle with wheels welded to chassis (hinge joints planned)
 RigidBodySystem vehicle_sim;
@@ -221,7 +221,7 @@ for (int i = 0; i < 4; ++i) {
     );
     
     // Weld wheel to chassis (placeholder until hinge joints are implemented)
-    auto weld = std::make_shared<FixedConstraintRB>(
+    auto weld = std::make_shared<WeldJoint>(
         vehicle_sim.get_body(chassis_id),
         vehicle_sim.get_body(wheel_id),
         wheel_pos,

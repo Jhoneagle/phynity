@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/collision/contact/pgs_solver.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 using namespace phynity::physics;
 using namespace phynity::physics::collision;
@@ -17,15 +17,13 @@ namespace
 ParticleSystem create_stable_system()
 {
     ParticleSystem system;
-    system.set_solver_mode(ParticleSystem::SolverMode::PGS);
     system.enable_collisions(true);
     system.enable_constraints(true);
 
-    PGSConfig pgs_config;
-    pgs_config.max_iterations = 8;
-    pgs_config.convergence_threshold = 1e-5f;
-    pgs_config.friction_coefficient = 0.5f;
-    system.set_pgs_config(pgs_config);
+    constraints::ConstraintSolverConfig solver_config;
+    solver_config.iterations = 8;
+    solver_config.convergence_threshold = 1e-5f;
+    system.set_constraint_solver_config(solver_config);
 
     return system;
 }

@@ -25,7 +25,7 @@
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug",
 				"PHYNITY_ENABLE_SANITIZERS": "OFF",
-				"PHYNITY_WARNINGS_AS_ERRORS": "OFF"
+				"PHYNITY_WARNINGS_AS_ERRORS": "ON"
 			}
 		},
 		{

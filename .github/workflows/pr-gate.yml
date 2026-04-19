@@ -238,11 +238,16 @@ jobs:
           # Generate compile_commands.json if not present
           [ -f compile_commands.json ] || cmake --build . --target all
 
-          # Run clang-tidy on the full source set with workflow-enforced failures.
-          find ../../src -type f -name "*.cpp" | sort | while read file; do
-            echo "Analyzing: $file"
-            clang-tidy -p . "$file"
-          done
+          # Run clang-tidy in parallel using run-clang-tidy wrapper
+          if command -v run-clang-tidy &> /dev/null; then
+            run-clang-tidy -p . -j "$(nproc)"
+          else
+            # Fallback to sequential if run-clang-tidy not available
+            find ../../src ../../tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | sort | while read file; do
+              echo "Analyzing: $file"
+              clang-tidy -p . "$file"
+            done
+          fi
 
       - name: Archive clang-tidy report
         if: always()
@@ -317,7 +322,8 @@ jobs:
             --object-directory build/debug \
             --xml-pretty --output build/debug/coverage.xml \
             --html-details build/debug/coverage.html \
-            --exclude 'tests/.*'
+            --exclude 'tests/.*' \
+            --fail-under-line 60
 
       - name: Upload coverage artifacts
         if: always()
@@ -399,7 +405,7 @@ jobs:
         env:
           ASAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
           UBSAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
-        run: ctest -C Debug --output-on-failure -LE performance -j
+        run: ctest -C Debug --output-on-failure -R "^(unit\\.|validation\\.)" -LE performance -j
 
       - name: Archive sanitizer reports on failure
         if: failure()
@@ -407,6 +413,62 @@ jobs:
         with:
           name: sanitizer-report-${{ matrix.os }}
           path: build/debug-asan/
+          retention-days: 90
+
+  # Job 4b: Thread Sanitizer (TSAN on Linux only)
+  sanitizers-tsan:
+    name: Sanitizers TSAN (linux)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Bootstrap vcpkg
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Setup dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang lld
+
+      - name: Setup vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg/archives
+            ~/.cache/vcpkg/src
+          key: vcpkg-linux-tsan-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+
+      - name: Configure CMake with TSAN
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake --preset=debug-tsan -DPHYNITY_BUILD_TESTS=ON -DPHYNITY_WARNINGS_AS_ERRORS=OFF -DVCPKG_TARGET_TRIPLET=x64-linux
+
+      - name: Build with TSAN
+        run: cmake --build build/debug-tsan -j
+
+      - name: Run tests with TSAN
+        env:
+          TSAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
+        run: |
+          python tools/run_ctest_with_retries.py \
+            --build-dir build/debug-tsan \
+            --config Debug \
+            --exclude-label performance \
+            --parallel 2 \
+            --max-retries 2 \
+            --report-file build/debug-tsan/test-retries/tsan-linux.txt \
+            --output-on-failure
+
+      - name: Archive TSAN reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsan-report-linux
+          path: build/debug-tsan/
           retention-days: 90
 
   # Job 5: Flaky budget check (non-blocking)
@@ -456,7 +518,7 @@ jobs:
   quality-gate:
     name: Quality Gate Summary
     runs-on: ubuntu-22.04
-    needs: [build-and-test, format-check, static-analysis, sanitizers]
+    needs: [build-and-test, format-check, static-analysis, sanitizers, sanitizers-tsan]
     if: always()
     steps:
       - name: Check all required checks passed
@@ -464,19 +526,22 @@ jobs:
           if [[ "${{ needs.build-and-test.result }}" != "success" || \
                 "${{ needs.format-check.result }}" != "success" || \
                 "${{ needs.static-analysis.result }}" != "success" || \
-                "${{ needs.sanitizers.result }}" != "success" ]]; then
+                "${{ needs.sanitizers.result }}" != "success" || \
+                "${{ needs.sanitizers-tsan.result }}" != "success" ]]; then
             echo "❌ PR Quality Gate FAILED"
             echo ""
             echo "Failed checks:"
             [ "${{ needs.build-and-test.result }}" != "success" ] && echo "  - Build and Tests"
             [ "${{ needs.format-check.result }}" != "success" ] && echo "  - Format Check"
             [ "${{ needs.static-analysis.result }}" != "success" ] && echo "  - Static Analysis"
-            [ "${{ needs.sanitizers.result }}" != "success" ] && echo "  - Sanitizers"
+            [ "${{ needs.sanitizers.result }}" != "success" ] && echo "  - Sanitizers (ASAN/UBSAN)"
+            [ "${{ needs.sanitizers-tsan.result }}" != "success" ] && echo "  - Sanitizers (TSAN)"
             exit 1
           fi
-          
+
           echo "✅ PR Quality Gate PASSED"
           echo "  ✓ Build and Tests"
           echo "  ✓ Format Check"
           echo "  ✓ Static Analysis"
-          echo "  ✓ Sanitizers (Linux/macOS)"
+          echo "  ✓ Sanitizers ASAN/UBSAN (Linux/macOS)"
+          echo "  ✓ Sanitizers TSAN (Linux)"

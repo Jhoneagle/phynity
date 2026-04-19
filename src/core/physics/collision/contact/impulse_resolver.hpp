@@ -1,7 +1,7 @@
 #pragma once
 
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
 
 #include <algorithm>
 
@@ -12,7 +12,7 @@ using phynity::math::vectors::Vec3f;
 
 /// Resolves collisions using impulse-based response
 /// Handles velocity impulses and penetration correction.
-/// Works with any objects that provide the SphereCollider interface.
+/// Works with any objects that provide the CollisionProxy interface.
 class ImpulseResolver
 {
 public:
@@ -21,7 +21,7 @@ public:
     /// @param collider_a First colliding object (modified in place)
     /// @param collider_b Second colliding object (modified in place)
     /// @return The impulse vector that was applied (useful for warm-start caching)
-    static Vec3f resolve(const ContactManifold &manifold, SphereCollider &collider_a, SphereCollider &collider_b)
+    static Vec3f resolve(const ContactManifold &manifold, CollisionProxy &collider_a, CollisionProxy &collider_b)
     {
         if (!manifold.is_valid())
         {

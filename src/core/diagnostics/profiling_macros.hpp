@@ -44,7 +44,7 @@
  *
  * The zone will be named with the function name (e.g., "expensive_calculation").
  */
-#define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
+#define PROFILE_FUNCTION() PROFILE_SCOPE(static_cast<const char *>(__FUNCTION__))
 
 /**
  * @brief Internal helper macro for generating unique variable names.

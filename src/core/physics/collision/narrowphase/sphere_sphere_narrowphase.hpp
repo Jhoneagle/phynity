@@ -3,10 +3,10 @@
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/collision/ccd/conservative_advancement.hpp>
 #include <core/physics/collision/ccd/swept_sphere.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/config/ccd_config.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 #include <algorithm>
 
@@ -21,8 +21,8 @@ using phynity::physics::constants::COLLISION_EPSILON;
 
 /// Narrowphase collision detection for sphere-sphere contacts
 /// Generates contact manifolds from geometric overlap.
-/// Works with any objects that provide SphereCollider properties.
-class SphereSpherNarrowphase
+/// Works with any objects that provide CollisionProxy properties.
+class SphereSphereNarrowphase
 {
 public:
     /// Detect collision between two spheres
@@ -32,7 +32,7 @@ public:
     /// @param index_b Index or ID of second object
     /// @return Contact manifold if collision detected, otherwise invalid manifold
     static ContactManifold
-    detect(const SphereCollider &collider_a, const SphereCollider &collider_b, size_t index_a, size_t index_b)
+    detect(const CollisionProxy &collider_a, const CollisionProxy &collider_b, size_t index_a, size_t index_b)
     {
         ContactManifold manifold;
         manifold.object_a_id = index_a;
@@ -86,8 +86,8 @@ public:
     /// @param dt Timestep duration (seconds)
     /// @param ccd_config CCD configuration options
     /// @return Contact manifold with collision time if CCD detected collision early
-    static ContactManifold detect_with_ccd(const SphereCollider &collider_a,
-                                           const SphereCollider &collider_b,
+    static ContactManifold detect_with_ccd(const CollisionProxy &collider_a,
+                                           const CollisionProxy &collider_b,
                                            size_t index_a,
                                            size_t index_b,
                                            float dt,
@@ -128,7 +128,7 @@ public:
     /// @param dt Timestep duration (seconds)
     /// @return Contact manifold with collision time if swept collision detected
     static ContactManifold detect_swept(
-        const SphereCollider &collider_a, const SphereCollider &collider_b, size_t index_a, size_t index_b, float dt)
+        const CollisionProxy &collider_a, const CollisionProxy &collider_b, size_t index_a, size_t index_b, float dt)
     {
         ContactManifold manifold;
         manifold.object_a_id = index_a;
@@ -178,8 +178,8 @@ private:
     /// @param dt Timestep duration
     /// @param ccd_config CCD configuration
     /// @return True if CCD should be tested, false if discrete detection sufficient
-    static bool should_use_ccd(const SphereCollider &collider_a,
-                               const SphereCollider &collider_b,
+    static bool should_use_ccd(const CollisionProxy &collider_a,
+                               const CollisionProxy &collider_b,
                                float dt,
                                const CCDConfig &ccd_config)
     {

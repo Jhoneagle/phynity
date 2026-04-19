@@ -92,7 +92,7 @@ jobs:
         env:
           ASAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
           UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=1"
-        run: ctest -C Debug --output-on-failure -LE performance -j
+        run: ctest -C Debug --output-on-failure -R "^(unit\\.|validation\\.)" -LE performance -j
 
       - name: Upload sanitizer artifacts
         if: always()

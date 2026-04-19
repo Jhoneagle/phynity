@@ -124,7 +124,7 @@ TEST_CASE("MomentumMonitor: 3D vector operations", "[diagnostics][momentum_monit
     REQUIRE(diff.z == 3.0);
 
     // Magnitude (3D, 4, 5 might be ~7.07)
-    double mag = diff.magnitude();
+    double mag = diff.length();
     REQUIRE(mag > 5.0); // sqrt(27) ≈ 5.19
 }
 

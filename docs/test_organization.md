@@ -149,7 +149,6 @@ This section maps major engine features to canonical test locations.
   - `tests/ValidationTests/physics/collision/narrowphase/gjk_epa_validation_test.cpp`
 - Contact and resolution
   - `tests/ValidationTests/physics/collision/contact/contact_cache_golden_test.cpp`
-  - `tests/ValidationTests/physics/collision/contact/pgs_solver_golden_test.cpp`
   - `tests/ValidationTests/physics/collision/contact/stacking_scenarios_test.cpp`
 - CCD-oriented scenarios
   - `tests/ValidationTests/physics/collision/ccd_validation_test.cpp`

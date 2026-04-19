@@ -1,7 +1,8 @@
 #include <catch2/catch_all.hpp>
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/macro/shape.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/sphere.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
 #include <core/serialization/snapshot_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>
@@ -13,6 +14,7 @@
 #include <vector>
 
 using namespace phynity::physics;
+using namespace phynity::physics::shapes;
 using namespace phynity::serialization;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers::constants;

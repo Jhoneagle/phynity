@@ -1,7 +1,7 @@
 #include <catch2/catch_all.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/config/ccd_config.hpp>
+#include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <chrono>

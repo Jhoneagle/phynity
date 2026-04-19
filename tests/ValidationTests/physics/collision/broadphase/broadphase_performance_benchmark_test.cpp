@@ -1,7 +1,7 @@
 #include <catch2/catch_all.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <tests/test_utils/timing_profile.hpp>
 
@@ -38,21 +38,21 @@ void resolve_collisions_brute_force(std::vector<Particle> &particles)
             if (!b.is_alive())
                 continue;
 
-            SphereCollider collider_a;
+            CollisionProxy collider_a;
             collider_a.position = a.position;
             collider_a.velocity = a.velocity;
             collider_a.radius = a.radius;
             collider_a.inverse_mass = a.inverse_mass();
             collider_a.restitution = a.material.restitution;
 
-            SphereCollider collider_b;
+            CollisionProxy collider_b;
             collider_b.position = b.position;
             collider_b.velocity = b.velocity;
             collider_b.radius = b.radius;
             collider_b.inverse_mass = b.inverse_mass();
             collider_b.restitution = b.material.restitution;
 
-            ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
+            ContactManifold manifold = SphereSphereNarrowphase::detect(collider_a, collider_b, i, j);
             if (manifold.is_valid())
             {
                 ImpulseResolver::resolve(manifold, collider_a, collider_b);

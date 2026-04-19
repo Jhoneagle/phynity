@@ -4,9 +4,10 @@
 #include <core/physics/collision/narrowphase/epa_solver.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 
 using namespace phynity::physics::collision;
+using phynity::physics::shapes::ShapeFactory;
 using namespace phynity::math::vectors;
 using Catch::Matchers::WithinAbs;
 

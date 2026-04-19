@@ -57,7 +57,7 @@ template <typename T = float> struct Vec3
         return Vec3(x / other.x, y / other.y, z / other.z);
     }
 
-    Vec3 &operator+=(const Vec3 &other)
+    constexpr Vec3 &operator+=(const Vec3 &other)
     {
         x += other.x;
         y += other.y;
@@ -65,7 +65,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 &operator*=(T scalar)
+    constexpr Vec3 &operator*=(T scalar)
     {
         x *= scalar;
         y *= scalar;
@@ -73,7 +73,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 &operator*=(const Vec3 &other)
+    constexpr Vec3 &operator*=(const Vec3 &other)
     {
         x *= other.x;
         y *= other.y;
@@ -81,7 +81,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 &operator-=(const Vec3 &other)
+    constexpr Vec3 &operator-=(const Vec3 &other)
     {
         x -= other.x;
         y -= other.y;
@@ -89,7 +89,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 &operator/=(T scalar)
+    constexpr Vec3 &operator/=(T scalar)
     {
         x /= scalar;
         y /= scalar;
@@ -97,7 +97,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 &operator/=(const Vec3 &other)
+    constexpr Vec3 &operator/=(const Vec3 &other)
     {
         x /= other.x;
         y /= other.y;
@@ -143,12 +143,12 @@ template <typename T = float> struct Vec3
             throw std::out_of_range("Vec3 index out of range");
         return (i == 0) ? x : (i == 1) ? y : z;
     }
-    T dot(const Vec3 &other) const
+    constexpr T dot(const Vec3 &other) const
     {
         return x * other.x + y * other.y + z * other.z;
     }
 
-    T squaredLength() const
+    constexpr T squaredLength() const
     {
         return dot(*this);
     }
@@ -174,7 +174,7 @@ template <typename T = float> struct Vec3
         return *this;
     }
 
-    Vec3 cross(const Vec3 &other) const
+    constexpr Vec3 cross(const Vec3 &other) const
     {
         return Vec3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
     }

@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
 
 #include <cmath>

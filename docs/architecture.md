@@ -27,7 +27,7 @@ The project is organized into clearly separated layers:
 - Optional rendering and visualization
 - Application-level executables
 
-The simulation core is fully decoupled from rendering and platform code.
+The simulation core is fully decoupled from rendering. It currently keeps a thin dependency on platform services for threading and allocation tracking.
 
 ## Core Principles
 
@@ -39,7 +39,7 @@ The simulation core is fully decoupled from rendering and platform code.
 ## Module Responsibilities
 
 ### core/
-Contains all platform-agnostic logic:
+Contains the main simulation logic and engine-facing data structures. Most subsystems are platform-agnostic, with a small platform dependency retained for threading and allocation instrumentation.
 - **Math and numerical utilities** (`core/math/`)
   - Vectors, matrices, quaternions with SIMD potential
   - Linear algebra: LU, QR, SVD, Cholesky decomposition
@@ -73,7 +73,8 @@ Minimal logic; orchestration only.
 
 ## Dependency Rules
 
-- core must not depend on platform or render
+- core must not depend on render
+- core currently has a narrow dependency on platform for threading and allocation instrumentation; reducing that coupling remains a valid cleanup target
 - render may depend on core
 - app may depend on everything
 
@@ -168,9 +169,8 @@ This is validated through reference-based tests comparing against analytical sol
 - Demo executable via `tools/run.(bat|sh)`
 
 **Testing**
-- 70 automated tests across unit and validation suites
+- Automated unit and validation suites with dedicated golden and performance regression checks
 - Reference-based determinism tests for reproducible stepping
-- Golden and performance regression checks for key scenarios
 - All tests use Catch2 framework
 
 ### Design Decisions
@@ -203,6 +203,7 @@ Required checks:
 - `Static Analysis (clang-tidy)`
 - `Sanitizers (linux)`
 - `Sanitizers (macos)`
+- `Sanitizers TSAN (linux)`
 - `Quality Gate Summary`
 
 These check names must match the PR workflow job names in `.github/workflows/pr-gate.yml`.

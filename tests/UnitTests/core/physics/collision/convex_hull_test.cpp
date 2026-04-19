@@ -1,10 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/collision/shapes/convex_hull.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/shapes/convex_hull.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics::collision;
+using namespace phynity::physics::shapes;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
 using Catch::Matchers::WithinAbs;

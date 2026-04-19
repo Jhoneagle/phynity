@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <core/serialization/replay_reader.hpp>
 #include <core/serialization/replay_writer.hpp>
 #include <core/serialization/snapshot_helpers.hpp>

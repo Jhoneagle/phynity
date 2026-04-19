@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/constraints/contact/contact_constraint.hpp>
-#include <core/physics/constraints/joints/fixed_constraint.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/constraints/constraint.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
+#include <core/physics/constraints/fixed_joint.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <algorithm>
@@ -37,7 +37,7 @@ SolveMetrics solve_fixed_once(int iterations, bool warm_start)
     particles[1].material = make_no_damping_material(1.0f, 0.0f);
 
     std::vector<std::unique_ptr<Constraint>> constraints;
-    constraints.push_back(std::make_unique<FixedConstraint>(particles[0], particles[1]));
+    constraints.push_back(std::make_unique<DistanceJoint>(particles[0], particles[1]));
 
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
 
@@ -49,7 +49,7 @@ SolveMetrics solve_fixed_once(int iterations, bool warm_start)
     config.convergence_threshold = 1e-6f;
     solver.set_config(config);
 
-    solver.solve(constraints, particles);
+    solver.solve(constraints);
 
     SolveMetrics metrics;
     metrics.closing_speed = particles[0].velocity.x - particles[1].velocity.x;
@@ -67,7 +67,7 @@ float second_step_closing_speed_with_or_without_warm_start(bool warm_start)
     particles[1].material = make_no_damping_material(1.0f, 0.0f);
 
     std::vector<std::unique_ptr<Constraint>> constraints;
-    constraints.push_back(std::make_unique<FixedConstraint>(particles[0], particles[1]));
+    constraints.push_back(std::make_unique<DistanceJoint>(particles[0], particles[1]));
 
     ConstraintSolver solver;
     ConstraintSolverConfig config;
@@ -78,14 +78,14 @@ float second_step_closing_speed_with_or_without_warm_start(bool warm_start)
     solver.set_config(config);
 
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
-    solver.solve(constraints, particles);
+    solver.solve(constraints);
 
     particles[0].position = Vec3f(0.0f, 0.0f, 0.0f);
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
     particles[0].velocity = Vec3f(0.0f);
     particles[1].velocity = Vec3f(0.0f);
 
-    solver.solve(constraints, particles);
+    solver.solve(constraints);
     return particles[0].velocity.x - particles[1].velocity.x;
 }
 
@@ -132,7 +132,7 @@ TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[cons
     particles[1].material = make_no_damping_material(1.0f, 0.2f);
 
     std::vector<std::unique_ptr<Constraint>> constraints;
-    constraints.push_back(std::make_unique<FixedConstraint>(particles[0], particles[1]));
+    constraints.push_back(std::make_unique<DistanceJoint>(particles[0], particles[1]));
 
     particles[1].position = Vec3f(0.8f, 0.0f, 0.0f);
 
@@ -152,7 +152,7 @@ TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[cons
     config.use_warm_start = false;
     solver.set_config(config);
 
-    solver.solve(constraints, particles);
+    solver.solve(constraints);
 
     REQUIRE(std::isfinite(particles[0].velocity.x));
     REQUIRE(std::isfinite(particles[1].velocity.x));
