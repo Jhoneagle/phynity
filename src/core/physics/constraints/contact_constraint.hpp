@@ -10,11 +10,13 @@
 namespace phynity::physics::constraints
 {
 
+using phynity::math::matrices::Mat3f;
 using phynity::math::vectors::Vec3f;
 using phynity::physics::collision::ContactManifold;
 
 /// Contact constraint: represents a collision between two bodies.
 /// Wraps a ContactManifold and computes solver quantities directly from body state.
+/// Includes angular coupling for rigid bodies via the contact point lever arm.
 class ContactConstraint : public Constraint
 {
 public:
@@ -37,7 +39,12 @@ public:
         if (!manifold_.is_valid())
         {
             active_ = false;
+            return;
         }
+
+        // Precompute lever arms from body centers to contact point
+        r_a_ = manifold_.contact.position - body_a_.get_position();
+        r_b_ = manifold_.contact.position - body_b_.get_position();
     }
 
     // ========================================================================
@@ -49,30 +56,42 @@ public:
         return std::max(0.0f, manifold_.contact.penetration);
     }
 
-    /// J * v for a contact: relative velocity along normal = (v_b - v_a) . normal
     float compute_jv() const override
     {
         if (!active_)
             return 0.0f;
 
         const Vec3f &n = manifold_.contact.normal;
-        Vec3f v_a = body_a_.get_velocity();
-        Vec3f v_b = body_b_.get_velocity();
 
-        // J = [-n, n], so J*v = -n.v_a + n.v_b = n.(v_b - v_a)
+        // Velocity at contact point = v + omega x r
+        Vec3f v_a = body_a_.get_velocity() + body_a_.get_angular_velocity().cross(r_a_);
+        Vec3f v_b = body_b_.get_velocity() + body_b_.get_angular_velocity().cross(r_b_);
+
         return n.dot(v_b - v_a);
     }
 
-    /// J * M^-1 * J^T for a contact: inv_mass_a + inv_mass_b (for linear-only)
     float compute_effective_mass() const override
     {
         if (!active_)
             return 0.0f;
 
-        // For J = [-n, n] and diagonal M^-1:
-        // J * M^-1 * J^T = |n|^2 * (inv_mass_a + inv_mass_b) = inv_mass_a + inv_mass_b
-        // (since n is unit length)
-        return body_a_.get_inverse_mass() + body_b_.get_inverse_mass();
+        const Vec3f &n = manifold_.contact.normal;
+
+        // J * M^-1 * J^T including angular terms:
+        // eff = inv_mass_a + inv_mass_b
+        //     + (r_a x n)^T * I_a_inv * (r_a x n)
+        //     + (r_b x n)^T * I_b_inv * (r_b x n)
+        float eff = body_a_.get_inverse_mass() + body_b_.get_inverse_mass();
+
+        Vec3f raxn = r_a_.cross(n);
+        Mat3f I_a_inv = body_a_.get_inverse_inertia_world();
+        eff += raxn.dot(I_a_inv * raxn);
+
+        Vec3f rbxn = r_b_.cross(n);
+        Mat3f I_b_inv = body_b_.get_inverse_inertia_world();
+        eff += rbxn.dot(I_b_inv * rbxn);
+
+        return eff;
     }
 
     void apply_impulse(float impulse_magnitude) override
@@ -85,27 +104,27 @@ public:
         const Vec3f &normal = manifold_.contact.normal;
         const Vec3f impulse_vector = normal * impulse_magnitude;
 
+        // Linear impulse
         if (body_a_.get_inverse_mass() > 0.0f)
         {
             body_a_.apply_velocity_impulse(-impulse_vector * body_a_.get_inverse_mass());
         }
-
         if (body_b_.get_inverse_mass() > 0.0f)
         {
             body_b_.apply_velocity_impulse(impulse_vector * body_b_.get_inverse_mass());
         }
+
+        // Angular impulse: torque = r x impulse
+        body_a_.apply_angular_impulse(-r_a_.cross(impulse_vector));
+        body_b_.apply_angular_impulse(r_b_.cross(impulse_vector));
     }
 
     // ========================================================================
-    // Warm-Start
+    // Warm-Start & Status
     // ========================================================================
 
     void set_warm_start_impulse(float impulse) override { (void)impulse; }
     float get_accumulated_impulse() const override { return accumulated_impulse_; }
-
-    // ========================================================================
-    // Status & Accessors
-    // ========================================================================
 
     bool is_active() const override { return active_ && manifold_.is_valid(); }
     bool is_unilateral() const override { return true; }
@@ -128,6 +147,8 @@ private:
     const ContactManifold &manifold_;
     Body &body_a_;
     Body &body_b_;
+    Vec3f r_a_; ///< Lever arm: contact point relative to body A center
+    Vec3f r_b_; ///< Lever arm: contact point relative to body B center
     ContactType contact_type_;
     float accumulated_impulse_;
     bool active_ = true;

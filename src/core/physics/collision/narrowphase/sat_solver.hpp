@@ -13,6 +13,9 @@
 namespace phynity::physics::collision
 {
 
+using phynity::physics::shapes::ConvexHull2D;
+using phynity::physics::shapes::ConvexHull3D;
+
 using phynity::math::vectors::Vec2f;
 using phynity::math::vectors::Vec3f;
 
