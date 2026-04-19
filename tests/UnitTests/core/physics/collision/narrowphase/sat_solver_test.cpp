@@ -5,6 +5,7 @@
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics::collision;
+using phynity::physics::shapes::ShapeFactory;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
 using Catch::Matchers::WithinAbs;

@@ -7,6 +7,7 @@
 #include <core/physics/shapes/shape_factory.hpp>
 
 using namespace phynity::physics::collision;
+using phynity::physics::shapes::ShapeFactory;
 using namespace phynity::math::vectors;
 using Catch::Matchers::WithinAbs;
 

@@ -19,6 +19,7 @@
 
 using namespace phynity::physics;
 using namespace phynity::physics::collision;
+using phynity::physics::shapes::ShapeFactory;
 using namespace phynity::math::vectors;
 using namespace phynity::test;
 using namespace phynity::test::helpers;
