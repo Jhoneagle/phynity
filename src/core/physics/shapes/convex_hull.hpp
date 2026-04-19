@@ -36,6 +36,8 @@ public:
         phynity::platform::track_vector_capacity_release(vertices);
         phynity::platform::track_vector_capacity_release(normals);
     }
+    ConvexHull2D(const ConvexHull2D &) = default;
+    ConvexHull2D &operator=(const ConvexHull2D &) = default;
     ConvexHull2D(ConvexHull2D &&) noexcept = default;
     ConvexHull2D &operator=(ConvexHull2D &&) noexcept = default;
 
@@ -236,6 +238,8 @@ public:
         phynity::platform::track_vector_capacity_release(face_normals);
         phynity::platform::track_vector_capacity_release(edge_normals);
     }
+    ConvexHull3D(const ConvexHull3D &) = default;
+    ConvexHull3D &operator=(const ConvexHull3D &) = default;
     ConvexHull3D(ConvexHull3D &&) noexcept = default;
     ConvexHull3D &operator=(ConvexHull3D &&) noexcept = default;
 
