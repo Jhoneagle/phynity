@@ -127,10 +127,10 @@ public:
         accumulated_impulse_ += impulse_vector * impulse_magnitude;
     }
 
-    /// Get the body IDs for this constraint.
-    std::vector<size_t> get_body_ids() const override
+    /// Get the bodies involved in this constraint.
+    std::vector<Body *> get_bodies() const override
     {
-        return {static_cast<size_t>(body_a_.get_id()), static_cast<size_t>(body_b_.get_id())};
+        return {&body_a_, &body_b_};
     }
 
     // ========================================================================

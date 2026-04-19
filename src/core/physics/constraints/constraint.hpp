@@ -2,6 +2,7 @@
 
 #include <core/math/matrices/mat_dynamic.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/constraints/body.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -45,9 +46,10 @@ public:
     /// @param impulse_magnitude The magnitude of the impulse to apply (may be clamped by constraint type)
     virtual void apply_impulse(float impulse_magnitude) = 0;
 
-    /// Get the associated body IDs for this constraint.
-    /// @return Vector of particle/body indices involved in the constraint
-    virtual std::vector<size_t> get_body_ids() const = 0;
+    /// Get the bodies involved in this constraint.
+    /// The solver uses these to compute Jacobian-velocity products and effective mass.
+    /// @return Vector of Body pointers involved in the constraint
+    virtual std::vector<Body *> get_bodies() const = 0;
 
     // ========================================================================
     // Warm-Start Support (Optional)

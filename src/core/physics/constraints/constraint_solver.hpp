@@ -2,8 +2,6 @@
 
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
 #include <platform/allocation_tracker.hpp>
 
@@ -75,9 +73,9 @@ public:
 
     /// Solve all constraints in the system.
     /// This is the main entry point for unified constraint solving.
+    /// Each constraint carries its own body references, so no global body list is needed.
     /// @param constraints Vector of constraints to solve (contacts + rigid constraints)
-    /// @param particles   Reference to all particles for constraint access
-    void solve(std::vector<std::unique_ptr<Constraint>> &constraints, std::vector<Body *> &bodies)
+    void solve(std::vector<std::unique_ptr<Constraint>> &constraints)
     {
         PROFILE_FUNCTION();
 
@@ -148,32 +146,26 @@ public:
 
                 // Compute Jacobian-velocity product (relative velocity along constraint)
                 // J * v = dot(jacobian[row], [v_a, v_b])
-                float jv = compute_jacobian_velocity(jacobian, row, constraint->get_body_ids(), bodies);
+                auto constraint_bodies = constraint->get_bodies();
+                float jv = compute_jacobian_velocity(jacobian, row, constraint_bodies);
 
-                // Compute impulse magnitude
-                // Using Baumgarte stabilization: add error-correcting term
-                // For contact constraints with restitution: add velocity bounce target
                 const float error_correction = config_.baumgarte_beta * error;
 
-                // Add restitution target velocity for contact constraints
-                // Restitution is based on INITIAL approach velocity, not current velocity
-                // This ensures restitution is only applied once, not re-computed each iteration
                 float restitution_term = 0.0f;
                 if (constraint->is_unilateral() && iter == 0)
-                { // Contact constraint, first iteration only
+                {
                     float e = constraint->get_restitution();
                     float v_approach = constraint->get_initial_approach_velocity();
                     if (v_approach < -1e-3f)
-                    { // Significant approach velocity
-                        restitution_term = e * v_approach; // Note: v_approach is negative
+                    {
+                        restitution_term = e * v_approach;
                     }
                 }
 
                 const float rhs = -(jv + error_correction + restitution_term);
 
-                // Compute inverse mass sum along constraint direction
                 const float denominator =
-                    compute_jacobian_inverse_mass(jacobian, row, constraint->get_body_ids(), bodies);
+                    compute_jacobian_inverse_mass(jacobian, row, constraint_bodies);
                 if (denominator < 1e-6f)
                 {
                     continue; // Singular constraint
@@ -240,20 +232,19 @@ private:
     /// @return -dot(jacobian_row, [v_a, v_b, ...])  (negative because we solve in positive direction)
     float compute_jacobian_velocity(const MatDynamic<float> &jacobian,
                                     size_t row_index,
-                                    const std::vector<size_t> &body_ids,
-                                    const std::vector<Body *> &bodies) const
+                                    const std::vector<Body *> &constraint_bodies) const
     {
         float jv = 0.0f;
         size_t col_index = 0;
 
-        for (size_t body_id : body_ids)
+        for (const Body *body : constraint_bodies)
         {
-            if (body_id >= bodies.size() || !bodies[body_id])
+            if (!body)
             {
+                col_index += 3;
                 continue;
             }
 
-            const Body *body = bodies[body_id];
             const Vec3f v = body->get_velocity();
 
             if (col_index < jacobian.numCols())
@@ -283,20 +274,19 @@ private:
     /// @return Effective mass (positive = solvable, zero = singular)
     float compute_jacobian_inverse_mass(const MatDynamic<float> &jacobian,
                                         size_t row_index,
-                                        const std::vector<size_t> &body_ids,
-                                        const std::vector<Body *> &bodies) const
+                                        const std::vector<Body *> &constraint_bodies) const
     {
         float denominator = 0.0f;
         size_t col_index = 0;
 
-        for (size_t body_id : body_ids)
+        for (const Body *body : constraint_bodies)
         {
-            if (body_id >= bodies.size() || !bodies[body_id])
+            if (!body)
             {
+                col_index += 3;
                 continue;
             }
 
-            const Body *body = bodies[body_id];
             float inv_mass = body->get_inverse_mass();
 
             if (col_index < jacobian.numCols())

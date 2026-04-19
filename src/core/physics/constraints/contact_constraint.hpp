@@ -124,10 +124,10 @@ public:
         }
     }
 
-    /// Get the body IDs for this contact.
-    std::vector<size_t> get_body_ids() const override
+    /// Get the bodies involved in this contact.
+    std::vector<Body *> get_bodies() const override
     {
-        return {manifold_.object_a_id, manifold_.object_b_id};
+        return {&body_a_, &body_b_};
     }
 
     // ========================================================================

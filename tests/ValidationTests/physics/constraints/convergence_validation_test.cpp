@@ -49,7 +49,7 @@ SolveMetrics solve_fixed_once(int iterations, bool warm_start)
     config.convergence_threshold = 1e-6f;
     solver.set_config(config);
 
-    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    solver.solve(constraints);
 
     SolveMetrics metrics;
     metrics.closing_speed = particles[0].velocity.x - particles[1].velocity.x;
@@ -78,16 +78,14 @@ float second_step_closing_speed_with_or_without_warm_start(bool warm_start)
     solver.set_config(config);
 
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
-    std::vector<phynity::physics::constraints::Body *> bodies;
-    for (auto &p : particles) bodies.push_back(&p);
-    solver.solve(constraints, bodies);
+    solver.solve(constraints);
 
     particles[0].position = Vec3f(0.0f, 0.0f, 0.0f);
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
     particles[0].velocity = Vec3f(0.0f);
     particles[1].velocity = Vec3f(0.0f);
 
-    solver.solve(constraints, bodies);
+    solver.solve(constraints);
     return particles[0].velocity.x - particles[1].velocity.x;
 }
 
@@ -154,7 +152,7 @@ TEST_CASE("Constraint convergence: over-constrained pair remains finite", "[cons
     config.use_warm_start = false;
     solver.set_config(config);
 
-    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    solver.solve(constraints);
 
     REQUIRE(std::isfinite(particles[0].velocity.x));
     REQUIRE(std::isfinite(particles[1].velocity.x));

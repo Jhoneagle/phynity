@@ -150,14 +150,14 @@ public:
         accumulated_impulse_ += impulse_magnitude;
     }
 
-    std::vector<size_t> get_body_ids() const override
+    std::vector<Body *> get_bodies() const override
     {
-        std::vector<size_t> ids;
+        std::vector<Body *> result;
         if (body_a_)
-            ids.push_back(static_cast<size_t>(body_a_->id));
+            result.push_back(body_a_);
         if (body_b_)
-            ids.push_back(static_cast<size_t>(body_b_->id));
-        return ids;
+            result.push_back(body_b_);
+        return result;
     }
 
     int num_constraint_rows() const override

@@ -249,15 +249,7 @@ public:
                 }
             }
 
-            // Build Body* vector for the constraint solver
-            std::vector<constraints::Body *> bodies;
-            bodies.reserve(particles.size());
-            for (auto &p : particles)
-            {
-                bodies.push_back(&p);
-            }
-
-            ctx.constraint_solver.solve(temp_constraints, bodies);
+            ctx.constraint_solver.solve(temp_constraints);
 
             for (size_t i = 0; i < temp_constraints.size() && i < cached_manifolds.size(); ++i)
             {
@@ -269,7 +261,7 @@ public:
 
             if (ctx.constraints_enabled)
             {
-                ctx.constraint_solver.solve(ctx.constraints, bodies);
+                ctx.constraint_solver.solve(ctx.constraints);
             }
         }
     }
