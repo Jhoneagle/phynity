@@ -23,7 +23,7 @@ TEST_CASE("GravityField: Default constructor (Earth gravity)", "[ForceField][Gra
     Vec3f force = gravity.apply(Vec3f(0.0f), Vec3f(0.0f), 1.0f);
 
     REQUIRE_THAT(force.x, WithinAbs(0.0f, 1e-6f));
-    REQUIRE_THAT(force.y, WithinAbs(-phynity::physics::EARTH_GRAVITY, 1e-6f));
+    REQUIRE_THAT(force.y, WithinAbs(-phynity::physics::constants::EARTH_GRAVITY, 1e-6f));
     REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
     REQUIRE(gravity.name() == std::string("GravityField"));
 }
@@ -51,7 +51,7 @@ TEST_CASE("GravityField: Force proportional to mass", "[ForceField][GravityField
 
 TEST_CASE("GravityField: Position independent", "[ForceField][GravityField]")
 {
-    GravityField gravity(Vec3f(0.0f, -phynity::physics::EARTH_GRAVITY, 0.0f));
+    GravityField gravity(Vec3f(0.0f, -phynity::physics::constants::EARTH_GRAVITY, 0.0f));
 
     Vec3f force1 = gravity.apply(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f);
     Vec3f force2 = gravity.apply(Vec3f(100.0f, 200.0f, -50.0f), Vec3f(0.0f), 1.0f);
@@ -61,7 +61,7 @@ TEST_CASE("GravityField: Position independent", "[ForceField][GravityField]")
 
 TEST_CASE("GravityField: Velocity independent", "[ForceField][GravityField]")
 {
-    GravityField gravity(Vec3f(0.0f, -phynity::physics::EARTH_GRAVITY, 0.0f));
+    GravityField gravity(Vec3f(0.0f, -phynity::physics::constants::EARTH_GRAVITY, 0.0f));
 
     Vec3f force1 = gravity.apply(Vec3f(0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f);
     Vec3f force2 = gravity.apply(Vec3f(0.0f), Vec3f(10.0f, 20.0f, 30.0f), 1.0f);
