@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
