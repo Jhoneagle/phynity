@@ -407,9 +407,9 @@ private:
             // sum_j(|R[i][j]| * half_extents[j])
             Vec3f h = box->half_extents;
             Vec3f rotated_half(
-                std::abs(R.m[0][0]) * h.x + std::abs(R.m[0][1]) * h.y + std::abs(R.m[0][2]) * h.z,
-                std::abs(R.m[1][0]) * h.x + std::abs(R.m[1][1]) * h.y + std::abs(R.m[1][2]) * h.z,
-                std::abs(R.m[2][0]) * h.x + std::abs(R.m[2][1]) * h.y + std::abs(R.m[2][2]) * h.z);
+                std::abs(R(0, 0)) * h.x + std::abs(R(0, 1)) * h.y + std::abs(R(0, 2)) * h.z,
+                std::abs(R(1, 0)) * h.x + std::abs(R(1, 1)) * h.y + std::abs(R(1, 2)) * h.z,
+                std::abs(R(2, 0)) * h.x + std::abs(R(2, 1)) * h.y + std::abs(R(2, 2)) * h.z);
 
             // Transform local center through rotation
             Vec3f center = body.position + R * box->local_center;
