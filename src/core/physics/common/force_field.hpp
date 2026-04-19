@@ -10,7 +10,8 @@ namespace phynity::physics
 {
 
 using phynity::math::vectors::Vec3f;
-using namespace phynity::physics::constants;
+using phynity::physics::constants::EARTH_GRAVITY_VECTOR;
+using phynity::physics::constants::VELOCITY_EPSILON;
 
 /// ============================================================================
 /// Abstract Force Field Base Class

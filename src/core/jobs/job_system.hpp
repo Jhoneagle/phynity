@@ -2,9 +2,11 @@
 
 #include "job_handle.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <span>
+#include <vector>
 
 namespace phynity::jobs
 {
@@ -46,12 +48,40 @@ public:
 
     template <typename IndexFn> void parallel_for(uint32_t begin, uint32_t end, uint32_t grain, IndexFn &&fn)
     {
-        (void) grain;
-        // Sketch: serial fallback until the worker system is implemented.
-        for (uint32_t i = begin; i < end; ++i)
+        if (begin >= end)
         {
-            fn(i);
+            return;
         }
+
+        uint32_t count = end - begin;
+
+        // Serial fallback: system not running, small range, or deterministic mode
+        if (!is_running() || count <= grain || scheduling_mode() == SchedulingMode::Deterministic)
+        {
+            for (uint32_t i = begin; i < end; ++i)
+            {
+                fn(i);
+            }
+            return;
+        }
+
+        // Divide [begin, end) into chunks of size `grain` and submit each as a job
+        std::vector<JobHandle> handles;
+        handles.reserve((count + grain - 1) / grain);
+
+        for (uint32_t chunk_begin = begin; chunk_begin < end; chunk_begin += grain)
+        {
+            uint32_t chunk_end = std::min(chunk_begin + grain, end);
+            handles.push_back(submit([chunk_begin, chunk_end, &fn]()
+                                     {
+                                         for (uint32_t i = chunk_begin; i < chunk_end; ++i)
+                                         {
+                                             fn(i);
+                                         }
+                                     }));
+        }
+
+        wait_all(handles);
     }
 
 private:

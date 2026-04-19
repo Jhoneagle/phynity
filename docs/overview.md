@@ -1,7 +1,7 @@
 # Project Overview
 
 **Status**: Active Development (production-leaning)  
-**Last Updated**: February 28, 2026
+**Last Updated**: April 19, 2026
 
 ## Current Milestones
 
@@ -61,7 +61,7 @@ The physics subsystem is feature-complete for particles and has a working rigid-
 - **Collision system**: Broadphase + narrowphase with contact caching and resolution
 - **Timestep control**: Fixed timestep accumulator with overflow handling
 - **Diagnostics**: Real-time energy and momentum tracking
-- **Test coverage**: 70 passing tests with analytical validation
+- **Test coverage**: Comprehensive test suite (unit + validation + golden) with analytical validation
 
 ### Mathematics Library
 Robust numerical foundation for simulation and scientific computing:

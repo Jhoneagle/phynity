@@ -203,6 +203,7 @@ Required checks:
 - `Static Analysis (clang-tidy)`
 - `Sanitizers (linux)`
 - `Sanitizers (macos)`
+- `Sanitizers TSAN (linux)`
 - `Quality Gate Summary`
 
 These check names must match the PR workflow job names in `.github/workflows/pr-gate.yml`.

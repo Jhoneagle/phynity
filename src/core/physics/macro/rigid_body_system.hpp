@@ -22,6 +22,8 @@
 
 #include <memory>
 #include <span>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace phynity::physics
@@ -50,6 +52,8 @@ public:
         float default_collision_radius = 1.0f; ///< Default broadphase radius for new bodies
         bool enable_linear_ccd = true; ///< Enable linear CCD for fast movers
         CCDConfig ccd_config = ccd_presets::balanced(); ///< CCD thresholds and parameters
+        int constraint_iterations = 8; ///< PGS solver iterations for constraints
+        float baumgarte_beta = 0.2f; ///< Baumgarte penetration/error correction factor (0.0-0.5)
 
         constexpr Config() = default;
     };
@@ -110,20 +114,19 @@ public:
 
         rb.set_mass(mass);
 
+        body_index_[next_body_id_] = bodies_.size() - 1;
         return next_body_id_++;
     }
 
-    /// Get a rigid body by ID
+    /// Get a rigid body by ID (O(1) lookup via index map)
     RigidBody *get_body(RigidBodyID id)
     {
-        for (auto &rb : bodies_)
+        auto it = body_index_.find(id);
+        if (it == body_index_.end() || it->second >= bodies_.size())
         {
-            if (rb.id == id)
-            {
-                return &rb;
-            }
+            return nullptr;
         }
-        return nullptr;
+        return &bodies_[it->second];
     }
 
     /// Get total number of active bodies
@@ -147,6 +150,7 @@ public:
     void clear_bodies()
     {
         bodies_.clear();
+        body_index_.clear();
         next_body_id_ = 0;
     }
 
@@ -283,25 +287,54 @@ public:
             resolve_collisions(frame_start_positions, dt);
         }
 
-        // Phase 6: Constraint solving (collisions + joints)
+        // Phase 6: Constraint solving (PGS-style iterative solver for rigid body constraints)
+        if (!constraints_.empty())
         {
             PROFILE_SCOPE("RigidBodySystem::constraint_solving");
-            // TODO: Implement RigidBody constraint solver
-            // For MVP: use basic constraint application without iterative solving
-            // Full implementation will integrate with unified ConstraintSolver in Phase 4
-            for (auto &constraint : constraints_)
+
+            // Collect active constraints
+            std::vector<Constraint *> active;
+            active.reserve(constraints_.size());
+            for (auto &c : constraints_)
             {
-                if (!constraint)
-                    continue;
+                if (c && c->is_active())
+                {
+                    active.push_back(c.get());
+                }
+            }
 
-                // Solve constraint iteratively
-                for (int iter = 0; iter < 4; ++iter)
-                { // 4 iterations by default
-                    float error = constraint->compute_error();
-                    if (error < 1e-5f)
-                        break; // Converged
+            if (!active.empty())
+            {
+                const int iterations = config_.constraint_iterations;
+                const float beta = config_.baumgarte_beta;
+                const float convergence_threshold = 1e-5f;
 
-                    constraint->apply_impulse(0.1f); // Small impulse for MVP
+                for (int iter = 0; iter < iterations; ++iter)
+                {
+                    float max_impulse = 0.0f;
+
+                    for (auto *constraint : active)
+                    {
+                        float error = constraint->compute_error();
+                        if (error < convergence_threshold)
+                        {
+                            continue;
+                        }
+
+                        // Baumgarte-corrected impulse: scale by beta and error
+                        float impulse = beta * error;
+
+                        // Clamp for stability
+                        impulse = std::min(impulse, 10.0f);
+
+                        constraint->apply_impulse(impulse);
+                        max_impulse = std::max(max_impulse, impulse);
+                    }
+
+                    if (max_impulse < convergence_threshold)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -316,6 +349,13 @@ public:
             bodies_.erase(
                 std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
                 bodies_.end());
+
+            // Rebuild index map after removal may have shifted elements
+            body_index_.clear();
+            for (size_t idx = 0; idx < bodies_.size(); ++idx)
+            {
+                body_index_[bodies_[idx].id] = idx;
+            }
         }
 
         // Phase 8: Update diagnostics
@@ -360,22 +400,27 @@ private:
 
         if (body.shape->shape_type == ShapeType::Box)
         {
-            const auto *box = dynamic_cast<const BoxShape *>(body.shape.get());
-            if (box)
-            {
-                Vec3f center = body.position + box->local_center;
-                return collision::AABB(center - box->half_extents, center + box->half_extents);
-            }
+            const auto *box = static_cast<const BoxShape *>(body.shape.get());
+            Mat3f R = phynity::math::quaternions::toRotationMatrix(body.orientation);
+
+            // OBB-to-AABB expansion: for each axis i, the rotated half-extent is
+            // sum_j(|R[i][j]| * half_extents[j])
+            Vec3f h = box->half_extents;
+            Vec3f rotated_half(
+                std::abs(R.m[0][0]) * h.x + std::abs(R.m[0][1]) * h.y + std::abs(R.m[0][2]) * h.z,
+                std::abs(R.m[1][0]) * h.x + std::abs(R.m[1][1]) * h.y + std::abs(R.m[1][2]) * h.z,
+                std::abs(R.m[2][0]) * h.x + std::abs(R.m[2][1]) * h.y + std::abs(R.m[2][2]) * h.z);
+
+            // Transform local center through rotation
+            Vec3f center = body.position + R * box->local_center;
+            return collision::AABB(center - rotated_half, center + rotated_half);
         }
 
         if (body.shape->shape_type == ShapeType::Sphere)
         {
-            const auto *sphere = dynamic_cast<const SphereShape *>(body.shape.get());
-            if (sphere)
-            {
-                Vec3f center = body.position + sphere->local_center;
-                return collision::AABB::from_sphere(center, sphere->radius);
-            }
+            const auto *sphere = static_cast<const SphereShape *>(body.shape.get());
+            Vec3f center = body.position + sphere->local_center;
+            return collision::AABB::from_sphere(center, sphere->radius);
         }
 
         return collision::AABB::from_sphere(body.position, body.collision_radius);
@@ -497,11 +542,8 @@ private:
 
         if (body.shape->shape_type == ShapeType::Sphere)
         {
-            const auto *sphere = dynamic_cast<const SphereShape *>(body.shape.get());
-            if (sphere)
-            {
-                return sphere->radius;
-            }
+            const auto *sphere = static_cast<const SphereShape *>(body.shape.get());
+            return sphere->radius;
         }
 
         return body.collision_radius;
@@ -527,10 +569,50 @@ private:
             return;
         }
 
-        for (size_t i = 0; i + 1 < bodies_.size(); ++i)
+        // Phase 1: Build broadphase spatial grid
         {
-            for (size_t j = i + 1; j < bodies_.size(); ++j)
+            PROFILE_SCOPE("RigidBodySystem::broadphase_build");
+            spatial_grid_.clear();
+            for (size_t i = 0; i < bodies_.size(); ++i)
             {
+                if (bodies_[i].active)
+                {
+                    spatial_grid_.insert(static_cast<uint32_t>(i), bodies_[i].position);
+                }
+            }
+        }
+
+        // Phase 2: Query broadphase for candidate pairs and run narrowphase
+        std::unordered_set<uint64_t> processed_pairs;
+        processed_pairs.reserve(bodies_.size() * 2);
+
+        for (size_t i = 0; i < bodies_.size(); ++i)
+        {
+            if (!bodies_[i].active)
+            {
+                continue;
+            }
+
+            const auto candidates = spatial_grid_.get_neighbor_objects_tracked(bodies_[i].position);
+
+            for (uint32_t j_index : candidates)
+            {
+                const auto j = static_cast<size_t>(j_index);
+
+                // Canonical ordering: only process pairs where i < j
+                if (i >= j)
+                {
+                    continue;
+                }
+
+                // Deduplicate pairs from overlapping grid cell queries
+                const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
+                if (processed_pairs.count(pair_id) > 0)
+                {
+                    continue;
+                }
+                processed_pairs.insert(pair_id);
+
                 RigidBody &body_a = bodies_[i];
                 RigidBody &body_b = bodies_[j];
 
@@ -550,13 +632,8 @@ private:
 
                 if (end_overlap && sphere_sphere)
                 {
-                    const auto *sphere_a = dynamic_cast<const SphereShape *>(body_a.shape.get());
-                    const auto *sphere_b = dynamic_cast<const SphereShape *>(body_b.shape.get());
-
-                    if (!sphere_a || !sphere_b)
-                    {
-                        continue;
-                    }
+                    const auto *sphere_a = static_cast<const SphereShape *>(body_a.shape.get());
+                    const auto *sphere_b = static_cast<const SphereShape *>(body_b.shape.get());
 
                     collision::SphereCollider collider_a{body_a.position + sphere_a->local_center,
                                                          body_a.velocity,
@@ -791,11 +868,10 @@ private:
 
     Config config_;
     std::vector<RigidBody> bodies_;
+    std::unordered_map<RigidBodyID, size_t> body_index_;
     std::vector<std::shared_ptr<ForceField>> force_fields_;
     std::vector<std::shared_ptr<Constraint>> constraints_;
     SpatialGrid spatial_grid_;
-    // TODO: Full ConstraintSolver integration in Phase 4
-    // ConstraintSolver constraint_solver_;
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
 };

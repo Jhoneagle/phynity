@@ -6,7 +6,7 @@
 namespace phynity::physics
 {
 
-using namespace phynity::physics::constants;
+using phynity::physics::constants::TIMESTEP_EPSILON;
 
 /// Timestep Controller for deterministic physics simulation.
 /// Implements the accumulator pattern to ensure consistent timesteps regardless

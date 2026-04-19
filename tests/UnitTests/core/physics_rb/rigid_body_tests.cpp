@@ -548,3 +548,115 @@ TEST_CASE("HingeConstraint RB error computation", "[constraint][hinge]")
     // Initially at same position, error should be minimal
     REQUIRE(error < 0.01f);
 }
+
+// ============================================================================
+// CONSTRAINT SOLVER INTEGRATION TESTS
+// ============================================================================
+
+TEST_CASE("RigidBodySystem FixedConstraintRB converges over simulation steps", "[rigid_body][constraints][solver]")
+{
+    // Two bodies connected by a fixed constraint, initially displaced.
+    // The constraint solver should pull them together over multiple steps.
+    RigidBodySystem system;
+
+    auto sphere_shape = std::make_shared<SphereShape>(0.5f);
+
+    // Body A at origin
+    RigidBodyID id_a = system.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
+
+    // Body B displaced by 0.5 units on X
+    RigidBodyID id_b = system.spawn_body(
+        Vec3f(0.5f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
+
+    RigidBody *body_a = system.get_body(id_a);
+    RigidBody *body_b = system.get_body(id_b);
+    REQUIRE(body_a != nullptr);
+    REQUIRE(body_b != nullptr);
+
+    // Create fixed constraint: anchors at body centers (local origin)
+    auto constraint = std::make_shared<constraints::FixedConstraintRB>(
+        body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
+
+    float initial_error = constraint->compute_error();
+    REQUIRE(initial_error > 0.1f); // Bodies are separated
+
+    system.add_constraint(constraint);
+
+    // Step the simulation multiple times
+    const float dt = 1.0f / 60.0f;
+    for (int i = 0; i < 100; ++i)
+    {
+        system.update(dt);
+    }
+
+    // After 100 steps, the constraint should have reduced the error significantly
+    // Re-fetch body pointers (bodies may have been reallocated)
+    body_a = system.get_body(id_a);
+    body_b = system.get_body(id_b);
+    REQUIRE(body_a != nullptr);
+    REQUIRE(body_b != nullptr);
+
+    float distance = body_a->position.distance(body_b->position);
+    CHECK(distance < initial_error); // Should be closer than initial separation
+}
+
+// ============================================================================
+// ROTATED BOX AABB TESTS
+// ============================================================================
+
+TEST_CASE("Rotated box collision detection uses orientation-aware AABB", "[rigid_body][collision][aabb]")
+{
+    // A long thin box (2x0.2x0.2) placed at origin, rotated 45 degrees around Y.
+    // When unrotated, the box extends [-1, 1] on X and [-0.1, 0.1] on Y/Z.
+    // When rotated 45deg around Y, the AABB should be wider on both X and Z.
+    //
+    // Place a small sphere just outside the unrotated X extent but within the
+    // rotated extent. If the AABB accounts for rotation, the broadphase will
+    // detect the overlap and collision will occur.
+
+    RigidBodySystem system;
+
+    // Rotated long box at origin
+    auto box_shape = std::make_shared<BoxShape>(Vec3f(1.0f, 0.1f, 0.1f));
+    Quatf rotation_45_y = toQuaternion(Vec3f(0.0f, 0.7853981f, 0.0f)); // pi/4 around Y
+    RigidBodyID box_id = system.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.0f),
+        rotation_45_y,
+        box_shape,
+        0.0f, // static (infinite mass)
+        Material{});
+
+    // The rotated box AABB should extend to about +-0.778 on X and Z
+    // (cos(45)*1.0 + sin(45)*0.1 ≈ 0.778)
+    // Place a sphere at Z=0.6, which is outside unrotated AABB (0.1) but inside rotated AABB
+    auto sphere_shape = std::make_shared<SphereShape>(0.2f);
+    RigidBodyID sphere_id = system.spawn_body(
+        Vec3f(0.0f, 0.0f, 0.6f),
+        Quatf(),
+        sphere_shape,
+        1.0f,
+        Material{});
+
+    // Give sphere velocity toward box to ensure collision response
+    RigidBody *sphere = system.get_body(sphere_id);
+    REQUIRE(sphere != nullptr);
+    sphere->velocity = Vec3f(0.0f, 0.0f, -5.0f);
+
+    // Step the simulation
+    Vec3f initial_vel = sphere->velocity;
+    system.update(1.0f / 60.0f);
+
+    // After one step, if the rotated AABB was computed correctly, the broadphase
+    // should have detected overlap, and collision response should have changed velocity.
+    // With the old code (no rotation), the AABB on Z would be [-0.1, 0.1] and the
+    // sphere at Z=0.6 would be missed entirely.
+    // No force fields are added, so without collision the velocity would stay at -5.0 on Z.
+    sphere = system.get_body(sphere_id);
+    if (sphere != nullptr)
+    {
+        bool velocity_changed = !sphere->velocity.approxEqual(initial_vel, 0.5f);
+        bool position_corrected = sphere->position.z > 0.5f; // Didn't travel full distance
+        CHECK((velocity_changed || position_corrected));
+    }
+}

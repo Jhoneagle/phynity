@@ -14,9 +14,15 @@
 namespace phynity::app::rigid_body_demos
 {
 
-using namespace phynity::physics;
-using namespace phynity::math::vectors;
-using namespace phynity::math::quaternions;
+using phynity::math::quaternions::Quatf;
+using phynity::math::vectors::Vec3f;
+using phynity::physics::BoxShape;
+using phynity::physics::constraints::FixedConstraintRB;
+using phynity::physics::constraints::HingeConstraintRB;
+using phynity::physics::GravityField;
+using phynity::physics::Material;
+using phynity::physics::RigidBody;
+using phynity::physics::RigidBodySystem;
 
 /// Simple stacking demo: tower of boxes under gravity
 class StackingDemoRB

@@ -30,8 +30,6 @@
 namespace phynity::physics
 {
 
-using namespace phynity::physics::constants;
-
 /// Manages a collection of particles and force fields, providing simulation stepping.
 /// Integrates Material system, ForceField system, and provides energy/momentum diagnostics.
 class ParticleSystem
@@ -487,21 +485,24 @@ public:
         }
 
         // Step 6: Monitor physics (energy, momentum)
-        if (energy_monitor_enabled_ && energy_monitor_)
+        if ((energy_monitor_enabled_ && energy_monitor_) || (momentum_monitor_enabled_ && momentum_monitor_))
         {
-            PROFILE_SCOPE("energy_monitoring");
+            PROFILE_SCOPE("physics_monitoring");
             const Diagnostics diag = compute_diagnostics();
-            // Include potential energy from gravity fields if present
-            float total_energy = diag.total_kinetic_energy;
-            energy_monitor_->update(static_cast<double>(total_energy));
-        }
 
-        if (momentum_monitor_enabled_ && momentum_monitor_)
-        {
-            PROFILE_SCOPE("momentum_monitoring");
-            const Diagnostics diag = compute_diagnostics();
-            diagnostics::Vec3 momentum(diag.total_momentum.x, diag.total_momentum.y, diag.total_momentum.z);
-            momentum_monitor_->update(momentum);
+            if (energy_monitor_enabled_ && energy_monitor_)
+            {
+                energy_monitor_->update(static_cast<double>(diag.total_kinetic_energy));
+            }
+
+            if (momentum_monitor_enabled_ && momentum_monitor_)
+            {
+                diagnostics::Vec3 momentum(
+                    static_cast<double>(diag.total_momentum.x),
+                    static_cast<double>(diag.total_momentum.y),
+                    static_cast<double>(diag.total_momentum.z));
+                momentum_monitor_->update(momentum);
+            }
         }
 
         // Step 7: Remove dead particles
@@ -513,14 +514,14 @@ public:
 
     /// Legacy step method for backwards compatibility.
     /// @deprecated Use update() instead
-    void step(float dt)
+    [[deprecated("Use update() instead")]] void step(float dt)
     {
         update(dt);
     }
 
     /// Apply gravity to all particles (legacy method).
     /// @deprecated Add a GravityField instead
-    void applyGravity(const Vec3f &gravity)
+    [[deprecated("Add a GravityField instead")]] void applyGravity(const Vec3f &gravity)
     {
         for (auto &p : particles_)
         {

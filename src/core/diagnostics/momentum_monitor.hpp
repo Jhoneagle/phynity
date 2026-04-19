@@ -1,7 +1,8 @@
 #pragma once
 
+#include <core/math/vectors/vec3.hpp>
+
 #include <array>
-#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <string_view>
@@ -10,35 +11,8 @@
 namespace phynity::diagnostics
 {
 
-/**
- * @brief 3D vector for momentum representation.
- */
-struct Vec3
-{
-    double x, y, z;
-
-    Vec3() noexcept : x(0.0), y(0.0), z(0.0)
-    {
-    }
-    Vec3(double x, double y, double z) noexcept : x(x), y(y), z(z)
-    {
-    }
-
-    Vec3 operator+(const Vec3 &other) const noexcept
-    {
-        return Vec3(x + other.x, y + other.y, z + other.z);
-    }
-
-    Vec3 operator-(const Vec3 &other) const noexcept
-    {
-        return Vec3(x - other.x, y - other.y, z - other.z);
-    }
-
-    [[nodiscard]] double magnitude() const noexcept
-    {
-        return std::sqrt(x * x + y * y + z * z);
-    }
-};
+/// 3D vector for momentum representation (double precision).
+using Vec3 = phynity::math::vectors::Vec3<double>;
 
 /**
  * @brief Momentum conservation violation report.
@@ -140,7 +114,7 @@ public:
 
         // Calculate change
         const Vec3 change = current_momentum - previous_momentum_;
-        const double change_mag = change.magnitude();
+        const double change_mag = change.length();
 
         // Check for violations
         if (change_mag > max_change_magnitude_)

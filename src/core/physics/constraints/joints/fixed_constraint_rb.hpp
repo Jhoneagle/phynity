@@ -146,28 +146,36 @@ public:
         if (!body_a_)
             return;
 
-        // Get anchor in world space
+        // Get anchor positions in world space
         Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a_->orientation);
         Vec3f r_a = R_a * anchor_a_local_;
+        Vec3f anchor_a_world = body_a_->position + r_a;
 
-        // For simplicity, apply impulse along constraint direction
-        // In full implementation, would use separable impulses for each constraint row
-        Vec3f impulse_dir = Vec3f(1, 0, 0); // TODO: Use Jacobian column
+        Vec3f anchor_b_world = anchor_b_local_;
+        Vec3f r_b = Vec3f(0.0f);
+        if (body_b_)
+        {
+            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
+            r_b = R_b * anchor_b_local_;
+            anchor_b_world = body_b_->position + r_b;
+        }
+
+        // Compute impulse direction from constraint error (anchor separation)
+        Vec3f error_vec = anchor_b_world - anchor_a_world;
+        float error_len = error_vec.length();
+        Vec3f impulse_dir = (error_len > 1e-6f) ? error_vec / error_len : Vec3f(0.0f);
         Vec3f impulse = impulse_dir * impulse_magnitude;
 
-        // Apply to body A
+        // Apply linear impulse to body A
         body_a_->velocity += impulse * body_a_->inv_mass;
-        Vec3f torque_a = r_a.cross(impulse);
-        body_a_->angular_velocity += body_a_->inertia_tensor_inv * torque_a;
+        // Apply angular impulse to body A
+        body_a_->angular_velocity += body_a_->inertia_tensor_inv * r_a.cross(impulse);
 
-        // Apply to body B (opposite)
+        // Apply opposite impulse to body B
         if (body_b_)
         {
             body_b_->velocity -= impulse * body_b_->inv_mass;
-            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
-            Vec3f r_b = R_b * anchor_b_local_;
-            Vec3f torque_b = r_b.cross(-impulse);
-            body_b_->angular_velocity += body_b_->inertia_tensor_inv * torque_b;
+            body_b_->angular_velocity -= body_b_->inertia_tensor_inv * r_b.cross(impulse);
         }
 
         accumulated_impulse_ += impulse_magnitude;
@@ -343,24 +351,35 @@ public:
         if (!body_a_)
             return;
 
-        // Similar to FixedConstraint but respecting hinge axis
+        // Get pivot positions in world space
         Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a_->orientation);
         Vec3f r_a = R_a * pivot_a_local_;
+        Vec3f pivot_a_world = body_a_->position + r_a;
 
-        Vec3f impulse_dir = Vec3f(1, 0, 0); // TODO: Use Jacobian column
+        Vec3f pivot_b_world = pivot_b_local_;
+        Vec3f r_b = Vec3f(0.0f);
+        if (body_b_)
+        {
+            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
+            r_b = R_b * pivot_b_local_;
+            pivot_b_world = body_b_->position + r_b;
+        }
+
+        // Compute impulse direction from constraint error (pivot separation)
+        Vec3f error_vec = pivot_b_world - pivot_a_world;
+        float error_len = error_vec.length();
+        Vec3f impulse_dir = (error_len > 1e-6f) ? error_vec / error_len : Vec3f(0.0f);
         Vec3f impulse = impulse_dir * impulse_magnitude;
 
+        // Apply linear + angular impulse to body A
         body_a_->velocity += impulse * body_a_->inv_mass;
-        Vec3f torque_a = r_a.cross(impulse);
-        body_a_->angular_velocity += body_a_->inertia_tensor_inv * torque_a;
+        body_a_->angular_velocity += body_a_->inertia_tensor_inv * r_a.cross(impulse);
 
+        // Apply opposite to body B
         if (body_b_)
         {
             body_b_->velocity -= impulse * body_b_->inv_mass;
-            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
-            Vec3f r_b = R_b * pivot_b_local_;
-            Vec3f torque_b = r_b.cross(-impulse);
-            body_b_->angular_velocity += body_b_->inertia_tensor_inv * torque_b;
+            body_b_->angular_velocity -= body_b_->inertia_tensor_inv * r_b.cross(impulse);
         }
 
         accumulated_impulse_ += impulse_magnitude;
