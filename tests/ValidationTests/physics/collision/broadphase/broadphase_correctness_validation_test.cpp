@@ -79,7 +79,7 @@ void resolve_collisions_brute_force(std::vector<Particle> &particles)
     }
 
     constraints::ConstraintSolver solver;
-    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 }
 
 TEST_CASE("Broadphase correctness: Simple sphere-sphere collision", "[validation][broadphase]")

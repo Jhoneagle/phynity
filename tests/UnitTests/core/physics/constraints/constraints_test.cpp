@@ -269,7 +269,7 @@ TEST_CASE("ConstraintSolver: Single contact constraint", "[solver][constraint]")
     constraints.push_back(std::make_unique<ContactConstraint>(manifold, particles[0], particles[1]));
 
     ConstraintSolver solver;
-    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // After solving, the relative velocity along normal should be reduced
     // (particles should stop approaching)
@@ -300,7 +300,7 @@ TEST_CASE("ConstraintSolver: Fixed constraint convergence", "[solver][constraint
     config.iterations = 10;
     solver.set_config(config);
 
-    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // After solving, particles should have velocities that correct the separation
     // Both should move toward their rest distance (p_a moves right, p_b moves left)
@@ -316,7 +316,7 @@ TEST_CASE("ConstraintSolver: Empty constraint list", "[solver][constraint]")
     ConstraintSolver solver;
 
     // Should not crash with empty lists
-    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     REQUIRE(constraints.empty());
     REQUIRE(particles.empty());
@@ -367,7 +367,7 @@ TEST_CASE("Constraint: Contact + Fixed constraint together", "[constraint][integ
     constraints.push_back(std::make_unique<DistanceJoint>(particles[1], particles[2]));
 
     ConstraintSolver solver;
-    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+    std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // All particles should have changed their velocities
     REQUIRE(particles[0].velocity != Vec3f(1.0f, 0.0f, 0.0f));
@@ -399,7 +399,7 @@ TEST_CASE("Constraint: Determinism - same input same result", "[constraint][dete
         constraints.push_back(std::make_unique<ContactConstraint>(manifold, particles[0], particles[1]));
 
         ConstraintSolver solver;
-        std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
+        std::vector<phynity::physics::constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
         return std::make_pair(particles[0].velocity, particles[1].velocity);
     };
