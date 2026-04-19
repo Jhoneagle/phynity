@@ -4,7 +4,6 @@
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
 #include <core/physics/collision/contact/contact_cache.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
-#include <core/physics/collision/contact/pgs_solver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/physics/common/ccd_config.hpp>
@@ -123,7 +122,7 @@ public:
 
                 ++last_stats_.narrowphase_tests;
                 ContactManifold manifold =
-                    collision::SphereSpherNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt, ccd_config);
+                    collision::SphereSphereNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt, ccd_config);
 
                 if (manifold.is_valid())
                 {
@@ -207,7 +206,7 @@ public:
 
                     ++last_stats_.narrowphase_tests;
                     ContactManifold manifold =
-                        collision::SphereSpherNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt, ccd_config);
+                        collision::SphereSphereNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt, ccd_config);
 
                     processed_pairs.insert(pair_id);
                     if (manifold.is_valid())

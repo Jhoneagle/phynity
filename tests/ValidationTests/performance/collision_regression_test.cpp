@@ -1,8 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
-#include <core/physics/collision/contact/pgs_solver.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
 #include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/constraints/contact/contact_constraint.hpp>
+#include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/micro/particle_system.hpp>
 #include <platform/memory_usage.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
@@ -169,37 +170,33 @@ PerfResult run_gjk_scenario(int iterations)
 
 PerfResult run_solver_scenario(int contact_count, int iterations)
 {
+    using namespace phynity::physics::constraints;
+
     phynity::platform::AllocatorDeltaScope allocator_scope;
+
+    // Create particles as bodies for the constraint solver
+    std::vector<Particle> particles;
+    particles.reserve(static_cast<size_t>(contact_count) * 2);
+
     std::vector<ContactManifold> manifolds;
-    std::vector<SphereCollider> colliders;
-
-    const size_t previous_manifold_capacity = manifolds.capacity();
     manifolds.reserve(static_cast<size_t>(contact_count));
-    phynity::platform::track_vector_capacity_change(manifolds, previous_manifold_capacity);
-
-    const size_t previous_collider_capacity = colliders.capacity();
-    colliders.reserve(static_cast<size_t>(contact_count) * 2);
-    phynity::platform::track_vector_capacity_change(colliders, previous_collider_capacity);
 
     for (int i = 0; i < contact_count; ++i)
     {
-        SphereCollider a;
-        SphereCollider b;
-        a.position = Vec3f(0.0f, 0.0f, 0.0f);
-        b.position = Vec3f(0.8f, 0.0f, 0.0f);
-        a.velocity = Vec3f(0.0f);
-        b.velocity = Vec3f(0.0f);
+        Particle a(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f));
+        a.material.mass = 1.0f;
+        a.material.restitution = 0.2f;
         a.radius = 0.5f;
-        b.radius = 0.5f;
-        a.inverse_mass = 1.0f;
-        b.inverse_mass = 1.0f;
-        a.restitution = 0.2f;
-        b.restitution = 0.2f;
 
-        const size_t idx_a = colliders.size();
-        const size_t idx_b = colliders.size() + 1;
-        colliders.push_back(a);
-        colliders.push_back(b);
+        Particle b(Vec3f(0.8f, 0.0f, 0.0f), Vec3f(0.0f));
+        b.material.mass = 1.0f;
+        b.material.restitution = 0.2f;
+        b.radius = 0.5f;
+
+        const size_t idx_a = particles.size();
+        const size_t idx_b = particles.size() + 1;
+        particles.push_back(std::move(a));
+        particles.push_back(std::move(b));
 
         ContactManifold manifold;
         manifold.object_a_id = idx_a;
@@ -211,13 +208,26 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
         manifolds.push_back(manifold);
     }
 
-    PGSConfig config;
-    config.max_iterations = 8;
+    ConstraintSolverConfig solver_config;
+    solver_config.iterations = 8;
+    ConstraintSolver solver;
+    solver.set_config(solver_config);
 
     const auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < iterations; ++i)
     {
-        PGSSolver::solve(manifolds, colliders, config);
+        // Build contact constraints from manifolds
+        std::vector<std::unique_ptr<Constraint>> constraints;
+        constraints.reserve(manifolds.size());
+        for (const auto &manifold : manifolds)
+        {
+            constraints.push_back(std::make_unique<ContactConstraint>(
+                manifold,
+                particles[manifold.object_a_id],
+                particles[manifold.object_b_id],
+                ContactConstraint::ContactType::Normal));
+        }
+        solver.solve(constraints, particles);
     }
     const auto end = std::chrono::high_resolution_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -227,11 +237,9 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
     result.milliseconds = static_cast<double>(duration.count()) / 1000.0;
     result.iterations = iterations;
     result.workload = contact_count;
-    result.notes = "PGS solver with synthetic contacts";
+    result.notes = "Constraint solver with synthetic contacts";
     result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
     result.allocator_delta_bytes = allocator_scope.delta_bytes();
-    phynity::platform::track_vector_capacity_release(manifolds);
-    phynity::platform::track_vector_capacity_release(colliders);
     return result;
 }
 

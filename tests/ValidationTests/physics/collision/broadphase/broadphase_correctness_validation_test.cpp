@@ -51,7 +51,7 @@ void resolve_collisions_brute_force(std::vector<Particle> &particles)
             collider_b.inverse_mass = b.inverse_mass();
             collider_b.restitution = b.material.restitution;
 
-            ContactManifold manifold = SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
+            ContactManifold manifold = SphereSphereNarrowphase::detect(collider_a, collider_b, i, j);
             if (manifold.is_valid())
             {
                 manifolds.push_back(manifold);

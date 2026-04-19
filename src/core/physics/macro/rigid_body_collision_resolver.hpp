@@ -137,7 +137,7 @@ public:
                                                          body_b.material.restitution,
                                                          sphere_b->radius};
 
-                    manifold = collision::SphereSpherNarrowphase::detect(collider_a, collider_b, i, j);
+                    manifold = collision::SphereSphereNarrowphase::detect(collider_a, collider_b, i, j);
                 }
                 else if (end_overlap)
                 {
@@ -174,7 +174,7 @@ public:
                     collision::SphereCollider ccd_collider_b{
                         start_center_b, body_b.velocity, body_b.inv_mass, body_b.material.restitution, sweep_radius_b};
 
-                    manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
+                    manifold = collision::SphereSphereNarrowphase::detect_with_ccd(
                         ccd_collider_a, ccd_collider_b, i, j, dt, config.ccd_config);
 
                     if (!manifold.is_valid() && config.ccd_config.enable_rotational_ccd && sphere_sphere)

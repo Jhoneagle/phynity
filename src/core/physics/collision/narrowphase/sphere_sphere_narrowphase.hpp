@@ -22,7 +22,7 @@ using phynity::physics::constants::COLLISION_EPSILON;
 /// Narrowphase collision detection for sphere-sphere contacts
 /// Generates contact manifolds from geometric overlap.
 /// Works with any objects that provide SphereCollider properties.
-class SphereSpherNarrowphase
+class SphereSphereNarrowphase
 {
 public:
     /// Detect collision between two spheres

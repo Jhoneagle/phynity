@@ -8,7 +8,7 @@ namespace phynity::physics::collision
 using phynity::math::vectors::Vec3f;
 
 /// Minimal interface for objects that can participate in sphere-based collision detection
-/// Any object with these properties can be used with SphereSpherNarrowphase and ImpulseResolver
+/// Any object with these properties can be used with SphereSphereNarrowphase and ImpulseResolver
 struct SphereCollider
 {
     Vec3f position = Vec3f(0.0f); ///< World position

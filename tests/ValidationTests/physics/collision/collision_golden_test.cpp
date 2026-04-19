@@ -22,7 +22,7 @@ using phynity::physics::collision::ContactManifold;
 using phynity::physics::collision::ImpulseResolver;
 using phynity::physics::collision::SpatialGrid;
 using phynity::physics::collision::SphereCollider;
-using phynity::physics::collision::SphereSpherNarrowphase;
+using phynity::physics::collision::SphereSphereNarrowphase;
 
 namespace fs = std::filesystem;
 
@@ -151,7 +151,7 @@ TEST_CASE("Collision golden: spatial grid and narrowphase")
     sphere_b.inverse_mass = 1.0f;
     sphere_b.restitution = 1.0f;
 
-    ContactManifold sphere_contact = SphereSpherNarrowphase::detect(sphere_a, sphere_b, 1, 2);
+    ContactManifold sphere_contact = SphereSphereNarrowphase::detect(sphere_a, sphere_b, 1, 2);
 
     builder.scalar("valid", sphere_contact.is_valid() ? 1.0 : 0.0);
     builder.vec3("contact_pos", sphere_contact.contact.position);
@@ -220,7 +220,7 @@ TEST_CASE("Collision golden: broader scenarios")
     s2.velocity = Vec3f(0.0f, 0.0f, 0.0f);
     s2.radius = 0.5f;
 
-    ContactManifold no_contact = SphereSpherNarrowphase::detect(s1, s2, 5, 6);
+    ContactManifold no_contact = SphereSphereNarrowphase::detect(s1, s2, 5, 6);
     builder.scalar("valid", no_contact.is_valid() ? 1.0 : 0.0);
 
     builder.header("sphere_separating");
@@ -231,7 +231,7 @@ TEST_CASE("Collision golden: broader scenarios")
     s3.velocity = Vec3f(-1.0f, 0.0f, 0.0f);
     s4.velocity = Vec3f(1.0f, 0.0f, 0.0f);
 
-    ContactManifold separating = SphereSpherNarrowphase::detect(s3, s4, 7, 8);
+    ContactManifold separating = SphereSphereNarrowphase::detect(s3, s4, 7, 8);
     builder.scalar("valid", separating.is_valid() ? 1.0 : 0.0);
 
     builder.header("aabb_touching_edges");
@@ -263,7 +263,7 @@ TEST_CASE("Collision golden: broader scenarios")
     i2.inverse_mass = 0.5f;
     i2.restitution = 0.6f;
 
-    ContactManifold impulse_contact = SphereSpherNarrowphase::detect(i1, i2, 20, 21);
+    ContactManifold impulse_contact = SphereSphereNarrowphase::detect(i1, i2, 20, 21);
     builder.scalar("contact_valid", impulse_contact.is_valid() ? 1.0 : 0.0);
     ImpulseResolver::resolve(impulse_contact, i1, i2);
     builder.vec3("vel_a", i1.velocity);

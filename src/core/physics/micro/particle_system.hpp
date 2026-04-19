@@ -4,7 +4,6 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
 #include <core/math/utilities/float_comparison.hpp>
-#include <core/physics/collision/contact/pgs_solver.hpp>
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/physics_constants.hpp>
@@ -27,13 +26,6 @@ namespace phynity::physics
 class ParticleSystem
 {
 public:
-    /// Collision solver modes for dual-solver architecture (Phase 4)
-    enum class SolverMode
-    {
-        SimpleImpulse, ///< Single-pass impulse-based collision resolution (fast, less stable)
-        PGS ///< Projected Gauss-Seidel iterative solver (slower, more stable for stacking)
-    };
-
     /// Diagnostic information about the particle system
     struct Diagnostics
     {
@@ -303,67 +295,6 @@ public:
     }
 
     // ========================================================================
-    // Solver Configuration (Phase 4: Dual-Solver Architecture)
-    // ========================================================================
-
-    /// Set the collision solver mode (SimpleImpulse or PGS).
-    /// @param mode The solver mode to use
-    void set_solver_mode(SolverMode mode)
-    {
-        solver_mode_ = mode;
-    }
-
-    /// Get the current collision solver mode.
-    SolverMode solver_mode() const
-    {
-        return solver_mode_;
-    }
-
-    /// Set PGS solver configuration (only used when solver_mode == PGS).
-    /// @param config PGS solver configuration struct
-    void set_pgs_config(const collision::PGSConfig &config)
-    {
-        pgs_config_ = config;
-    }
-
-    /// Get the current PGS solver configuration.
-    const collision::PGSConfig &pgs_config() const
-    {
-        return pgs_config_;
-    }
-
-    /// Enable/disable adaptive iteration for PGS solver.
-    /// When enabled, iterates more for larger contact sets.
-    /// @param adaptive True to use adaptive iterations, false for fixed iterations
-    void set_pgs_adaptive(bool adaptive)
-    {
-        pgs_adaptive_ = adaptive;
-    }
-
-    /// Check if adaptive iteration is enabled for PGS solver.
-    bool pgs_adaptive() const
-    {
-        return pgs_adaptive_;
-    }
-
-    /// Get the contact threshold for automatic solver selection.
-    /// When not forcing a specific solver, the system uses:
-    /// - SimpleImpulse if contact count <= threshold
-    /// - PGS if contact count > threshold
-    /// @return The current contact count threshold
-    int contact_count_threshold() const
-    {
-        return contact_count_threshold_;
-    }
-
-    /// Set the contact threshold for automatic solver selection.
-    /// @param threshold Contact count above which to use PGS (default: 10)
-    void set_contact_count_threshold(int threshold)
-    {
-        contact_count_threshold_ = std::max(1, threshold);
-    }
-
-    // ========================================================================
     // Simulation Update
     // ========================================================================
 
@@ -611,12 +542,6 @@ private:
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
-
-    // Solver configuration (Phase 4: Dual-Solver Architecture)
-    SolverMode solver_mode_ = SolverMode::SimpleImpulse;
-    collision::PGSConfig pgs_config_;
-    bool pgs_adaptive_ = true;
-    int contact_count_threshold_ = 10; ///< Use PGS if contact count exceeds this threshold
 
     // Continuous Collision Detection (CCD) configuration
     CCDConfig ccd_config_;
