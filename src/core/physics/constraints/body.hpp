@@ -19,9 +19,6 @@ class Body
 public:
     virtual ~Body() = default;
 
-    // Identity
-    virtual int get_id() const = 0;
-
     // Linear state (all bodies)
     virtual Vec3f get_position() const = 0;
     virtual Vec3f get_velocity() const = 0;
@@ -37,7 +34,6 @@ public:
     // Queries
     virtual bool is_static() const = 0;
     virtual bool is_alive() const { return true; }
-    virtual int get_dof() const { return 3; } // 3 for particles, 6 for rigid bodies
 
     // Material access for restitution
     virtual float get_restitution() const { return 0.0f; }

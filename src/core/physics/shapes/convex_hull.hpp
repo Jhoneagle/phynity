@@ -369,10 +369,3 @@ private:
 };
 
 } // namespace phynity::physics::shapes
-
-// Backward compatibility
-namespace phynity::physics::collision
-{
-using phynity::physics::shapes::ConvexHull2D;
-using phynity::physics::shapes::ConvexHull3D;
-} // namespace phynity::physics::collision

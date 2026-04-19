@@ -228,9 +228,3 @@ public:
 };
 
 } // namespace phynity::physics::shapes
-
-// Backward compatibility
-namespace phynity::physics::collision
-{
-using phynity::physics::shapes::ShapeFactory;
-} // namespace phynity::physics::collision

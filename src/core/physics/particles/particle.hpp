@@ -120,12 +120,6 @@ public:
     // Lifecycle Management
     // ========================================================================
 
-    /// Returns true if particle is still alive
-    /// Particles with lifetime < 0 are infinite (always alive)
-    /// Particles with lifetime > 0 are alive and counting down
-    /// Particles with lifetime <= 0 (for positive lifetimes) are dead
-    /// (Implements Body::is_alive)
-
     /// Set finite lifetime for this particle
     /// @param lifetime_sec Remaining time in seconds (> 0)
     void set_lifetime(float lifetime_sec)
@@ -182,7 +176,6 @@ public:
     // Body Interface Implementation
     // ========================================================================
 
-    int get_id() const override { return id; }
     Vec3f get_position() const override { return position; }
     Vec3f get_velocity() const override { return velocity; }
     float get_inverse_mass() const override { return inverse_mass(); }

@@ -64,20 +64,8 @@ public:
             pivot_b_world = body_b_->position + R_b * pivot_b_local_;
         }
 
-        // Position error: pivots must coincide
         Vec3f pos_error = pivot_b_world - pivot_a_world;
-        float pos_error_mag = pos_error.length();
-
-        // Rotation error: perpendicular directions must align
-        Vec3f axis_a = (R_a * axis_local_).normalized();
-        (void) axis_a;
-        if (body_b_)
-        {
-            // TODO: Get hinge axis for body B if different
-        }
-
-        // For MVP: just return position error
-        return pos_error_mag;
+        return pos_error.length();
     }
 
     /// J * v for the positional part of the hinge constraint.

@@ -157,14 +157,12 @@ public:
     // Body Interface Implementation
     // ========================================================================
 
-    int get_id() const override { return id; }
     Vec3f get_position() const override { return position; }
     Vec3f get_velocity() const override { return velocity; }
     float get_inverse_mass() const override { return inv_mass; }
     Quatf get_orientation() const override { return orientation; }
     Vec3f get_angular_velocity() const override { return angular_velocity; }
     bool is_alive() const override { return active; }
-    int get_dof() const override { return 6; }
     float get_restitution() const override { return material.restitution; }
 
     Mat3f get_inverse_inertia_world() const override
@@ -174,7 +172,7 @@ public:
 
     void apply_velocity_impulse(const Vec3f &impulse) override
     {
-        velocity += impulse * inv_mass;
+        velocity += impulse;
     }
 
     void apply_angular_impulse(const Vec3f &impulse) override

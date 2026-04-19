@@ -32,8 +32,7 @@ public:
           body_a_(body_a),
           body_b_(body_b),
           contact_type_(contact_type),
-          accumulated_impulse_(0.0f),
-          warm_start_impulse_(manifold.previous_impulse.x)
+          accumulated_impulse_(0.0f)
     {
         if (!manifold_.is_valid())
         {
@@ -81,11 +80,10 @@ public:
         if (!active_)
             return;
 
-        const float clamped_impulse = std::max(0.0f, impulse_magnitude);
-        accumulated_impulse_ += clamped_impulse;
+        accumulated_impulse_ += impulse_magnitude;
 
         const Vec3f &normal = manifold_.contact.normal;
-        const Vec3f impulse_vector = normal * clamped_impulse;
+        const Vec3f impulse_vector = normal * impulse_magnitude;
 
         if (body_a_.get_inverse_mass() > 0.0f)
         {
@@ -102,7 +100,7 @@ public:
     // Warm-Start
     // ========================================================================
 
-    void set_warm_start_impulse(float impulse) override { warm_start_impulse_ = impulse; }
+    void set_warm_start_impulse(float impulse) override { (void)impulse; }
     float get_accumulated_impulse() const override { return accumulated_impulse_; }
 
     // ========================================================================
@@ -132,7 +130,6 @@ private:
     Body &body_b_;
     ContactType contact_type_;
     float accumulated_impulse_;
-    float warm_start_impulse_;
     bool active_ = true;
 };
 

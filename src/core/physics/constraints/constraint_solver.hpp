@@ -46,16 +46,16 @@ public:
         PROFILE_FUNCTION();
 
         // Filter out inactive constraints
-        std::vector<Constraint *> active_constraints;
+        active_constraints_.clear();
         for (auto &constraint : constraints)
         {
             if (constraint && constraint->is_active())
             {
-                active_constraints.push_back(constraint.get());
+                active_constraints_.push_back(constraint.get());
             }
         }
 
-        if (active_constraints.empty())
+        if (active_constraints_.empty())
         {
             return;
         }
@@ -64,7 +64,7 @@ public:
         int iterations = config_.iterations;
         if (config_.enable_adaptive_iterations)
         {
-            const size_t constraint_count = active_constraints.size();
+            const size_t constraint_count = active_constraints_.size();
             if (constraint_count > 20)
             {
                 iterations = std::min(iterations * 2, 16);
@@ -75,7 +75,7 @@ public:
         if (config_.use_warm_start)
         {
             PROFILE_SCOPE("warm_start");
-            for (auto constraint : active_constraints)
+            for (auto constraint : active_constraints_)
             {
                 float warm_start = constraint->get_accumulated_impulse();
                 if (warm_start > 1e-6f)
@@ -94,7 +94,7 @@ public:
 
             max_impulse_change = 0.0f;
 
-            for (auto constraint : active_constraints)
+            for (auto constraint : active_constraints_)
             {
                 float error = constraint->compute_error();
                 float jv = constraint->compute_jv();
@@ -146,20 +146,9 @@ public:
         }
     }
 
-    float get_last_avg_impulse() const
-    {
-        return last_avg_impulse_;
-    }
-
-    int get_last_iteration_count() const
-    {
-        return last_iteration_count_;
-    }
-
 private:
     ConstraintSolverConfig config_;
-    float last_avg_impulse_ = 0.0f;
-    int last_iteration_count_ = 0;
+    std::vector<Constraint *> active_constraints_;
 };
 
 } // namespace phynity::physics::constraints

@@ -51,7 +51,7 @@ public:
 
     float get_bounding_radius() const override
     {
-        return std::sqrt(radius * radius + half_height * half_height + radius * radius);
+        return half_height + radius;
     }
 
     std::unique_ptr<Shape> clone() const override
