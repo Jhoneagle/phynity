@@ -250,7 +250,10 @@ TEST_CASE("ParticleSystem - Legacy step method", "[particle_system]")
 
     ps.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -10.0f, 0.0f)));
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     ps.step(0.1f); // Should behave same as update()
+#pragma GCC diagnostic pop
 
     REQUIRE_THAT(ps.particles()[0].velocity.y, WithinAbs(-1.0f, 1e-6f));
     REQUIRE_THAT(ps.particles()[0].position.y, WithinAbs(9.9f, 1e-5f));
@@ -264,7 +267,10 @@ TEST_CASE("ParticleSystem - Legacy applyGravity method", "[particle_system]")
     zero_damp.linear_damping = 0.0f;
     ps.spawn(Vec3f(0.0f, 10.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), zero_damp);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     ps.applyGravity(Vec3f(0.0f, -10.0f, 0.0f));
+#pragma GCC diagnostic pop
 
     // Forces applied, now update acceleration and integrate
     ps.particles()[0].update_acceleration();

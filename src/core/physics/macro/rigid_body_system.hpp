@@ -54,6 +54,7 @@ public:
         CCDConfig ccd_config = ccd_presets::balanced(); ///< CCD thresholds and parameters
         int constraint_iterations = 8; ///< PGS solver iterations for constraints
         float baumgarte_beta = 0.2f; ///< Baumgarte penetration/error correction factor (0.0-0.5)
+        float max_constraint_impulse = 100.0f; ///< Maximum impulse per constraint per iteration
 
         constexpr Config() = default;
     };
@@ -321,11 +322,7 @@ public:
                             continue;
                         }
 
-                        // Baumgarte-corrected impulse: scale by beta and error
-                        float impulse = beta * error;
-
-                        // Clamp for stability
-                        impulse = std::min(impulse, 10.0f);
+                        float impulse = std::min(beta * error, config_.max_constraint_impulse);
 
                         constraint->apply_impulse(impulse);
                         max_impulse = std::max(max_impulse, impulse);
@@ -346,15 +343,19 @@ public:
             {
                 rb.update_lifetime(dt);
             }
+            const size_t size_before = bodies_.size();
             bodies_.erase(
                 std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
                 bodies_.end());
 
-            // Rebuild index map after removal may have shifted elements
-            body_index_.clear();
-            for (size_t idx = 0; idx < bodies_.size(); ++idx)
+            // Rebuild index map only if removal shifted elements
+            if (bodies_.size() != size_before)
             {
-                body_index_[bodies_[idx].id] = idx;
+                body_index_.clear();
+                for (size_t idx = 0; idx < bodies_.size(); ++idx)
+                {
+                    body_index_[bodies_[idx].id] = idx;
+                }
             }
         }
 

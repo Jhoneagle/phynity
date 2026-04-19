@@ -17,6 +17,46 @@ using phynity::math::matrices::MatDynamic;
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
 
+/// Apply a positional correction impulse between two rigid bodies.
+/// Computes world-space anchor positions, derives impulse direction from their separation,
+/// and applies equal-and-opposite linear + angular impulses.
+inline void apply_positional_impulse(physics::RigidBody *body_a,
+                                     physics::RigidBody *body_b,
+                                     const Vec3f &local_a,
+                                     const Vec3f &local_b,
+                                     float impulse_magnitude)
+{
+    if (!body_a)
+        return;
+
+    Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a->orientation);
+    Vec3f r_a = R_a * local_a;
+    Vec3f world_a = body_a->position + r_a;
+
+    Vec3f world_b = local_b;
+    Vec3f r_b = Vec3f(0.0f);
+    if (body_b)
+    {
+        Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b->orientation);
+        r_b = R_b * local_b;
+        world_b = body_b->position + r_b;
+    }
+
+    Vec3f error_vec = world_b - world_a;
+    float error_len = error_vec.length();
+    Vec3f impulse_dir = (error_len > 1e-6f) ? error_vec / error_len : Vec3f(0.0f);
+    Vec3f impulse = impulse_dir * impulse_magnitude;
+
+    body_a->velocity += impulse * body_a->inv_mass;
+    body_a->angular_velocity += body_a->inertia_tensor_inv * r_a.cross(impulse);
+
+    if (body_b)
+    {
+        body_b->velocity -= impulse * body_b->inv_mass;
+        body_b->angular_velocity -= body_b->inertia_tensor_inv * r_b.cross(impulse);
+    }
+}
+
 /// Fixed constraint for rigid bodies (6-DOF lock).
 /// Locks both position and orientation between two rigid bodies (or one body to world).
 /// Can be used to create welded joints or attach bodies to fixed points.
@@ -143,41 +183,7 @@ public:
 
     void apply_impulse(float impulse_magnitude) override
     {
-        if (!body_a_)
-            return;
-
-        // Get anchor positions in world space
-        Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a_->orientation);
-        Vec3f r_a = R_a * anchor_a_local_;
-        Vec3f anchor_a_world = body_a_->position + r_a;
-
-        Vec3f anchor_b_world = anchor_b_local_;
-        Vec3f r_b = Vec3f(0.0f);
-        if (body_b_)
-        {
-            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
-            r_b = R_b * anchor_b_local_;
-            anchor_b_world = body_b_->position + r_b;
-        }
-
-        // Compute impulse direction from constraint error (anchor separation)
-        Vec3f error_vec = anchor_b_world - anchor_a_world;
-        float error_len = error_vec.length();
-        Vec3f impulse_dir = (error_len > 1e-6f) ? error_vec / error_len : Vec3f(0.0f);
-        Vec3f impulse = impulse_dir * impulse_magnitude;
-
-        // Apply linear impulse to body A
-        body_a_->velocity += impulse * body_a_->inv_mass;
-        // Apply angular impulse to body A
-        body_a_->angular_velocity += body_a_->inertia_tensor_inv * r_a.cross(impulse);
-
-        // Apply opposite impulse to body B
-        if (body_b_)
-        {
-            body_b_->velocity -= impulse * body_b_->inv_mass;
-            body_b_->angular_velocity -= body_b_->inertia_tensor_inv * r_b.cross(impulse);
-        }
-
+        apply_positional_impulse(body_a_, body_b_, anchor_a_local_, anchor_b_local_, impulse_magnitude);
         accumulated_impulse_ += impulse_magnitude;
     }
 
@@ -348,40 +354,7 @@ public:
 
     void apply_impulse(float impulse_magnitude) override
     {
-        if (!body_a_)
-            return;
-
-        // Get pivot positions in world space
-        Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a_->orientation);
-        Vec3f r_a = R_a * pivot_a_local_;
-        Vec3f pivot_a_world = body_a_->position + r_a;
-
-        Vec3f pivot_b_world = pivot_b_local_;
-        Vec3f r_b = Vec3f(0.0f);
-        if (body_b_)
-        {
-            Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
-            r_b = R_b * pivot_b_local_;
-            pivot_b_world = body_b_->position + r_b;
-        }
-
-        // Compute impulse direction from constraint error (pivot separation)
-        Vec3f error_vec = pivot_b_world - pivot_a_world;
-        float error_len = error_vec.length();
-        Vec3f impulse_dir = (error_len > 1e-6f) ? error_vec / error_len : Vec3f(0.0f);
-        Vec3f impulse = impulse_dir * impulse_magnitude;
-
-        // Apply linear + angular impulse to body A
-        body_a_->velocity += impulse * body_a_->inv_mass;
-        body_a_->angular_velocity += body_a_->inertia_tensor_inv * r_a.cross(impulse);
-
-        // Apply opposite to body B
-        if (body_b_)
-        {
-            body_b_->velocity -= impulse * body_b_->inv_mass;
-            body_b_->angular_velocity -= body_b_->inertia_tensor_inv * r_b.cross(impulse);
-        }
-
+        apply_positional_impulse(body_a_, body_b_, pivot_a_local_, pivot_b_local_, impulse_magnitude);
         accumulated_impulse_ += impulse_magnitude;
     }
 
