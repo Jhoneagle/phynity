@@ -190,7 +190,7 @@ private:
                                                          ));
 
         // Hinge constraint at door pivot
-        auto hinge = std::make_shared<constraints::HingeConstraintRB>(frame,
+        auto hinge = std::make_shared<HingeConstraintRB>(frame,
                                                                       door_body_,
                                                                       Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
                                                                       Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
