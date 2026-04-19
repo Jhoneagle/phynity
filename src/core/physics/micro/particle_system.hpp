@@ -6,25 +6,19 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
 #include <core/math/utilities/float_comparison.hpp>
-#include <core/physics/collision/broadphase/spatial_grid.hpp>
-#include <core/physics/collision/contact/contact_cache.hpp>
-#include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/contact/pgs_solver.hpp>
-#include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/physics_constants.hpp>
-#include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/micro/particle.hpp>
+#include <core/physics/micro/particle_collision_resolver.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
 namespace phynity::physics
@@ -188,17 +182,13 @@ public:
     /// Recommended: 2x to 4x the average particle diameter.
     void set_broadphase_cell_size(float cell_size)
     {
-        if (cell_size > 0.0f)
-        {
-            broadphase_cell_size_ = cell_size;
-            spatial_grid_.set_cell_size(cell_size);
-        }
+        collision_resolver_.set_cell_size(cell_size);
     }
 
     /// Get the current broadphase grid cell size.
     float broadphase_cell_size() const
     {
-        return broadphase_cell_size_;
+        return collision_resolver_.cell_size();
     }
 
     // ========================================================================
@@ -391,9 +381,6 @@ public:
     {
         PROFILE_FUNCTION();
 
-        // Store timestep for CCD calculations
-        dt_ = dt;
-
         auto for_each_alive = [this](auto &&fn)
         {
             const size_t count = particles_.size();
@@ -481,7 +468,17 @@ public:
         if (collisions_enabled_)
         {
             PROFILE_SCOPE("collision_resolution");
-            resolve_collisions();
+            ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};
+            collision_resolver_.resolve(particles_, dt, ccd_config_, ctx);
+
+            if (collision_monitor_enabled_ && collision_monitor_)
+            {
+                const auto &stats = collision_resolver_.last_stats();
+                collision_monitor_->set_broadphase_candidates(stats.broadphase_candidates);
+                collision_monitor_->set_narrowphase_tests(stats.narrowphase_tests);
+                collision_monitor_->set_actual_collisions(stats.actual_collisions);
+                collision_monitor_->end_frame();
+            }
         }
 
         // Step 6: Monitor physics (energy, momentum)
@@ -639,11 +636,9 @@ private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem *job_system_ = nullptr;
-    collision::SpatialGrid spatial_grid_{2.0f}; // Default cell size: 2x particle radius
-    collision::ContactCache contact_cache_; // Contact cache for frame-to-frame tracking (Phase 3)
+    ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
-    float broadphase_cell_size_ = 2.0f;
 
     // Solver configuration (Phase 4: Dual-Solver Architecture)
     SolverMode solver_mode_ = SolverMode::SimpleImpulse;
@@ -653,7 +648,6 @@ private:
 
     // Continuous Collision Detection (CCD) configuration
     CCDConfig ccd_config_;
-    float dt_ = 0.016f; ///< Current timestep (1/60 Hz default)
 
     // Constraint framework (Phase 5: Unified Constraint Solving)
     std::vector<std::unique_ptr<constraints::Constraint>> constraints_;
@@ -668,341 +662,6 @@ private:
     bool momentum_monitor_enabled_ = false;
     bool collision_monitor_enabled_ = false;
 
-    /// Convert a Particle to a SphereCollider for generic collision handling
-    static collision::SphereCollider particle_to_collider(const Particle &p)
-    {
-        collision::SphereCollider collider;
-        collider.position = p.position;
-        collider.velocity = p.velocity;
-        collider.radius = p.radius;
-        collider.inverse_mass = p.inverse_mass();
-        collider.restitution = p.material.restitution;
-        return collider;
-    }
-
-    /// Apply collision results back to a Particle
-    static void apply_collider_to_particle(const collision::SphereCollider &collider, Particle &p)
-    {
-        p.position = collider.position;
-        p.velocity = collider.velocity;
-    }
-
-    /// Internal collision resolution using spatial grid broadphase + narrowphase
-    ///
-    /// Algorithm:
-    /// 1. Build spatial grid by inserting all particles at their positions
-    /// 2. For each particle, query neighbors from spatial grid (3x3x3 cell neighborhood)
-    /// 3. Run narrowphase collision detection on candidate pairs
-    /// 4. Resolve collisions using impulse-based contact resolution
-    ///
-    /// Pair Deduplication Strategy:
-    /// - Spatial grid returns all objects in neighboring cells (may include duplicates)
-    /// - Each particle queries its neighbors, so pairs (i,j) may be found from both i and j queries
-    /// - Deduplication uses canonical ordering: only process pairs where i < j
-    /// - Hash set tracks processed pairs to avoid redundant narrowphase calls
-    /// - Pair ID encoding: (i << 32) | j, ensuring unique 64-bit identifier
-    ///
-    /// Performance:
-    /// - Broadphase: O(n) grid insertion + O(n * k) neighbor queries, k = avg neighbors
-    /// - Narrowphase: O(m) where m = unique candidate pairs (typically m << n²)
-    /// - Advantage over brute force: k << n, so total is O(n * k) vs O(n²)
-    void resolve_collisions()
-    {
-        using namespace phynity::physics::collision;
-
-        // Phase 1: Build broadphase spatial grid
-        // Clear previous frame's spatial structure and re-insert all alive particles
-        {
-            PROFILE_SCOPE("broadphase_grid_build");
-            spatial_grid_.clear();
-            const size_t count = particles_.size();
-            for (size_t i = 0; i < count; ++i)
-            {
-                const Particle &p = particles_[i];
-                if (p.is_alive())
-                {
-                    spatial_grid_.insert(static_cast<uint32_t>(i), p.position);
-                }
-            }
-        }
-
-        // Phase 2: Collision detection using broadphase culling + narrowphase
-        // Track processed pairs to avoid duplicates (same pair from different queries)
-        // Hash set provides O(1) lookup for pair deduplication
-        const size_t count = particles_.size();
-        std::unordered_set<uint64_t> processed_pairs;
-        processed_pairs.reserve(count * 2);
-        uint32_t broadphase_candidates = 0;
-        uint32_t narrowphase_tests = 0;
-        uint32_t actual_collisions = 0;
-
-        // Phase 3: Collect all detected manifolds (instead of resolving immediately)
-        std::vector<ContactManifold> detected_manifolds;
-
-        for (size_t i = 0; i < count; ++i)
-        {
-            Particle &a = particles_[i];
-            if (!a.is_alive())
-            {
-                continue;
-            }
-
-            // Get candidate neighbors from spatial grid (3x3x3 cell neighborhood)
-            const auto candidates = spatial_grid_.get_neighbor_objects_tracked(a.position);
-            broadphase_candidates += static_cast<uint32_t>(candidates.size());
-
-            for (uint32_t j_index : candidates)
-            {
-                const auto j = static_cast<size_t>(j_index);
-
-                // Canonical ordering: only process pairs where i < j
-                // This ensures each pair is considered exactly once
-                if (i >= j)
-                {
-                    continue; // Skip self-collisions (i==j) and reversed pairs (i>j)
-                }
-
-                Particle &b = particles_[j];
-                if (!b.is_alive())
-                {
-                    continue;
-                }
-
-                // Create unique pair ID for deduplication (i is guaranteed < j)
-                // Encoding: high 32 bits = i, low 32 bits = j
-                const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
-                if (processed_pairs.count(pair_id) > 0)
-                {
-                    continue; // Already processed this pair from a different grid cell query
-                }
-                processed_pairs.insert(pair_id);
-
-                // Convert particles to generic colliders for collision detection
-                SphereCollider collider_a = particle_to_collider(a);
-                SphereCollider collider_b = particle_to_collider(b);
-
-                // Detect collision using generic narrowphase with CCD support
-                ++narrowphase_tests;
-                ContactManifold manifold =
-                    collision::SphereSpherNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt_, ccd_config_);
-
-                // Collect valid manifolds for caching
-                if (manifold.is_valid())
-                {
-                    detected_manifolds.push_back(manifold);
-                }
-            }
-        }
-
-        // Phase 2.5: CCD fallback scan for fast movers that may tunnel past
-        // broadphase cells within one frame and therefore miss neighbor queries.
-        if (ccd_config_.enabled && dt_ > 1e-8f)
-        {
-            PROFILE_SCOPE("ccd_fallback_scan");
-
-            // Optimization: Pre-compute and cache velocity magnitudes for all particles
-            // to avoid redundant length() calls in the nested loop
-            std::vector<float> particle_speeds;
-            particle_speeds.reserve(count);
-            for (size_t i = 0; i < count; ++i)
-            {
-                if (particles_[i].is_alive())
-                {
-                    particle_speeds.push_back(particles_[i].velocity.length());
-                }
-                else
-                {
-                    particle_speeds.push_back(0.0f);
-                }
-            }
-
-            // Precompute threshold once instead of in lambda
-            const float ultra_fast_threshold = std::max(ccd_config_.velocity_threshold * 5.0f, 50.0f);
-
-            for (size_t i = 0; i < count; ++i)
-            {
-                Particle &a = particles_[i];
-                if (!a.is_alive())
-                {
-                    continue;
-                }
-
-                float speed_a = particle_speeds[i];
-                // Early skip: if particle A is not fast enough, no pairs with it will qualify
-                if (speed_a < ultra_fast_threshold)
-                {
-                    continue;
-                }
-
-                for (size_t j = i + 1; j < count; ++j)
-                {
-                    Particle &b = particles_[j];
-                    if (!b.is_alive())
-                    {
-                        continue;
-                    }
-
-                    float speed_b = particle_speeds[j];
-                    float max_speed = std::max(speed_a, speed_b);
-
-                    // Keep this fallback targeted to tunneling-risk projectiles only
-                    if (max_speed < ultra_fast_threshold)
-                    {
-                        continue;
-                    }
-
-                    const uint64_t pair_id = (static_cast<uint64_t>(i) << 32) | static_cast<uint32_t>(j);
-                    if (processed_pairs.count(pair_id) > 0)
-                    {
-                        continue;
-                    }
-
-                    // Quick conservative distance gate to avoid expensive CCD on distant pairs.
-                    // Optimization: use squared distance comparison to avoid sqrt when possible
-                    Vec3f delta_now = b.position - a.position;
-                    float distance_sq = delta_now.dot(delta_now);
-                    float max_travel = (speed_a + speed_b) * dt_;
-                    float combined_radius = a.radius + b.radius;
-                    float max_reach = combined_radius + max_travel + ccd_config_.speculative_distance;
-
-                    // Early out using squared distance (avoids sqrt)
-                    if (distance_sq > max_reach * max_reach)
-                    {
-                        continue;
-                    }
-
-                    SphereCollider collider_a = particle_to_collider(a);
-                    SphereCollider collider_b = particle_to_collider(b);
-                    collider_a.position = a.position - a.velocity * dt_;
-                    collider_b.position = b.position - b.velocity * dt_;
-
-                    ++narrowphase_tests;
-                    ContactManifold manifold = collision::SphereSpherNarrowphase::detect_with_ccd(
-                        collider_a, collider_b, i, j, dt_, ccd_config_);
-
-                    processed_pairs.insert(pair_id);
-                    if (manifold.is_valid())
-                    {
-                        detected_manifolds.push_back(manifold);
-                    }
-                }
-            }
-        }
-
-        // Phase 3.5: Update manifolds through contact cache (applies warm-start data)
-        auto cached_manifolds = contact_cache_.update_tracked(detected_manifolds);
-        actual_collisions = static_cast<uint32_t>(cached_manifolds.size());
-
-        // Phase 3.75: CCD Sub-stepping (if enabled)
-        // Sort manifolds by TOI to resolve earliest collisions first
-        if (ccd_config_.enabled && ccd_config_.max_substeps > 0)
-        {
-            PROFILE_SCOPE("ccd_substepping");
-            perform_ccd_substeps(cached_manifolds);
-        }
-
-        // Phase 4: Unified Constraint Solving (Phase 5)
-        // Create contact constraints from manifolds and solve alongside rigid constraints
-        if (!cached_manifolds.empty() || !constraints_.empty())
-        {
-            PROFILE_SCOPE("constraint_solving");
-
-            // Create a temporary constraint list from manifolds + add rigid constraints
-            std::vector<std::unique_ptr<constraints::Constraint>> temp_constraints;
-            temp_constraints.reserve(cached_manifolds.size());
-
-            // Convert contact manifolds to contact constraints
-            for (const ContactManifold &manifold : cached_manifolds)
-            {
-                if (manifold.object_a_id < particles_.size() && manifold.object_b_id < particles_.size())
-                {
-                    auto contact_constraint = std::make_unique<constraints::ContactConstraint>(
-                        manifold,
-                        particles_[manifold.object_a_id],
-                        particles_[manifold.object_b_id],
-                        constraints::ContactConstraint::ContactType::Normal);
-                    temp_constraints.push_back(std::move(contact_constraint));
-                }
-            }
-
-            // Add rigid constraints if constraint solving is enabled
-            if (constraints_enabled_)
-            {
-                for (auto &constraint : constraints_)
-                {
-                    if (constraint && constraint->is_active())
-                    {
-                        // We'll solve these directly in the constraint solver
-                        // For now, we process them alongside contact constraints
-                    }
-                }
-            }
-
-            // Solve all constraints together (contacts + rigid constraints)
-            constraint_solver_.solve(temp_constraints, particles_);
-
-            // Cache impulses from contact constraints for warm-start
-            for (size_t i = 0; i < temp_constraints.size() && i < cached_manifolds.size(); ++i)
-            {
-                const auto &constraint = temp_constraints[i];
-                const auto &manifold = cached_manifolds[i];
-                float impulse = constraint->get_accumulated_impulse();
-                contact_cache_.store_impulse(manifold.contact_id, Vec3f(impulse, 0.0f, 0.0f));
-            }
-
-            // Also solve rigid constraints
-            if (constraints_enabled_)
-            {
-                constraint_solver_.solve(constraints_, particles_);
-            }
-        }
-
-        // Report collision statistics to monitor
-        if (collision_monitor_enabled_ && collision_monitor_)
-        {
-            collision_monitor_->set_broadphase_candidates(broadphase_candidates);
-            collision_monitor_->set_narrowphase_tests(narrowphase_tests);
-            collision_monitor_->set_actual_collisions(actual_collisions);
-            collision_monitor_->end_frame();
-        }
-    }
-
-    // Private helper method for CCD sub-stepping
-    // When a collision is detected with TOI < 1.0, we handle only that collision
-    // in this iteration, re-detect after, and continue with remaining collisions.
-    //
-    // Note: Particles are always integrated to t=dt in the main integration step.
-    // CCD reports when the collision would have occurred (toi * dt).
-    // Sub-stepping is about resolution order: earliest collisions first, then re-detect.
-    //
-    // This method iteratively:
-    // 1. Finds earliest TOI collision in manifold
-    // 2. Keeps only that one for constraint solving (implicit in Phase 4)
-    // 3. Re-detects after (to find subsequent collisions)
-    // 4. Repeats until no early collisions remain
-    //
-    // For now, this is a placeholder that just processes all manifolds once.
-    // A full implementation would need to:
-    // - Filter manifolds to keep only the earliest TOI
-    // - Solve constraints for just that manifold
-    // - Re-detect collisions from new state
-    // - Repeat until all TOI-based collisions are resolved
-    void perform_ccd_substeps(std::vector<collision::ContactManifold> &manifolds) const noexcept
-    {
-        PROFILE_SCOPE("ccd_substeps");
-
-        if (manifolds.empty() || !ccd_config_.enabled)
-        {
-            return;
-        }
-
-        // Future: Implement recursive sub-stepping
-        // For now, just ensure manifolds are sorted by TOI (earliest first)
-        std::sort(manifolds.begin(),
-                  manifolds.end(),
-                  [](const collision::ContactManifold &a, const collision::ContactManifold &b)
-                  { return a.toi < b.toi; });
-    }
 };
 
 } // namespace phynity::physics
