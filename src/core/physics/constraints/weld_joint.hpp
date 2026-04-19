@@ -13,7 +13,6 @@ namespace phynity::physics::constraints
 {
 
 using phynity::math::matrices::Mat3f;
-using phynity::math::matrices::MatDynamic;
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
 
@@ -115,86 +114,49 @@ public:
         return std::max(pos_error_mag, rotation_error);
     }
 
-    MatDynamic<float> compute_jacobian() const override
+    /// J * v for the positional part of the weld constraint.
+    /// Simplified: relative linear velocity of anchors projected onto error direction.
+    float compute_jv() const override
     {
-        // 6 constraint equations: 3 position + 3 rotation
-        // Columns: [v_a, ω_a, v_b, ω_b] (12 columns for 2 bodies)
-
-        MatDynamic<float> J(6, 12, 0.0f);
-
         if (!body_a_)
-            return J;
+            return 0.0f;
 
-        // Convert anchor to world space
         Mat3f R_a = phynity::math::quaternions::toRotationMatrix(body_a_->orientation);
-        Vec3f r_a = R_a * anchor_a_local_;
+        Vec3f anchor_a_world = body_a_->position + R_a * anchor_a_local_;
 
-        // Position constraints (3 rows)
-        // Jacobian for position: identity for linear, -r× for angular
-        for (int i = 0; i < 3; ++i)
-        {
-            J(static_cast<size_t>(i), static_cast<size_t>(i)) = 1.0f; // ∂/∂v_a
-        }
-
-        // Skew-symmetric matrix of r_a for cross product (-r_a ×)
-        // [-r_a ×] = [  0  -rz   ry ]
-        //            [ rz   0  -rx ]
-        //            [-ry  rx   0  ]
-        J(0, 5) = r_a.z; // ∂(x)/∂ω_a.y = rz
-        J(0, 4) = -r_a.y; // ∂(x)/∂ω_a.z = -ry
-        J(1, 3) = -r_a.z; // ∂(y)/∂ω_a.x = -rz
-        J(1, 5) = r_a.x; // ∂(y)/∂ω_a.z = rx
-        J(2, 3) = r_a.y; // ∂(z)/∂ω_a.x = ry
-        J(2, 4) = -r_a.x; // ∂(z)/∂ω_a.y = -rx
-
+        Vec3f anchor_b_world = anchor_b_local_;
         if (body_b_)
         {
             Mat3f R_b = phynity::math::quaternions::toRotationMatrix(body_b_->orientation);
-            Vec3f r_b = R_b * anchor_b_local_;
-
-            // Negative coupling to body B
-            for (int i = 0; i < 3; ++i)
-            {
-                J(static_cast<size_t>(i), static_cast<size_t>(6 + i)) = -1.0f; // -I for v_b
-            }
-
-            // Skew-symmetric for body B
-            J(0, 11) = r_b.z;
-            J(0, 10) = -r_b.y;
-            J(1, 9) = -r_b.z;
-            J(1, 11) = r_b.x;
-            J(2, 9) = r_b.y;
-            J(2, 10) = -r_b.x;
+            anchor_b_world = body_b_->position + R_b * anchor_b_local_;
         }
 
-        // Rotation constraints (3 rows) - simplified: relative orientation error
-        // Use quaternion error for angular constraint
-        for (int i = 0; i < 3; ++i)
-        {
-            J(static_cast<size_t>(3 + i), static_cast<size_t>(3 + i)) = 1.0f; // ω_a affects relative angular velocity
-            if (body_b_)
-            {
-                J(static_cast<size_t>(3 + i), static_cast<size_t>(9 + i)) = -1.0f; // -ω_b
-            }
-        }
+        Vec3f error_vec = anchor_b_world - anchor_a_world;
+        float error_len = error_vec.length();
+        if (error_len < 1e-6f)
+            return 0.0f;
 
-        return J;
+        Vec3f dir = error_vec / error_len;
+        Vec3f rel_vel = (body_b_ ? body_b_->velocity : Vec3f(0.0f)) - body_a_->velocity;
+        return dir.dot(rel_vel);
+    }
+
+    /// Effective mass for the positional constraint direction.
+    float compute_effective_mass() const override
+    {
+        if (!body_a_)
+            return 0.0f;
+
+        float eff = body_a_->inv_mass;
+        if (body_b_)
+            eff += body_b_->inv_mass;
+        return eff;
     }
 
     void apply_impulse(float impulse_magnitude) override
     {
         apply_positional_impulse(body_a_, body_b_, anchor_a_local_, anchor_b_local_, impulse_magnitude);
         accumulated_impulse_ += impulse_magnitude;
-    }
-
-    std::vector<Body *> get_bodies() const override
-    {
-        std::vector<Body *> result;
-        if (body_a_)
-            result.push_back(body_a_);
-        if (body_b_)
-            result.push_back(body_b_);
-        return result;
     }
 
     float get_accumulated_impulse() const override

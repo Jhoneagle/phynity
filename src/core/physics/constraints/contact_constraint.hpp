@@ -1,11 +1,11 @@
 #pragma once
 
-#include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
 
-#include <vector>
+#include <algorithm>
+#include <cstdint>
 
 namespace phynity::physics::constraints
 {
@@ -13,28 +13,17 @@ namespace phynity::physics::constraints
 using phynity::math::vectors::Vec3f;
 using phynity::physics::collision::ContactManifold;
 
-/// Contact constraint: represents a collision between two particles.
-/// This constraint wraps a ContactManifold and provides the interface
-/// needed for solving contact constraints alongside other rigid constraints.
+/// Contact constraint: represents a collision between two bodies.
+/// Wraps a ContactManifold and computes solver quantities directly from body state.
 class ContactConstraint : public Constraint
 {
 public:
-    /// Contact constraint types
     enum class ContactType
     {
-        Normal, ///< Normal force (perpendicular to contact surface)
-        Tangent ///< Friction force (parallel to contact surface)
+        Normal,
+        Tangent
     };
 
-    // ========================================================================
-    // Construction
-    // ========================================================================
-
-    /// Create a contact constraint from a manifold and particle references.
-    /// @param manifold ContactManifold from collision detection
-    /// @param body_a First particle involved in contact
-    /// @param body_b Second particle involved in contact
-    /// @param contact_type Whether this constraint is normal or tangent (friction)
     ContactConstraint(const ContactManifold &manifold,
                       Body &body_a,
                       Body &body_b,
@@ -44,9 +33,8 @@ public:
           body_b_(body_b),
           contact_type_(contact_type),
           accumulated_impulse_(0.0f),
-          warm_start_impulse_(manifold.previous_impulse.x) // For normal contact
+          warm_start_impulse_(manifold.previous_impulse.x)
     {
-        // Verify valid manifold
         if (!manifold_.is_valid())
         {
             active_ = false;
@@ -54,65 +42,51 @@ public:
     }
 
     // ========================================================================
-    // Constraint Interface Implementation
+    // Constraint Interface
     // ========================================================================
 
-    /// Compute the constraint error (penetration depth).
-    /// @return Positive value indicates constraint violation (penetration)
     float compute_error() const override
     {
         return std::max(0.0f, manifold_.contact.penetration);
     }
 
-    /// Compute the Jacobian for this contact constraint.
-    /// For a simple particle contact:
-    ///   J = [-normal, normal]  (linear only, no angular components)
-    /// This relates relative velocity along the normal to the constraint violation rate.
-    MatDynamic<float> compute_jacobian() const override
+    /// J * v for a contact: relative velocity along normal = (v_b - v_a) . normal
+    float compute_jv() const override
     {
-        MatDynamic<float> jacobian(1, 6); // 1 row, 6 columns (3 DOF for body A, 3 for body B)
-
         if (!active_)
-        {
-            return jacobian;
-        }
+            return 0.0f;
 
-        // Contact normal direction (from A to B)
-        const Vec3f &normal = manifold_.contact.normal;
+        const Vec3f &n = manifold_.contact.normal;
+        Vec3f v_a = body_a_.get_velocity();
+        Vec3f v_b = body_b_.get_velocity();
 
-        // For two particles with linear velocity only:
-        // J = [-normal, normal]  (normal points from A to B)
-        jacobian(0, 0) = -normal.x;
-        jacobian(0, 1) = -normal.y;
-        jacobian(0, 2) = -normal.z;
-        jacobian(0, 3) = normal.x;
-        jacobian(0, 4) = normal.y;
-        jacobian(0, 5) = normal.z;
-
-        return jacobian;
+        // J = [-n, n], so J*v = -n.v_a + n.v_b = n.(v_b - v_a)
+        return n.dot(v_b - v_a);
     }
 
-    /// Apply an impulse along the contact normal.
-    /// This modifies velocities of both particles.
-    /// @param impulse_magnitude The impulse to apply (clamped to non-negative for normal contact)
+    /// J * M^-1 * J^T for a contact: inv_mass_a + inv_mass_b (for linear-only)
+    float compute_effective_mass() const override
+    {
+        if (!active_)
+            return 0.0f;
+
+        // For J = [-n, n] and diagonal M^-1:
+        // J * M^-1 * J^T = |n|^2 * (inv_mass_a + inv_mass_b) = inv_mass_a + inv_mass_b
+        // (since n is unit length)
+        return body_a_.get_inverse_mass() + body_b_.get_inverse_mass();
+    }
+
     void apply_impulse(float impulse_magnitude) override
     {
         if (!active_)
-        {
             return;
-        }
 
-        // Clamp impulse to non-negative for normal contact (no pulling)
         const float clamped_impulse = std::max(0.0f, impulse_magnitude);
-
-        // Accumulate for warm-starting
         accumulated_impulse_ += clamped_impulse;
 
-        // Compute impulse vector: impulse_magnitude * contact_normal
         const Vec3f &normal = manifold_.contact.normal;
         const Vec3f impulse_vector = normal * clamped_impulse;
 
-        // Apply impulse to bodies via Body interface
         if (body_a_.get_inverse_mass() > 0.0f)
         {
             body_a_.apply_velocity_impulse(-impulse_vector * body_a_.get_inverse_mass());
@@ -124,84 +98,42 @@ public:
         }
     }
 
-    /// Get the bodies involved in this contact.
-    std::vector<Body *> get_bodies() const override
-    {
-        return {&body_a_, &body_b_};
-    }
-
     // ========================================================================
-    // Warm-Start Support
+    // Warm-Start
     // ========================================================================
 
-    /// Set warm-start impulse from previous frame.
-    void set_warm_start_impulse(float impulse) override
-    {
-        warm_start_impulse_ = impulse;
-    }
-
-    /// Get the current accumulated impulse for caching.
-    float get_accumulated_impulse() const override
-    {
-        return accumulated_impulse_;
-    }
+    void set_warm_start_impulse(float impulse) override { warm_start_impulse_ = impulse; }
+    float get_accumulated_impulse() const override { return accumulated_impulse_; }
 
     // ========================================================================
-    // Status Queries
+    // Status & Accessors
     // ========================================================================
 
-    /// Check if contact is still active.
-    bool is_active() const override
-    {
-        return active_ && manifold_.is_valid();
-    }
+    bool is_active() const override { return active_ && manifold_.is_valid(); }
+    bool is_unilateral() const override { return true; }
 
-    /// Contact constraints are unilateral (can only push, not pull).
-    bool is_unilateral() const override
-    {
-        return true;
-    }
-
-    /// Get the contact manifold data.
-    const ContactManifold &get_manifold() const
-    {
-        return manifold_;
-    }
-
-    /// Get the contact type (normal or tangent).
-    ContactType get_contact_type() const
-    {
-        return contact_type_;
-    }
-
-    /// Get the contact ID for cache tracking.
-    uint64_t get_contact_id() const
-    {
-        return manifold_.contact_id;
-    }
-
-    /// Get the combined coefficient of restitution for this contact.
-    /// Uses the minimum of the two bodies' restitution values.
     float get_restitution() const override
     {
         return std::min(body_a_.get_restitution(), body_b_.get_restitution());
     }
 
-    /// Get the initial approach velocity (for restitution calculation).
-    /// This is the relative velocity along the normal at first contact.
     float get_initial_approach_velocity() const override
     {
         return manifold_.contact.relative_velocity_along_normal;
     }
 
+    const ContactManifold &get_manifold() const { return manifold_; }
+    ContactType get_contact_type() const { return contact_type_; }
+    uint64_t get_contact_id() const { return manifold_.contact_id; }
+
 private:
-    const ContactManifold &manifold_; ///< Reference to contact data
-    Body &body_a_; ///< First body
-    Body &body_b_; ///< Second body
-    ContactType contact_type_; ///< Normal or tangent/friction
-    float accumulated_impulse_; ///< Total impulse applied (for warm-start caching)
-    float warm_start_impulse_; ///< Impulse from previous frame (for warm-start)
-    bool active_ = true; ///< Whether this contact is active
+    const ContactManifold &manifold_;
+    Body &body_a_;
+    Body &body_b_;
+    ContactType contact_type_;
+    float accumulated_impulse_;
+    float warm_start_impulse_;
+    bool active_ = true;
 };
 
 } // namespace phynity::physics::constraints

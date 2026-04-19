@@ -85,14 +85,12 @@ TEST_CASE("ContactConstraint: Compute Jacobian", "[constraint][contact]")
 
     ContactConstraint constraint(manifold, p_a, p_b);
 
-    auto jacobian = constraint.compute_jacobian();
+    // compute_jv should return relative velocity along normal
+    // Both at rest, so Jv = 0
+    REQUIRE_THAT(constraint.compute_jv(), WithinAbs(0.0f, 1e-6f));
 
-    REQUIRE(jacobian.numRows() == 1);
-    REQUIRE(jacobian.numCols() == 6); // 3 linear for A, 3 linear for B
-
-    // Normal should be negated for A, positive for B
-    REQUIRE_THAT(jacobian(0, 0), WithinAbs(-1.0f, 1e-6f));
-    REQUIRE_THAT(jacobian(0, 3), WithinAbs(1.0f, 1e-6f));
+    // effective_mass = inv_mass_a + inv_mass_b = 1 + 1 = 2
+    REQUIRE_THAT(constraint.compute_effective_mass(), WithinAbs(2.0f, 1e-6f));
 }
 
 TEST_CASE("ContactConstraint: Apply impulse", "[constraint][contact]")

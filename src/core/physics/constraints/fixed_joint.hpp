@@ -5,114 +5,73 @@
 #include <core/physics/constraints/constraint.hpp>
 
 #include <cmath>
-#include <vector>
 
 namespace phynity::physics::constraints
 {
 
 using phynity::math::vectors::Vec3f;
 
-/// Fixed constraint: rigidly attaches two particles at a fixed offset.
-/// The particles move together, maintaining their relative position and orientation.
-/// This is equivalent to a welded joint with 6 DOF locked (in 3D) or 3 DOF locked (in 2D).
+/// Distance joint: maintains a fixed distance between two bodies.
+/// Works with any Body type (particles, rigid bodies, or mixed).
 class DistanceJoint : public Constraint
 {
 public:
-    // ========================================================================
-    // Construction
-    // ========================================================================
-
-    /// Create a fixed constraint between two particles.
-    /// The constraint locks the particles at their current relative offset.
-    /// @param body_a First particle
-    /// @param body_b Second particle
-    /// @param offset Optional relative position offset (defaults to current offset)
     DistanceJoint(Body &body_a, Body &body_b, const Vec3f &offset = Vec3f(0.0f))
         : body_a_(body_a),
           body_b_(body_b),
           rest_offset_(offset.length() > 1e-5f ? offset : (body_b.get_position() - body_a.get_position())),
-          accumulated_impulse_(Vec3f(0.0f)),
-          max_iterations_(10)
+          accumulated_impulse_(0.0f)
     {
-        // Pre-compute rest distance for stability
         rest_distance_ = rest_offset_.length();
     }
 
     // ========================================================================
-    // Constraint Interface Implementation
+    // Constraint Interface
     // ========================================================================
 
-    /// Compute the constraint error (distance deviation from rest state).
-    /// Error is the difference between current distance and rest distance.
-    /// @return Positive value indicates constraint violation (distance mismatch)
     float compute_error() const override
     {
-        const Vec3f current_offset = body_b_.get_position() - body_a_.get_position();
-        const float current_distance = current_offset.length();
-        const float error = current_distance - rest_distance_;
-        return std::abs(error); // Penalize both compression and extension
+        const float current_distance = get_current_distance();
+        return std::abs(current_distance - rest_distance_);
     }
 
-    /// Compute the Jacobian for this fixed constraint.
-    /// For a distance constraint: J = [direction_normalized, -direction_normalized]
-    /// where direction is the vector from A to B.
-    MatDynamic<float> compute_jacobian() const override
+    /// J * v for a distance constraint: relative velocity along the constraint direction
+    /// J = [-d, d] where d is the unit direction from A to B
+    /// J * v = d . (v_b - v_a)
+    float compute_jv() const override
     {
-        MatDynamic<float> jacobian(1, 6); // 1 row, 6 columns (3 DOF for body A, 3 for body B)
-
         if (!is_active())
-        {
-            return jacobian;
-        }
+            return 0.0f;
 
-        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
-        const float distance = offset.length();
+        const Vec3f direction = get_direction();
+        if (direction.squaredLength() < 1e-12f)
+            return 0.0f;
 
-        if (distance < 1e-6f)
-        {
-            // Degenerate case: particles are at same position
-            return jacobian;
-        }
-
-        // Normalized direction from A to B
-        const Vec3f direction = offset * (1.0f / distance);
-
-        // Jacobian row: direction for A, -direction for B
-        jacobian(0, 0) = -direction.x;
-        jacobian(0, 1) = -direction.y;
-        jacobian(0, 2) = -direction.z;
-        jacobian(0, 3) = direction.x;
-        jacobian(0, 4) = direction.y;
-        jacobian(0, 5) = direction.z;
-
-        return jacobian;
+        Vec3f v_a = body_a_.get_velocity();
+        Vec3f v_b = body_b_.get_velocity();
+        return direction.dot(v_b - v_a);
     }
 
-    /// Apply an impulse along the distance constraint direction.
-    /// This corrects the relative position by modifying velocities.
-    /// @param impulse_magnitude The impulse to apply
+    /// J * M^-1 * J^T = inv_mass_a + inv_mass_b (direction is unit length)
+    float compute_effective_mass() const override
+    {
+        if (!is_active())
+            return 0.0f;
+
+        return body_a_.get_inverse_mass() + body_b_.get_inverse_mass();
+    }
+
     void apply_impulse(float impulse_magnitude) override
     {
         if (!is_active())
-        {
             return;
-        }
 
-        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
-        const float distance = offset.length();
+        const Vec3f direction = get_direction();
+        if (direction.squaredLength() < 1e-12f)
+            return;
 
-        if (distance < 1e-6f)
-        {
-            return; // Degenerate case
-        }
-
-        // Direction from A to B
-        const Vec3f direction = offset * (1.0f / distance);
-
-        // Create impulse vector
         const Vec3f impulse_vector = direction * impulse_magnitude;
 
-        // Apply impulse to bodies via Body interface
         if (body_a_.get_inverse_mass() > 0.0f)
         {
             body_a_.apply_velocity_impulse(-impulse_vector * body_a_.get_inverse_mass());
@@ -123,85 +82,59 @@ public:
             body_b_.apply_velocity_impulse(impulse_vector * body_b_.get_inverse_mass());
         }
 
-        // Accumulate for warm-starting
-        accumulated_impulse_ += impulse_vector * impulse_magnitude;
-    }
-
-    /// Get the bodies involved in this constraint.
-    std::vector<Body *> get_bodies() const override
-    {
-        return {&body_a_, &body_b_};
+        accumulated_impulse_ += impulse_magnitude;
     }
 
     // ========================================================================
-    // Warm-Start Support
+    // Warm-Start
     // ========================================================================
 
-    /// Set warm-start impulse from previous frame.
     void set_warm_start_impulse(float impulse) override
     {
-        // For fixed constraints, apply the entire warm-start impulse immediately
-        // This provides faster convergence to the rest configuration
-        if (impulse > 0.0f)
+        if (impulse > 0.0f && get_current_distance() > 1e-6f)
         {
-            const Vec3f offset = body_b_.get_position() - body_a_.get_position();
-            const float distance = offset.length();
-            if (distance > 1e-6f)
-            {
-                apply_impulse(impulse);
-            }
+            apply_impulse(impulse);
         }
     }
 
-    /// Get the current accumulated impulse.
     float get_accumulated_impulse() const override
     {
-        return accumulated_impulse_.length();
+        return std::abs(accumulated_impulse_);
     }
 
     // ========================================================================
-    // Status Queries
+    // Status & Accessors
     // ========================================================================
 
-    /// Check if constraint is active.
-    /// A fixed constraint is inactive if either body is dead.
     bool is_active() const override
     {
         return body_a_.is_alive() && body_b_.is_alive();
     }
 
-    /// Get the rest distance between particles.
-    float get_rest_distance() const
-    {
-        return rest_distance_;
-    }
+    float get_rest_distance() const { return rest_distance_; }
+    const Vec3f &get_rest_offset() const { return rest_offset_; }
 
-    /// Get the rest offset (relative position).
-    const Vec3f &get_rest_offset() const
-    {
-        return rest_offset_;
-    }
-
-    /// Get the current distance between particles.
     float get_current_distance() const
     {
-        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
-        return offset.length();
-    }
-
-    /// Get the constraint iteration count for diagnostic purposes.
-    int num_constraint_rows() const override
-    {
-        return 1; // Distance constraint is a single equation
+        return (body_b_.get_position() - body_a_.get_position()).length();
     }
 
 private:
-    Body &body_a_; ///< First body
-    Body &body_b_; ///< Second body
-    Vec3f rest_offset_; ///< Desired relative position (direction and magnitude)
-    float rest_distance_; ///< Distance to maintain between particles
-    Vec3f accumulated_impulse_; ///< Accumulated impulse vector (for warm-start)
-    [[maybe_unused]] int max_iterations_; ///< Max iterations to converge (for reference)
+    /// Get unit direction from A to B (returns zero if degenerate)
+    Vec3f get_direction() const
+    {
+        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
+        const float distance = offset.length();
+        if (distance < 1e-6f)
+            return Vec3f(0.0f);
+        return offset * (1.0f / distance);
+    }
+
+    Body &body_a_;
+    Body &body_b_;
+    Vec3f rest_offset_;
+    float rest_distance_;
+    float accumulated_impulse_;
 };
 
 } // namespace phynity::physics::constraints
