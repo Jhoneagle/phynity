@@ -293,18 +293,17 @@ public:
         {
             PROFILE_SCOPE("RigidBodySystem::constraint_solving");
 
-            // Collect active constraints
-            std::vector<Constraint *> active;
-            active.reserve(constraints_.size());
+            // Collect active constraints (reuse member to avoid per-frame allocation)
+            active_constraints_cache_.clear();
             for (auto &c : constraints_)
             {
                 if (c && c->is_active())
                 {
-                    active.push_back(c.get());
+                    active_constraints_cache_.push_back(c.get());
                 }
             }
 
-            if (!active.empty())
+            if (!active_constraints_cache_.empty())
             {
                 const int iterations = config_.constraint_iterations;
                 const float beta = config_.baumgarte_beta;
@@ -314,7 +313,7 @@ public:
                 {
                     float max_impulse = 0.0f;
 
-                    for (auto *constraint : active)
+                    for (auto *constraint : active_constraints_cache_)
                     {
                         float error = constraint->compute_error();
                         if (error < convergence_threshold)
@@ -872,6 +871,7 @@ private:
     std::unordered_map<RigidBodyID, size_t> body_index_;
     std::vector<std::shared_ptr<ForceField>> force_fields_;
     std::vector<std::shared_ptr<Constraint>> constraints_;
+    std::vector<Constraint *> active_constraints_cache_;
     SpatialGrid spatial_grid_;
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
