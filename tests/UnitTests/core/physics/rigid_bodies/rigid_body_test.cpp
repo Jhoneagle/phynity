@@ -3,8 +3,8 @@
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/material.hpp>
-#include <core/physics/constraints/fixed_joint_rb.hpp>
-#include <core/physics/constraints/hinge_joint_rb.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
+#include <core/physics/constraints/hinge_joint.hpp>
 #include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
@@ -513,14 +513,14 @@ TEST_CASE("RigidBodySystem contact friction damps tangential velocity", "[system
 // CONSTRAINT TESTS
 // ============================================================================
 
-TEST_CASE("FixedConstraint RB error computation", "[constraint][fixed]")
+TEST_CASE("DistanceJoint RB error computation", "[constraint][fixed]")
 {
     auto shape = std::make_shared<SphereShape>(0.5f);
 
     RigidBody body_a(Vec3f(0, 0, 0), Quatf(), shape, Material{}, 1.0f);
     RigidBody body_b(Vec3f(1, 0, 0), Quatf(), shape, Material{}, 1.0f);
 
-    constraints::FixedConstraintRB constraint(&body_a,
+    constraints::WeldJoint constraint(&body_a,
                                               &body_b,
                                               Vec3f(0, 0, 0), // Anchor at origin of A
                                               Vec3f(-1, 0, 0) // Anchor at origin of B (relative to center)
@@ -539,7 +539,7 @@ TEST_CASE("HingeConstraint RB error computation", "[constraint][hinge]")
     RigidBody body_a(Vec3f(0, 0, 0), Quatf(), shape, Material{}, 1.0f);
     RigidBody body_b(Vec3f(0, 0, 0), Quatf(), shape, Material{}, 1.0f);
 
-    constraints::HingeConstraintRB constraint(&body_a,
+    constraints::HingeJoint constraint(&body_a,
                                               &body_b,
                                               Vec3f(0, 0, 0), // Pivot at origin of A
                                               Vec3f(0, 0, 0), // Pivot at origin of B
@@ -556,7 +556,7 @@ TEST_CASE("HingeConstraint RB error computation", "[constraint][hinge]")
 // CONSTRAINT SOLVER INTEGRATION TESTS
 // ============================================================================
 
-TEST_CASE("RigidBodySystem FixedConstraintRB produces bounded correction", "[rigid_body][constraints][solver]")
+TEST_CASE("RigidBodySystem WeldJoint produces bounded correction", "[rigid_body][constraints][solver]")
 {
     // Two bodies connected by a fixed constraint, initially displaced.
     // The constraint solver should apply corrections that keep the system bounded.
@@ -573,7 +573,7 @@ TEST_CASE("RigidBodySystem FixedConstraintRB produces bounded correction", "[rig
     REQUIRE(body_a != nullptr);
     REQUIRE(body_b != nullptr);
 
-    auto constraint = std::make_unique<constraints::FixedConstraintRB>(body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
+    auto constraint = std::make_unique<constraints::WeldJoint>(body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
 
     float initial_error = constraint->compute_error();
     REQUIRE(initial_error > 0.05f);

@@ -60,10 +60,10 @@ inline void apply_positional_impulse(physics::RigidBody *body_a,
 /// Fixed constraint for rigid bodies (6-DOF lock).
 /// Locks both position and orientation between two rigid bodies (or one body to world).
 /// Can be used to create welded joints or attach bodies to fixed points.
-class FixedConstraintRB : public Constraint
+class WeldJoint : public Constraint
 {
 public:
-    FixedConstraintRB(physics::RigidBody *body_a,
+    WeldJoint(physics::RigidBody *body_a,
                       physics::RigidBody *body_b,
                       const Vec3f &anchor_a_local, ///< Anchor in body A's local frame
                       const Vec3f &anchor_b_local ///< Anchor in body B's local frame (or world if b is null)

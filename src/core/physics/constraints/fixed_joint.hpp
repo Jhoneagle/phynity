@@ -1,8 +1,8 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
-#include <core/physics/particles/particle.hpp>
 
 #include <cmath>
 #include <vector>
@@ -15,7 +15,7 @@ using phynity::math::vectors::Vec3f;
 /// Fixed constraint: rigidly attaches two particles at a fixed offset.
 /// The particles move together, maintaining their relative position and orientation.
 /// This is equivalent to a welded joint with 6 DOF locked (in 3D) or 3 DOF locked (in 2D).
-class FixedConstraint : public Constraint
+class DistanceJoint : public Constraint
 {
 public:
     // ========================================================================
@@ -27,10 +27,10 @@ public:
     /// @param body_a First particle
     /// @param body_b Second particle
     /// @param offset Optional relative position offset (defaults to current offset)
-    FixedConstraint(Particle &body_a, Particle &body_b, const Vec3f &offset = Vec3f(0.0f))
+    DistanceJoint(Body &body_a, Body &body_b, const Vec3f &offset = Vec3f(0.0f))
         : body_a_(body_a),
           body_b_(body_b),
-          rest_offset_(offset.length() > 1e-5f ? offset : (body_b.position - body_a.position)),
+          rest_offset_(offset.length() > 1e-5f ? offset : (body_b.get_position() - body_a.get_position())),
           accumulated_impulse_(Vec3f(0.0f)),
           max_iterations_(10)
     {
@@ -47,7 +47,7 @@ public:
     /// @return Positive value indicates constraint violation (distance mismatch)
     float compute_error() const override
     {
-        const Vec3f current_offset = body_b_.position - body_a_.position;
+        const Vec3f current_offset = body_b_.get_position() - body_a_.get_position();
         const float current_distance = current_offset.length();
         const float error = current_distance - rest_distance_;
         return std::abs(error); // Penalize both compression and extension
@@ -65,7 +65,7 @@ public:
             return jacobian;
         }
 
-        const Vec3f offset = body_b_.position - body_a_.position;
+        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
         const float distance = offset.length();
 
         if (distance < 1e-6f)
@@ -98,7 +98,7 @@ public:
             return;
         }
 
-        const Vec3f offset = body_b_.position - body_a_.position;
+        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
         const float distance = offset.length();
 
         if (distance < 1e-6f)
@@ -112,15 +112,15 @@ public:
         // Create impulse vector
         const Vec3f impulse_vector = direction * impulse_magnitude;
 
-        // Apply impulse to bodies
-        if (body_a_.inverse_mass() > 0.0f)
+        // Apply impulse to bodies via Body interface
+        if (body_a_.get_inverse_mass() > 0.0f)
         {
-            body_a_.velocity -= impulse_vector * body_a_.inverse_mass();
+            body_a_.apply_velocity_impulse(-impulse_vector * body_a_.get_inverse_mass());
         }
 
-        if (body_b_.inverse_mass() > 0.0f)
+        if (body_b_.get_inverse_mass() > 0.0f)
         {
-            body_b_.velocity += impulse_vector * body_b_.inverse_mass();
+            body_b_.apply_velocity_impulse(impulse_vector * body_b_.get_inverse_mass());
         }
 
         // Accumulate for warm-starting
@@ -130,9 +130,7 @@ public:
     /// Get the body IDs for this constraint.
     std::vector<size_t> get_body_ids() const override
     {
-        // Note: In full implementation, would need to track particle indices
-        // For now, return a placeholder
-        return {0, 1}; // Would need actual IDs from particles
+        return {static_cast<size_t>(body_a_.get_id()), static_cast<size_t>(body_b_.get_id())};
     }
 
     // ========================================================================
@@ -146,7 +144,7 @@ public:
         // This provides faster convergence to the rest configuration
         if (impulse > 0.0f)
         {
-            const Vec3f offset = body_b_.position - body_a_.position;
+            const Vec3f offset = body_b_.get_position() - body_a_.get_position();
             const float distance = offset.length();
             if (distance > 1e-6f)
             {
@@ -187,7 +185,7 @@ public:
     /// Get the current distance between particles.
     float get_current_distance() const
     {
-        const Vec3f offset = body_b_.position - body_a_.position;
+        const Vec3f offset = body_b_.get_position() - body_a_.get_position();
         return offset.length();
     }
 
@@ -198,8 +196,8 @@ public:
     }
 
 private:
-    Particle &body_a_; ///< First particle
-    Particle &body_b_; ///< Second particle
+    Body &body_a_; ///< First body
+    Body &body_b_; ///< Second body
     Vec3f rest_offset_; ///< Desired relative position (direction and magnitude)
     float rest_distance_; ///< Distance to maintain between particles
     Vec3f accumulated_impulse_; ///< Accumulated impulse vector (for warm-start)

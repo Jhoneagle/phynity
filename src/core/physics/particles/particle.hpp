@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/constraints/body.hpp>
 #include <core/physics/dynamics/material.hpp>
 
 namespace phynity::physics
@@ -11,7 +12,8 @@ using phynity::math::vectors::Vec3f;
 /// Represents a single particle in the simulation.
 /// Each particle has mass, kinematic state (position, velocity), material properties,
 /// and lifecycle management (lifetime, active flags for pooling).
-class Particle
+/// Implements the Body interface for use with the constraint system.
+class Particle : public constraints::Body
 {
 public:
     // ========================================================================
@@ -31,6 +33,7 @@ public:
     Material material{}; ///< Material properties (mass, restitution, etc.)
     float lifetime = -1.0f; ///< Remaining lifetime (< 0 = infinite, 0 = dead, > 0 = finite)
     bool active = true; ///< Active flag for pooling/recycling
+    int id = -1; ///< Unique identifier for constraint linking
 
     // ========================================================================
     // Constructors
@@ -121,10 +124,7 @@ public:
     /// Particles with lifetime < 0 are infinite (always alive)
     /// Particles with lifetime > 0 are alive and counting down
     /// Particles with lifetime <= 0 (for positive lifetimes) are dead
-    bool is_alive() const
-    {
-        return lifetime < 0.0f || lifetime > 0.0f;
-    }
+    /// (Implements Body::is_alive)
 
     /// Set finite lifetime for this particle
     /// @param lifetime_sec Remaining time in seconds (> 0)
@@ -176,6 +176,23 @@ public:
     float kinetic_energy() const
     {
         return 0.5f * material.mass * velocity.squaredLength();
+    }
+
+    // ========================================================================
+    // Body Interface Implementation
+    // ========================================================================
+
+    int get_id() const override { return id; }
+    Vec3f get_position() const override { return position; }
+    Vec3f get_velocity() const override { return velocity; }
+    float get_inverse_mass() const override { return inverse_mass(); }
+    bool is_static() const override { return material.mass <= 0.0f; }
+    bool is_alive() const override { return lifetime < 0.0f || lifetime > 0.0f; }
+    float get_restitution() const override { return material.restitution; }
+
+    void apply_velocity_impulse(const Vec3f &impulse) override
+    {
+        velocity += impulse;
     }
 
     // ========================================================================

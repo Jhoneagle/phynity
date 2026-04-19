@@ -146,7 +146,7 @@ Both scales share fundamental components:
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/shape.hpp>
-#include <core/physics/constraints/fixed_joint_rb.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
 ```
 
 **RigidBody**: 6-DOF with inertia tensor  
@@ -201,7 +201,7 @@ for (int frame = 0; frame < 600; ++frame) {
 ```cpp
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/shape.hpp>
-#include <core/physics/constraints/fixed_joint_rb.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
 
 // Vehicle with wheels welded to chassis (hinge joints planned)
 RigidBodySystem vehicle_sim;
@@ -221,7 +221,7 @@ for (int i = 0; i < 4; ++i) {
     );
     
     // Weld wheel to chassis (placeholder until hinge joints are implemented)
-    auto weld = std::make_shared<FixedConstraintRB>(
+    auto weld = std::make_shared<WeldJoint>(
         vehicle_sim.get_body(chassis_id),
         vehicle_sim.get_body(wheel_id),
         wheel_pos,

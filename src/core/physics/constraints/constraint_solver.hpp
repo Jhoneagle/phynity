@@ -3,8 +3,8 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
-#include <core/physics/particles/particle.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
@@ -77,7 +77,7 @@ public:
     /// This is the main entry point for unified constraint solving.
     /// @param constraints Vector of constraints to solve (contacts + rigid constraints)
     /// @param particles   Reference to all particles for constraint access
-    void solve(std::vector<std::unique_ptr<Constraint>> &constraints, std::vector<Particle> &particles)
+    void solve(std::vector<std::unique_ptr<Constraint>> &constraints, std::vector<Body *> &bodies)
     {
         PROFILE_FUNCTION();
 
@@ -148,7 +148,7 @@ public:
 
                 // Compute Jacobian-velocity product (relative velocity along constraint)
                 // J * v = dot(jacobian[row], [v_a, v_b])
-                float jv = compute_jacobian_velocity(jacobian, row, constraint->get_body_ids(), particles);
+                float jv = compute_jacobian_velocity(jacobian, row, constraint->get_body_ids(), bodies);
 
                 // Compute impulse magnitude
                 // Using Baumgarte stabilization: add error-correcting term
@@ -173,7 +173,7 @@ public:
 
                 // Compute inverse mass sum along constraint direction
                 const float denominator =
-                    compute_jacobian_inverse_mass(jacobian, row, constraint->get_body_ids(), particles);
+                    compute_jacobian_inverse_mass(jacobian, row, constraint->get_body_ids(), bodies);
                 if (denominator < 1e-6f)
                 {
                     continue; // Singular constraint
@@ -241,22 +241,21 @@ private:
     float compute_jacobian_velocity(const MatDynamic<float> &jacobian,
                                     size_t row_index,
                                     const std::vector<size_t> &body_ids,
-                                    const std::vector<Particle> &particles) const
+                                    const std::vector<Body *> &bodies) const
     {
         float jv = 0.0f;
         size_t col_index = 0;
 
         for (size_t body_id : body_ids)
         {
-            if (body_id >= particles.size())
+            if (body_id >= bodies.size() || !bodies[body_id])
             {
                 continue;
             }
 
-            const Particle &p = particles[body_id];
-            const Vec3f &v = p.velocity;
+            const Body *body = bodies[body_id];
+            const Vec3f v = body->get_velocity();
 
-            // Dot product: jacobian[row, col:col+3] · v
             if (col_index < jacobian.numCols())
             {
                 jv += jacobian(row_index, col_index) * v.x;
@@ -270,7 +269,7 @@ private:
                 jv += jacobian(row_index, col_index + 2) * v.z;
             }
 
-            col_index += 3; // Move to next body (assumes 3 linear DOF per body)
+            col_index += 3;
         }
 
         return jv;
@@ -285,22 +284,21 @@ private:
     float compute_jacobian_inverse_mass(const MatDynamic<float> &jacobian,
                                         size_t row_index,
                                         const std::vector<size_t> &body_ids,
-                                        const std::vector<Particle> &particles) const
+                                        const std::vector<Body *> &bodies) const
     {
         float denominator = 0.0f;
         size_t col_index = 0;
 
         for (size_t body_id : body_ids)
         {
-            if (body_id >= particles.size())
+            if (body_id >= bodies.size() || !bodies[body_id])
             {
                 continue;
             }
 
-            const Particle &p = particles[body_id];
-            float inv_mass = p.inverse_mass();
+            const Body *body = bodies[body_id];
+            float inv_mass = body->get_inverse_mass();
 
-            // J_i * M^-1 * J_i^T = (J_i · J_i) * inv_mass
             if (col_index < jacobian.numCols())
             {
                 float jx = jacobian(row_index, col_index);

@@ -227,7 +227,10 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
                 particles[manifold.object_b_id],
                 ContactConstraint::ContactType::Normal));
         }
-        solver.solve(constraints, particles);
+        std::vector<Body *> bodies;
+        bodies.reserve(particles.size());
+        for (auto &p : particles) bodies.push_back(&p);
+        solver.solve(constraints, bodies);
     }
     const auto end = std::chrono::high_resolution_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

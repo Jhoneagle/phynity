@@ -2,8 +2,8 @@
 
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/dynamics/force_field.hpp>
-#include <core/physics/constraints/fixed_joint_rb.hpp>
-#include <core/physics/constraints/hinge_joint_rb.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
+#include <core/physics/constraints/hinge_joint.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/box.hpp>
 #include <core/physics/shapes/sphere.hpp>
@@ -23,8 +23,8 @@ using phynity::physics::GravityField;
 using phynity::physics::Material;
 using phynity::physics::RigidBody;
 using phynity::physics::RigidBodySystem;
-using phynity::physics::constraints::FixedConstraintRB;
-using phynity::physics::constraints::HingeConstraintRB;
+using phynity::physics::constraints::WeldJoint;
+using phynity::physics::constraints::HingeJoint;
 
 /// Simple stacking demo: tower of boxes under gravity
 class StackingDemoRB
@@ -191,7 +191,7 @@ private:
                                                          ));
 
         // Hinge constraint at door pivot
-        system_.add_constraint(std::make_unique<HingeConstraintRB>(frame,
+        system_.add_constraint(std::make_unique<HingeJoint>(frame,
                                                                      door_body_,
                                                                      Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
                                                                      Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door

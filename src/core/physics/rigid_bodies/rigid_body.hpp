@@ -4,6 +4,7 @@
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
+#include <core/physics/constraints/body.hpp>
 #include <core/physics/dynamics/material.hpp>
 #include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/shapes/box.hpp>
@@ -25,7 +26,7 @@ using phynity::physics::shapes::ShapeType;
 /// Represents a rigid body in the simulation (macro-scale).
 /// Extends beyond particles with rotational dynamics, orientation, and inertia.
 /// Rigid bodies are used for larger-scale objects that can rotate and interact via constraints.
-class RigidBody
+class RigidBody : public constraints::Body
 {
 public:
     // ========================================================================
@@ -137,7 +138,7 @@ public:
     }
 
     /// Check if body is static (infinite mass)
-    bool is_static() const
+    bool is_static() const override
     {
         return inv_mass == 0.0f;
     }
@@ -150,6 +151,35 @@ public:
     Mat3f get_rotation_matrix() const
     {
         return phynity::math::quaternions::toRotationMatrix(orientation);
+    }
+
+    // ========================================================================
+    // Body Interface Implementation
+    // ========================================================================
+
+    int get_id() const override { return id; }
+    Vec3f get_position() const override { return position; }
+    Vec3f get_velocity() const override { return velocity; }
+    float get_inverse_mass() const override { return inv_mass; }
+    Quatf get_orientation() const override { return orientation; }
+    Vec3f get_angular_velocity() const override { return angular_velocity; }
+    bool is_alive() const override { return active; }
+    int get_dof() const override { return 6; }
+    float get_restitution() const override { return material.restitution; }
+
+    Mat3f get_inverse_inertia_world() const override
+    {
+        return inertia::rotate_inertia_tensor(inertia_tensor_inv, orientation);
+    }
+
+    void apply_velocity_impulse(const Vec3f &impulse) override
+    {
+        velocity += impulse * inv_mass;
+    }
+
+    void apply_angular_impulse(const Vec3f &impulse) override
+    {
+        angular_velocity += get_inverse_inertia_world() * impulse;
     }
 
     /// Get kinetic energy (linear + angular)

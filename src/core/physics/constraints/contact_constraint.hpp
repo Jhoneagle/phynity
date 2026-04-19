@@ -2,8 +2,8 @@
 
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
+#include <core/physics/constraints/body.hpp>
 #include <core/physics/constraints/constraint.hpp>
-#include <core/physics/particles/particle.hpp>
 
 #include <vector>
 
@@ -36,8 +36,8 @@ public:
     /// @param body_b Second particle involved in contact
     /// @param contact_type Whether this constraint is normal or tangent (friction)
     ContactConstraint(const ContactManifold &manifold,
-                      Particle &body_a,
-                      Particle &body_b,
+                      Body &body_a,
+                      Body &body_b,
                       ContactType contact_type = ContactType::Normal)
         : manifold_(manifold),
           body_a_(body_a),
@@ -112,17 +112,15 @@ public:
         const Vec3f &normal = manifold_.contact.normal;
         const Vec3f impulse_vector = normal * clamped_impulse;
 
-        // Apply impulse to bodies (F = m * a, so dv = impulse / m)
-        // Body A: receives negative impulse (stays in place)
-        // Body B: receives positive impulse (pushed away)
-        if (body_a_.inverse_mass() > 0.0f)
+        // Apply impulse to bodies via Body interface
+        if (body_a_.get_inverse_mass() > 0.0f)
         {
-            body_a_.velocity -= impulse_vector * body_a_.inverse_mass();
+            body_a_.apply_velocity_impulse(-impulse_vector * body_a_.get_inverse_mass());
         }
 
-        if (body_b_.inverse_mass() > 0.0f)
+        if (body_b_.get_inverse_mass() > 0.0f)
         {
-            body_b_.velocity += impulse_vector * body_b_.inverse_mass();
+            body_b_.apply_velocity_impulse(impulse_vector * body_b_.get_inverse_mass());
         }
     }
 
@@ -186,7 +184,7 @@ public:
     /// Uses the minimum of the two bodies' restitution values.
     float get_restitution() const override
     {
-        return std::min(body_a_.material.restitution, body_b_.material.restitution);
+        return std::min(body_a_.get_restitution(), body_b_.get_restitution());
     }
 
     /// Get the initial approach velocity (for restitution calculation).
@@ -198,8 +196,8 @@ public:
 
 private:
     const ContactManifold &manifold_; ///< Reference to contact data
-    Particle &body_a_; ///< First particle
-    Particle &body_b_; ///< Second particle
+    Body &body_a_; ///< First body
+    Body &body_b_; ///< Second body
     ContactType contact_type_; ///< Normal or tangent/friction
     float accumulated_impulse_; ///< Total impulse applied (for warm-start caching)
     float warm_start_impulse_; ///< Impulse from previous frame (for warm-start)

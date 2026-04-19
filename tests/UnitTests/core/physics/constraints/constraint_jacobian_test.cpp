@@ -11,7 +11,7 @@ using phynity::math::vectors::Vec3f;
 using phynity::physics::Particle;
 using phynity::physics::collision::ContactManifold;
 using phynity::physics::constraints::ContactConstraint;
-using phynity::physics::constraints::FixedConstraint;
+using phynity::physics::constraints::DistanceJoint;
 
 TEST_CASE("Constraint Jacobian: ContactConstraint matches normal", "[constraint][jacobian]")
 {
@@ -34,12 +34,12 @@ TEST_CASE("Constraint Jacobian: ContactConstraint matches normal", "[constraint]
     REQUIRE_THAT(jacobian(0, 3), WithinAbs(1.0f, 1e-6f));
 }
 
-TEST_CASE("Constraint Jacobian: FixedConstraint direction normalized", "[constraint][jacobian]")
+TEST_CASE("Constraint Jacobian: DistanceJoint direction normalized", "[constraint][jacobian]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     Particle p_b(Vec3f(3.0f, 4.0f, 0.0f));
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
     auto jacobian = constraint.compute_jacobian();
 
     REQUIRE(jacobian.numRows() == 1);
@@ -52,12 +52,12 @@ TEST_CASE("Constraint Jacobian: FixedConstraint direction normalized", "[constra
     REQUIRE_THAT(jacobian(0, 4), WithinAbs(0.8f, 1e-5f));
 }
 
-TEST_CASE("Constraint Jacobian: FixedConstraint degenerate case", "[constraint][jacobian]")
+TEST_CASE("Constraint Jacobian: DistanceJoint degenerate case", "[constraint][jacobian]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     Particle p_b(Vec3f(0.0f, 0.0f, 0.0f));
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
     auto jacobian = constraint.compute_jacobian();
 
     REQUIRE(jacobian.numRows() == 1);

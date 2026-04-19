@@ -4,7 +4,7 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/constraints/constraint.hpp>
-#include <core/physics/constraints/fixed_joint_rb.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 
 #include <cmath>
@@ -21,10 +21,10 @@ using phynity::math::vectors::Vec3f;
 /// Hinge constraint for rigid bodies (5-DOF rotation).
 /// Allows rotation around a hinge axis while locking the pivot point and other rotations.
 /// Useful for doors, hinges, wheels, etc.
-class HingeConstraintRB : public Constraint
+class HingeJoint : public Constraint
 {
 public:
-    HingeConstraintRB(physics::RigidBody *body_a,
+    HingeJoint(physics::RigidBody *body_a,
                       physics::RigidBody *body_b,
                       const Vec3f &pivot_a_local, ///< Pivot point in body A's local frame
                       const Vec3f &pivot_b_local, ///< Pivot point in body B's local frame

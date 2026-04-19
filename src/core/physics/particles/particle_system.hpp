@@ -68,6 +68,7 @@ public:
         p.material.mass = mass;
         p.lifetime = lifetime;
         p.radius = (radius > 0.0f) ? radius : default_collision_radius_;
+        p.id = static_cast<int>(particles_.size() - 1);
     }
 
     /// Spawn a new particle with full material specification.
@@ -90,6 +91,7 @@ public:
         p.material = material;
         p.lifetime = lifetime;
         p.radius = (radius > 0.0f) ? radius : default_collision_radius_;
+        p.id = static_cast<int>(particles_.size() - 1);
     }
 
     /// Clear all particles.
@@ -202,7 +204,7 @@ public:
     /// @param particle_a_index Index of first particle
     /// @param particle_b_index Index of second particle
     /// @return Pointer to the created constraint (for reference/modification)
-    constraints::FixedConstraint *add_fixed_constraint(size_t particle_a_index, size_t particle_b_index)
+    constraints::DistanceJoint *add_fixed_constraint(size_t particle_a_index, size_t particle_b_index)
     {
         if (particle_a_index >= particles_.size() || particle_b_index >= particles_.size())
         {
@@ -210,7 +212,7 @@ public:
         }
 
         auto constraint =
-            std::make_unique<constraints::FixedConstraint>(particles_[particle_a_index], particles_[particle_b_index]);
+            std::make_unique<constraints::DistanceJoint>(particles_[particle_a_index], particles_[particle_b_index]);
         auto *ptr = constraint.get();
         const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(std::move(constraint));

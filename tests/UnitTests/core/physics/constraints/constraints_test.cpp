@@ -19,7 +19,7 @@ using phynity::physics::constraints::Constraint;
 using phynity::physics::constraints::ConstraintSolver;
 using phynity::physics::constraints::ConstraintSolverConfig;
 using phynity::physics::constraints::ContactConstraint;
-using phynity::physics::constraints::FixedConstraint;
+using phynity::physics::constraints::DistanceJoint;
 
 // ============================================================================
 // ContactConstraint Tests
@@ -146,10 +146,10 @@ TEST_CASE("ContactConstraint: Warm-start", "[constraint][contact]")
 }
 
 // ============================================================================
-// FixedConstraint Tests
+// DistanceJoint Tests
 // ============================================================================
 
-TEST_CASE("FixedConstraint: Construction", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Construction", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -157,13 +157,13 @@ TEST_CASE("FixedConstraint: Construction", "[constraint][fixed]")
     Particle p_b(Vec3f(2.0f, 0.0f, 0.0f));
     p_b.material.mass = 1.0f;
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
 
     REQUIRE_THAT(constraint.get_rest_distance(), WithinAbs(2.0f, 1e-6f));
     REQUIRE(constraint.is_active());
 }
 
-TEST_CASE("FixedConstraint: Compute error - no violation", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Compute error - no violation", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -171,13 +171,13 @@ TEST_CASE("FixedConstraint: Compute error - no violation", "[constraint][fixed]"
     Particle p_b(Vec3f(2.0f, 0.0f, 0.0f));
     p_b.material.mass = 1.0f;
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
 
     float error = constraint.compute_error();
     REQUIRE_THAT(error, WithinAbs(0.0f, 1e-6f));
 }
 
-TEST_CASE("FixedConstraint: Compute error - with violation", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Compute error - with violation", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -185,7 +185,7 @@ TEST_CASE("FixedConstraint: Compute error - with violation", "[constraint][fixed
     Particle p_b(Vec3f(2.0f, 0.0f, 0.0f));
     p_b.material.mass = 1.0f;
 
-    FixedConstraint constraint(p_a, p_b); // Stores rest distance = 2.0
+    DistanceJoint constraint(p_a, p_b); // Stores rest distance = 2.0
 
     // Move p_b further away
     p_b.position = Vec3f(3.0f, 0.0f, 0.0f);
@@ -194,7 +194,7 @@ TEST_CASE("FixedConstraint: Compute error - with violation", "[constraint][fixed
     REQUIRE_THAT(error, WithinAbs(1.0f, 1e-6f)); // 3.0 - 2.0 = 1.0
 }
 
-TEST_CASE("FixedConstraint: Apply impulse", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Apply impulse", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -203,7 +203,7 @@ TEST_CASE("FixedConstraint: Apply impulse", "[constraint][fixed]")
     p_b.material.mass = 1.0f;
 
     // Move p_b further away so we have a constraint violation
-    FixedConstraint constraint(p_a, p_b); // Rest distance = 3.0
+    DistanceJoint constraint(p_a, p_b); // Rest distance = 3.0
     p_b.position = Vec3f(5.0f, 0.0f, 0.0f); // Now distance = 5.0, error = 2.0
 
     // Apply impulse to correct the distance
@@ -215,7 +215,7 @@ TEST_CASE("FixedConstraint: Apply impulse", "[constraint][fixed]")
     REQUIRE(p_b.velocity.x > 0.0f);
 }
 
-TEST_CASE("FixedConstraint: Stays active with live particles", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Stays active with live particles", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -225,12 +225,12 @@ TEST_CASE("FixedConstraint: Stays active with live particles", "[constraint][fix
     p_b.material.mass = 1.0f;
     p_b.active = true;
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
 
     REQUIRE(constraint.is_active());
 }
 
-TEST_CASE("FixedConstraint: Becomes inactive with dead particle", "[constraint][fixed]")
+TEST_CASE("DistanceJoint: Becomes inactive with dead particle", "[constraint][fixed]")
 {
     Particle p_a(Vec3f(0.0f, 0.0f, 0.0f));
     p_a.material.mass = 1.0f;
@@ -239,7 +239,7 @@ TEST_CASE("FixedConstraint: Becomes inactive with dead particle", "[constraint][
     Particle p_b(Vec3f(2.0f, 0.0f, 0.0f));
     p_b.material.mass = 1.0f;
 
-    FixedConstraint constraint(p_a, p_b);
+    DistanceJoint constraint(p_a, p_b);
 
     REQUIRE_FALSE(constraint.is_active());
 }
@@ -269,7 +269,7 @@ TEST_CASE("ConstraintSolver: Single contact constraint", "[solver][constraint]")
     constraints.push_back(std::make_unique<ContactConstraint>(manifold, particles[0], particles[1]));
 
     ConstraintSolver solver;
-    solver.solve(constraints, particles);
+    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // After solving, the relative velocity along normal should be reduced
     // (particles should stop approaching)
@@ -290,7 +290,7 @@ TEST_CASE("ConstraintSolver: Fixed constraint convergence", "[solver][constraint
     particles[1].material.mass = 1.0f;
 
     std::vector<std::unique_ptr<Constraint>> constraints;
-    constraints.push_back(std::make_unique<FixedConstraint>(particles[0], particles[1])); // Rest distance = 2.0
+    constraints.push_back(std::make_unique<DistanceJoint>(particles[0], particles[1])); // Rest distance = 2.0
 
     // Now move particle B further away
     particles[1].position = Vec3f(4.0f, 0.0f, 0.0f);
@@ -300,7 +300,7 @@ TEST_CASE("ConstraintSolver: Fixed constraint convergence", "[solver][constraint
     config.iterations = 10;
     solver.set_config(config);
 
-    solver.solve(constraints, particles);
+    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // After solving, particles should have velocities that correct the separation
     // Both should move toward their rest distance (p_a moves right, p_b moves left)
@@ -316,7 +316,7 @@ TEST_CASE("ConstraintSolver: Empty constraint list", "[solver][constraint]")
     ConstraintSolver solver;
 
     // Should not crash with empty lists
-    solver.solve(constraints, particles);
+    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     REQUIRE(constraints.empty());
     REQUIRE(particles.empty());
@@ -364,10 +364,10 @@ TEST_CASE("Constraint: Contact + Fixed constraint together", "[constraint][integ
 
     std::vector<std::unique_ptr<Constraint>> constraints;
     constraints.push_back(std::make_unique<ContactConstraint>(manifold, particles[0], particles[1]));
-    constraints.push_back(std::make_unique<FixedConstraint>(particles[1], particles[2]));
+    constraints.push_back(std::make_unique<DistanceJoint>(particles[1], particles[2]));
 
     ConstraintSolver solver;
-    solver.solve(constraints, particles);
+    std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
     // All particles should have changed their velocities
     REQUIRE(particles[0].velocity != Vec3f(1.0f, 0.0f, 0.0f));
@@ -399,7 +399,7 @@ TEST_CASE("Constraint: Determinism - same input same result", "[constraint][dete
         constraints.push_back(std::make_unique<ContactConstraint>(manifold, particles[0], particles[1]));
 
         ConstraintSolver solver;
-        solver.solve(constraints, particles);
+        std::vector<constraints::Body *> bodies; for (auto &p : particles) bodies.push_back(&p); solver.solve(constraints, bodies);
 
         return std::make_pair(particles[0].velocity, particles[1].velocity);
     };
