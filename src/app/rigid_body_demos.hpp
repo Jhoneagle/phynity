@@ -62,8 +62,7 @@ private:
     void setup()
     {
         // Add gravity
-        auto gravity = std::make_shared<GravityField>(Vec3f(0.0f, -9.81f, 0.0f));
-        system_.add_force_field(gravity);
+        system_.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
 
         // Create ground (static box)
         auto ground_shape = std::make_shared<BoxShape>(Vec3f(10.0f, 0.5f, 10.0f));
@@ -190,13 +189,12 @@ private:
                                                          ));
 
         // Hinge constraint at door pivot
-        auto hinge = std::make_shared<HingeConstraintRB>(frame,
-                                                         door_body_,
-                                                         Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
-                                                         Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
-                                                         Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
-        );
-        system_.add_constraint(hinge);
+        system_.add_constraint(std::make_unique<HingeConstraintRB>(frame,
+                                                                     door_body_,
+                                                                     Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
+                                                                     Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
+                                                                     Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
+                                                                     ));
 
         // Apply initial spin
         if (door_body_ != nullptr)

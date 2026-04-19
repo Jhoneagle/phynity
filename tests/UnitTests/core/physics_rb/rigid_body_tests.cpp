@@ -182,8 +182,7 @@ TEST_CASE("RigidBodySystem gravity simulation", "[system][gravity]")
     RigidBodyID id = sys.spawn_body(Vec3f(0.0f, 10.0f, 0.0f), Quatf(), shape, 1.0f);
 
     // Add gravity
-    auto gravity = std::make_shared<GravityField>(Vec3f(0.0f, -9.81f, 0.0f));
-    sys.add_force_field(gravity);
+    sys.add_force_field(std::make_unique<GravityField>(Vec3f(0.0f, -9.81f, 0.0f)));
 
     // Simulate 1 second
     for (int i = 0; i < 100; ++i)
@@ -570,12 +569,12 @@ TEST_CASE("RigidBodySystem FixedConstraintRB produces bounded correction", "[rig
     REQUIRE(body_a != nullptr);
     REQUIRE(body_b != nullptr);
 
-    auto constraint = std::make_shared<constraints::FixedConstraintRB>(body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
+    auto constraint = std::make_unique<constraints::FixedConstraintRB>(body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
 
     float initial_error = constraint->compute_error();
     REQUIRE(initial_error > 0.05f);
 
-    system.add_constraint(constraint);
+    system.add_constraint(std::move(constraint));
 
     // Step the simulation -- verify bodies stay finite and bounded
     const float dt = 1.0f / 60.0f;

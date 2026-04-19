@@ -166,10 +166,10 @@ public:
     // ========================================================================
 
     /// Add a force field (gravity, drag, wind, etc.)
-    void add_force_field(std::shared_ptr<ForceField> field)
+    void add_force_field(std::unique_ptr<ForceField> field)
     {
         const size_t previous_capacity = force_fields_.capacity();
-        force_fields_.push_back(field);
+        force_fields_.push_back(std::move(field));
         phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
     }
 
@@ -184,15 +184,15 @@ public:
     // ========================================================================
 
     /// Register a constraint (fixed joint, hinge, etc.)
-    void add_constraint(std::shared_ptr<Constraint> constraint)
+    void add_constraint(std::unique_ptr<Constraint> constraint)
     {
         const size_t previous_capacity = constraints_.capacity();
-        constraints_.push_back(constraint);
+        constraints_.push_back(std::move(constraint));
         phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
     }
 
     /// Get all constraints
-    const std::vector<std::shared_ptr<Constraint>> &get_constraints() const
+    const std::vector<std::unique_ptr<Constraint>> &get_constraints() const
     {
         return constraints_;
     }
@@ -870,8 +870,8 @@ private:
     Config config_;
     std::vector<RigidBody> bodies_;
     std::unordered_map<RigidBodyID, size_t> body_index_;
-    std::vector<std::shared_ptr<ForceField>> force_fields_;
-    std::vector<std::shared_ptr<Constraint>> constraints_;
+    std::vector<std::unique_ptr<ForceField>> force_fields_;
+    std::vector<std::unique_ptr<Constraint>> constraints_;
     std::vector<Constraint *> active_constraints_cache_;
     SpatialGrid spatial_grid_;
     RigidBodyID next_body_id_;
