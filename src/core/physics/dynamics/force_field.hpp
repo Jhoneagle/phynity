@@ -2,7 +2,7 @@
 
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 #include <memory>
 

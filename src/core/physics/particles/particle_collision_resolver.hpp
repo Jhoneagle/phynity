@@ -6,10 +6,10 @@
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/collision/collision_proxy.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/constraints/contact/contact_constraint.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/config/ccd_config.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
+#include <core/physics/constraints/constraint.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
 #include <core/physics/particles/particle.hpp>
 
 #include <algorithm>

@@ -10,7 +10,7 @@
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/shapes/aabb.hpp>
 #include <core/physics/collision/collision_proxy.hpp>
-#include <core/physics/common/ccd_config.hpp>
+#include <core/physics/config/ccd_config.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 
 #include <algorithm>

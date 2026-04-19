@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 #include <cmath>
 

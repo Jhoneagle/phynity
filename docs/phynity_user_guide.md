@@ -119,9 +119,9 @@ for (int i = 0; i < 1000; ++i) {
 Both scales share fundamental components:
 
 ```cpp
-#include <core/physics/common/material.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/timestep_controller.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/config/timestep_controller.hpp>
 ```
 
 **Material**: Physical properties (mass, restitution, friction)  
@@ -146,7 +146,7 @@ Both scales share fundamental components:
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/shape.hpp>
-#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
+#include <core/physics/constraints/fixed_joint_rb.hpp>
 ```
 
 **RigidBody**: 6-DOF with inertia tensor  
@@ -159,7 +159,7 @@ Both scales share fundamental components:
 ```cpp
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
-#include <core/physics/constraints/solver/constraint_solver.hpp>
+#include <core/physics/constraints/constraint_solver.hpp>
 ```
 
 Both scales use the same collision and constraint infrastructure:
@@ -174,7 +174,7 @@ Both scales use the same collision and constraint infrastructure:
 
 ```cpp
 #include <core/physics/particles/particle_system.hpp>
-#include <core/physics/common/force_field.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 
 // Water simulation with 10,000 particles
 ParticleSystem water;
@@ -201,7 +201,7 @@ for (int frame = 0; frame < 600; ++frame) {
 ```cpp
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/shape.hpp>
-#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
+#include <core/physics/constraints/fixed_joint_rb.hpp>
 
 // Vehicle with wheels welded to chassis (hinge joints planned)
 RigidBodySystem vehicle_sim;

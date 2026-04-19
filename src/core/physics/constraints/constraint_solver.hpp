@@ -3,7 +3,7 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
+#include <core/physics/constraints/constraint.hpp>
 #include <core/physics/particles/particle.hpp>
 #include <platform/allocation_tracker.hpp>
 

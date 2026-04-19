@@ -5,9 +5,9 @@
 #include <core/math/utilities/constants.hpp>
 #include <core/math/utilities/numeric.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/common/timestep_controller.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/config/timestep_controller.hpp>
 #include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 

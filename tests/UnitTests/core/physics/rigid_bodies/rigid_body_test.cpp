@@ -1,10 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
-#include <core/physics/rigid_bodies/inertia.hpp>
+#include <core/physics/config/ccd_config.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/constraints/fixed_joint_rb.hpp>
+#include <core/physics/constraints/hinge_joint_rb.hpp>
+#include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/box.hpp>

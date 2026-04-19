@@ -5,8 +5,8 @@
 #include <core/physics/collision/ccd/swept_sphere.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/collision_proxy.hpp>
-#include <core/physics/common/ccd_config.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/config/ccd_config.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 #include <algorithm>
 

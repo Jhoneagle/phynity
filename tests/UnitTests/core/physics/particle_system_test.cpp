@@ -1,8 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <core/physics/common/force_field.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/config/physics_constants.hpp>
 #include <core/physics/particles/particle_system.hpp>
 
 using namespace phynity::physics;

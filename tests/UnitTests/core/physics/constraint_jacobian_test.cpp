@@ -2,8 +2,8 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/constraints/contact/contact_constraint.hpp>
-#include <core/physics/constraints/joints/fixed_constraint.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
+#include <core/physics/constraints/fixed_joint.hpp>
 #include <core/physics/particles/particle.hpp>
 
 using Catch::Matchers::WithinAbs;

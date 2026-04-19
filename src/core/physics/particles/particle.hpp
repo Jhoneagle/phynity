@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/common/material.hpp>
+#include <core/physics/dynamics/material.hpp>
 
 namespace phynity::physics
 {

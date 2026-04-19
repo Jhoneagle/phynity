@@ -4,8 +4,8 @@
 #include <core/math/quaternions/quat.hpp>
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/common/material.hpp>
-#include <core/physics/rigid_bodies/inertia.hpp>
+#include <core/physics/dynamics/material.hpp>
+#include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/shapes/box.hpp>
 #include <core/physics/shapes/capsule.hpp>
 #include <core/physics/shapes/shape.hpp>

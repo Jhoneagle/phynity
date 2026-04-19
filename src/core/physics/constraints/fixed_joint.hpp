@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/constraints/solver/constraint.hpp>
+#include <core/physics/constraints/constraint.hpp>
 #include <core/physics/particles/particle.hpp>
 
 #include <cmath>

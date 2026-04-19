@@ -1,6 +1,6 @@
 #include "demo_scenarios.hpp"
 
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 #include <cmath>
 

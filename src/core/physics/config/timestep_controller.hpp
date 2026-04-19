@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core/math/utilities/float_comparison.hpp>
-#include <core/physics/common/physics_constants.hpp>
+#include <core/physics/config/physics_constants.hpp>
 
 namespace phynity::physics
 {
