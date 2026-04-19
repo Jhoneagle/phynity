@@ -16,10 +16,7 @@ using phynity::math::quaternions::Quatf;
 class WeldJoint : public PivotJoint
 {
 public:
-    WeldJoint(Body *body_a,
-              Body *body_b,
-              const Vec3f &anchor_a_local,
-              const Vec3f &anchor_b_local)
+    WeldJoint(Body *body_a, Body *body_b, const Vec3f &anchor_a_local, const Vec3f &anchor_b_local)
         : PivotJoint(body_a, body_b, anchor_a_local, anchor_b_local)
     {
         if (body_a && body_b)
@@ -34,9 +31,7 @@ protected:
         float pos_error = cached_error_len_;
 
         Quatf orient_a = body_a_->get_orientation();
-        Quatf relative_q = body_b_
-            ? body_b_->get_orientation() * orient_a.conjugate()
-            : orient_a;
+        Quatf relative_q = body_b_ ? body_b_->get_orientation() * orient_a.conjugate() : orient_a;
         Quatf error_q = relative_q * initial_relative_q_.conjugate();
 
         float rotation_error = 2.0f * std::acos(std::clamp(error_q.w, -1.0f, 1.0f));

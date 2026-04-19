@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
-#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
 #include <core/serialization/snapshot_schema.hpp>
 #include <core/serialization/snapshot_serializer.hpp>

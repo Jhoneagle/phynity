@@ -18,10 +18,7 @@ using phynity::math::vectors::Vec3f;
 class PivotJoint : public Constraint
 {
 public:
-    PivotJoint(Body *body_a,
-               Body *body_b,
-               const Vec3f &anchor_a_local,
-               const Vec3f &anchor_b_local)
+    PivotJoint(Body *body_a, Body *body_b, const Vec3f &anchor_a_local, const Vec3f &anchor_b_local)
         : body_a_(body_a),
           body_b_(body_b),
           anchor_a_local_(anchor_a_local),
@@ -90,9 +87,8 @@ public:
         // Relative velocity of anchor points along error direction
         // v_anchor = v_body + omega x r
         Vec3f v_a = body_a_->get_velocity() + body_a_->get_angular_velocity().cross(cached_r_a_);
-        Vec3f v_b = body_b_
-            ? body_b_->get_velocity() + body_b_->get_angular_velocity().cross(cached_r_b_)
-            : Vec3f(0.0f);
+        Vec3f v_b =
+            body_b_ ? body_b_->get_velocity() + body_b_->get_angular_velocity().cross(cached_r_b_) : Vec3f(0.0f);
 
         return cached_dir_.dot(v_b - v_a);
     }
@@ -150,8 +146,14 @@ public:
     // Warm-Start
     // ========================================================================
 
-    float get_accumulated_impulse() const override { return accumulated_impulse_; }
-    void set_warm_start_impulse(float impulse) override { accumulated_impulse_ = impulse; }
+    float get_accumulated_impulse() const override
+    {
+        return accumulated_impulse_;
+    }
+    void set_warm_start_impulse(float impulse) override
+    {
+        accumulated_impulse_ = impulse;
+    }
 
 protected:
     /// Override to add constraint-specific error (e.g., rotation error for WeldJoint).

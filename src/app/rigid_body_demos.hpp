@@ -1,9 +1,9 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/dynamics/force_field.hpp>
-#include <core/physics/constraints/weld_joint.hpp>
 #include <core/physics/constraints/hinge_joint.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/box.hpp>
 #include <core/physics/shapes/sphere.hpp>
@@ -18,13 +18,13 @@ namespace phynity::app::rigid_body_demos
 
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
-using phynity::physics::shapes::BoxShape;
 using phynity::physics::GravityField;
 using phynity::physics::Material;
 using phynity::physics::RigidBody;
 using phynity::physics::RigidBodySystem;
-using phynity::physics::constraints::WeldJoint;
 using phynity::physics::constraints::HingeJoint;
+using phynity::physics::constraints::WeldJoint;
+using phynity::physics::shapes::BoxShape;
 
 /// Simple stacking demo: tower of boxes under gravity
 class StackingDemoRB
@@ -192,11 +192,11 @@ private:
 
         // Hinge constraint at door pivot
         system_.add_constraint(std::make_unique<HingeJoint>(frame,
-                                                                     door_body_,
-                                                                     Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
-                                                                     Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
-                                                                     Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
-                                                                     ));
+                                                            door_body_,
+                                                            Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
+                                                            Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
+                                                            Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
+                                                            ));
 
         // Apply initial spin
         if (door_body_ != nullptr)

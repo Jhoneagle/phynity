@@ -49,7 +49,10 @@ public:
     virtual float get_bounding_radius() const = 0;
 
     /// Get the center offset in body-local coordinates
-    virtual Vec3f get_local_center() const { return Vec3f(0.0f); }
+    virtual Vec3f get_local_center() const
+    {
+        return Vec3f(0.0f);
+    }
 
     /// Clone this shape into a unique_ptr
     virtual std::unique_ptr<Shape> clone() const = 0;

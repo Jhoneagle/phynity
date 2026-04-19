@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/constraints/contact_constraint.hpp>
-#include <core/physics/constraints/fixed_joint.hpp>
 #include <core/physics/constraints/constraint.hpp>
 #include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
+#include <core/physics/constraints/fixed_joint.hpp>
 #include <core/physics/particles/particle.hpp>
 
 #include <cmath>

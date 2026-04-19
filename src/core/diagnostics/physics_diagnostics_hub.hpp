@@ -74,8 +74,7 @@ public:
 
         if (momentum_monitor_enabled_ && momentum_monitor_)
         {
-            Vec3 mom(static_cast<double>(momentum.x), static_cast<double>(momentum.y),
-                     static_cast<double>(momentum.z));
+            Vec3 mom(static_cast<double>(momentum.x), static_cast<double>(momentum.y), static_cast<double>(momentum.z));
             momentum_monitor_->update(mom);
         }
     }

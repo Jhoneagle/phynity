@@ -5,11 +5,11 @@
 #include <core/jobs/job_system.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
-#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/config/physics_constants.hpp>
-#include <core/physics/constraints/fixed_joint.hpp>
 #include <core/physics/constraints/constraint.hpp>
 #include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/constraints/fixed_joint.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/particles/particle.hpp>
 #include <core/physics/particles/particle_collision_resolver.hpp>
 #include <platform/allocation_tracker.hpp>
@@ -405,8 +405,8 @@ public:
             if (diagnostics_hub_.has_active_collision_monitor())
             {
                 const auto &stats = collision_resolver_.last_stats();
-                diagnostics_hub_.report_collisions(stats.broadphase_candidates, stats.narrowphase_tests,
-                                                   stats.actual_collisions);
+                diagnostics_hub_.report_collisions(
+                    stats.broadphase_candidates, stats.narrowphase_tests, stats.actual_collisions);
             }
         }
 
@@ -555,7 +555,6 @@ private:
 
     // Diagnostics monitoring (energy, momentum, collision stats)
     diagnostics::PhysicsDiagnosticsHub diagnostics_hub_;
-
 };
 
 } // namespace phynity::physics

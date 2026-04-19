@@ -13,16 +13,19 @@ namespace phynity::physics::shapes
 class CapsuleShape : public Shape
 {
 public:
-    float radius = 0.25f;      ///< Radius of the capsule
-    float half_height = 0.5f;  ///< Half-length of the cylinder
-    Vec3f local_center;        ///< Center offset in body-local coordinates
+    float radius = 0.25f; ///< Radius of the capsule
+    float half_height = 0.5f; ///< Half-length of the cylinder
+    Vec3f local_center; ///< Center offset in body-local coordinates
 
     explicit CapsuleShape(float r = 0.25f, float h = 0.5f, const Vec3f &center = Vec3f(0.0f))
         : radius(r), half_height(h), local_center(center)
     {
     }
 
-    Vec3f get_local_center() const override { return local_center; }
+    Vec3f get_local_center() const override
+    {
+        return local_center;
+    }
 
     ShapeType get_type() const override
     {

@@ -5,13 +5,13 @@
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
 #include <core/physics/collision/ccd/conservative_advancement.hpp>
 #include <core/physics/collision/ccd/convex_sweep.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/shapes/aabb.hpp>
-#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
+#include <core/physics/shapes/aabb.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -117,8 +117,7 @@ public:
 
                 collision::ContactManifold manifold;
 
-                bool sphere_sphere = body_a.shape && body_b.shape &&
-                                     body_a.shape->get_type() == ShapeType::Sphere &&
+                bool sphere_sphere = body_a.shape && body_b.shape && body_a.shape->get_type() == ShapeType::Sphere &&
                                      body_b.shape->get_type() == ShapeType::Sphere;
 
                 if (end_overlap && sphere_sphere)

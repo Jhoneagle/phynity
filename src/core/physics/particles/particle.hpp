@@ -176,12 +176,30 @@ public:
     // Body Interface Implementation
     // ========================================================================
 
-    Vec3f get_position() const override { return position; }
-    Vec3f get_velocity() const override { return velocity; }
-    float get_inverse_mass() const override { return inverse_mass(); }
-    bool is_static() const override { return material.mass <= 0.0f; }
-    bool is_alive() const override { return lifetime < 0.0f || lifetime > 0.0f; }
-    float get_restitution() const override { return material.restitution; }
+    Vec3f get_position() const override
+    {
+        return position;
+    }
+    Vec3f get_velocity() const override
+    {
+        return velocity;
+    }
+    float get_inverse_mass() const override
+    {
+        return inverse_mass();
+    }
+    bool is_static() const override
+    {
+        return material.mass <= 0.0f;
+    }
+    bool is_alive() const override
+    {
+        return lifetime < 0.0f || lifetime > 0.0f;
+    }
+    float get_restitution() const override
+    {
+        return material.restitution;
+    }
 
     void apply_velocity_impulse(const Vec3f &impulse) override
     {

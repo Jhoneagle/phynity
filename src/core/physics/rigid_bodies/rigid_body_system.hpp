@@ -5,8 +5,8 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
-#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/constraints/constraint.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_collision_resolver.hpp>

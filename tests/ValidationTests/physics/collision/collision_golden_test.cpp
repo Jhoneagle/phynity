@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/shapes/aabb.hpp>
-#include <core/physics/collision/collision_proxy.hpp>
 
 #include <algorithm>
 #include <cstdlib>
@@ -18,10 +18,10 @@
 using phynity::math::vectors::Vec3f;
 using phynity::physics::collision::AABB;
 using phynity::physics::collision::AABBNarrowphase;
+using phynity::physics::collision::CollisionProxy;
 using phynity::physics::collision::ContactManifold;
 using phynity::physics::collision::ImpulseResolver;
 using phynity::physics::collision::SpatialGrid;
-using phynity::physics::collision::CollisionProxy;
 using phynity::physics::collision::SphereSphereNarrowphase;
 
 namespace fs = std::filesystem;

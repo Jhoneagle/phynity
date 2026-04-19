@@ -10,13 +10,9 @@ namespace phynity::physics::constraints
 class HingeJoint : public PivotJoint
 {
 public:
-    HingeJoint(Body *body_a,
-               Body *body_b,
-               const Vec3f &pivot_a_local,
-               const Vec3f &pivot_b_local,
-               const Vec3f &axis_local)
-        : PivotJoint(body_a, body_b, pivot_a_local, pivot_b_local),
-          axis_local_(axis_local.normalized())
+    HingeJoint(
+        Body *body_a, Body *body_b, const Vec3f &pivot_a_local, const Vec3f &pivot_b_local, const Vec3f &axis_local)
+        : PivotJoint(body_a, body_b, pivot_a_local, pivot_b_local), axis_local_(axis_local.normalized())
     {
     }
 

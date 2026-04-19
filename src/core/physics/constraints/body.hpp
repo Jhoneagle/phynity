@@ -26,17 +26,35 @@ public:
     virtual void apply_velocity_impulse(const Vec3f &impulse) = 0;
 
     // Angular state (no-op defaults for point masses)
-    virtual Quatf get_orientation() const { return Quatf(); }
-    virtual Vec3f get_angular_velocity() const { return Vec3f(0.0f); }
-    virtual Mat3f get_inverse_inertia_world() const { return Mat3f(0.0f); }
-    virtual void apply_angular_impulse(const Vec3f &impulse) { (void)impulse; }
+    virtual Quatf get_orientation() const
+    {
+        return Quatf();
+    }
+    virtual Vec3f get_angular_velocity() const
+    {
+        return Vec3f(0.0f);
+    }
+    virtual Mat3f get_inverse_inertia_world() const
+    {
+        return Mat3f(0.0f);
+    }
+    virtual void apply_angular_impulse(const Vec3f &impulse)
+    {
+        (void) impulse;
+    }
 
     // Queries
     virtual bool is_static() const = 0;
-    virtual bool is_alive() const { return true; }
+    virtual bool is_alive() const
+    {
+        return true;
+    }
 
     // Material access for restitution
-    virtual float get_restitution() const { return 0.0f; }
+    virtual float get_restitution() const
+    {
+        return 0.0f;
+    }
 };
 
 } // namespace phynity::physics::constraints

@@ -1,5 +1,5 @@
-#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
 
 #include <algorithm>
@@ -266,12 +266,12 @@ bool SnapshotHelpers::restore_rigid_body_system(const PhysicsSnapshot &snapshot,
         if (rigid_snapshot.shape_type == SnapshotShapeType::Sphere)
         {
             shape = std::make_shared<phynity::physics::shapes::SphereShape>(rigid_snapshot.shape_radius,
-                                                                    rigid_snapshot.shape_local_center);
+                                                                            rigid_snapshot.shape_local_center);
         }
         else if (rigid_snapshot.shape_type == SnapshotShapeType::Box)
         {
             shape = std::make_shared<phynity::physics::shapes::BoxShape>(rigid_snapshot.shape_half_extents,
-                                                                 rigid_snapshot.shape_local_center);
+                                                                         rigid_snapshot.shape_local_center);
         }
         else if (rigid_snapshot.shape_type == SnapshotShapeType::Capsule)
         {

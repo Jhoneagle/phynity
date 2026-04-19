@@ -1,11 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/physics/config/ccd_config.hpp>
-#include <core/physics/dynamics/force_field.hpp>
-#include <core/physics/dynamics/material.hpp>
-#include <core/physics/constraints/weld_joint.hpp>
 #include <core/physics/constraints/hinge_joint.hpp>
+#include <core/physics/constraints/weld_joint.hpp>
+#include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/inertia.hpp>
+#include <core/physics/dynamics/material.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/box.hpp>
@@ -521,9 +521,9 @@ TEST_CASE("DistanceJoint RB error computation", "[constraint][fixed]")
     RigidBody body_b(Vec3f(1, 0, 0), Quatf(), shape, Material{}, 1.0f);
 
     constraints::WeldJoint constraint(&body_a,
-                                              &body_b,
-                                              Vec3f(0, 0, 0), // Anchor at origin of A
-                                              Vec3f(-1, 0, 0) // Anchor at origin of B (relative to center)
+                                      &body_b,
+                                      Vec3f(0, 0, 0), // Anchor at origin of A
+                                      Vec3f(-1, 0, 0) // Anchor at origin of B (relative to center)
     );
 
     float error = constraint.compute_error();
@@ -540,10 +540,10 @@ TEST_CASE("HingeConstraint RB error computation", "[constraint][hinge]")
     RigidBody body_b(Vec3f(0, 0, 0), Quatf(), shape, Material{}, 1.0f);
 
     constraints::HingeJoint constraint(&body_a,
-                                              &body_b,
-                                              Vec3f(0, 0, 0), // Pivot at origin of A
-                                              Vec3f(0, 0, 0), // Pivot at origin of B
-                                              Vec3f(0, 0, 1.0f) // Hinge axis along Z
+                                       &body_b,
+                                       Vec3f(0, 0, 0), // Pivot at origin of A
+                                       Vec3f(0, 0, 0), // Pivot at origin of B
+                                       Vec3f(0, 0, 1.0f) // Hinge axis along Z
     );
 
     float error = constraint.compute_error();

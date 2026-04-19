@@ -111,8 +111,14 @@ public:
         return body_a_.is_alive() && body_b_.is_alive();
     }
 
-    float get_rest_distance() const { return rest_distance_; }
-    const Vec3f &get_rest_offset() const { return rest_offset_; }
+    float get_rest_distance() const
+    {
+        return rest_distance_;
+    }
+    const Vec3f &get_rest_offset() const
+    {
+        return rest_offset_;
+    }
 
     float get_current_distance() const
     {

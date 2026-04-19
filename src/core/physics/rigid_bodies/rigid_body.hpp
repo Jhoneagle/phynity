@@ -5,8 +5,8 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/constraints/body.hpp>
-#include <core/physics/dynamics/material.hpp>
 #include <core/physics/dynamics/inertia.hpp>
+#include <core/physics/dynamics/material.hpp>
 #include <core/physics/shapes/box.hpp>
 #include <core/physics/shapes/capsule.hpp>
 #include <core/physics/shapes/shape.hpp>
@@ -110,22 +110,23 @@ public:
         {
             switch (shape->get_type())
             {
-            case ShapeType::Sphere:
-                inertia_tensor = inertia::compute_sphere_inertia(
-                    mass, static_cast<const shapes::SphereShape *>(shape.get())->radius);
-                break;
-            case ShapeType::Box:
-                inertia_tensor = inertia::compute_box_inertia(
-                    mass, static_cast<const shapes::BoxShape *>(shape.get())->half_extents);
-                break;
-            case ShapeType::Capsule: {
-                const auto *capsule = static_cast<const shapes::CapsuleShape *>(shape.get());
-                inertia_tensor = inertia::compute_capsule_inertia(mass, capsule->radius, capsule->half_height);
-                break;
-            }
-            default:
-                inertia_tensor = Mat3f(0.0f);
-                break;
+                case ShapeType::Sphere:
+                    inertia_tensor = inertia::compute_sphere_inertia(
+                        mass, static_cast<const shapes::SphereShape *>(shape.get())->radius);
+                    break;
+                case ShapeType::Box:
+                    inertia_tensor = inertia::compute_box_inertia(
+                        mass, static_cast<const shapes::BoxShape *>(shape.get())->half_extents);
+                    break;
+                case ShapeType::Capsule:
+                {
+                    const auto *capsule = static_cast<const shapes::CapsuleShape *>(shape.get());
+                    inertia_tensor = inertia::compute_capsule_inertia(mass, capsule->radius, capsule->half_height);
+                    break;
+                }
+                default:
+                    inertia_tensor = Mat3f(0.0f);
+                    break;
             }
             inertia_tensor_inv = inertia::invert_inertia_tensor(inertia_tensor);
         }
@@ -157,13 +158,34 @@ public:
     // Body Interface Implementation
     // ========================================================================
 
-    Vec3f get_position() const override { return position; }
-    Vec3f get_velocity() const override { return velocity; }
-    float get_inverse_mass() const override { return inv_mass; }
-    Quatf get_orientation() const override { return orientation; }
-    Vec3f get_angular_velocity() const override { return angular_velocity; }
-    bool is_alive() const override { return active; }
-    float get_restitution() const override { return material.restitution; }
+    Vec3f get_position() const override
+    {
+        return position;
+    }
+    Vec3f get_velocity() const override
+    {
+        return velocity;
+    }
+    float get_inverse_mass() const override
+    {
+        return inv_mass;
+    }
+    Quatf get_orientation() const override
+    {
+        return orientation;
+    }
+    Vec3f get_angular_velocity() const override
+    {
+        return angular_velocity;
+    }
+    bool is_alive() const override
+    {
+        return active;
+    }
+    float get_restitution() const override
+    {
+        return material.restitution;
+    }
 
     Mat3f get_inverse_inertia_world() const override
     {

@@ -21,8 +21,14 @@ using phynity::math::vectors::Vec3f;
 class ConvexHull2D : public Shape2D
 {
 public:
-    ShapeType get_type() const override { return ShapeType::ConvexHull2D; }
-    std::unique_ptr<Shape> clone() const override { return std::make_unique<ConvexHull2D>(*this); }
+    ShapeType get_type() const override
+    {
+        return ShapeType::ConvexHull2D;
+    }
+    std::unique_ptr<Shape> clone() const override
+    {
+        return std::make_unique<ConvexHull2D>(*this);
+    }
 
     std::vector<Vec2f> vertices; ///< Vertices in CCW order
     std::vector<Vec2f> normals; ///< Edge normals (outward facing) in same order as vertices
@@ -221,8 +227,14 @@ private:
 class ConvexHull3D : public Shape3D
 {
 public:
-    ShapeType get_type() const override { return ShapeType::ConvexHull3D; }
-    std::unique_ptr<Shape> clone() const override { return std::make_unique<ConvexHull3D>(*this); }
+    ShapeType get_type() const override
+    {
+        return ShapeType::ConvexHull3D;
+    }
+    std::unique_ptr<Shape> clone() const override
+    {
+        return std::make_unique<ConvexHull3D>(*this);
+    }
 
     std::vector<Vec3f> vertices; ///< Vertices of the hull
     std::vector<Vec3f> face_normals; ///< Face normals (outward facing)

@@ -30,11 +30,7 @@ public:
                       Body &body_a,
                       Body &body_b,
                       ContactType contact_type = ContactType::Normal)
-        : manifold_(manifold),
-          body_a_(body_a),
-          body_b_(body_b),
-          contact_type_(contact_type),
-          accumulated_impulse_(0.0f)
+        : manifold_(manifold), body_a_(body_a), body_b_(body_b), contact_type_(contact_type), accumulated_impulse_(0.0f)
     {
         if (!manifold_.is_valid())
         {
@@ -123,11 +119,23 @@ public:
     // Warm-Start & Status
     // ========================================================================
 
-    void set_warm_start_impulse(float impulse) override { (void)impulse; }
-    float get_accumulated_impulse() const override { return accumulated_impulse_; }
+    void set_warm_start_impulse(float impulse) override
+    {
+        (void) impulse;
+    }
+    float get_accumulated_impulse() const override
+    {
+        return accumulated_impulse_;
+    }
 
-    bool is_active() const override { return active_ && manifold_.is_valid(); }
-    bool is_unilateral() const override { return true; }
+    bool is_active() const override
+    {
+        return active_ && manifold_.is_valid();
+    }
+    bool is_unilateral() const override
+    {
+        return true;
+    }
 
     float get_restitution() const override
     {
@@ -139,9 +147,18 @@ public:
         return manifold_.contact.relative_velocity_along_normal;
     }
 
-    const ContactManifold &get_manifold() const { return manifold_; }
-    ContactType get_contact_type() const { return contact_type_; }
-    uint64_t get_contact_id() const { return manifold_.contact_id; }
+    const ContactManifold &get_manifold() const
+    {
+        return manifold_;
+    }
+    ContactType get_contact_type() const
+    {
+        return contact_type_;
+    }
+    uint64_t get_contact_id() const
+    {
+        return manifold_.contact_id;
+    }
 
 private:
     const ContactManifold &manifold_;

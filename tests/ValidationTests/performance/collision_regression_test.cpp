@@ -1,10 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/shapes/shape_factory.hpp>
-#include <core/physics/constraints/contact_constraint.hpp>
 #include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
 #include <core/physics/particles/particle_system.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 #include <platform/memory_usage.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
@@ -221,11 +221,10 @@ PerfResult run_solver_scenario(int contact_count, int iterations)
         constraints.reserve(manifolds.size());
         for (const auto &manifold : manifolds)
         {
-            constraints.push_back(std::make_unique<ContactConstraint>(
-                manifold,
-                particles[manifold.object_a_id],
-                particles[manifold.object_b_id],
-                ContactConstraint::ContactType::Normal));
+            constraints.push_back(std::make_unique<ContactConstraint>(manifold,
+                                                                      particles[manifold.object_a_id],
+                                                                      particles[manifold.object_b_id],
+                                                                      ContactConstraint::ContactType::Normal));
         }
         solver.solve(constraints);
     }

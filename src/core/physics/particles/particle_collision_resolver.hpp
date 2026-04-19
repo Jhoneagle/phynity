@@ -2,14 +2,14 @@
 
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/physics/collision/broadphase/spatial_grid.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/collision/contact/contact_cache.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/config/ccd_config.hpp>
-#include <core/physics/constraints/contact_constraint.hpp>
 #include <core/physics/constraints/constraint.hpp>
 #include <core/physics/constraints/constraint_solver.hpp>
+#include <core/physics/constraints/contact_constraint.hpp>
 #include <core/physics/particles/particle.hpp>
 
 #include <algorithm>
@@ -45,7 +45,8 @@ struct ParticleCollisionStats
 class ParticleCollisionResolver
 {
 public:
-    explicit ParticleCollisionResolver(float cell_size = 2.0f) : spatial_grid_(cell_size), broadphase_cell_size_(cell_size)
+    explicit ParticleCollisionResolver(float cell_size = 2.0f)
+        : spatial_grid_(cell_size), broadphase_cell_size_(cell_size)
     {
     }
 
@@ -205,8 +206,8 @@ public:
                     collider_b.position = b.position - b.velocity * dt;
 
                     ++last_stats_.narrowphase_tests;
-                    ContactManifold manifold =
-                        collision::SphereSphereNarrowphase::detect_with_ccd(collider_a, collider_b, i, j, dt, ccd_config);
+                    ContactManifold manifold = collision::SphereSphereNarrowphase::detect_with_ccd(
+                        collider_a, collider_b, i, j, dt, ccd_config);
 
                     processed_pairs.insert(pair_id);
                     if (manifold.is_valid())

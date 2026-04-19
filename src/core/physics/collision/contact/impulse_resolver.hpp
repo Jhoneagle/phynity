@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/collision_proxy.hpp>
+#include <core/physics/collision/contact/contact_manifold.hpp>
 
 #include <algorithm>
 
