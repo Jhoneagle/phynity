@@ -3,7 +3,7 @@
 #include <core/physics/collision/narrowphase/epa_solver.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <cmath>

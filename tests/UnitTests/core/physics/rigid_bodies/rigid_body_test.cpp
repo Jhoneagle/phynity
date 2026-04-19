@@ -7,12 +7,15 @@
 #include <core/physics/rigid_bodies/inertia.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/capsule.hpp>
+#include <core/physics/shapes/sphere.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <cmath>
 
 using namespace phynity::physics;
+using namespace phynity::physics::shapes;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers::constants;
 using namespace phynity::math::matrices;

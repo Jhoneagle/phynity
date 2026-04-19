@@ -37,14 +37,14 @@ void resolve_collisions_brute_force(std::vector<Particle> &particles)
                 continue;
             }
 
-            SphereCollider collider_a;
+            CollisionProxy collider_a;
             collider_a.position = a.position;
             collider_a.velocity = a.velocity;
             collider_a.radius = a.radius;
             collider_a.inverse_mass = a.inverse_mass();
             collider_a.restitution = a.material.restitution;
 
-            SphereCollider collider_b;
+            CollisionProxy collider_b;
             collider_b.position = b.position;
             collider_b.velocity = b.velocity;
             collider_b.radius = b.radius;

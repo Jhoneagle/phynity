@@ -2,7 +2,7 @@
 
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/collision/shapes/aabb.hpp>
+#include <core/physics/shapes/aabb.hpp>
 
 #include <algorithm>
 #include <cmath>

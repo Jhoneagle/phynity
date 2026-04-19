@@ -4,7 +4,8 @@
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/sphere.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -16,7 +17,7 @@ namespace phynity::app::rigid_body_demos
 
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
-using phynity::physics::BoxShape;
+using phynity::physics::shapes::BoxShape;
 using phynity::physics::GravityField;
 using phynity::physics::Material;
 using phynity::physics::RigidBody;

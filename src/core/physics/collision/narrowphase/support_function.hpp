@@ -1,12 +1,13 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/collision/shapes/shape_base.hpp>
+#include <core/physics/shapes/shape.hpp>
 
 namespace phynity::physics::collision
 {
 
 using phynity::math::vectors::Vec3f;
+using phynity::physics::shapes::Shape;
 
 /// Support function interface: returns the point on a shape's boundary furthest along a direction
 class SupportFunction

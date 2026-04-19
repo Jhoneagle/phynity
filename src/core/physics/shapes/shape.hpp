@@ -5,35 +5,51 @@
 
 #include <memory>
 
-namespace phynity::physics::collision
+namespace phynity::physics::shapes
 {
 
 using phynity::math::vectors::Vec2f;
 using phynity::math::vectors::Vec3f;
 
-// Forward declarations
+// Forward declaration
 struct AABB;
 
-/// Virtual base class for collision shapes
-/// All shapes must implement these methods for collision detection
+/// Enumeration for supported shape types
+enum class ShapeType
+{
+    Sphere,
+    Box,
+    Capsule,
+    ConvexHull2D,
+    ConvexHull3D
+};
+
+/// Abstract base class for all collision shapes.
+/// Shapes are pure geometry — they define support functions, bounding volumes,
+/// and cloning, but not physics properties like inertia (which is computed externally).
 class Shape
 {
 public:
     virtual ~Shape() = default;
 
-    /// Get the bounding box (AABB) of this shape in world space
-    /// @return An AABB enclosing the shape
-    virtual AABB get_aabb() const = 0;
+    /// Identify the shape type for dispatch
+    virtual ShapeType get_type() const = 0;
 
-    /// Get the closest point on the shape's surface along a given direction
-    /// Used by GJK and other distance algorithms
+    /// Get the support point: the point on the shape's boundary furthest along the given direction.
+    /// Used by GJK and other distance algorithms.
     /// @param direction The search direction (should be normalized)
     /// @return The point on the shape's boundary furthest along the direction
     virtual Vec3f support_point(const Vec3f &direction) const = 0;
 
-    /// Get the radius of the shape (for sphere-based approximations)
-    /// @return The radius, or 0 if not applicable
-    virtual float get_radius() const = 0;
+    /// Get the bounding box (AABB) of this shape
+    /// @return An AABB enclosing the shape
+    virtual AABB get_aabb() const = 0;
+
+    /// Get bounding sphere radius (for broadphase)
+    virtual float get_bounding_radius() const = 0;
+
+    /// Clone this shape into a unique_ptr
+    virtual std::unique_ptr<Shape> clone() const = 0;
 };
 
 /// Specialization for 2D shapes (lies in XY plane, Z=0)
@@ -43,7 +59,7 @@ public:
     ~Shape2D() override = default;
 
     /// Get the support point in 2D (result has z=0)
-    /// @param direction_2d The search direction in 2D
+    /// @param direction The search direction in 2D
     /// @return The point on the shape's boundary in 2D (with z=0)
     virtual Vec2f support_point_2d(const Vec2f &direction) const = 0;
 
@@ -63,4 +79,4 @@ public:
     ~Shape3D() override = default;
 };
 
-} // namespace phynity::physics::collision
+} // namespace phynity::physics::shapes

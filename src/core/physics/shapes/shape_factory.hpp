@@ -2,11 +2,11 @@
 
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/collision/shapes/convex_hull.hpp>
+#include <core/physics/shapes/convex_hull.hpp>
 
 #include <cmath>
 
-namespace phynity::physics::collision
+namespace phynity::physics::shapes
 {
 
 using phynity::math::vectors::Vec2f;
@@ -227,4 +227,10 @@ public:
     }
 };
 
+} // namespace phynity::physics::shapes
+
+// Backward compatibility
+namespace phynity::physics::collision
+{
+using phynity::physics::shapes::ShapeFactory;
 } // namespace phynity::physics::collision

@@ -5,7 +5,7 @@
 #include <core/physics/collision/contact/contact_cache.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
@@ -117,8 +117,8 @@ public:
                 }
                 processed_pairs.insert(pair_id);
 
-                SphereCollider collider_a = particle_to_collider(a);
-                SphereCollider collider_b = particle_to_collider(b);
+                CollisionProxy collider_a = particle_to_collider(a);
+                CollisionProxy collider_b = particle_to_collider(b);
 
                 ++last_stats_.narrowphase_tests;
                 ContactManifold manifold =
@@ -199,8 +199,8 @@ public:
                         continue;
                     }
 
-                    SphereCollider collider_a = particle_to_collider(a);
-                    SphereCollider collider_b = particle_to_collider(b);
+                    CollisionProxy collider_a = particle_to_collider(a);
+                    CollisionProxy collider_b = particle_to_collider(b);
                     collider_a.position = a.position - a.velocity * dt;
                     collider_b.position = b.position - b.velocity * dt;
 
@@ -299,9 +299,9 @@ private:
     float broadphase_cell_size_;
     ParticleCollisionStats last_stats_;
 
-    static collision::SphereCollider particle_to_collider(const Particle &p)
+    static collision::CollisionProxy particle_to_collider(const Particle &p)
     {
-        collision::SphereCollider collider;
+        collision::CollisionProxy collider;
         collider.position = p.position;
         collider.velocity = p.velocity;
         collider.radius = p.radius;

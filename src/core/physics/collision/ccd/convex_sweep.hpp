@@ -3,7 +3,7 @@
 #include <core/physics/collision/ccd/toi_solver.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/shape.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -20,7 +20,7 @@ class ConvexSweepSolver
 public:
     struct MovingConvex
     {
-        const phynity::physics::Shape *shape = nullptr;
+        const phynity::physics::shapes::Shape *shape = nullptr;
         Vec3f position = Vec3f(0.0f);
         Vec3f velocity = Vec3f(0.0f);
         float expansion = 0.0f; // Minkowski expansion radius (for rotational CCD)
@@ -53,8 +53,8 @@ public:
             Vec3f pos_a = a.position + a.velocity * (safe_dt * time_normalized);
             Vec3f pos_b = b.position + b.velocity * (safe_dt * time_normalized);
 
-            MacroShapeSupportFunction support_a(a.shape, pos_a, a.expansion);
-            MacroShapeSupportFunction support_b(b.shape, pos_b, b.expansion);
+            ExpandedShapeSupportFunction support_a(a.shape, pos_a, a.expansion);
+            ExpandedShapeSupportFunction support_b(b.shape, pos_b, b.expansion);
 
             GJKResult gjk_result = GJKSolver::solve(support_a, support_b);
 
@@ -69,8 +69,8 @@ public:
 
             if (gjk_result.collision || separation <= tolerance)
             {
-                Vec3f support_point_a = a.shape->support_function(normal) + pos_a + normal * a.expansion;
-                Vec3f support_point_b = b.shape->support_function(-normal) + pos_b - normal * b.expansion;
+                Vec3f support_point_a = a.shape->support_point(normal) + pos_a + normal * a.expansion;
+                Vec3f support_point_b = b.shape->support_point(-normal) + pos_b - normal * b.expansion;
                 Vec3f contact_point = (support_point_a + support_point_b) * 0.5f;
                 Vec3f rel_vel = b.velocity - a.velocity;
 
@@ -108,11 +108,11 @@ public:
     }
 
 private:
-    /// Adapter for macro shapes to the support function interface.
-    class MacroShapeSupportFunction : public SupportFunction
+    /// Support function wrapper for convex sweep with optional Minkowski expansion.
+    class ExpandedShapeSupportFunction : public SupportFunction
     {
     public:
-        MacroShapeSupportFunction(const phynity::physics::Shape *shape, const Vec3f &origin, float expansion)
+        ExpandedShapeSupportFunction(const phynity::physics::shapes::Shape *shape, const Vec3f &origin, float expansion)
             : shape_(shape), origin_(origin), expansion_(expansion)
         {
         }
@@ -128,7 +128,7 @@ private:
             {
                 dir = dir.normalized();
             }
-            return shape_->support_function(dir) + origin_ + dir * expansion_;
+            return shape_->support_point(dir) + origin_ + dir * expansion_;
         }
 
         Vec3f get_origin() const override
@@ -137,7 +137,7 @@ private:
         }
 
     private:
-        const phynity::physics::Shape *shape_;
+        const phynity::physics::shapes::Shape *shape_;
         Vec3f origin_;
         float expansion_;
     };

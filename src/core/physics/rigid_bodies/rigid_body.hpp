@@ -5,7 +5,11 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/common/material.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/rigid_bodies/inertia.hpp>
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/capsule.hpp>
+#include <core/physics/shapes/shape.hpp>
+#include <core/physics/shapes/sphere.hpp>
 
 #include <memory>
 
@@ -15,6 +19,8 @@ namespace phynity::physics
 using phynity::math::matrices::Mat3f;
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
+using phynity::physics::shapes::Shape;
+using phynity::physics::shapes::ShapeType;
 
 /// Represents a rigid body in the simulation (macro-scale).
 /// Extends beyond particles with rotational dynamics, orientation, and inertia.
@@ -101,7 +107,26 @@ public:
         // Recompute inertia tensor based on shape and mass
         if (shape)
         {
-            shape->compute_inertia_tensors(mass, inertia_tensor, inertia_tensor_inv);
+            switch (shape->get_type())
+            {
+            case ShapeType::Sphere:
+                inertia_tensor = inertia::compute_sphere_inertia(
+                    mass, static_cast<const shapes::SphereShape *>(shape.get())->radius);
+                break;
+            case ShapeType::Box:
+                inertia_tensor = inertia::compute_box_inertia(
+                    mass, static_cast<const shapes::BoxShape *>(shape.get())->half_extents);
+                break;
+            case ShapeType::Capsule: {
+                const auto *capsule = static_cast<const shapes::CapsuleShape *>(shape.get());
+                inertia_tensor = inertia::compute_capsule_inertia(mass, capsule->radius, capsule->half_height);
+                break;
+            }
+            default:
+                inertia_tensor = Mat3f(0.0f);
+                break;
+            }
+            inertia_tensor_inv = inertia::invert_inertia_tensor(inertia_tensor);
         }
     }
 

@@ -2,15 +2,15 @@
 
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/collision/shapes/aabb.hpp>
-#include <core/physics/collision/shapes/shape_base.hpp>
+#include <core/physics/shapes/aabb.hpp>
+#include <core/physics/shapes/shape.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <cassert>
 #include <cmath>
 #include <vector>
 
-namespace phynity::physics::collision
+namespace phynity::physics::shapes
 {
 
 using phynity::math::vectors::Vec2f;
@@ -21,6 +21,9 @@ using phynity::math::vectors::Vec3f;
 class ConvexHull2D : public Shape2D
 {
 public:
+    ShapeType get_type() const override { return ShapeType::ConvexHull2D; }
+    std::unique_ptr<Shape> clone() const override { return std::make_unique<ConvexHull2D>(*this); }
+
     std::vector<Vec2f> vertices; ///< Vertices in CCW order
     std::vector<Vec2f> normals; ///< Edge normals (outward facing) in same order as vertices
     Vec2f position = Vec2f(0.0f); ///< Center/reference position
@@ -134,7 +137,7 @@ public:
         return bound;
     }
 
-    float get_radius() const override
+    float get_bounding_radius() const override
     {
         return bounding_radius;
     }
@@ -216,6 +219,9 @@ private:
 class ConvexHull3D : public Shape3D
 {
 public:
+    ShapeType get_type() const override { return ShapeType::ConvexHull3D; }
+    std::unique_ptr<Shape> clone() const override { return std::make_unique<ConvexHull3D>(*this); }
+
     std::vector<Vec3f> vertices; ///< Vertices of the hull
     std::vector<Vec3f> face_normals; ///< Face normals (outward facing)
     std::vector<Vec3f> edge_normals; ///< Edge normals for edge-edge testing in SAT
@@ -314,7 +320,7 @@ public:
         return bound;
     }
 
-    float get_radius() const override
+    float get_bounding_radius() const override
     {
         return bounding_radius;
     }
@@ -358,4 +364,11 @@ private:
     }
 };
 
+} // namespace phynity::physics::shapes
+
+// Backward compatibility
+namespace phynity::physics::collision
+{
+using phynity::physics::shapes::ConvexHull2D;
+using phynity::physics::shapes::ConvexHull3D;
 } // namespace phynity::physics::collision

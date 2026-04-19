@@ -1,8 +1,10 @@
 #include <catch2/catch_all.hpp>
 #include <core/physics/collision/ccd/convex_sweep.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/sphere.hpp>
 
 using namespace phynity::physics;
+using namespace phynity::physics::shapes;
 using namespace phynity::physics::collision::ccd;
 using namespace phynity::math::vectors;
 

@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <vector>
 
-namespace phynity::physics::collision
+namespace phynity::physics::shapes
 {
 
 using phynity::math::vectors::Vec3f;
@@ -165,4 +165,10 @@ struct AABB
     }
 };
 
+} // namespace phynity::physics::shapes
+
+// Backward compatibility: make AABB available in the collision namespace
+namespace phynity::physics::collision
+{
+using phynity::physics::shapes::AABB;
 } // namespace phynity::physics::collision

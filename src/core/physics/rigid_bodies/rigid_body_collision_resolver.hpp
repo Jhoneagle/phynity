@@ -8,11 +8,10 @@
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/shapes/aabb.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/shapes/aabb.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/rigid_bodies/rigid_body.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -26,6 +25,8 @@ namespace phynity::physics
 using phynity::math::matrices::Mat3f;
 using phynity::math::vectors::Vec3f;
 using phynity::physics::collision::SpatialGrid;
+using phynity::physics::shapes::BoxShape;
+using phynity::physics::shapes::SphereShape;
 
 /// Configuration for the rigid body collision resolver.
 /// Extracted from RigidBodySystem::Config to avoid circular dependency.
@@ -117,21 +118,21 @@ public:
                 collision::ContactManifold manifold;
 
                 bool sphere_sphere = body_a.shape && body_b.shape &&
-                                     body_a.shape->shape_type == ShapeType::Sphere &&
-                                     body_b.shape->shape_type == ShapeType::Sphere;
+                                     body_a.shape->get_type() == ShapeType::Sphere &&
+                                     body_b.shape->get_type() == ShapeType::Sphere;
 
                 if (end_overlap && sphere_sphere)
                 {
                     const auto *sphere_a = static_cast<const SphereShape *>(body_a.shape.get());
                     const auto *sphere_b = static_cast<const SphereShape *>(body_b.shape.get());
 
-                    collision::SphereCollider collider_a{body_a.position + sphere_a->local_center,
+                    collision::CollisionProxy collider_a{body_a.position + sphere_a->local_center,
                                                          body_a.velocity,
                                                          body_a.inv_mass,
                                                          body_a.material.restitution,
                                                          sphere_a->radius};
 
-                    collision::SphereCollider collider_b{body_b.position + sphere_b->local_center,
+                    collision::CollisionProxy collider_b{body_b.position + sphere_b->local_center,
                                                          body_b.velocity,
                                                          body_b.inv_mass,
                                                          body_b.material.restitution,
@@ -168,10 +169,10 @@ public:
                     float sweep_radius_a = get_rotationally_expanded_sweep_radius(body_a, dt, config.ccd_config);
                     float sweep_radius_b = get_rotationally_expanded_sweep_radius(body_b, dt, config.ccd_config);
 
-                    collision::SphereCollider ccd_collider_a{
+                    collision::CollisionProxy ccd_collider_a{
                         start_center_a, body_a.velocity, body_a.inv_mass, body_a.material.restitution, sweep_radius_a};
 
-                    collision::SphereCollider ccd_collider_b{
+                    collision::CollisionProxy ccd_collider_b{
                         start_center_b, body_b.velocity, body_b.inv_mass, body_b.material.restitution, sweep_radius_b};
 
                     manifold = collision::SphereSphereNarrowphase::detect_with_ccd(
@@ -330,7 +331,7 @@ private:
             return collision::AABB::from_sphere(body.position, body.collision_radius);
         }
 
-        if (body.shape->shape_type == ShapeType::Box)
+        if (body.shape->get_type() == ShapeType::Box)
         {
             const auto *box = static_cast<const BoxShape *>(body.shape.get());
             Mat3f R = phynity::math::quaternions::toRotationMatrix(body.orientation);
@@ -344,7 +345,7 @@ private:
             return collision::AABB(center - rotated_half, center + rotated_half);
         }
 
-        if (body.shape->shape_type == ShapeType::Sphere)
+        if (body.shape->get_type() == ShapeType::Sphere)
         {
             const auto *sphere = static_cast<const SphereShape *>(body.shape.get());
             Vec3f center = body.position + sphere->local_center;
@@ -468,7 +469,7 @@ private:
             return body.collision_radius;
         }
 
-        if (body.shape->shape_type == ShapeType::Sphere)
+        if (body.shape->get_type() == ShapeType::Sphere)
         {
             const auto *sphere = static_cast<const SphereShape *>(body.shape.get());
             return sphere->radius;

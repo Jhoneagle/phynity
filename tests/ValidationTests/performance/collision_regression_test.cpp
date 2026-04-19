@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/collision/shapes/shape_factory.hpp>
+#include <core/physics/shapes/shape_factory.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
 #include <core/physics/particles/particle_system.hpp>

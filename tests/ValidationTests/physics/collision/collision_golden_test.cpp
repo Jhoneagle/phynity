@@ -4,8 +4,8 @@
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/aabb_narrowphase.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/collision/shapes/aabb.hpp>
-#include <core/physics/collision/shapes/sphere_collider.hpp>
+#include <core/physics/shapes/aabb.hpp>
+#include <core/physics/collision/collision_proxy.hpp>
 
 #include <algorithm>
 #include <cstdlib>
@@ -21,7 +21,7 @@ using phynity::physics::collision::AABBNarrowphase;
 using phynity::physics::collision::ContactManifold;
 using phynity::physics::collision::ImpulseResolver;
 using phynity::physics::collision::SpatialGrid;
-using phynity::physics::collision::SphereCollider;
+using phynity::physics::collision::CollisionProxy;
 using phynity::physics::collision::SphereSphereNarrowphase;
 
 namespace fs = std::filesystem;
@@ -137,14 +137,14 @@ TEST_CASE("Collision golden: spatial grid and narrowphase")
 
     // Sphere-sphere narrowphase
     builder.header("sphere_sphere");
-    SphereCollider sphere_a;
+    CollisionProxy sphere_a;
     sphere_a.position = Vec3f(0.0f, 0.0f, 0.0f);
     sphere_a.velocity = Vec3f(1.0f, 0.0f, 0.0f);
     sphere_a.radius = 0.5f;
     sphere_a.inverse_mass = 1.0f;
     sphere_a.restitution = 1.0f;
 
-    SphereCollider sphere_b;
+    CollisionProxy sphere_b;
     sphere_b.position = Vec3f(0.8f, 0.0f, 0.0f);
     sphere_b.velocity = Vec3f(-1.0f, 0.0f, 0.0f);
     sphere_b.radius = 0.5f;
@@ -181,8 +181,8 @@ TEST_CASE("Collision golden: spatial grid and narrowphase")
 
     // Impulse resolver
     builder.header("impulse_resolver");
-    SphereCollider resolve_a = sphere_a;
-    SphereCollider resolve_b = sphere_b;
+    CollisionProxy resolve_a = sphere_a;
+    CollisionProxy resolve_b = sphere_b;
 
     ImpulseResolver::resolve(sphere_contact, resolve_a, resolve_b);
     builder.vec3("vel_a", resolve_a.velocity);
@@ -210,12 +210,12 @@ TEST_CASE("Collision golden: broader scenarios")
     GoldenTextBuilder builder;
 
     builder.header("sphere_non_collision");
-    SphereCollider s1;
+    CollisionProxy s1;
     s1.position = Vec3f(0.0f, 0.0f, 0.0f);
     s1.velocity = Vec3f(0.0f, 0.0f, 0.0f);
     s1.radius = 0.5f;
 
-    SphereCollider s2;
+    CollisionProxy s2;
     s2.position = Vec3f(2.0f, 0.0f, 0.0f);
     s2.velocity = Vec3f(0.0f, 0.0f, 0.0f);
     s2.radius = 0.5f;
@@ -224,8 +224,8 @@ TEST_CASE("Collision golden: broader scenarios")
     builder.scalar("valid", no_contact.is_valid() ? 1.0 : 0.0);
 
     builder.header("sphere_separating");
-    SphereCollider s3 = s1;
-    SphereCollider s4 = s2;
+    CollisionProxy s3 = s1;
+    CollisionProxy s4 = s2;
     s3.position = Vec3f(0.0f, 0.0f, 0.0f);
     s4.position = Vec3f(0.9f, 0.0f, 0.0f);
     s3.velocity = Vec3f(-1.0f, 0.0f, 0.0f);
@@ -249,14 +249,14 @@ TEST_CASE("Collision golden: broader scenarios")
     builder.scalar("valid", edge_contact.is_valid() ? 1.0 : 0.0);
 
     builder.header("impulse_restitution");
-    SphereCollider i1;
+    CollisionProxy i1;
     i1.position = Vec3f(-0.4f, 0.0f, 0.0f);
     i1.velocity = Vec3f(2.0f, 0.0f, 0.0f);
     i1.radius = 0.5f;
     i1.inverse_mass = 1.0f;
     i1.restitution = 0.2f;
 
-    SphereCollider i2;
+    CollisionProxy i2;
     i2.position = Vec3f(0.4f, 0.0f, 0.0f);
     i2.velocity = Vec3f(-1.0f, 0.0f, 0.0f);
     i2.radius = 0.5f;

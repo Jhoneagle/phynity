@@ -3,7 +3,7 @@
 #include <core/math/vectors/vec2.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
-#include <core/physics/collision/shapes/convex_hull.hpp>
+#include <core/physics/shapes/convex_hull.hpp>
 
 #include <algorithm>
 #include <cmath>

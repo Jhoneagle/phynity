@@ -145,7 +145,7 @@ Both scales share fundamental components:
 ```cpp
 #include <core/physics/rigid_bodies/rigid_body.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/shape.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 ```
 
@@ -200,7 +200,7 @@ for (int frame = 0; frame < 600; ++frame) {
 
 ```cpp
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
-#include <core/physics/rigid_bodies/shape.hpp>
+#include <core/physics/shapes/shape.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 
 // Vehicle with wheels welded to chassis (hinge joints planned)
