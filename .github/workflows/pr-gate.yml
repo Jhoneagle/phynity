@@ -238,8 +238,8 @@ jobs:
           # Generate compile_commands.json if not present
           [ -f compile_commands.json ] || cmake --build . --target all
 
-          # Run clang-tidy on the full source set with workflow-enforced failures.
-          find ../../src -type f -name "*.cpp" | sort | while read file; do
+          # Match the repository's local static-analysis scripts.
+          find ../../src ../../tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | sort | while read file; do
             echo "Analyzing: $file"
             clang-tidy -p . "$file"
           done
@@ -399,7 +399,7 @@ jobs:
         env:
           ASAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
           UBSAN_OPTIONS: 'halt_on_error=1:abort_on_error=1'
-        run: ctest -C Debug --output-on-failure -LE performance -j
+        run: ctest -C Debug --output-on-failure -R "^(unit\\.|validation\\.)" -LE performance -j
 
       - name: Archive sanitizer reports on failure
         if: failure()

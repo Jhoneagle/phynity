@@ -5,4 +5,4 @@ target_link_libraries(test_job_system PRIVATE
 )
 phynity_target_defaults(test_job_system)
 
-add_test(NAME job_system_tests COMMAND test_job_system)
+add_test(NAME unit.jobs.job_system COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:test_job_system>)

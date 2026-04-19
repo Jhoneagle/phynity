@@ -132,7 +132,7 @@ struct PhysicsSnapshot
     // Rigid body system state
     std::vector<RigidBodySnapshot> rigid_bodies;
 
-    // Future: Rigid body snapshots, constraints, etc.
+    // Future: constraint and other extended simulation state.
 
     /// Total size of snapshot in bytes (for diagnostics)
     size_t serialized_size() const;
