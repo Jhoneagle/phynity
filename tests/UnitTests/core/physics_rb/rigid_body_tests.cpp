@@ -626,23 +626,17 @@ TEST_CASE("Rotated box collision detection uses orientation-aware AABB", "[rigid
     // Rotated long box at origin
     auto box_shape = std::make_shared<BoxShape>(Vec3f(1.0f, 0.1f, 0.1f));
     Quatf rotation_45_y = toQuaternion(Vec3f(0.0f, 0.7853981f, 0.0f)); // pi/4 around Y
-    system.spawn_body(
-        Vec3f(0.0f, 0.0f, 0.0f),
-        rotation_45_y,
-        box_shape,
-        0.0f, // static (infinite mass)
-        Material{});
+    system.spawn_body(Vec3f(0.0f, 0.0f, 0.0f),
+                      rotation_45_y,
+                      box_shape,
+                      0.0f, // static (infinite mass)
+                      Material{});
 
     // The rotated box AABB should extend to about +-0.778 on X and Z
     // (cos(45)*1.0 + sin(45)*0.1 ≈ 0.778)
     // Place a sphere at Z=0.6, which is outside unrotated AABB (0.1) but inside rotated AABB
     auto sphere_shape = std::make_shared<SphereShape>(0.2f);
-    RigidBodyID sphere_id = system.spawn_body(
-        Vec3f(0.0f, 0.0f, 0.6f),
-        Quatf(),
-        sphere_shape,
-        1.0f,
-        Material{});
+    RigidBodyID sphere_id = system.spawn_body(Vec3f(0.0f, 0.0f, 0.6f), Quatf(), sphere_shape, 1.0f, Material{});
 
     // Give sphere velocity toward box to ensure collision response
     RigidBody *sphere = system.get_body(sphere_id);

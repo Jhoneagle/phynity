@@ -99,7 +99,10 @@ TEST_CASE("JobSystem parallel_for with workers visits all indices", "[jobs]")
         v.store(0);
     }
 
-    js.parallel_for(0, count, 100, [&](uint32_t i)
+    js.parallel_for(0,
+                    count,
+                    100,
+                    [&](uint32_t i)
                     {
                         visited[i].fetch_add(1);
                         visit_count.fetch_add(1);
@@ -126,10 +129,7 @@ TEST_CASE("JobSystem parallel_for deterministic mode runs serially", "[jobs]")
     std::vector<uint32_t> order;
     order.reserve(100);
 
-    js.parallel_for(0, 100, 10, [&order](uint32_t i)
-                    {
-                        order.push_back(i);
-                    });
+    js.parallel_for(0, 100, 10, [&order](uint32_t i) { order.push_back(i); });
 
     REQUIRE(order.size() == 100);
     for (uint32_t i = 0; i < 100; ++i)
@@ -150,10 +150,7 @@ TEST_CASE("JobSystem parallel_for small range uses serial", "[jobs]")
     order.reserve(5);
 
     // grain=10 but range is only 5, so serial path
-    js.parallel_for(0, 5, 10, [&order](uint32_t i)
-                    {
-                        order.push_back(i);
-                    });
+    js.parallel_for(0, 5, 10, [&order](uint32_t i) { order.push_back(i); });
 
     REQUIRE(order.size() == 5);
     for (uint32_t i = 0; i < 5; ++i)

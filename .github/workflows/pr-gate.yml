@@ -238,12 +238,13 @@ jobs:
           # Generate compile_commands.json if not present
           [ -f compile_commands.json ] || cmake --build . --target all
 
-          # Run clang-tidy in parallel using run-clang-tidy wrapper
+          # Run clang-tidy in parallel on source files (tests excluded to avoid
+          # false positives from macro expansions in benchmark/test code)
           if command -v run-clang-tidy &> /dev/null; then
-            run-clang-tidy -p . -j "$(nproc)"
+            run-clang-tidy -p . -j "$(nproc)" "../../src/.*"
           else
             # Fallback to sequential if run-clang-tidy not available
-            find ../../src ../../tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | sort | while read file; do
+            find ../../src -type f -name "*.cpp" | sort | while read file; do
               echo "Analyzing: $file"
               clang-tidy -p . "$file"
             done

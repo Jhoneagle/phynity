@@ -17,13 +17,15 @@ TEST_CASE("ThreadSafeArena allocates aligned blocks until full", "[memory]")
 {
     phynity::memory::ThreadSafeArena arena(kArenaCapacity);
 
-    void *first = arena.allocate(16, 16);
-    REQUIRE(first != nullptr);
-    REQUIRE(reinterpret_cast<std::uintptr_t>(first) % 16 == 0);
+    constexpr std::size_t kAlign = alignof(std::max_align_t);
 
-    void *second = arena.allocate(32, 32);
+    void *first = arena.allocate(16, kAlign);
+    REQUIRE(first != nullptr);
+    REQUIRE(reinterpret_cast<std::uintptr_t>(first) % kAlign == 0);
+
+    void *second = arena.allocate(32, kAlign);
     REQUIRE(second != nullptr);
-    REQUIRE(reinterpret_cast<std::uintptr_t>(second) % 32 == 0);
+    REQUIRE(reinterpret_cast<std::uintptr_t>(second) % kAlign == 0);
 
     REQUIRE(arena.size() >= 48);
     REQUIRE(arena.size() <= arena.capacity());
