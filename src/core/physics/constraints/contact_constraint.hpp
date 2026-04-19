@@ -95,10 +95,14 @@ public:
         if (!active_)
             return;
 
-        accumulated_impulse_ += impulse_magnitude;
+        // Clamp to non-negative: contact constraints can only push, not pull.
+        // This works with the solver's accumulated-impulse clamping to prevent
+        // oscillation where positive corrections get reversed on subsequent iterations.
+        const float clamped = std::max(0.0f, impulse_magnitude);
+        accumulated_impulse_ += clamped;
 
         const Vec3f &normal = manifold_.contact.normal;
-        const Vec3f impulse_vector = normal * impulse_magnitude;
+        const Vec3f impulse_vector = normal * clamped;
 
         // Linear impulse
         if (body_a_.get_inverse_mass() > 0.0f)
