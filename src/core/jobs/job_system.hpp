@@ -73,13 +73,14 @@ public:
         for (uint32_t chunk_begin = begin; chunk_begin < end; chunk_begin += effective_grain)
         {
             uint32_t chunk_end = std::min(chunk_begin + effective_grain, end);
-            handles.push_back(submit([chunk_begin, chunk_end, &fn]()
-                                     {
-                                         for (uint32_t i = chunk_begin; i < chunk_end; ++i)
-                                         {
-                                             fn(i);
-                                         }
-                                     }));
+            handles.push_back(submit(
+                [chunk_begin, chunk_end, &fn]()
+                {
+                    for (uint32_t i = chunk_begin; i < chunk_end; ++i)
+                    {
+                        fn(i);
+                    }
+                }));
         }
 
         wait_all(handles);

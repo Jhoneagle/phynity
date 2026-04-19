@@ -497,10 +497,9 @@ public:
 
             if (momentum_monitor_enabled_ && momentum_monitor_)
             {
-                diagnostics::Vec3 momentum(
-                    static_cast<double>(diag.total_momentum.x),
-                    static_cast<double>(diag.total_momentum.y),
-                    static_cast<double>(diag.total_momentum.z));
+                diagnostics::Vec3 momentum(static_cast<double>(diag.total_momentum.x),
+                                           static_cast<double>(diag.total_momentum.y),
+                                           static_cast<double>(diag.total_momentum.z));
                 momentum_monitor_->update(momentum);
             }
         }

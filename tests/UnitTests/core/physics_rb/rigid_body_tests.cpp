@@ -562,18 +562,15 @@ TEST_CASE("RigidBodySystem FixedConstraintRB produces bounded correction", "[rig
     auto sphere_shape = std::make_shared<SphereShape>(0.5f);
 
     // Body A at origin, body B displaced slightly
-    RigidBodyID id_a = system.spawn_body(
-        Vec3f(0.0f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
-    RigidBodyID id_b = system.spawn_body(
-        Vec3f(0.1f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
+    RigidBodyID id_a = system.spawn_body(Vec3f(0.0f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
+    RigidBodyID id_b = system.spawn_body(Vec3f(0.1f, 0.0f, 0.0f), Quatf(), sphere_shape, 1.0f, Material{});
 
     RigidBody *body_a = system.get_body(id_a);
     RigidBody *body_b = system.get_body(id_b);
     REQUIRE(body_a != nullptr);
     REQUIRE(body_b != nullptr);
 
-    auto constraint = std::make_shared<constraints::FixedConstraintRB>(
-        body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
+    auto constraint = std::make_shared<constraints::FixedConstraintRB>(body_a, body_b, Vec3f(0.0f), Vec3f(0.0f));
 
     float initial_error = constraint->compute_error();
     REQUIRE(initial_error > 0.05f);

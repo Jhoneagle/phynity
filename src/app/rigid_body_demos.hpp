@@ -17,12 +17,12 @@ namespace phynity::app::rigid_body_demos
 using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
 using phynity::physics::BoxShape;
-using phynity::physics::constraints::FixedConstraintRB;
-using phynity::physics::constraints::HingeConstraintRB;
 using phynity::physics::GravityField;
 using phynity::physics::Material;
 using phynity::physics::RigidBody;
 using phynity::physics::RigidBodySystem;
+using phynity::physics::constraints::FixedConstraintRB;
+using phynity::physics::constraints::HingeConstraintRB;
 
 /// Simple stacking demo: tower of boxes under gravity
 class StackingDemoRB
@@ -191,10 +191,10 @@ private:
 
         // Hinge constraint at door pivot
         auto hinge = std::make_shared<HingeConstraintRB>(frame,
-                                                                      door_body_,
-                                                                      Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
-                                                                      Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
-                                                                      Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
+                                                         door_body_,
+                                                         Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
+                                                         Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
+                                                         Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
         );
         system_.add_constraint(hinge);
 
