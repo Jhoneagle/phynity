@@ -22,6 +22,8 @@ public:
     {
     }
 
+    Vec3f get_local_center() const override { return local_center; }
+
     ShapeType get_type() const override
     {
         return ShapeType::Capsule;

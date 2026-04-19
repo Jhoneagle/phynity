@@ -459,7 +459,7 @@ private:
 
     static Vec3f get_shape_local_center(const RigidBody &body)
     {
-        return body.shape ? body.shape->local_center : Vec3f(0.0f);
+        return body.shape ? body.shape->get_local_center() : Vec3f(0.0f);
     }
 
     static float get_shape_sweep_radius(const RigidBody &body)

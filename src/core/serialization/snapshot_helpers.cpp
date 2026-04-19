@@ -183,7 +183,7 @@ PhysicsSnapshot SnapshotHelpers::capture_rigid_body_system(const phynity::physic
 
         if (body.shape)
         {
-            rigid_snapshot.shape_local_center = body.shape->local_center;
+            rigid_snapshot.shape_local_center = body.shape->get_local_center();
 
             if (body.shape->get_type() == phynity::physics::shapes::ShapeType::Sphere)
             {
