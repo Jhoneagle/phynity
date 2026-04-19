@@ -1,8 +1,6 @@
 #pragma once
 
-#include <core/diagnostics/collision_monitor.hpp>
-#include <core/diagnostics/energy_monitor.hpp>
-#include <core/diagnostics/momentum_monitor.hpp>
+#include <core/diagnostics/physics_diagnostics_hub.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
 #include <core/math/utilities/float_comparison.hpp>
@@ -471,34 +469,20 @@ public:
             ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};
             collision_resolver_.resolve(particles_, dt, ccd_config_, ctx);
 
-            if (collision_monitor_enabled_ && collision_monitor_)
+            if (diagnostics_hub_.has_active_collision_monitor())
             {
                 const auto &stats = collision_resolver_.last_stats();
-                collision_monitor_->set_broadphase_candidates(stats.broadphase_candidates);
-                collision_monitor_->set_narrowphase_tests(stats.narrowphase_tests);
-                collision_monitor_->set_actual_collisions(stats.actual_collisions);
-                collision_monitor_->end_frame();
+                diagnostics_hub_.report_collisions(stats.broadphase_candidates, stats.narrowphase_tests,
+                                                   stats.actual_collisions);
             }
         }
 
         // Step 6: Monitor physics (energy, momentum)
-        if ((energy_monitor_enabled_ && energy_monitor_) || (momentum_monitor_enabled_ && momentum_monitor_))
+        if (diagnostics_hub_.has_active_physics_monitors())
         {
             PROFILE_SCOPE("physics_monitoring");
             const Diagnostics diag = compute_diagnostics();
-
-            if (energy_monitor_enabled_ && energy_monitor_)
-            {
-                energy_monitor_->update(static_cast<double>(diag.total_kinetic_energy));
-            }
-
-            if (momentum_monitor_enabled_ && momentum_monitor_)
-            {
-                diagnostics::Vec3 momentum(static_cast<double>(diag.total_momentum.x),
-                                           static_cast<double>(diag.total_momentum.y),
-                                           static_cast<double>(diag.total_momentum.z));
-                momentum_monitor_->update(momentum);
-            }
+            diagnostics_hub_.report_physics(diag.total_kinetic_energy, diag.total_momentum);
         }
 
         // Step 7: Remove dead particles
@@ -557,46 +541,34 @@ public:
     // Physics Monitoring (Optional)
     // ========================================================================
 
-    /// Enable energy conservation monitoring.
-    /// Monitors total system energy and detects violations (excess loss/gain).
     void enable_energy_monitor(std::shared_ptr<diagnostics::EnergyMonitor> monitor)
     {
-        energy_monitor_ = monitor;
-        energy_monitor_enabled_ = true;
+        diagnostics_hub_.enable_energy_monitor(monitor);
     }
 
-    /// Disable energy monitoring.
     void disable_energy_monitor()
     {
-        energy_monitor_enabled_ = false;
+        diagnostics_hub_.disable_energy_monitor();
     }
 
-    /// Enable momentum conservation monitoring.
-    /// Monitors total system momentum and detects unexpected changes.
     void enable_momentum_monitor(std::shared_ptr<diagnostics::MomentumMonitor> monitor)
     {
-        momentum_monitor_ = monitor;
-        momentum_monitor_enabled_ = true;
+        diagnostics_hub_.enable_momentum_monitor(monitor);
     }
 
-    /// Disable momentum monitoring.
     void disable_momentum_monitor()
     {
-        momentum_monitor_enabled_ = false;
+        diagnostics_hub_.disable_momentum_monitor();
     }
 
-    /// Enable collision efficiency monitoring.
-    /// Tracks broadphase/narrowphase efficiency to detect poor grid configuration.
     void enable_collision_monitor(std::shared_ptr<diagnostics::CollisionMonitor> monitor)
     {
-        collision_monitor_ = monitor;
-        collision_monitor_enabled_ = true;
+        diagnostics_hub_.enable_collision_monitor(monitor);
     }
 
-    /// Disable collision monitoring.
     void disable_collision_monitor()
     {
-        collision_monitor_enabled_ = false;
+        diagnostics_hub_.disable_collision_monitor();
     }
 
     // ========================================================================
@@ -654,13 +626,8 @@ private:
     constraints::ConstraintSolver constraint_solver_;
     bool constraints_enabled_ = true;
 
-    // Optional diagnostics monitors
-    std::shared_ptr<diagnostics::EnergyMonitor> energy_monitor_;
-    std::shared_ptr<diagnostics::MomentumMonitor> momentum_monitor_;
-    std::shared_ptr<diagnostics::CollisionMonitor> collision_monitor_;
-    bool energy_monitor_enabled_ = false;
-    bool momentum_monitor_enabled_ = false;
-    bool collision_monitor_enabled_ = false;
+    // Diagnostics monitoring (energy, momentum, collision stats)
+    diagnostics::PhysicsDiagnosticsHub diagnostics_hub_;
 
 };
 
