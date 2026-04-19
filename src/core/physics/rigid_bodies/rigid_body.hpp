@@ -5,7 +5,7 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/common/material.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 
 #include <memory>
 

@@ -1,6 +1,7 @@
 # Core physics unit tests
 
 add_subdirectory(collision)
+add_subdirectory(rigid_bodies)
 
 add_executable(material_test material_test.cpp)
 phynity_target_defaults(material_test)

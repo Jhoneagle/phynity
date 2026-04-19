@@ -1,7 +1,7 @@
 #include <catch2/catch_all.hpp>
 #include <core/physics/collision/contact/impulse_resolver.hpp>
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 #include <tests/test_utils/timing_profile.hpp>
 

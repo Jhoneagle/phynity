@@ -1,6 +1,6 @@
 # Rigid body physics unit tests
 
-add_executable(rigid_body_test rigid_body_tests.cpp)
+add_executable(rigid_body_test rigid_body_test.cpp)
 phynity_target_defaults(rigid_body_test)
 phynity_apply_warnings(rigid_body_test)
 phynity_apply_sanitizers(rigid_body_test)

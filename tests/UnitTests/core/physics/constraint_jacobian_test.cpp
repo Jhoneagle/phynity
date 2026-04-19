@@ -4,7 +4,7 @@
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 
 using Catch::Matchers::WithinAbs;
 using phynity::math::vectors::Vec3f;

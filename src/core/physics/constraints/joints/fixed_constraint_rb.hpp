@@ -4,7 +4,7 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/macro/rigid_body.hpp>
+#include <core/physics/rigid_bodies/rigid_body.hpp>
 
 #include <cmath>
 #include <vector>

@@ -1,6 +1,6 @@
 #include <catch2/catch_all.hpp>
 #include <core/physics/collision/ccd/convex_sweep.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 
 using namespace phynity::physics;
 using namespace phynity::physics::collision::ccd;

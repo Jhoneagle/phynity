@@ -4,7 +4,7 @@
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <algorithm>

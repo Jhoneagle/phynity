@@ -2,7 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/physics/common/material.hpp>
 #include <core/physics/common/physics_constants.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 
 #include <cmath>
 

@@ -227,7 +227,7 @@ std::cout << "False positive rate: " << (stats.false_positive_rate * 100.0) << "
 The `ParticleSystem` class has built-in support for all monitoring systems:
 
 ```cpp
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 ParticleSystem system;
 
@@ -393,7 +393,7 @@ Optimized builds (Release with -O2/-O3) typically see 10x lower overhead.
 ## Example: Complete Instrumentation
 
 ```cpp
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <core/diagnostics/frame_profiler.hpp>
 #include <core/diagnostics/frame_budget.hpp>
 #include <core/diagnostics/energy_monitor.hpp>

@@ -10,7 +10,7 @@
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 
 #include <algorithm>
 #include <cstdint>

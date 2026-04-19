@@ -2,7 +2,7 @@
 #include <core/physics/collision/narrowphase/sphere_sphere_narrowphase.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 using namespace phynity::physics;

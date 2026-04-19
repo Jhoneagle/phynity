@@ -8,7 +8,7 @@
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/material.hpp>
 #include <core/physics/common/timestep_controller.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <cmath>

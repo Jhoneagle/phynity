@@ -6,7 +6,7 @@
 #include <core/physics/common/material.hpp>
 #include <core/physics/common/physics_constants.hpp>
 #include <core/physics/common/timestep_controller.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 #include <memory>
 

@@ -10,8 +10,8 @@
 #include <core/physics/constraints/joints/fixed_constraint.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_collision_resolver.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_collision_resolver.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <algorithm>

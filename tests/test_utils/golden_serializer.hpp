@@ -1,8 +1,8 @@
 #pragma once
 
 #include <core/math/vectors/vec3.hpp>
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 #include <cmath>
 #include <fstream>

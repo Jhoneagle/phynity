@@ -3,8 +3,8 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 using namespace phynity::physics;
 using namespace phynity::physics::collision;

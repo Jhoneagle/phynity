@@ -11,8 +11,8 @@
 #include <core/physics/collision/shapes/aabb.hpp>
 #include <core/physics/collision/shapes/sphere_collider.hpp>
 #include <core/physics/common/ccd_config.hpp>
-#include <core/physics/macro/rigid_body.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/rigid_body.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 
 #include <algorithm>
 #include <cmath>

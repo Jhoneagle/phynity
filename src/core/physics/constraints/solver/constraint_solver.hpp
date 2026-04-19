@@ -4,7 +4,7 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <algorithm>

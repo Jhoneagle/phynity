@@ -3,7 +3,7 @@
 #include <core/physics/collision/ccd/toi_solver.hpp>
 #include <core/physics/collision/narrowphase/gjk_solver.hpp>
 #include <core/physics/collision/narrowphase/support_function.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 
 #include <algorithm>
 #include <cmath>

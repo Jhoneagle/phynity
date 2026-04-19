@@ -7,9 +7,9 @@
 #include <core/physics/common/ccd_config.hpp>
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/macro/inertia.hpp>
-#include <core/physics/macro/rigid_body.hpp>
-#include <core/physics/macro/rigid_body_collision_resolver.hpp>
+#include <core/physics/rigid_bodies/inertia.hpp>
+#include <core/physics/rigid_bodies/rigid_body.hpp>
+#include <core/physics/rigid_bodies/rigid_body_collision_resolver.hpp>
 #include <platform/allocation_tracker.hpp>
 
 #include <memory>

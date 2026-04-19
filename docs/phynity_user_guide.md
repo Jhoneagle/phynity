@@ -132,8 +132,8 @@ Both scales share fundamental components:
 ### Micro-Scale Components
 
 ```cpp
-#include <core/physics/micro/particle.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle.hpp>
+#include <core/physics/particles/particle_system.hpp>
 ```
 
 **Particle**: Point mass with position, velocity, forces  
@@ -143,9 +143,9 @@ Both scales share fundamental components:
 ### Macro-Scale Components
 
 ```cpp
-#include <core/physics/macro/rigid_body.hpp>
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/rigid_body.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 ```
 
@@ -173,7 +173,7 @@ Both scales use the same collision and constraint infrastructure:
 ### Pattern 1: Pure Micro-Scale Simulation
 
 ```cpp
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <core/physics/common/force_field.hpp>
 
 // Water simulation with 10,000 particles
@@ -199,8 +199,8 @@ for (int frame = 0; frame < 600; ++frame) {
 ### Pattern 2: Pure Macro-Scale Simulation
 
 ```cpp
-#include <core/physics/macro/rigid_body_system.hpp>
-#include <core/physics/macro/shape.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/physics/rigid_bodies/shape.hpp>
 #include <core/physics/constraints/joints/fixed_constraint_rb.hpp>
 
 // Vehicle with wheels welded to chassis (hinge joints planned)

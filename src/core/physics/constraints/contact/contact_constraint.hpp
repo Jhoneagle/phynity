@@ -3,7 +3,7 @@
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/collision/contact/contact_manifold.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 
 #include <vector>
 

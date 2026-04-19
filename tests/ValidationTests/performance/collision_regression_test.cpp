@@ -4,7 +4,7 @@
 #include <core/physics/collision/shapes/shape_factory.hpp>
 #include <core/physics/constraints/contact/contact_constraint.hpp>
 #include <core/physics/constraints/solver/constraint_solver.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 #include <platform/memory_usage.hpp>
 #include <tests/test_utils/golden_serializer.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>

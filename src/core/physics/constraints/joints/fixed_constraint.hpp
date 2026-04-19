@@ -2,7 +2,7 @@
 
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/constraints/solver/constraint.hpp>
-#include <core/physics/micro/particle.hpp>
+#include <core/physics/particles/particle.hpp>
 
 #include <cmath>
 #include <vector>

@@ -3,7 +3,7 @@
 #include <core/physics/common/force_field.hpp>
 #include <core/physics/common/material.hpp>
 #include <core/physics/common/physics_constants.hpp>
-#include <core/physics/micro/particle_system.hpp>
+#include <core/physics/particles/particle_system.hpp>
 
 using namespace phynity::physics;
 using namespace phynity::physics::constants;
