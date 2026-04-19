@@ -620,7 +620,7 @@ TEST_CASE("Rotated box collision detection uses orientation-aware AABB", "[rigid
     // Rotated long box at origin
     auto box_shape = std::make_shared<BoxShape>(Vec3f(1.0f, 0.1f, 0.1f));
     Quatf rotation_45_y = toQuaternion(Vec3f(0.0f, 0.7853981f, 0.0f)); // pi/4 around Y
-    RigidBodyID box_id = system.spawn_body(
+    system.spawn_body(
         Vec3f(0.0f, 0.0f, 0.0f),
         rotation_45_y,
         box_shape,
