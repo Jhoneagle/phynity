@@ -23,7 +23,6 @@ struct JobSystemConfig
 {
     uint32_t worker_count = 0; // 0 = use hardware concurrency
     SchedulingMode mode = SchedulingMode::Concurrent;
-    uint32_t queue_capacity = 1024;
 };
 
 using JobFn = std::function<void()>;

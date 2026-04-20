@@ -3,6 +3,7 @@
 #include "task_graph.hpp"
 #include "task_id.hpp"
 
+#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -39,6 +40,8 @@ inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph, uint32_t item_
                                                 const std::vector<TaskId> &prev_tier,
                                                 const PartitionFnFactory &fn_factory, const char *debug_name)
 {
+    assert(prev_tier.empty() || prev_tier.size() == partition_count);
+
     std::vector<TaskId> tier_ids;
     tier_ids.reserve(partition_count);
 

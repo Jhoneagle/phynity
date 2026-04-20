@@ -46,7 +46,7 @@ private:
     FrameRecord current_frame_{};
     std::atomic<uint32_t> execution_counter_{0};
     std::mutex record_mutex_;
-    bool in_frame_ = false;
+    std::atomic<bool> in_frame_{false};
 };
 
 } // namespace phynity::jobs

@@ -20,6 +20,8 @@ void TaskExecutor::execute(const TaskGraph &graph)
 
 void TaskExecutor::execute(const TaskSchedule &schedule, const TaskGraph &graph)
 {
+    assert(schedule.entries.size() == graph.task_count());
+
     if (schedule.entries.empty())
     {
         return;

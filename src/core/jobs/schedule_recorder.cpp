@@ -1,6 +1,7 @@
 #include "schedule_recorder.hpp"
 #include "schedule_schema.hpp"
 
+#include <algorithm>
 #include <fstream>
 
 namespace phynity::jobs
@@ -11,12 +12,12 @@ void ScheduleRecorder::begin_frame(uint32_t frame_index)
     current_frame_ = FrameRecord{};
     current_frame_.frame_index = frame_index;
     execution_counter_.store(0, std::memory_order_relaxed);
-    in_frame_ = true;
+    in_frame_.store(true, std::memory_order_release);
 }
 
 void ScheduleRecorder::record_task_start(TaskId id, uint32_t worker_index)
 {
-    if (!in_frame_)
+    if (!in_frame_.load(std::memory_order_acquire))
     {
         return;
     }
@@ -29,14 +30,16 @@ void ScheduleRecorder::record_task_start(TaskId id, uint32_t worker_index)
 
 void ScheduleRecorder::end_frame()
 {
-    if (!in_frame_)
+    if (!in_frame_.load(std::memory_order_acquire))
     {
         return;
     }
 
-    in_frame_ = false;
+    // Acquire the mutex before clearing in_frame_ to ensure no concurrent
+    // record_task_start() is mid-write when we finalize the frame.
+    std::lock_guard<std::mutex> lock(record_mutex_);
+    in_frame_.store(false, std::memory_order_release);
 
-    // Sort by start_order for consistent output
     auto &tasks = current_frame_.tasks;
     std::sort(tasks.begin(), tasks.end(),
               [](const TaskRecord &a, const TaskRecord &b) { return a.start_order < b.start_order; });
@@ -79,7 +82,7 @@ void ScheduleRecorder::clear()
     frames_.clear();
     current_frame_ = FrameRecord{};
     execution_counter_.store(0, std::memory_order_relaxed);
-    in_frame_ = false;
+    in_frame_.store(false, std::memory_order_relaxed);
 }
 
 } // namespace phynity::jobs

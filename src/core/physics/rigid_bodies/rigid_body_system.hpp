@@ -451,11 +451,11 @@ private:
             cached_schedule_.reset();
         }
 
-        // Save start positions for CCD (captured by the collision task)
-        auto frame_start_positions = std::make_shared<std::vector<Vec3f>>();
-        frame_start_positions->reserve(count);
+        // Save start positions for CCD (reused member vector avoids per-frame allocation)
+        frame_start_positions_.clear();
+        frame_start_positions_.reserve(count);
         for (const auto &body : bodies_)
-            frame_start_positions->push_back(body.position);
+            frame_start_positions_.push_back(body.position);
 
         TaskGraph graph;
 
@@ -523,13 +523,13 @@ private:
 
         auto collision_id = add_serial_task_after(
             graph, angular_ids,
-            [this, frame_start_positions, dt]
+            [this, dt]
             {
                 RigidBodyCollisionConfig cc;
                 cc.default_collision_radius = config_.default_collision_radius;
                 cc.enable_linear_ccd = config_.enable_linear_ccd;
                 cc.ccd_config = config_.ccd_config;
-                collision_resolver_.resolve(bodies_, *frame_start_positions, dt, cc);
+                collision_resolver_.resolve(bodies_, frame_start_positions_, dt, cc);
             },
             "rb_collisions");
 
@@ -602,6 +602,7 @@ private:
     std::vector<std::unique_ptr<Constraint>> constraints_;
     std::vector<Constraint *> active_constraints_cache_;
     RigidBodyCollisionResolver collision_resolver_;
+    std::vector<Vec3f> frame_start_positions_; // reused per frame to avoid allocation
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
     phynity::jobs::TaskExecutor *task_executor_ = nullptr;

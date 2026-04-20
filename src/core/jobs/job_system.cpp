@@ -78,6 +78,9 @@ private:
     // Per-worker work-stealing deques
     std::vector<std::unique_ptr<WorkStealingDeque<uint32_t>>> worker_queues_;
 
+    // Round-robin submit distribution
+    std::atomic<uint32_t> submit_counter_{0};
+
     // Wakeup mechanism
     std::mutex wake_mutex_;
     std::condition_variable wake_cv_;
@@ -160,9 +163,7 @@ JobSystemImpl::~JobSystemImpl()
 
 JobHandle JobSystemImpl::submit(JobFn job)
 {
-    // Round-robin distribution across workers
-    static std::atomic<uint32_t> submit_counter{0};
-    uint32_t target = submit_counter.fetch_add(1, std::memory_order_relaxed) %
+    uint32_t target = submit_counter_.fetch_add(1, std::memory_order_relaxed) %
                       static_cast<uint32_t>(worker_queues_.size());
     return submit_impl(std::move(job), target);
 }
@@ -185,7 +186,14 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
     uint32_t generation = job_id / pool_capacity_ + 1;
 
     auto &slot = job_pool_[slot_index];
-    // Wait for previous occupant to be consumed (generation-based safety)
+
+    // Spin-wait until the previous occupant is consumed (completed or generation mismatch).
+    // With pool_capacity_=4096 and typical ~20 tasks/frame, this never spins in practice.
+    while (slot.generation.load(std::memory_order_acquire) != 0 && !slot.completed.load(std::memory_order_acquire))
+    {
+        platform::yield_thread();
+    }
+
     slot.reset(std::move(job), generation);
 
     worker_queues_[target_worker]->push(job_id);

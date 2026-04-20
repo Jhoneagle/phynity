@@ -50,12 +50,11 @@ ConstraintColoring color_constraints(std::span<const Constraint *> constraints,
     // Greedy first-fit coloring (process in index order for determinism)
     result.color_of.resize(n, UINT32_MAX);
     uint32_t max_color = 0;
+    std::vector<uint32_t> neighbor_colors; // reused across iterations
 
     for (uint32_t i = 0; i < n; ++i)
     {
-        // Collect colors used by neighbors into a sorted vector for fast lookup
-        std::vector<uint32_t> neighbor_colors;
-        neighbor_colors.reserve(adj[i].size());
+        neighbor_colors.clear();
         for (uint32_t neighbor : adj[i])
         {
             if (result.color_of[neighbor] != UINT32_MAX)

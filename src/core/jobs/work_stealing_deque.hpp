@@ -106,10 +106,12 @@ public:
     }
 
 private:
-    std::vector<T> buffer_;
+    // Read-only after construction — safe to share cache lines with each other
     uint32_t mask_;
+    std::vector<T> buffer_;
 
-    // Separate cache lines to prevent false sharing between owner (bottom) and thieves (top)
+    // Contended atomics on separate cache lines to prevent false sharing.
+    // top_ is CAS'd by thieves; bottom_ is modified by the owner.
     alignas(64) std::atomic<int64_t> top_{0};
     alignas(64) std::atomic<int64_t> bottom_{0};
 };
