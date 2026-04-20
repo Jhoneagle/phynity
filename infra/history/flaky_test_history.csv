@@ -30,3 +30,6 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-04-15T04:52:05Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,24436944833,nightly-quality,windows,performance-windows,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,3
 1,2026-04-17T04:55:33Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,24548312982,nightly-quality,linux,performance-linux,validation.physics.collision.broadphase_performance,FAILED_AFTER_RETRY,3
 1,2026-04-19T05:21:08Z,7d8cf8992299a22919bfcf0fcae8656bb73316e4,refs/heads/master,24621321126,nightly-quality,linux,tsan-linux,job_system_tests,FLAKY_RECOVERED,2
+1,2026-04-20T05:20:04Z,f562f874ac51f72c841c3160dc68d23ded8e9720,refs/heads/master,24649695296,nightly-quality,macos,performance-macos,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,2
+1,2026-04-20T05:20:04Z,f562f874ac51f72c841c3160dc68d23ded8e9720,refs/heads/master,24649695296,nightly-quality,windows,performance-windows,validation.performance.ccd,FLAKY_RECOVERED,2
+1,2026-04-20T05:20:04Z,f562f874ac51f72c841c3160dc68d23ded8e9720,refs/heads/master,24649695296,nightly-quality,windows,performance-windows,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,2

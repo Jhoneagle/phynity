@@ -6,5 +6,5 @@ Threshold: 3 incident(s)
 | Test | Incidents | Budget |
 | --- | ---: | --- |
 | job_system_tests | 5 | EXCEEDED |
-| validation.physics.collision.broadphase_performance | 3 | EXCEEDED |
-| validation.performance.ccd | 1 | OK |
+| validation.physics.collision.broadphase_performance | 5 | EXCEEDED |
+| validation.performance.ccd | 2 | OK |
