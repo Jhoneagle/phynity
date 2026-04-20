@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -27,14 +28,19 @@ struct JobSystemConfig
 
 using JobFn = std::function<void()>;
 
+class JobSystemImpl; // forward declaration for PIMPL
+
 class JobSystem
 {
 public:
-    JobSystem() = default;
+    JobSystem();
     explicit JobSystem(const JobSystemConfig &config);
+    ~JobSystem();
 
     JobSystem(const JobSystem &) = delete;
     JobSystem &operator=(const JobSystem &) = delete;
+    JobSystem(JobSystem &&) noexcept;
+    JobSystem &operator=(JobSystem &&) noexcept;
 
     void start(const JobSystemConfig &config);
     void shutdown();
@@ -90,7 +96,7 @@ public:
     }
 
 private:
-    JobSystemConfig config_{};
+    std::unique_ptr<JobSystemImpl> impl_;
 };
 
 } // namespace phynity::jobs

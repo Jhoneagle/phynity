@@ -7,7 +7,6 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <map>
 #include <mutex>
 #include <vector>
 
@@ -17,16 +16,20 @@ namespace phynity::jobs
 // Internal PIMPL implementation intentionally uses compact naming and state layout.
 // NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
-struct JobEntry
+/// Pre-allocated job slot. Uses generation counting to detect stale handles.
+struct JobSlot
 {
     JobFn fn;
     std::atomic<bool> completed{false};
+    std::atomic<uint32_t> generation{0}; // incremented on each reuse
     std::condition_variable done_cv;
     std::mutex done_mutex;
 
-    JobEntry() = default;
-    explicit JobEntry(JobFn f) : fn(std::move(f)), completed(false)
+    void reset(JobFn f, uint32_t gen)
     {
+        fn = std::move(f);
+        completed.store(false, std::memory_order_relaxed);
+        generation.store(gen, std::memory_order_release);
     }
 };
 
@@ -67,12 +70,10 @@ private:
 
     phynity::platform::TrackedVector<platform::Thread> workers_;
 
-    // Per-job tracking
-    std::mutex jobs_mutex_;
-    std::map<uint32_t, std::shared_ptr<JobEntry>, std::less<>,
-             phynity::platform::TrackedAllocator<std::pair<const uint32_t, std::shared_ptr<JobEntry>>>>
-        jobs_;
-    uint32_t next_job_id_{1};
+    // Job pool: fixed-size ring buffer indexed by job_id % pool_capacity_
+    static constexpr uint32_t pool_capacity_ = 4096;
+    std::vector<JobSlot> job_pool_;
+    std::atomic<uint32_t> next_job_id_{1};
 
     // Per-worker work-stealing deques
     std::vector<std::unique_ptr<WorkStealingDeque<uint32_t>>> worker_queues_;
@@ -105,6 +106,9 @@ void JobSystemImpl::start(const JobSystemConfig &config)
     // In deterministic/replay modes, use single worker thread.
     uint32_t actual_workers =
         (mode_ == SchedulingMode::Deterministic || mode_ == SchedulingMode::DeterministicReplay) ? 1 : worker_count_;
+
+    // Initialize job pool
+    job_pool_.resize(pool_capacity_);
 
     // Create per-worker deques
     worker_queues_.clear();
@@ -176,12 +180,13 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
         return JobHandle{};
     }
 
-    uint32_t job_id = 0;
-    {
-        std::lock_guard<std::mutex> lock(jobs_mutex_);
-        job_id = next_job_id_++;
-        jobs_[job_id] = std::make_shared<JobEntry>(std::move(job));
-    }
+    uint32_t job_id = next_job_id_.fetch_add(1, std::memory_order_relaxed);
+    uint32_t slot_index = job_id % pool_capacity_;
+    uint32_t generation = job_id / pool_capacity_ + 1;
+
+    auto &slot = job_pool_[slot_index];
+    // Wait for previous occupant to be consumed (generation-based safety)
+    slot.reset(std::move(job), generation);
 
     worker_queues_[target_worker]->push(job_id);
     pending_work_.fetch_add(1, std::memory_order_release);
@@ -191,7 +196,7 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
         wake_cv_.notify_one();
     }
 
-    return JobHandle{job_id, 1};
+    return JobHandle{job_id, generation};
 }
 
 void JobSystemImpl::wait(JobHandle handle)
@@ -201,30 +206,25 @@ void JobSystemImpl::wait(JobHandle handle)
         return;
     }
 
-    std::shared_ptr<JobEntry> entry;
+    uint32_t slot_index = handle.id % pool_capacity_;
+    auto &slot = job_pool_[slot_index];
+
+    // Check generation to ensure we're waiting on the right job
+    if (slot.generation.load(std::memory_order_acquire) != handle.generation)
     {
-        std::lock_guard<std::mutex> lock(jobs_mutex_);
-        auto it = jobs_.find(handle.id);
-        if (it == jobs_.end())
-        {
-            return;
-        }
-        entry = it->second;
+        return; // already recycled
     }
 
-    // Wait for job completion
-    {
-        std::unique_lock<std::mutex> lock(entry->done_mutex);
-        entry->done_cv.wait(lock, [&entry] { return entry->completed.load(); });
-    }
+    std::unique_lock<std::mutex> lock(slot.done_mutex);
+    slot.done_cv.wait(lock,
+                      [&slot, &handle]
+                      {
+                          return slot.completed.load() ||
+                                 slot.generation.load(std::memory_order_acquire) != handle.generation;
+                      });
 
-    // Clean up after waiting. The shared_ptr keeps the entry alive until this
-    // function returns, so ~JobEntry() (pthread_cond_destroy) cannot run while
-    // the worker thread's notify_all() is still executing.
-    {
-        std::lock_guard<std::mutex> lock(jobs_mutex_);
-        jobs_.erase(handle.id);
-    }
+    // Clear the fn to release captured resources promptly
+    slot.fn = nullptr;
 }
 
 void JobSystemImpl::worker_loop(uint32_t worker_index)
@@ -255,24 +255,14 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
 
         if (found)
         {
-            // Hold a shared_ptr for the duration of execution and notify_all() so
-            // that ~JobEntry() cannot run (via jobs_.erase in wait()) until after
-            // notify_all() has fully returned.
-            std::shared_ptr<JobEntry> entry;
-            {
-                std::lock_guard<std::mutex> lock(jobs_mutex_);
-                auto it = jobs_.find(job_id);
-                if (it != jobs_.end())
-                {
-                    entry = it->second;
-                }
-            }
+            uint32_t slot_index = job_id % pool_capacity_;
+            auto &slot = job_pool_[slot_index];
 
-            if (entry && static_cast<bool>(entry->fn))
+            if (static_cast<bool>(slot.fn))
             {
-                entry->fn();
-                entry->completed.store(true);
-                entry->done_cv.notify_all();
+                slot.fn();
+                slot.completed.store(true, std::memory_order_release);
+                slot.done_cv.notify_all();
             }
 
             pending_work_.fetch_sub(1, std::memory_order_release);
@@ -288,63 +278,71 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
 }
 
 // =============================================================================
-// JobSystem public interface (thin wrapper)
+// JobSystem public interface (instance-owned PIMPL)
 // =============================================================================
 
-static thread_local std::unique_ptr<JobSystemImpl> g_job_system;
+JobSystem::JobSystem() = default;
 
 JobSystem::JobSystem(const JobSystemConfig &config)
 {
     start(config);
 }
 
+JobSystem::~JobSystem()
+{
+    shutdown();
+}
+
+JobSystem::JobSystem(JobSystem &&) noexcept = default;
+JobSystem &JobSystem::operator=(JobSystem &&) noexcept = default;
+
 void JobSystem::start(const JobSystemConfig &config)
 {
-    if (!g_job_system)
+    if (!impl_)
     {
-        g_job_system = std::make_unique<JobSystemImpl>(config);
+        impl_ = std::make_unique<JobSystemImpl>(config);
     }
 }
 
 void JobSystem::shutdown()
 {
-    if (g_job_system)
+    if (impl_)
     {
-        g_job_system->shutdown();
-        g_job_system.reset();
+        impl_->shutdown();
+        impl_.reset();
     }
 }
 
 bool JobSystem::is_running() const noexcept
 {
-    return g_job_system && g_job_system->is_running();
+    return impl_ && impl_->is_running();
 }
 
 uint32_t JobSystem::worker_count() const noexcept
 {
-    return g_job_system ? g_job_system->worker_count() : 0;
+    return impl_ ? impl_->worker_count() : 0;
 }
 
 SchedulingMode JobSystem::scheduling_mode() const noexcept
 {
-    return g_job_system ? g_job_system->scheduling_mode() : SchedulingMode::Concurrent;
+    return impl_ ? impl_->scheduling_mode() : SchedulingMode::Concurrent;
 }
 
 JobHandle JobSystem::submit(JobFn job)
 {
-    return g_job_system ? g_job_system->submit(std::move(job)) : JobHandle{};
+    return impl_ ? impl_->submit(std::move(job)) : JobHandle{};
 }
 
 JobHandle JobSystem::submit_to_worker(uint32_t worker_index, JobFn job)
 {
-    return g_job_system ? g_job_system->submit_to_worker(worker_index, std::move(job)) : JobHandle{};
+    return impl_ ? impl_->submit_to_worker(worker_index, std::move(job)) : JobHandle{};
 }
 
 void JobSystem::wait(JobHandle handle)
 {
-    if (g_job_system)
+    if (impl_)
     {
-        g_job_system->wait(handle);
+        impl_->wait(handle);
     }
 }
 

@@ -5,6 +5,8 @@
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/task_executor.hpp>
 #include <core/jobs/task_graph.hpp>
+#include <core/jobs/task_graph_builder.hpp>
+#include <core/jobs/task_scheduler.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/constraints/constraint.hpp>
@@ -15,6 +17,7 @@
 #include <platform/allocation_tracker.hpp>
 
 #include <memory>
+#include <optional>
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -436,128 +439,100 @@ private:
 
     void update_with_task_graph(float dt)
     {
-        const uint32_t body_count = static_cast<uint32_t>(bodies_.size());
-        const uint32_t partition_count = std::min(body_count, 4u);
+        using namespace phynity::jobs;
 
-        // Save start positions for CCD
-        std::vector<Vec3f> frame_start_positions;
-        frame_start_positions.reserve(body_count);
+        const uint32_t count = static_cast<uint32_t>(bodies_.size());
+        const uint32_t partitions = std::min(count, 4u);
+        const bool has_constraints = !constraints_.empty();
+
+        // Invalidate cached schedule when topology changes
+        if (partitions != cached_partition_count_ || has_constraints != cached_has_constraints_)
+        {
+            cached_schedule_.reset();
+        }
+
+        // Save start positions for CCD (captured by the collision task)
+        auto frame_start_positions = std::make_shared<std::vector<Vec3f>>();
+        frame_start_positions->reserve(count);
         for (const auto &body : bodies_)
-        {
-            frame_start_positions.push_back(body.position);
-        }
+            frame_start_positions->push_back(body.position);
 
-        phynity::jobs::TaskGraph graph;
+        TaskGraph graph;
 
-        // Phase 1: Clear forces/torques (partitioned)
-        std::vector<phynity::jobs::TaskId> clear_ids;
-        for (uint32_t p = 0; p < partition_count; ++p)
-        {
-            uint32_t start = (body_count * p) / partition_count;
-            uint32_t end = (body_count * (p + 1)) / partition_count;
-            clear_ids.push_back(graph.add_task(
-                {.fn = [this, start, end]
-                 {
-                     for (uint32_t i = start; i < end; ++i)
-                         bodies_[i].clear_forces_and_torques();
-                 },
-                 .affinity_hint = p,
-                 .debug_name = "rb_clear"}));
-        }
+        auto clear_ids = add_partitioned_tier(
+            graph, count, partitions, {},
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e] { for (uint32_t i = s; i < e; ++i) bodies_[i].clear_forces_and_torques(); };
+            },
+            "rb_clear");
 
-        // Phase 2: Apply force fields (partitioned, depends on clear)
-        std::vector<phynity::jobs::TaskId> forces_ids;
-        for (uint32_t p = 0; p < partition_count; ++p)
-        {
-            uint32_t start = (body_count * p) / partition_count;
-            uint32_t end = (body_count * (p + 1)) / partition_count;
-            auto id = graph.add_task(
-                {.fn = [this, start, end]
-                 {
-                     for (auto &field : force_fields_)
-                     {
-                         for (uint32_t i = start; i < end; ++i)
-                         {
-                             Vec3f force = field->apply(bodies_[i].position, bodies_[i].velocity, bodies_[i].get_mass());
-                             bodies_[i].force_accumulator += force;
-                         }
-                     }
-                 },
-                 .affinity_hint = p,
-                 .debug_name = "rb_forces"});
-            graph.add_dependency(clear_ids[p], id);
-            forces_ids.push_back(id);
-        }
+        auto forces_ids = add_partitioned_tier(
+            graph, count, partitions, clear_ids,
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (auto &field : force_fields_)
+                        for (uint32_t i = s; i < e; ++i)
+                        {
+                            Vec3f force = field->apply(bodies_[i].position, bodies_[i].velocity, bodies_[i].get_mass());
+                            bodies_[i].force_accumulator += force;
+                        }
+                };
+            },
+            "rb_forces");
 
-        // Phase 3: Linear integration (partitioned, depends on forces)
-        std::vector<phynity::jobs::TaskId> linear_ids;
-        for (uint32_t p = 0; p < partition_count; ++p)
-        {
-            uint32_t start = (body_count * p) / partition_count;
-            uint32_t end = (body_count * (p + 1)) / partition_count;
-            auto id = graph.add_task(
-                {.fn = [this, start, end, dt]
-                 {
-                     for (uint32_t i = start; i < end; ++i)
-                     {
-                         auto &rb = bodies_[i];
-                         if (rb.is_static()) continue;
-                         Vec3f acceleration = rb.force_accumulator * rb.inv_mass;
-                         rb.velocity += acceleration * dt;
-                         rb.velocity *= (1.0f - rb.material.linear_damping * dt);
-                         rb.position += rb.velocity * dt;
-                     }
-                 },
-                 .affinity_hint = p,
-                 .debug_name = "rb_linear"});
-            graph.add_dependency(forces_ids[p], id);
-            linear_ids.push_back(id);
-        }
+        auto linear_ids = add_partitioned_tier(
+            graph, count, partitions, forces_ids,
+            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e, dt]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                    {
+                        auto &rb = bodies_[i];
+                        if (rb.is_static()) continue;
+                        rb.velocity += (rb.force_accumulator * rb.inv_mass) * dt;
+                        rb.velocity *= (1.0f - rb.material.linear_damping * dt);
+                        rb.position += rb.velocity * dt;
+                    }
+                };
+            },
+            "rb_linear");
 
-        // Phase 4: Angular integration (partitioned, depends on linear)
-        std::vector<phynity::jobs::TaskId> angular_ids;
-        for (uint32_t p = 0; p < partition_count; ++p)
-        {
-            uint32_t start = (body_count * p) / partition_count;
-            uint32_t end = (body_count * (p + 1)) / partition_count;
-            auto id = graph.add_task(
-                {.fn = [this, start, end, dt]
-                 {
-                     for (uint32_t i = start; i < end; ++i)
-                     {
-                         auto &rb = bodies_[i];
-                         if (rb.is_static()) continue;
-                         Vec3f angular_accel = rb.inertia_tensor_inv * rb.torque_accumulator;
-                         rb.angular_velocity += angular_accel * dt;
-                         rb.angular_velocity *= (1.0f - rb.material.angular_damping * dt);
-                         rb.orientation = phynity::physics::inertia::integrate_quaternion(
-                             rb.orientation, rb.angular_velocity, dt);
-                         rb.orientation.normalize();
-                     }
-                 },
-                 .affinity_hint = p,
-                 .debug_name = "rb_angular"});
-            graph.add_dependency(linear_ids[p], id);
-            angular_ids.push_back(id);
-        }
+        auto angular_ids = add_partitioned_tier(
+            graph, count, partitions, linear_ids,
+            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e, dt]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                    {
+                        auto &rb = bodies_[i];
+                        if (rb.is_static()) continue;
+                        rb.angular_velocity += (rb.inertia_tensor_inv * rb.torque_accumulator) * dt;
+                        rb.angular_velocity *= (1.0f - rb.material.angular_damping * dt);
+                        rb.orientation =
+                            phynity::physics::inertia::integrate_quaternion(rb.orientation, rb.angular_velocity, dt);
+                        rb.orientation.normalize();
+                    }
+                };
+            },
+            "rb_angular");
 
-        // Phase 5: Collision detection (serial, depends on all angular tasks)
-        auto collision_id = graph.add_task(
-            {.fn = [this, &frame_start_positions, dt]
-             {
-                 RigidBodyCollisionConfig collision_config;
-                 collision_config.default_collision_radius = config_.default_collision_radius;
-                 collision_config.enable_linear_ccd = config_.enable_linear_ccd;
-                 collision_config.ccd_config = config_.ccd_config;
-                 collision_resolver_.resolve(bodies_, frame_start_positions, dt, collision_config);
-             },
-             .debug_name = "rb_collisions"});
-        for (const auto &id : angular_ids)
-        {
-            graph.add_dependency(id, collision_id);
-        }
+        auto collision_id = add_serial_task_after(
+            graph, angular_ids,
+            [this, frame_start_positions, dt]
+            {
+                RigidBodyCollisionConfig cc;
+                cc.default_collision_radius = config_.default_collision_radius;
+                cc.enable_linear_ccd = config_.enable_linear_ccd;
+                cc.ccd_config = config_.ccd_config;
+                collision_resolver_.resolve(bodies_, *frame_start_positions, dt, cc);
+            },
+            "rb_collisions");
 
-        // Phase 6: Constraint solving (serial, depends on collision)
         if (!constraints_.empty())
         {
             auto constraint_id = graph.add_task(
@@ -565,54 +540,56 @@ private:
                  {
                      active_constraints_cache_.clear();
                      for (auto &c : constraints_)
-                     {
-                         if (c && c->is_active())
-                             active_constraints_cache_.push_back(c.get());
-                     }
+                         if (c && c->is_active()) active_constraints_cache_.push_back(c.get());
 
-                     if (!active_constraints_cache_.empty())
-                     {
-                         const int iterations = config_.constraint_iterations;
-                         const float beta = config_.baumgarte_beta;
-                         const float convergence_threshold = 1e-5f;
+                     if (active_constraints_cache_.empty()) return;
 
-                         for (int iter = 0; iter < iterations; ++iter)
+                     const int iterations = config_.constraint_iterations;
+                     const float beta = config_.baumgarte_beta;
+                     const float threshold = 1e-5f;
+
+                     for (int iter = 0; iter < iterations; ++iter)
+                     {
+                         float max_impulse = 0.0f;
+                         for (auto *constraint : active_constraints_cache_)
                          {
-                             float max_impulse = 0.0f;
-                             for (auto *constraint : active_constraints_cache_)
-                             {
-                                 float error = constraint->compute_error();
-                                 if (error < convergence_threshold) continue;
-                                 float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
-                                 constraint->apply_impulse(impulse);
-                                 max_impulse = std::max(max_impulse, std::abs(impulse));
-                             }
-                             if (max_impulse < convergence_threshold) break;
+                             float error = constraint->compute_error();
+                             if (error < threshold) continue;
+                             float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
+                             constraint->apply_impulse(impulse);
+                             max_impulse = std::max(max_impulse, std::abs(impulse));
                          }
+                         if (max_impulse < threshold) break;
                      }
                  },
                  .debug_name = "rb_constraints"});
             graph.add_dependency(collision_id, constraint_id);
         }
 
-        task_executor_->execute(graph);
-
-        // Post-graph serial work: cleanup and diagnostics
+        // Use cached schedule when topology is stable (skip validate + Kahn's)
+        if (!cached_schedule_)
         {
-            for (auto &rb : bodies_)
-                rb.update_lifetime(dt);
+            cached_schedule_ = TaskScheduler::build_schedule(graph);
+            cached_partition_count_ = partitions;
+            cached_has_constraints_ = has_constraints;
+        }
 
-            const size_t size_before = bodies_.size();
-            bodies_.erase(
-                std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
-                bodies_.end());
+        task_executor_->execute(*cached_schedule_, graph);
 
-            if (bodies_.size() != size_before)
-            {
-                body_index_.clear();
-                for (size_t idx = 0; idx < bodies_.size(); ++idx)
-                    body_index_[bodies_[idx].id] = idx;
-            }
+        // Post-graph serial: cleanup and diagnostics
+        for (auto &rb : bodies_)
+            rb.update_lifetime(dt);
+
+        const size_t size_before = bodies_.size();
+        bodies_.erase(
+            std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
+            bodies_.end());
+
+        if (bodies_.size() != size_before)
+        {
+            body_index_.clear();
+            for (size_t idx = 0; idx < bodies_.size(); ++idx)
+                body_index_[bodies_[idx].id] = idx;
         }
 
         compute_diagnostics();
@@ -628,6 +605,11 @@ private:
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
     phynity::jobs::TaskExecutor *task_executor_ = nullptr;
+
+    // Cached task schedule (topology-stable across frames)
+    std::optional<phynity::jobs::TaskSchedule> cached_schedule_;
+    uint32_t cached_partition_count_ = 0;
+    bool cached_has_constraints_ = false;
 };
 
 } // namespace phynity::physics
