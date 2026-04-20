@@ -460,15 +460,25 @@ private:
         TaskGraph graph;
 
         auto clear_ids = add_partitioned_tier(
-            graph, count, partitions, {},
+            graph,
+            count,
+            partitions,
+            {},
             [this](uint32_t s, uint32_t e) -> JobFn
             {
-                return [this, s, e] { for (uint32_t i = s; i < e; ++i) bodies_[i].clear_forces_and_torques(); };
+                return [this, s, e]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                        bodies_[i].clear_forces_and_torques();
+                };
             },
             "rb_clear");
 
         auto forces_ids = add_partitioned_tier(
-            graph, count, partitions, clear_ids,
+            graph,
+            count,
+            partitions,
+            clear_ids,
             [this](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e]
@@ -484,7 +494,10 @@ private:
             "rb_forces");
 
         auto linear_ids = add_partitioned_tier(
-            graph, count, partitions, forces_ids,
+            graph,
+            count,
+            partitions,
+            forces_ids,
             [this, dt](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e, dt]
@@ -492,7 +505,8 @@ private:
                     for (uint32_t i = s; i < e; ++i)
                     {
                         auto &rb = bodies_[i];
-                        if (rb.is_static()) continue;
+                        if (rb.is_static())
+                            continue;
                         rb.velocity += (rb.force_accumulator * rb.inv_mass) * dt;
                         rb.velocity *= (1.0f - rb.material.linear_damping * dt);
                         rb.position += rb.velocity * dt;
@@ -502,7 +516,10 @@ private:
             "rb_linear");
 
         auto angular_ids = add_partitioned_tier(
-            graph, count, partitions, linear_ids,
+            graph,
+            count,
+            partitions,
+            linear_ids,
             [this, dt](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e, dt]
@@ -510,7 +527,8 @@ private:
                     for (uint32_t i = s; i < e; ++i)
                     {
                         auto &rb = bodies_[i];
-                        if (rb.is_static()) continue;
+                        if (rb.is_static())
+                            continue;
                         rb.angular_velocity += (rb.inertia_tensor_inv * rb.torque_accumulator) * dt;
                         rb.angular_velocity *= (1.0f - rb.material.angular_damping * dt);
                         rb.orientation =
@@ -522,7 +540,8 @@ private:
             "rb_angular");
 
         auto collision_id = add_serial_task_after(
-            graph, angular_ids,
+            graph,
+            angular_ids,
             [this, dt]
             {
                 RigidBodyCollisionConfig cc;
@@ -535,34 +554,39 @@ private:
 
         if (!constraints_.empty())
         {
-            auto constraint_id = graph.add_task(
-                {.fn = [this, dt]
-                 {
-                     active_constraints_cache_.clear();
-                     for (auto &c : constraints_)
-                         if (c && c->is_active()) active_constraints_cache_.push_back(c.get());
+            auto constraint_id =
+                graph.add_task({.fn =
+                                    [this, dt]
+                                {
+                                    active_constraints_cache_.clear();
+                                    for (auto &c : constraints_)
+                                        if (c && c->is_active())
+                                            active_constraints_cache_.push_back(c.get());
 
-                     if (active_constraints_cache_.empty()) return;
+                                    if (active_constraints_cache_.empty())
+                                        return;
 
-                     const int iterations = config_.constraint_iterations;
-                     const float beta = config_.baumgarte_beta;
-                     const float threshold = 1e-5f;
+                                    const int iterations = config_.constraint_iterations;
+                                    const float beta = config_.baumgarte_beta;
+                                    const float threshold = 1e-5f;
 
-                     for (int iter = 0; iter < iterations; ++iter)
-                     {
-                         float max_impulse = 0.0f;
-                         for (auto *constraint : active_constraints_cache_)
-                         {
-                             float error = constraint->compute_error();
-                             if (error < threshold) continue;
-                             float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
-                             constraint->apply_impulse(impulse);
-                             max_impulse = std::max(max_impulse, std::abs(impulse));
-                         }
-                         if (max_impulse < threshold) break;
-                     }
-                 },
-                 .debug_name = "rb_constraints"});
+                                    for (int iter = 0; iter < iterations; ++iter)
+                                    {
+                                        float max_impulse = 0.0f;
+                                        for (auto *constraint : active_constraints_cache_)
+                                        {
+                                            float error = constraint->compute_error();
+                                            if (error < threshold)
+                                                continue;
+                                            float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
+                                            constraint->apply_impulse(impulse);
+                                            max_impulse = std::max(max_impulse, std::abs(impulse));
+                                        }
+                                        if (max_impulse < threshold)
+                                            break;
+                                    }
+                                },
+                                .debug_name = "rb_constraints"});
             graph.add_dependency(collision_id, constraint_id);
         }
 
@@ -581,9 +605,8 @@ private:
             rb.update_lifetime(dt);
 
         const size_t size_before = bodies_.size();
-        bodies_.erase(
-            std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
-            bodies_.end());
+        bodies_.erase(std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
+                      bodies_.end());
 
         if (bodies_.size() != size_before)
         {

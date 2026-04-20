@@ -13,7 +13,7 @@ struct TaskSchedule
     struct Entry
     {
         TaskId id;
-        uint32_t tier;     // wavefront number (0 = roots)
+        uint32_t tier; // wavefront number (0 = roots)
         uint32_t sequence; // global deterministic sequence number
     };
 

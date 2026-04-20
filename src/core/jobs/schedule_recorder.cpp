@@ -1,4 +1,5 @@
 #include "schedule_recorder.hpp"
+
 #include "schedule_schema.hpp"
 
 #include <algorithm>
@@ -41,7 +42,8 @@ void ScheduleRecorder::end_frame()
     in_frame_.store(false, std::memory_order_release);
 
     auto &tasks = current_frame_.tasks;
-    std::sort(tasks.begin(), tasks.end(),
+    std::sort(tasks.begin(),
+              tasks.end(),
               [](const TaskRecord &a, const TaskRecord &b) { return a.start_order < b.start_order; });
 
     frames_.push_back(std::move(current_frame_));

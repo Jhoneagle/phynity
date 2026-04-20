@@ -1,4 +1,5 @@
 #include "schedule_replayer.hpp"
+
 #include "schedule_schema.hpp"
 
 #include <fstream>
@@ -84,8 +85,7 @@ TaskSchedule ScheduleReplayer::replay_schedule(uint32_t frame_index) const
     schedule.entries.reserve(frame.tasks.size());
     for (uint32_t i = 0; i < frame.tasks.size(); ++i)
     {
-        schedule.entries.push_back(
-            {.id = TaskId{frame.tasks[i].task_id}, .tier = i, .sequence = i});
+        schedule.entries.push_back({.id = TaskId{frame.tasks[i].task_id}, .tier = i, .sequence = i});
     }
     schedule.tier_count = static_cast<uint32_t>(frame.tasks.size());
 

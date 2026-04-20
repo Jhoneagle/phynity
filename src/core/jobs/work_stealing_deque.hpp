@@ -58,8 +58,7 @@ public:
             if (t == b)
             {
                 // Last element - race with steal
-                if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst,
-                                                  std::memory_order_relaxed))
+                if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
                 {
                     // Lost race to a thief
                     bottom_.store(t + 1, std::memory_order_relaxed);

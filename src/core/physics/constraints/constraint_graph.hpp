@@ -15,8 +15,8 @@ namespace phynity::physics::constraints
 struct ConstraintColoring
 {
     uint32_t color_count = 0;
-    std::vector<uint32_t> color_of;                // color_of[constraint_index]
-    std::vector<std::vector<uint32_t>> groups;     // groups[color] = {constraint indices}
+    std::vector<uint32_t> color_of; // color_of[constraint_index]
+    std::vector<std::vector<uint32_t>> groups; // groups[color] = {constraint indices}
 };
 
 /// Extracts body pointer pairs from constraints for conflict detection.

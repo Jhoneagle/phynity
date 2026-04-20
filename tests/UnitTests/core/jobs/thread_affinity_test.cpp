@@ -15,7 +15,7 @@ TEST_CASE("set_thread_affinity to core 0", "[platform][affinity]")
 
     // We don't hard-require success because CI runners may restrict affinity,
     // but on most systems this should work.
-    (void)result;
+    (void) result;
 
     // Just verify it doesn't crash
     SUCCEED();

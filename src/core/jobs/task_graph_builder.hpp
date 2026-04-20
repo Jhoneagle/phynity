@@ -36,9 +36,12 @@ using PartitionFnFactory = std::function<JobFn(uint32_t start, uint32_t end)>;
 /// (same-partition chaining for data locality).
 ///
 /// @return Vector of TaskIds for the new tier.
-inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph, uint32_t item_count, uint32_t partition_count,
+inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph,
+                                                uint32_t item_count,
+                                                uint32_t partition_count,
                                                 const std::vector<TaskId> &prev_tier,
-                                                const PartitionFnFactory &fn_factory, const char *debug_name)
+                                                const PartitionFnFactory &fn_factory,
+                                                const char *debug_name)
 {
     assert(prev_tier.empty() || prev_tier.size() == partition_count);
 
@@ -62,8 +65,8 @@ inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph, uint32_t item_
 }
 
 /// Add a single serial task that depends on all tasks in prev_tier (fan-in).
-inline TaskId add_serial_task_after(TaskGraph &graph, const std::vector<TaskId> &prev_tier, JobFn fn,
-                                    const char *debug_name)
+inline TaskId
+add_serial_task_after(TaskGraph &graph, const std::vector<TaskId> &prev_tier, JobFn fn, const char *debug_name)
 {
     auto id = graph.add_task({.fn = std::move(fn), .debug_name = debug_name});
     for (const auto &dep : prev_tier)

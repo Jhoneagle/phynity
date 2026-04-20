@@ -574,19 +574,26 @@ private:
         TaskGraph graph;
 
         auto clear_ids = add_partitioned_tier(
-            graph, count, partitions, {},
+            graph,
+            count,
+            partitions,
+            {},
             [this](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e]
                 {
                     for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive()) particles_[i].clear_forces();
+                        if (particles_[i].is_alive())
+                            particles_[i].clear_forces();
                 };
             },
             "clear_forces");
 
         auto forces_ids = add_partitioned_tier(
-            graph, count, partitions, clear_ids,
+            graph,
+            count,
+            partitions,
+            clear_ids,
             [this](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e]
@@ -595,7 +602,8 @@ private:
                         for (uint32_t i = s; i < e; ++i)
                         {
                             Particle &p = particles_[i];
-                            if (!p.is_alive()) continue;
+                            if (!p.is_alive())
+                                continue;
                             p.apply_force(field->apply(p.position, p.velocity, p.material.mass));
                         }
                 };
@@ -603,25 +611,33 @@ private:
             "apply_forces");
 
         auto accel_ids = add_partitioned_tier(
-            graph, count, partitions, forces_ids,
+            graph,
+            count,
+            partitions,
+            forces_ids,
             [this](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e]
                 {
                     for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive()) particles_[i].update_acceleration();
+                        if (particles_[i].is_alive())
+                            particles_[i].update_acceleration();
                 };
             },
             "update_accel");
 
         auto integrate_ids = add_partitioned_tier(
-            graph, count, partitions, accel_ids,
+            graph,
+            count,
+            partitions,
+            accel_ids,
             [this, dt](uint32_t s, uint32_t e) -> JobFn
             {
                 return [this, s, e, dt]
                 {
                     for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive()) particles_[i].integrate(dt);
+                        if (particles_[i].is_alive())
+                            particles_[i].integrate(dt);
                 };
             },
             "integrate");
@@ -629,7 +645,8 @@ private:
         if (collisions_enabled_)
         {
             add_serial_task_after(
-                graph, integrate_ids,
+                graph,
+                integrate_ids,
                 [this, dt]
                 {
                     ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};

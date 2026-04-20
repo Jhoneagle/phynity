@@ -38,9 +38,10 @@ inline bool set_thread_affinity([[maybe_unused]] uint32_t core_index)
     // Threads with the same tag are scheduled on the same core when possible.
     thread_affinity_policy_data_t policy;
     policy.affinity_tag = static_cast<integer_t>(core_index + 1); // 0 = no affinity
-    kern_return_t result =
-        thread_policy_set(mach_thread_self(), THREAD_AFFINITY_POLICY,
-                          reinterpret_cast<thread_policy_t>(&policy), THREAD_AFFINITY_POLICY_COUNT);
+    kern_return_t result = thread_policy_set(mach_thread_self(),
+                                             THREAD_AFFINITY_POLICY,
+                                             reinterpret_cast<thread_policy_t>(&policy),
+                                             THREAD_AFFINITY_POLICY_COUNT);
     return result == KERN_SUCCESS;
 #else
     return false;
