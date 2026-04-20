@@ -10,14 +10,28 @@ namespace
 class MockConstraint : public Constraint
 {
 public:
-    float compute_error() const override { return 0.0f; }
-    float compute_jv() const override { return 0.0f; }
-    float compute_effective_mass() const override { return 1.0f; }
-    void apply_impulse(float) override {}
+    float compute_error() const override
+    {
+        return 0.0f;
+    }
+    float compute_jv() const override
+    {
+        return 0.0f;
+    }
+    float compute_effective_mass() const override
+    {
+        return 1.0f;
+    }
+    void apply_impulse(float) override
+    {
+    }
 };
 
 // Dummy body addresses for testing
-struct DummyBody { int id; };
+struct DummyBody
+{
+    int id;
+};
 
 } // namespace
 
@@ -101,23 +115,22 @@ TEST_CASE("ConstraintColoring validity check", "[constraints][coloring]")
     // Larger test: verify no two same-color constraints share a body
     MockConstraint cs[6];
     const Constraint *constraints[6];
-    for (int i = 0; i < 6; ++i) constraints[i] = &cs[i];
+    for (int i = 0; i < 6; ++i)
+        constraints[i] = &cs[i];
 
     DummyBody bodies[7];
     // Chain: 0-1, 1-2, 2-3, 3-4, 4-5, 5-6
-    ConstraintBodyPair pairs[] = {
-        {&bodies[0], &bodies[1]},
-        {&bodies[1], &bodies[2]},
-        {&bodies[2], &bodies[3]},
-        {&bodies[3], &bodies[4]},
-        {&bodies[4], &bodies[5]},
-        {&bodies[5], &bodies[6]}
-    };
+    ConstraintBodyPair pairs[] = {{&bodies[0], &bodies[1]},
+                                  {&bodies[1], &bodies[2]},
+                                  {&bodies[2], &bodies[3]},
+                                  {&bodies[3], &bodies[4]},
+                                  {&bodies[4], &bodies[5]},
+                                  {&bodies[5], &bodies[6]}};
 
     auto result = color_constraints(constraints, pairs);
 
     // Verify validity: no adjacent constraints share a color
-    for (int i = 0; i < 5; ++i)
+    for (std::size_t i = 0; i + 1 < result.color_of.size(); ++i)
     {
         REQUIRE(result.color_of[i] != result.color_of[i + 1]);
     }

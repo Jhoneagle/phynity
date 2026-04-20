@@ -83,7 +83,7 @@ TEST_CASE("WorkStealingDeque size_approx", "[jobs][deque]")
 TEST_CASE("WorkStealingDeque multi-threaded producer + stealers", "[jobs][deque]")
 {
     constexpr int item_count = 1000;
-    constexpr int stealer_count = 3;
+    constexpr std::size_t stealer_count = 3;
 
     WorkStealingDeque<int> deque(12); // capacity 4096
 
@@ -97,7 +97,7 @@ TEST_CASE("WorkStealingDeque multi-threaded producer + stealers", "[jobs][deque]
     std::vector<std::thread> stealers;
     std::atomic<bool> done{false};
 
-    for (int s = 0; s < stealer_count; ++s)
+    for (std::size_t s = 0; s < stealer_count; ++s)
     {
         stealers.emplace_back(
             [&deque, &done, &stolen_items, s]

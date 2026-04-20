@@ -1,4 +1,5 @@
 #include "job_system.hpp"
+
 #include "work_stealing_deque.hpp"
 
 #include <platform/allocation_tracker.hpp>
@@ -7,6 +8,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <deque>
 #include <mutex>
 #include <vector>
 
@@ -72,7 +74,7 @@ private:
 
     // Job pool: fixed-size ring buffer indexed by job_id % pool_capacity_
     static constexpr uint32_t pool_capacity_ = 4096;
-    std::vector<JobSlot> job_pool_;
+    std::deque<JobSlot> job_pool_;
     std::atomic<uint32_t> next_job_id_{1};
 
     // Per-worker work-stealing deques
@@ -163,8 +165,8 @@ JobSystemImpl::~JobSystemImpl()
 
 JobHandle JobSystemImpl::submit(JobFn job)
 {
-    uint32_t target = submit_counter_.fetch_add(1, std::memory_order_relaxed) %
-                      static_cast<uint32_t>(worker_queues_.size());
+    uint32_t target =
+        submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
     return submit_impl(std::move(job), target);
 }
 
@@ -225,8 +227,7 @@ void JobSystemImpl::wait(JobHandle handle)
 
     std::unique_lock<std::mutex> lock(slot.done_mutex);
     slot.done_cv.wait(lock,
-                      [&slot, &handle]
-                      {
+                      [&slot, &handle] {
                           return slot.completed.load() ||
                                  slot.generation.load(std::memory_order_acquire) != handle.generation;
                       });
@@ -279,7 +280,8 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
         {
             // 3. No work found - wait with timeout
             std::unique_lock<std::mutex> lock(wake_mutex_);
-            wake_cv_.wait_for(lock, std::chrono::milliseconds(1),
+            wake_cv_.wait_for(lock,
+                              std::chrono::milliseconds(1),
                               [this] { return pending_work_.load(std::memory_order_acquire) > 0 || !running_.load(); });
         }
     }
