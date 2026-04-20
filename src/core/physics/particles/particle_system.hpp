@@ -3,6 +3,8 @@
 #include <core/diagnostics/physics_diagnostics_hub.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
+#include <core/jobs/task_executor.hpp>
+#include <core/jobs/task_graph.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/config/physics_constants.hpp>
@@ -312,6 +314,13 @@ public:
     {
         PROFILE_FUNCTION();
 
+        // Task-graph path: structured wavefront dispatch with cache affinity
+        if (task_executor_ && !particles_.empty())
+        {
+            update_with_task_graph(dt);
+            return;
+        }
+
         auto for_each_alive = [this](auto &&fn)
         {
             const size_t count = particles_.size();
@@ -515,6 +524,14 @@ public:
         job_system_ = job_system;
     }
 
+    /// Provide a task executor for structured parallel update using task graphs.
+    /// When set, update() uses wavefront-based dispatch instead of ad-hoc parallel_for.
+    /// The executor is not owned by ParticleSystem.
+    void set_task_executor(phynity::jobs::TaskExecutor *executor)
+    {
+        task_executor_ = executor;
+    }
+
     // ========================================================================
     // Accessors
     // ========================================================================
@@ -538,9 +555,136 @@ public:
     }
 
 private:
+    void update_with_task_graph(float dt)
+    {
+        const uint32_t count = static_cast<uint32_t>(particles_.size());
+        const uint32_t partition_count = std::min(count, 4u);
+
+        phynity::jobs::TaskGraph graph;
+
+        // Phase 1: Clear forces (partitioned)
+        std::vector<phynity::jobs::TaskId> clear_ids;
+        for (uint32_t p = 0; p < partition_count; ++p)
+        {
+            uint32_t start = (count * p) / partition_count;
+            uint32_t end = (count * (p + 1)) / partition_count;
+            clear_ids.push_back(graph.add_task(
+                {.fn = [this, start, end]
+                 {
+                     for (uint32_t i = start; i < end; ++i)
+                     {
+                         if (particles_[i].is_alive()) particles_[i].clear_forces();
+                     }
+                 },
+                 .affinity_hint = p,
+                 .debug_name = "clear_forces"}));
+        }
+
+        // Phase 2: Apply force fields (partitioned, depends on clear)
+        std::vector<phynity::jobs::TaskId> forces_ids;
+        for (uint32_t p = 0; p < partition_count; ++p)
+        {
+            uint32_t start = (count * p) / partition_count;
+            uint32_t end = (count * (p + 1)) / partition_count;
+            auto id = graph.add_task(
+                {.fn = [this, start, end]
+                 {
+                     for (const auto &field : force_fields_)
+                     {
+                         for (uint32_t i = start; i < end; ++i)
+                         {
+                             Particle &part = particles_[i];
+                             if (!part.is_alive()) continue;
+                             Vec3f force = field->apply(part.position, part.velocity, part.material.mass);
+                             part.apply_force(force);
+                         }
+                     }
+                 },
+                 .affinity_hint = p,
+                 .debug_name = "apply_forces"});
+            graph.add_dependency(clear_ids[p], id);
+            forces_ids.push_back(id);
+        }
+
+        // Phase 3: Update accelerations (partitioned, depends on forces)
+        std::vector<phynity::jobs::TaskId> accel_ids;
+        for (uint32_t p = 0; p < partition_count; ++p)
+        {
+            uint32_t start = (count * p) / partition_count;
+            uint32_t end = (count * (p + 1)) / partition_count;
+            auto id = graph.add_task(
+                {.fn = [this, start, end]
+                 {
+                     for (uint32_t i = start; i < end; ++i)
+                     {
+                         if (particles_[i].is_alive()) particles_[i].update_acceleration();
+                     }
+                 },
+                 .affinity_hint = p,
+                 .debug_name = "update_accel"});
+            graph.add_dependency(forces_ids[p], id);
+            accel_ids.push_back(id);
+        }
+
+        // Phase 4: Integrate (partitioned, depends on accelerations)
+        std::vector<phynity::jobs::TaskId> integrate_ids;
+        for (uint32_t p = 0; p < partition_count; ++p)
+        {
+            uint32_t start = (count * p) / partition_count;
+            uint32_t end = (count * (p + 1)) / partition_count;
+            auto id = graph.add_task(
+                {.fn = [this, start, end, dt]
+                 {
+                     for (uint32_t i = start; i < end; ++i)
+                     {
+                         if (particles_[i].is_alive()) particles_[i].integrate(dt);
+                     }
+                 },
+                 .affinity_hint = p,
+                 .debug_name = "integrate"});
+            graph.add_dependency(accel_ids[p], id);
+            integrate_ids.push_back(id);
+        }
+
+        // Phase 5: Collision resolution (serial, depends on all integrate tasks)
+        if (collisions_enabled_)
+        {
+            auto collision_id = graph.add_task(
+                {.fn = [this, dt]
+                 {
+                     ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};
+                     collision_resolver_.resolve(particles_, dt, ccd_config_, ctx);
+
+                     if (diagnostics_hub_.has_active_collision_monitor())
+                     {
+                         const auto &stats = collision_resolver_.last_stats();
+                         diagnostics_hub_.report_collisions(
+                             stats.broadphase_candidates, stats.narrowphase_tests, stats.actual_collisions);
+                     }
+                 },
+                 .debug_name = "collisions"});
+            for (const auto &id : integrate_ids)
+            {
+                graph.add_dependency(id, collision_id);
+            }
+        }
+
+        task_executor_->execute(graph);
+
+        // Post-graph serial work: diagnostics and cleanup
+        if (diagnostics_hub_.has_active_physics_monitors())
+        {
+            const Diagnostics diag = compute_diagnostics();
+            diagnostics_hub_.report_physics(diag.total_kinetic_energy, diag.total_momentum);
+        }
+
+        remove_dead_particles();
+    }
+
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem *job_system_ = nullptr;
+    phynity::jobs::TaskExecutor *task_executor_ = nullptr;
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;

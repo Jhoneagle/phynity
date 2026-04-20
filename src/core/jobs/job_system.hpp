@@ -14,7 +14,8 @@ namespace phynity::jobs
 enum class SchedulingMode : uint8_t
 {
     Concurrent,
-    Deterministic
+    Deterministic,
+    DeterministicReplay // Replay a previously recorded schedule for bit-identical results
 };
 
 struct JobSystemConfig
@@ -43,6 +44,7 @@ public:
     [[nodiscard]] SchedulingMode scheduling_mode() const noexcept;
 
     JobHandle submit(JobFn job);
+    JobHandle submit_to_worker(uint32_t worker_index, JobFn job);
     void wait(JobHandle handle);
     void wait_all(std::span<const JobHandle> handles);
 
@@ -56,8 +58,9 @@ public:
         uint32_t count = end - begin;
         uint32_t effective_grain = (grain > 0) ? grain : count;
 
-        // Serial fallback: system not running, small range, or deterministic mode
-        if (!is_running() || count <= effective_grain || scheduling_mode() == SchedulingMode::Deterministic)
+        // Serial fallback: system not running, small range, or deterministic/replay mode
+        if (!is_running() || count <= effective_grain || scheduling_mode() == SchedulingMode::Deterministic ||
+            scheduling_mode() == SchedulingMode::DeterministicReplay)
         {
             for (uint32_t i = begin; i < end; ++i)
             {

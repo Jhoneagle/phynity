@@ -22,16 +22,48 @@ PhysicsContext::PhysicsContext(const Config &config)
     {
         JobSystemConfig job_config;
         job_config.worker_count = config_.job_workers;
-        job_config.mode = config_.use_determinism ? SchedulingMode::Deterministic : SchedulingMode::Concurrent;
+
+        if (!config_.replay_schedule_path.empty())
+        {
+            job_config.mode = SchedulingMode::DeterministicReplay;
+        }
+        else
+        {
+            job_config.mode = config_.use_determinism ? SchedulingMode::Deterministic : SchedulingMode::Concurrent;
+        }
+
         job_system_.start(job_config);
         particle_system_.set_job_system(&job_system_);
+
+        task_executor_ = std::make_unique<phynity::jobs::TaskExecutor>(job_system_);
+        particle_system_.set_task_executor(task_executor_.get());
+
+        if (config_.record_schedule)
+        {
+            schedule_recorder_ = std::make_unique<phynity::jobs::ScheduleRecorder>();
+        }
+
+        if (!config_.replay_schedule_path.empty())
+        {
+            schedule_replayer_ = std::make_unique<phynity::jobs::ScheduleReplayer>();
+            schedule_replayer_->load(config_.replay_schedule_path);
+        }
     }
     initialize_force_fields();
 }
 
 PhysicsContext::~PhysicsContext()
 {
+    save_schedule();
     job_system_.shutdown();
+}
+
+void PhysicsContext::save_schedule()
+{
+    if (schedule_recorder_ && !config_.record_schedule_path.empty())
+    {
+        schedule_recorder_->save(config_.record_schedule_path);
+    }
 }
 
 void PhysicsContext::initialize_force_fields()

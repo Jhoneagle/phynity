@@ -1,6 +1,9 @@
 #pragma once
 
 #include <core/jobs/job_system.hpp>
+#include <core/jobs/schedule_recorder.hpp>
+#include <core/jobs/schedule_replayer.hpp>
+#include <core/jobs/task_executor.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/config/timestep_controller.hpp>
@@ -41,6 +44,9 @@ public:
         uint32_t job_workers = 0; ///< Worker count (0 = auto)
         Vec3f gravity = Vec3f(0.0f, -EARTH_GRAVITY, 0.0f); ///< Gravitational acceleration
         float air_drag = 0.0f; ///< Air drag coefficient
+        bool record_schedule = false; ///< Record task execution schedule
+        std::string record_schedule_path; ///< Path to save recorded schedule
+        std::string replay_schedule_path; ///< If non-empty, replay from this file
 
         /// Default constructor initializes all fields to defaults above
         Config() = default;
@@ -148,9 +154,15 @@ private:
     ParticleSystem particle_system_;
     TimestepController timestep_controller_;
     JobSystem job_system_;
+    std::unique_ptr<phynity::jobs::TaskExecutor> task_executor_;
+    std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
+    std::unique_ptr<phynity::jobs::ScheduleReplayer> schedule_replayer_;
 
     /// Initialize force fields based on configuration
     void initialize_force_fields();
+
+    /// Save recorded schedule to disk (called by destructor if recording)
+    void save_schedule();
 };
 
 } // namespace phynity::app
