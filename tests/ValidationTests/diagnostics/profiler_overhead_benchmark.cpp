@@ -2,6 +2,7 @@
 #include <core/diagnostics/profiler.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/diagnostics/timer.hpp>
+#include <tests/test_utils/timing_profile.hpp>
 
 #include <chrono>
 #include <vector>
@@ -20,7 +21,7 @@ bool is_slow_env()
     return true;
 #endif
 #endif
-    return false;
+    return phynity::tests::timing::global_timing_profile().is_noisy;
 }
 } // namespace
 
@@ -302,8 +303,9 @@ TEST_CASE("Profiler Overhead: Frame data collection", "[validation][profiler][be
 
     INFO("Frame data retrieval: " << ns_per_retrieval << " ns");
 
-    // Data retrieval should be fast (it's just returning a reference)
-    // Relaxed threshold to account for system load variability
-    const double retrieval_limit = is_slow_env() ? 2000000.0 : 50000.0;
+    // Data retrieval copies the zone vector, so cost scales with zone count.
+    // 100 µs per retrieval is a reasonable upper bound under normal load.
+    const double retrieval_limit =
+        is_slow_env() ? 2000000.0 : phynity::tests::timing::scaled_ratio_limit(100000.0, 2000000.0);
     REQUIRE(ns_per_retrieval < retrieval_limit);
 }
