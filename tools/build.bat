@@ -4,6 +4,7 @@ setlocal
 rem Usage: tools\build.bat [preset]
 rem Presets: debug (default), release
 rem Env overrides:
+rem   CC / CXX               compiler override (default: auto-detect clang-cl or cl)
 rem   PHYNITY_SANITIZERS=ON|OFF|auto (default: auto)
 rem   PHYNITY_WARNINGS_AS_ERRORS=ON|OFF (default: ON)
 rem   VCPKG_TARGET_TRIPLET=<triplet> (default: x64-windows)
@@ -18,6 +19,16 @@ if "%PRESET%"=="" set PRESET=debug
 
 set TRIPLET=%VCPKG_TARGET_TRIPLET%
 if "%TRIPLET%"=="" set TRIPLET=x64-windows
+
+rem Auto-detect compiler if CC/CXX not set.
+rem Prefer clang-cl (matches CI), fall back to cl.exe (always present with VS).
+rem This prevents plain clang++.exe (GNU-like ABI) from being picked by Ninja,
+rem which would conflict with the MSVC-ABI x64-windows vcpkg triplet.
+if "%CC%"=="" (
+  set CC=cl
+  set CXX=cl
+  where clang-cl >nul 2>nul && set CC=clang-cl && set CXX=clang-cl
+)
 
 rem Sanitizers default to OFF on Windows (MSVC sanitizer support is limited)
 set SANITIZERS=%PHYNITY_SANITIZERS%

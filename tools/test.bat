@@ -9,6 +9,7 @@ rem   golden-compare    -> golden tests only (compare mode)
 rem   golden            -> golden tests only (capture mode)
 rem   <other>           -> passed directly to ctest -R as regex
 rem Env overrides:
+rem   CC / CXX               compiler override (default: auto-detect clang-cl or cl)
 rem   VCPKG_TARGET_TRIPLET=<triplet> (default: x64-windows)
 set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
@@ -17,6 +18,13 @@ set TRIPLET=%VCPKG_TARGET_TRIPLET%
 if "%TRIPLET%"=="" set TRIPLET=x64-windows
 set WERROR=%PHYNITY_WARNINGS_AS_ERRORS%
 if "%WERROR%"=="" set WERROR=ON
+
+rem Auto-detect compiler (same logic as build.bat)
+if "%CC%"=="" (
+  set CC=cl
+  set CXX=cl
+  where clang-cl >nul 2>nul && set CC=clang-cl && set CXX=clang-cl
+)
 
 rem Map friendly filters to ctest regex
 set FILTER_REGEX=%FILTER%
