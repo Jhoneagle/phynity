@@ -87,7 +87,6 @@ TEST_CASE("WorkStealingDeque multi-threaded producer + stealers", "[jobs][deque]
 
     WorkStealingDeque<int> deque(12); // capacity 4096
 
-    std::atomic<int> total_consumed{0};
     std::vector<std::vector<int>> stolen_items(stealer_count);
 
     // Producer pushes all items, then pops what remains
