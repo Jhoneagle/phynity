@@ -14,7 +14,7 @@ set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 set FILTER=%2
 set TRIPLET=%VCPKG_TARGET_TRIPLET%
-if "%TRIPLET%"=="" set TRIPLET=x64-mingw-static
+if "%TRIPLET%"=="" set TRIPLET=x64-windows
 set WERROR=%PHYNITY_WARNINGS_AS_ERRORS%
 if "%WERROR%"=="" set WERROR=ON
 
