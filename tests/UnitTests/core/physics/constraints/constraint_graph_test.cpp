@@ -22,7 +22,7 @@ public:
     {
         return 1.0f;
     }
-    void apply_impulse(float) override
+    void apply_impulse(float /*impulse_magnitude*/) override
     {
     }
 };

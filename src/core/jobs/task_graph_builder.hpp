@@ -36,6 +36,7 @@ using PartitionFnFactory = std::function<JobFn(uint32_t start, uint32_t end)>;
 /// (same-partition chaining for data locality).
 ///
 /// @return Vector of TaskIds for the new tier.
+// NOLINTBEGIN(clang-analyzer-cplusplus.NewDeleteLeaks) — std::function ownership transfers into TaskGraph
 inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph,
                                                 uint32_t item_count,
                                                 uint32_t partition_count,
@@ -63,6 +64,7 @@ inline std::vector<TaskId> add_partitioned_tier(TaskGraph &graph,
 
     return tier_ids;
 }
+// NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
 /// Add a single serial task that depends on all tasks in prev_tier (fan-in).
 inline TaskId
