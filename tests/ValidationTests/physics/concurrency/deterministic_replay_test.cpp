@@ -45,8 +45,8 @@ void spawn_test_particles(PhysicsContext &ctx, int count)
     for (int i = 0; i < count; ++i)
     {
         float x = static_cast<float>(i % 10) * 2.0f;
-        float y = static_cast<float>(i / 10) * 2.0f +
-                  5.0f; // NOLINT(bugprone-integer-division) — intentional truncation for grid layout
+        const int row = i / 10;
+        float y = static_cast<float>(row) * 2.0f + 5.0f;
         float z = static_cast<float>(i % 5) * 1.5f;
         float vx = static_cast<float>(i % 3) * 0.5f;
         float vy = -static_cast<float>(i % 7) * 0.3f;
