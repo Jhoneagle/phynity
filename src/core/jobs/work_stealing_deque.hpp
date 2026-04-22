@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace phynity::jobs
@@ -36,7 +37,11 @@ public:
             return false; // full
         }
 
-        buffer_[static_cast<uint32_t>(b) & mask_] = item;
+        const uint32_t index = static_cast<uint32_t>(b) & mask_;
+        {
+            std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
+            buffer_[index] = item;
+        }
         std::atomic_thread_fence(std::memory_order_release);
         bottom_.store(b + 1, std::memory_order_relaxed);
         return true;
@@ -53,7 +58,11 @@ public:
         if (t <= b)
         {
             // Non-empty
-            item = buffer_[static_cast<uint32_t>(b) & mask_];
+            const uint32_t index = static_cast<uint32_t>(b) & mask_;
+            {
+                std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
+                item = buffer_[index];
+            }
 
             if (t == b)
             {
@@ -86,7 +95,11 @@ public:
             return false; // empty
         }
 
-        item = buffer_[static_cast<uint32_t>(t) & mask_];
+        const uint32_t index = static_cast<uint32_t>(t) & mask_;
+        {
+            std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
+            item = buffer_[index];
+        }
 
         if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
         {
@@ -108,6 +121,7 @@ private:
     // Read-only after construction — safe to share cache lines with each other
     uint32_t mask_;
     std::vector<T> buffer_;
+    mutable std::mutex buffer_mutex_;
 
     // Contended atomics on separate cache lines to prevent false sharing.
     // top_ is CAS'd by thieves; bottom_ is modified by the owner.
