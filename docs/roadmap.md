@@ -20,7 +20,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Data and serialization (M): snapshot save/load, replay files, binary + JSON interchange for tests.✅
 - Performance monitoring (M): automated benchmark regression detection with per-test thresholds, historical tracking (CSV/DB), performance dashboard for frame time/memory trends, alerts for > 5% regressions.✅
 - CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.✅
-- Platform and concurrency (M): task graph builder, fiber-backed jobs, pinned tasks for cache locality; deterministic replay of job schedules.
+- Platform and concurrency (M): task graph builder, work-stealing thread pool, pinned tasks for cache locality; deterministic replay of job schedules.✅
 - Tooling and UI (M): in-engine debug HUD, timeline scrubber for stepping, detachable inspectors for bodies/constraints.
 - Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.
 - Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.
@@ -38,7 +38,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Particle physics sandbox (L): stochastic decay rules, simple probability-driven event system; isolated module for experimentation.
 - Chemistry hooks (L): material library (elements/molecules), simple reaction rules for energy release/absorption; opt-in module.
 - Large-scale optimization (L): SoA refactors, cache-friendly contact persistence, SIMD kernels, GPU/compute-backend investigation.
-- Parallelism at scale (L): NUMA-aware scheduling, task batching for thousands of bodies, deterministic lock-free data paths where feasible.
+- Parallelism at scale (L): NUMA-aware scheduling, fiber-backed jobs, task batching for thousands of bodies, deterministic lock-free data paths where feasible.
 
 ## Quality, Process, and Docs (ongoing)
 
