@@ -1,9 +1,9 @@
 {
   "scenario": "gjk",
-  "milliseconds": 1.343000,
+  "milliseconds": 1.868000,
   "iterations": 2000,
   "workload": 2,
   "notes": "GJK distance between convex shapes",
-  "peak_rss_kb": 5512,
+  "peak_rss_kb": 6556,
   "allocator_delta_bytes": 144
 }
