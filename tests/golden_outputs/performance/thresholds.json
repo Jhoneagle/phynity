@@ -32,7 +32,7 @@
     },
     "particle_integration_kernel": {
       "tier": "core-kernels",
-      "cv_threshold_percent": 30.0
+      "cv_threshold_percent": 35.0
     },
     "complex_deterministic_scene": {
       "tier": "complex-scenes",

@@ -226,7 +226,7 @@ PerfResult benchmark_particle_integration_kernel(int particle_count, int frames,
 PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
                                                  int particle_count,
                                                  int simulation_frames,
-                                                 int num_samples = 5)
+                                                 int num_samples = 15)
 {
     phynity::platform::AllocatorDeltaScope allocator_scope;
     constexpr float seed_max = 2147483647.0f;

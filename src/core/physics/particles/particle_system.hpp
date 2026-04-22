@@ -3,6 +3,10 @@
 #include <core/diagnostics/physics_diagnostics_hub.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_system.hpp>
+#include <core/jobs/task_executor.hpp>
+#include <core/jobs/task_graph.hpp>
+#include <core/jobs/task_graph_builder.hpp>
+#include <core/jobs/task_scheduler.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/config/physics_constants.hpp>
@@ -16,6 +20,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace phynity::physics
@@ -312,6 +317,13 @@ public:
     {
         PROFILE_FUNCTION();
 
+        // Task-graph path: structured wavefront dispatch with cache affinity
+        if (task_executor_ && !particles_.empty())
+        {
+            update_with_task_graph(dt);
+            return;
+        }
+
         auto for_each_alive = [this](auto &&fn)
         {
             const size_t count = particles_.size();
@@ -515,6 +527,14 @@ public:
         job_system_ = job_system;
     }
 
+    /// Provide a task executor for structured parallel update using task graphs.
+    /// When set, update() uses wavefront-based dispatch instead of ad-hoc parallel_for.
+    /// The executor is not owned by ParticleSystem.
+    void set_task_executor(phynity::jobs::TaskExecutor *executor)
+    {
+        task_executor_ = executor;
+    }
+
     // ========================================================================
     // Accessors
     // ========================================================================
@@ -538,9 +558,131 @@ public:
     }
 
 private:
+    void update_with_task_graph(float dt)
+    {
+        using namespace phynity::jobs;
+
+        const uint32_t count = static_cast<uint32_t>(particles_.size());
+        const uint32_t partitions = std::min(count, 4u);
+
+        // Invalidate cached schedule when topology changes
+        if (partitions != cached_partition_count_ || collisions_enabled_ != cached_collisions_enabled_)
+        {
+            cached_schedule_.reset();
+        }
+
+        TaskGraph graph;
+
+        auto clear_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            {},
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                        if (particles_[i].is_alive())
+                            particles_[i].clear_forces();
+                };
+            },
+            "clear_forces");
+
+        auto forces_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            clear_ids,
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (const auto &field : force_fields_)
+                        for (uint32_t i = s; i < e; ++i)
+                        {
+                            Particle &p = particles_[i];
+                            if (!p.is_alive())
+                                continue;
+                            p.apply_force(field->apply(p.position, p.velocity, p.material.mass));
+                        }
+                };
+            },
+            "apply_forces");
+
+        auto accel_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            forces_ids,
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                        if (particles_[i].is_alive())
+                            particles_[i].update_acceleration();
+                };
+            },
+            "update_accel");
+
+        auto integrate_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            accel_ids,
+            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e, dt]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                        if (particles_[i].is_alive())
+                            particles_[i].integrate(dt);
+                };
+            },
+            "integrate");
+
+        if (collisions_enabled_)
+        {
+            add_serial_task_after(
+                graph,
+                integrate_ids,
+                [this, dt]
+                {
+                    ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};
+                    collision_resolver_.resolve(particles_, dt, ccd_config_, ctx);
+                    if (diagnostics_hub_.has_active_collision_monitor())
+                    {
+                        const auto &stats = collision_resolver_.last_stats();
+                        diagnostics_hub_.report_collisions(
+                            stats.broadphase_candidates, stats.narrowphase_tests, stats.actual_collisions);
+                    }
+                },
+                "collisions");
+        }
+
+        // Use cached schedule when topology is stable (skip validate + Kahn's)
+        if (!cached_schedule_)
+        {
+            cached_schedule_ = TaskScheduler::build_schedule(graph);
+            cached_partition_count_ = partitions;
+            cached_collisions_enabled_ = collisions_enabled_;
+        }
+
+        task_executor_->execute(*cached_schedule_, graph);
+
+        if (diagnostics_hub_.has_active_physics_monitors())
+        {
+            const Diagnostics diag = compute_diagnostics();
+            diagnostics_hub_.report_physics(diag.total_kinetic_energy, diag.total_momentum);
+        }
+        remove_dead_particles();
+    }
+
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem *job_system_ = nullptr;
+    phynity::jobs::TaskExecutor *task_executor_ = nullptr;
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
@@ -555,6 +697,11 @@ private:
 
     // Diagnostics monitoring (energy, momentum, collision stats)
     diagnostics::PhysicsDiagnosticsHub diagnostics_hub_;
+
+    // Cached task schedule (topology-stable across frames)
+    std::optional<phynity::jobs::TaskSchedule> cached_schedule_;
+    uint32_t cached_partition_count_ = 0;
+    bool cached_collisions_enabled_ = false;
 };
 
 } // namespace phynity::physics

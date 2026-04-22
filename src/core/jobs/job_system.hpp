@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -14,26 +15,31 @@ namespace phynity::jobs
 enum class SchedulingMode : uint8_t
 {
     Concurrent,
-    Deterministic
+    Deterministic,
+    DeterministicReplay // Replay a previously recorded schedule for bit-identical results
 };
 
 struct JobSystemConfig
 {
     uint32_t worker_count = 0; // 0 = use hardware concurrency
     SchedulingMode mode = SchedulingMode::Concurrent;
-    uint32_t queue_capacity = 1024;
 };
 
 using JobFn = std::function<void()>;
 
+class JobSystemImpl; // forward declaration for PIMPL
+
 class JobSystem
 {
 public:
-    JobSystem() = default;
+    JobSystem();
     explicit JobSystem(const JobSystemConfig &config);
+    ~JobSystem();
 
     JobSystem(const JobSystem &) = delete;
     JobSystem &operator=(const JobSystem &) = delete;
+    JobSystem(JobSystem &&) noexcept;
+    JobSystem &operator=(JobSystem &&) noexcept;
 
     void start(const JobSystemConfig &config);
     void shutdown();
@@ -43,6 +49,7 @@ public:
     [[nodiscard]] SchedulingMode scheduling_mode() const noexcept;
 
     JobHandle submit(JobFn job);
+    JobHandle submit_to_worker(uint32_t worker_index, JobFn job);
     void wait(JobHandle handle);
     void wait_all(std::span<const JobHandle> handles);
 
@@ -56,8 +63,9 @@ public:
         uint32_t count = end - begin;
         uint32_t effective_grain = (grain > 0) ? grain : count;
 
-        // Serial fallback: system not running, small range, or deterministic mode
-        if (!is_running() || count <= effective_grain || scheduling_mode() == SchedulingMode::Deterministic)
+        // Serial fallback: system not running, small range, or deterministic/replay mode
+        if (!is_running() || count <= effective_grain || scheduling_mode() == SchedulingMode::Deterministic ||
+            scheduling_mode() == SchedulingMode::DeterministicReplay)
         {
             for (uint32_t i = begin; i < end; ++i)
             {
@@ -87,7 +95,7 @@ public:
     }
 
 private:
-    JobSystemConfig config_{};
+    std::unique_ptr<JobSystemImpl> impl_;
 };
 
 } // namespace phynity::jobs

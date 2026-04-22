@@ -3,6 +3,10 @@
 #include <core/diagnostics/energy_monitor.hpp>
 #include <core/diagnostics/momentum_monitor.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
+#include <core/jobs/task_executor.hpp>
+#include <core/jobs/task_graph.hpp>
+#include <core/jobs/task_graph_builder.hpp>
+#include <core/jobs/task_scheduler.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/constraints/constraint.hpp>
@@ -13,6 +17,7 @@
 #include <platform/allocation_tracker.hpp>
 
 #include <memory>
+#include <optional>
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -186,6 +191,16 @@ public:
     }
 
     // ========================================================================
+    // Job System Integration
+    // ========================================================================
+
+    /// Provide a task executor for structured parallel update using task graphs.
+    void set_task_executor(phynity::jobs::TaskExecutor *executor)
+    {
+        task_executor_ = executor;
+    }
+
+    // ========================================================================
     // Simulation Step
     // ========================================================================
 
@@ -196,6 +211,13 @@ public:
 
         if (bodies_.empty())
         {
+            return;
+        }
+
+        // Task-graph path: structured wavefront dispatch with cache affinity
+        if (task_executor_)
+        {
+            update_with_task_graph(dt);
             return;
         }
 
@@ -415,6 +437,187 @@ private:
     // Member Variables
     // ========================================================================
 
+    void update_with_task_graph(float dt)
+    {
+        using namespace phynity::jobs;
+
+        const uint32_t count = static_cast<uint32_t>(bodies_.size());
+        const uint32_t partitions = std::min(count, 4u);
+        const bool has_constraints = !constraints_.empty();
+
+        // Invalidate cached schedule when topology changes
+        if (partitions != cached_partition_count_ || has_constraints != cached_has_constraints_)
+        {
+            cached_schedule_.reset();
+        }
+
+        // Save start positions for CCD (reused member vector avoids per-frame allocation)
+        frame_start_positions_.clear();
+        frame_start_positions_.reserve(count);
+        for (const auto &body : bodies_)
+            frame_start_positions_.push_back(body.position);
+
+        TaskGraph graph;
+
+        auto clear_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            {},
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                        bodies_[i].clear_forces_and_torques();
+                };
+            },
+            "rb_clear");
+
+        auto forces_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            clear_ids,
+            [this](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e]
+                {
+                    for (auto &field : force_fields_)
+                        for (uint32_t i = s; i < e; ++i)
+                        {
+                            Vec3f force = field->apply(bodies_[i].position, bodies_[i].velocity, bodies_[i].get_mass());
+                            bodies_[i].force_accumulator += force;
+                        }
+                };
+            },
+            "rb_forces");
+
+        auto linear_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            forces_ids,
+            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e, dt]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                    {
+                        auto &rb = bodies_[i];
+                        if (rb.is_static())
+                            continue;
+                        rb.velocity += (rb.force_accumulator * rb.inv_mass) * dt;
+                        rb.velocity *= (1.0f - rb.material.linear_damping * dt);
+                        rb.position += rb.velocity * dt;
+                    }
+                };
+            },
+            "rb_linear");
+
+        auto angular_ids = add_partitioned_tier(
+            graph,
+            count,
+            partitions,
+            linear_ids,
+            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            {
+                return [this, s, e, dt]
+                {
+                    for (uint32_t i = s; i < e; ++i)
+                    {
+                        auto &rb = bodies_[i];
+                        if (rb.is_static())
+                            continue;
+                        rb.angular_velocity += (rb.inertia_tensor_inv * rb.torque_accumulator) * dt;
+                        rb.angular_velocity *= (1.0f - rb.material.angular_damping * dt);
+                        rb.orientation =
+                            phynity::physics::inertia::integrate_quaternion(rb.orientation, rb.angular_velocity, dt);
+                        rb.orientation.normalize();
+                    }
+                };
+            },
+            "rb_angular");
+
+        auto collision_id = add_serial_task_after(
+            graph,
+            angular_ids,
+            [this, dt]
+            {
+                RigidBodyCollisionConfig cc;
+                cc.default_collision_radius = config_.default_collision_radius;
+                cc.enable_linear_ccd = config_.enable_linear_ccd;
+                cc.ccd_config = config_.ccd_config;
+                collision_resolver_.resolve(bodies_, frame_start_positions_, dt, cc);
+            },
+            "rb_collisions");
+
+        if (!constraints_.empty())
+        {
+            auto constraint_id =
+                graph.add_task({.fn =
+                                    [this, dt]
+                                {
+                                    active_constraints_cache_.clear();
+                                    for (auto &c : constraints_)
+                                        if (c && c->is_active())
+                                            active_constraints_cache_.push_back(c.get());
+
+                                    if (active_constraints_cache_.empty())
+                                        return;
+
+                                    const int iterations = config_.constraint_iterations;
+                                    const float beta = config_.baumgarte_beta;
+                                    const float threshold = 1e-5f;
+
+                                    for (int iter = 0; iter < iterations; ++iter)
+                                    {
+                                        float max_impulse = 0.0f;
+                                        for (auto *constraint : active_constraints_cache_)
+                                        {
+                                            float error = constraint->compute_error();
+                                            if (error < threshold)
+                                                continue;
+                                            float impulse = std::min(beta * error * dt, config_.max_constraint_impulse);
+                                            constraint->apply_impulse(impulse);
+                                            max_impulse = std::max(max_impulse, std::abs(impulse));
+                                        }
+                                        if (max_impulse < threshold)
+                                            break;
+                                    }
+                                },
+                                .debug_name = "rb_constraints"});
+            graph.add_dependency(collision_id, constraint_id);
+        }
+
+        // Use cached schedule when topology is stable (skip validate + Kahn's)
+        if (!cached_schedule_)
+        {
+            cached_schedule_ = TaskScheduler::build_schedule(graph);
+            cached_partition_count_ = partitions;
+            cached_has_constraints_ = has_constraints;
+        }
+
+        task_executor_->execute(*cached_schedule_, graph);
+
+        // Post-graph serial: cleanup and diagnostics
+        for (auto &rb : bodies_)
+            rb.update_lifetime(dt);
+
+        const size_t size_before = bodies_.size();
+        bodies_.erase(std::remove_if(bodies_.begin(), bodies_.end(), [](const RigidBody &rb) { return !rb.active; }),
+                      bodies_.end());
+
+        if (bodies_.size() != size_before)
+        {
+            body_index_.clear();
+            for (size_t idx = 0; idx < bodies_.size(); ++idx)
+                body_index_[bodies_[idx].id] = idx;
+        }
+
+        compute_diagnostics();
+    }
+
     Config config_;
     std::vector<RigidBody> bodies_;
     std::unordered_map<RigidBodyID, size_t> body_index_;
@@ -422,8 +625,15 @@ private:
     std::vector<std::unique_ptr<Constraint>> constraints_;
     std::vector<Constraint *> active_constraints_cache_;
     RigidBodyCollisionResolver collision_resolver_;
+    std::vector<Vec3f> frame_start_positions_; // reused per frame to avoid allocation
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
+    phynity::jobs::TaskExecutor *task_executor_ = nullptr;
+
+    // Cached task schedule (topology-stable across frames)
+    std::optional<phynity::jobs::TaskSchedule> cached_schedule_;
+    uint32_t cached_partition_count_ = 0;
+    bool cached_has_constraints_ = false;
 };
 
 } // namespace phynity::physics
