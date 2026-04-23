@@ -2,6 +2,7 @@
 
 #include <core/math/quaternions/quat_conversions.hpp>
 
+#define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h>
 
 #include <cmath>
