@@ -11,6 +11,8 @@
 #include <core/physics/dynamics/material.hpp>
 #include <core/physics/particles/particle_system.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
+#include <core/serialization/simulation_timeline.hpp>
+#include <core/serialization/snapshot_helpers.hpp>
 
 #include <memory>
 
@@ -87,6 +89,7 @@ public:
 
     /// Update the simulation by delta_time seconds
     /// Accumulates time and performs physics steps as needed
+    /// When paused, this is a no-op. When speed != 1.0, dt is scaled.
     /// @param delta_time Time elapsed since last frame (seconds)
     void update(float delta_time);
 
@@ -96,6 +99,52 @@ public:
 
     /// Reset the timestep accumulator without performing physics steps
     void reset_accumulator();
+
+    // ========================================================================
+    // Timeline Control (pause / step / rewind)
+    // ========================================================================
+
+    /// Pause the simulation
+    void pause();
+
+    /// Resume the simulation
+    void resume();
+
+    /// Check if simulation is paused
+    bool is_paused() const
+    {
+        return paused_;
+    }
+
+    /// Advance exactly one fixed timestep (works when paused)
+    void step_forward();
+
+    /// Restore previous snapshot from timeline (works when paused)
+    void step_backward();
+
+    /// Jump to a specific frame in the timeline
+    void seek_to_frame(size_t index);
+
+    /// Set simulation speed multiplier (0.25 to 4.0)
+    void set_speed(float multiplier);
+
+    /// Get current speed multiplier
+    float speed() const
+    {
+        return speed_multiplier_;
+    }
+
+    /// Get current position in timeline (index of most recent frame)
+    size_t current_frame_index() const
+    {
+        return timeline_.size() > 0 ? timeline_.size() - 1 : 0;
+    }
+
+    /// Get total frames stored in timeline
+    size_t timeline_size() const
+    {
+        return timeline_.size();
+    }
 
     // ========================================================================
     // Particle Management (delegates to ParticleSystem)
@@ -202,11 +251,23 @@ private:
     std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
     std::unique_ptr<phynity::jobs::ScheduleReplayer> schedule_replayer_;
 
+    // Timeline state
+    serialization::SimulationTimeline timeline_{600};
+    bool paused_ = false;
+    float speed_multiplier_ = 1.0f;
+    uint64_t frame_counter_ = 0;
+
     /// Initialize force fields based on configuration (both systems)
     void initialize_force_fields();
 
     /// Save recorded schedule to disk (called by destructor if recording)
     void save_schedule();
+
+    /// Capture current state into timeline
+    void capture_timeline_frame();
+
+    /// Restore state from a timeline snapshot
+    void restore_from_snapshot(const serialization::PhysicsSnapshot &snapshot);
 };
 
 } // namespace phynity::app

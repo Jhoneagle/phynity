@@ -34,6 +34,7 @@ target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_helpers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_writer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_reader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/serialization/simulation_timeline.cpp
 )
 
 target_link_libraries(phynity_core PUBLIC phynity::platform)

@@ -85,13 +85,19 @@ void PhysicsContext::initialize_force_fields()
 
 void PhysicsContext::update(float delta_time)
 {
-    timestep_controller_.accumulate(delta_time);
+    if (paused_)
+    {
+        return;
+    }
+
+    timestep_controller_.accumulate(delta_time * speed_multiplier_);
 
     float dt = 0.0f;
     while ((dt = timestep_controller_.step()) > 0.0f)
     {
         particle_system_.update(dt);
         rigid_body_system_.update(dt);
+        capture_timeline_frame();
     }
 }
 
@@ -101,6 +107,82 @@ void PhysicsContext::step_deterministic()
     float dt = 1.0f / config_.target_fps;
     particle_system_.update(dt);
     rigid_body_system_.update(dt);
+    capture_timeline_frame();
+}
+
+void PhysicsContext::pause()
+{
+    paused_ = true;
+}
+
+void PhysicsContext::resume()
+{
+    paused_ = false;
+}
+
+void PhysicsContext::step_forward()
+{
+    float dt = 1.0f / config_.target_fps;
+    particle_system_.update(dt);
+    rigid_body_system_.update(dt);
+    capture_timeline_frame();
+}
+
+void PhysicsContext::step_backward()
+{
+    if (timeline_.size() < 2)
+    {
+        return;
+    }
+
+    // Go back one frame: truncate the latest, then restore the new latest
+    timeline_.truncate(timeline_.size() - 1);
+    const auto *snapshot = timeline_.at(timeline_.size() - 1);
+    if (snapshot != nullptr)
+    {
+        restore_from_snapshot(*snapshot);
+    }
+}
+
+void PhysicsContext::seek_to_frame(size_t index)
+{
+    const auto *snapshot = timeline_.at(index);
+    if (snapshot == nullptr)
+    {
+        return;
+    }
+
+    restore_from_snapshot(*snapshot);
+
+    // Truncate everything after this frame so step_forward resumes from here
+    timeline_.truncate(index + 1);
+}
+
+void PhysicsContext::set_speed(float multiplier)
+{
+    speed_multiplier_ = std::max(0.25f, std::min(4.0f, multiplier));
+}
+
+void PhysicsContext::capture_timeline_frame()
+{
+    using namespace phynity::serialization;
+
+    double sim_time = static_cast<double>(timestep_statistics().accumulated_time);
+    PhysicsSnapshot snapshot = SnapshotHelpers::capture_particle_system(particle_system_, frame_counter_, sim_time, 0);
+
+    // Merge rigid body state into the same snapshot
+    PhysicsSnapshot rb_snapshot =
+        SnapshotHelpers::capture_rigid_body_system(rigid_body_system_, frame_counter_, sim_time, 0);
+    snapshot.rigid_bodies = std::move(rb_snapshot.rigid_bodies);
+
+    timeline_.push(std::move(snapshot));
+    ++frame_counter_;
+}
+
+void PhysicsContext::restore_from_snapshot(const serialization::PhysicsSnapshot &snapshot)
+{
+    serialization::SnapshotHelpers::restore_particle_system(snapshot, particle_system_);
+    serialization::SnapshotHelpers::restore_rigid_body_system(snapshot, rigid_body_system_);
 }
 
 void PhysicsContext::reset_accumulator()
