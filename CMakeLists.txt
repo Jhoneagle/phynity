@@ -22,6 +22,7 @@ option(PHYNITY_ENABLE_SANITIZERS "Enable sanitizers when supported" OFF)
 set(PHYNITY_SANITIZER_MODE "address-undefined" CACHE STRING "Sanitizer mode: address-undefined or thread")
 set_property(CACHE PHYNITY_SANITIZER_MODE PROPERTY STRINGS "address-undefined" "thread")
 option(PHYNITY_ENABLE_LTO "Enable link-time optimization where supported" OFF)
+option(PHYNITY_BUILD_RENDER "Build render module with ImGui/GLFW/OpenGL" ON)
 option(PHYNITY_BUILD_TESTS "Build tests" ON)
 
 if(NOT PHYNITY_SANITIZER_MODE STREQUAL "address-undefined" AND NOT PHYNITY_SANITIZER_MODE STREQUAL "thread")
