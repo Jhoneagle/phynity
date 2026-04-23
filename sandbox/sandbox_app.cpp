@@ -58,8 +58,9 @@ void SandboxApp::load_scenario(int index)
         return;
     }
 
-    // Reset physics context
-    physics_context_ = PhysicsContext();
+    // Reset physics context (reconstruct in-place since it's non-copyable)
+    physics_context_.~PhysicsContext();
+    new (&physics_context_) PhysicsContext();
 
     // Create and setup new scenario
     current_scenario_ = scenario_registry_[static_cast<size_t>(index)].create();
@@ -532,7 +533,7 @@ render::DebugHUD::State SandboxApp::build_hud_state(float dt) const
 
     // Simulation state
     auto ts_stats = physics_context_.timestep_statistics();
-    state.physics_step_count = ts_stats.total_steps;
+    state.physics_step_count = static_cast<uint64_t>(ts_stats.total_steps);
     state.simulated_time = ts_stats.accumulated_time;
     state.timestep_size = physics_context_.target_timestep();
     state.determinism_enabled = physics_context_.config().use_determinism;

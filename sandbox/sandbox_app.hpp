@@ -6,7 +6,6 @@
 #include <core/diagnostics/frame_profiler.hpp>
 #include <render/body_inspector.hpp>
 #include <render/camera.hpp>
-#include <render/constraint_inspector.hpp>
 #include <render/debug_hud.hpp>
 #include <render/help_overlay.hpp>
 #include <render/imgui_context.hpp>
@@ -68,7 +67,6 @@ private:
 
     // Inspectors
     render::BodyInspector body_inspector_;
-    render::ConstraintInspector constraint_inspector_;
     std::set<int> open_body_inspectors_;
 
     void register_scenarios();
