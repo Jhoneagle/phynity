@@ -1,10 +1,16 @@
 #include "demo_scenarios.hpp"
 #include "physics_context.hpp"
 
+#include <algorithm>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#if PHYNITY_HAS_RENDER
+#include "sandbox_app.hpp"
+#endif
 
 using phynity::app::PhysicsContext;
 using phynity::app::scenarios::Scenario;
@@ -37,10 +43,7 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
 
     for (int frame = 0; frame < frames; ++frame)
     {
-        // Update physics with frame time
         context.update(dt);
-
-        // Call scenario step callback if needed
         scenario->step_callback(context, dt);
 
         // Print diagnostics every 60 frames (~1 second)
@@ -70,51 +73,64 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
     context.print_diagnostics();
 }
 
-int main()
+void run_headless()
+{
+    using namespace phynity::app::scenarios;
+
+    std::cout << "=== Phynity Physics Sandbox (headless) ===\n\n";
+
+    struct Entry
+    {
+        std::unique_ptr<Scenario> (*create)();
+        float duration;
+    };
+
+    // clang-format off
+    Entry entries[] = {
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<GravityWell>(); },              3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<ProjectileMotion>(); },         3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DragInteraction>(); },          5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<BoxStacking>(); },              3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<TowerTopple>(); },              7.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<HingeDoor>(); },                5.0f},
+    };
+    // clang-format on
+
+    for (auto &entry : entries)
+    {
+        run_scenario(entry.create(), entry.duration);
+    }
+
+    std::cout << "\n" << std::string(70, '=') << '\n';
+    std::cout << "All scenarios completed successfully!\n";
+    std::cout << std::string(70, '=') << '\n';
+}
+
+int main(int argc, char *argv[])
 {
     try
     {
-        std::cout << "=== Phynity Physics Sandbox ===\n";
-        std::cout << "Demo Scenarios\n\n";
-
-        // Build scenario registry
-        struct ScenarioEntry
+        bool headless = false;
+        for (int i = 1; i < argc; ++i)
         {
-            const char *name;
-            std::unique_ptr<Scenario> (*create)();
-            float duration;
-        };
-
-        // clang-format off
-        std::vector<ScenarioEntry> registry = {
-            // Particle scenarios
-            {"Gravity Well",            []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::GravityWell>(); },              3.0f},
-            {"Projectile Motion",       []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::ProjectileMotion>(); },         3.0f},
-            {"Drag Interaction",        []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::DragInteraction>(); },          5.0f},
-            // Rigid body scenarios
-            {"Box Stacking",            []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::BoxStacking>(); },              3.0f},
-            {"Tower Topple",            []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::TowerTopple>(); },              7.0f},
-            {"Hinge Door",              []() -> std::unique_ptr<Scenario> { return std::make_unique<phynity::app::scenarios::HingeDoor>(); },                5.0f},
-        };
-        // clang-format on
-
-        std::cout << "Available Scenarios:\n";
-        for (size_t i = 0; i < registry.size(); ++i)
-        {
-            std::cout << "  " << (i + 1) << ". " << registry[i].name << '\n';
+            if (std::strcmp(argv[i], "--headless") == 0)
+            {
+                headless = true;
+            }
         }
 
-        std::cout << "\nRunning all scenarios...\n";
-
-        for (auto &entry : registry)
+#if PHYNITY_HAS_RENDER
+        if (!headless)
         {
-            run_scenario(entry.create(), entry.duration);
+            phynity::app::SandboxApp app;
+            app.run();
+            return 0;
         }
+#else
+        (void) headless;
+#endif
 
-        std::cout << "\n" << std::string(70, '=') << '\n';
-        std::cout << "All scenarios completed successfully!\n";
-        std::cout << std::string(70, '=') << '\n';
-
+        run_headless();
         return 0;
     }
     catch (const std::exception &ex)
