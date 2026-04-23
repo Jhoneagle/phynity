@@ -4,13 +4,17 @@
 #include "physics_context.hpp"
 
 #include <core/diagnostics/frame_profiler.hpp>
+#include <render/camera.hpp>
 #include <render/debug_hud.hpp>
 #include <render/imgui_context.hpp>
+#include <render/picking.hpp>
+#include <render/scene_renderer.hpp>
 #include <render/timeline_scrubber.hpp>
 #include <render/window.hpp>
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -52,11 +56,19 @@ private:
     render::TimelineScrubber timeline_scrubber_;
     diagnostics::FrameProfiler frame_profiler_{120};
 
+    // Scene rendering and picking
+    render::Camera camera_;
+    render::SceneRenderer scene_renderer_;
+    std::optional<int> selected_body_id_;
+
     void register_scenarios();
     void load_scenario(int index);
     void draw_ui();
     void draw_scenario_panel();
     render::DebugHUD::State build_hud_state(float dt) const;
+    render::SceneRenderer::State build_scene_state() const;
+    void handle_picking(int fb_width, int fb_height);
+    void handle_camera_input();
 };
 
 } // namespace phynity::app

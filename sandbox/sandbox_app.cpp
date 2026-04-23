@@ -1,5 +1,9 @@
 #include "sandbox_app.hpp"
 
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/capsule.hpp>
+#include <core/physics/shapes/sphere.hpp>
+
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 
@@ -91,7 +95,18 @@ void SandboxApp::run()
         window_.get_framebuffer_size(fb_width, fb_height);
         glViewport(0, 0, fb_width, fb_height);
         glClearColor(0.15f, 0.15f, 0.18f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Handle camera input
+        handle_camera_input();
+
+        // Draw 3D scene
+        if (current_scenario_)
+        {
+            auto scene_state = build_scene_state();
+            scene_renderer_.draw(camera_, scene_state, fb_width, fb_height);
+            handle_picking(fb_width, fb_height);
+        }
 
         imgui_context_.begin_frame();
 
@@ -103,6 +118,10 @@ void SandboxApp::run()
         if (ImGui::IsKeyPressed(ImGuiKey_F3))
         {
             debug_hud_.toggle();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_Home))
+        {
+            camera_.reset();
         }
 
         if (show_imgui_demo_)
@@ -225,6 +244,146 @@ void SandboxApp::draw_scenario_panel()
     }
 
     ImGui::End();
+}
+
+render::SceneRenderer::State SandboxApp::build_scene_state() const
+{
+    render::SceneRenderer::State state;
+
+    // Rigid bodies
+    const auto &bodies = physics_context_.rigid_body_system().bodies();
+    state.bodies.reserve(bodies.size());
+    for (const auto &rb : bodies)
+    {
+        render::SceneRenderer::BodyVisual vis;
+        vis.position = rb.position;
+        vis.orientation = rb.orientation;
+        vis.id = rb.id;
+        vis.selected = (selected_body_id_.has_value() && selected_body_id_.value() == rb.id);
+
+        if (rb.shape)
+        {
+            switch (rb.shape->get_type())
+            {
+                case phynity::physics::shapes::ShapeType::Sphere:
+                    vis.type = render::SceneRenderer::ShapeType::Sphere;
+                    vis.dimensions =
+                        Vec3f(static_cast<const phynity::physics::shapes::SphereShape *>(rb.shape.get())->radius,
+                              0.0f,
+                              0.0f);
+                    break;
+                case phynity::physics::shapes::ShapeType::Box:
+                    vis.type = render::SceneRenderer::ShapeType::Box;
+                    vis.dimensions =
+                        static_cast<const phynity::physics::shapes::BoxShape *>(rb.shape.get())->half_extents;
+                    break;
+                case phynity::physics::shapes::ShapeType::Capsule:
+                {
+                    vis.type = render::SceneRenderer::ShapeType::Capsule;
+                    const auto *cap = static_cast<const phynity::physics::shapes::CapsuleShape *>(rb.shape.get());
+                    vis.dimensions = Vec3f(cap->radius, cap->half_height, 0.0f);
+                    break;
+                }
+                default:
+                    vis.type = render::SceneRenderer::ShapeType::Unknown;
+                    break;
+            }
+        }
+
+        state.bodies.push_back(vis);
+    }
+
+    // Particles
+    const auto &particles = physics_context_.particle_system().particles();
+    state.particles.reserve(particles.size());
+    for (const auto &p : particles)
+    {
+        render::SceneRenderer::ParticleVisual vis;
+        vis.position = p.position;
+        vis.radius = p.radius;
+        state.particles.push_back(vis);
+    }
+
+    // Constraints (draw lines between connected body pairs)
+    const auto &constraints = physics_context_.rigid_body_system().get_constraints();
+    for (const auto &c : constraints)
+    {
+        if (!c)
+            continue;
+        // Constraints store body pointers; we approximate by showing a line between bodies
+        // This is a simplified visualization
+        render::SceneRenderer::ConstraintVisual vis;
+        vis.pos_a = Vec3f(0.0f); // Will be filled if we can access body pointers
+        vis.pos_b = Vec3f(0.0f);
+        state.constraints.push_back(vis);
+    }
+
+    return state;
+}
+
+void SandboxApp::handle_picking(int fb_width, int fb_height)
+{
+    // Only pick on left-click when ImGui doesn't want the mouse
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        return;
+    }
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().KeyCtrl)
+    {
+        ImVec2 mouse_pos = ImGui::GetMousePos();
+        auto scene_state = build_scene_state();
+        auto result =
+            render::pick_body(camera_, mouse_pos.x, mouse_pos.y, fb_width, fb_height, scene_state);
+
+        if (result.has_value())
+        {
+            selected_body_id_ = result->body_id;
+        }
+        else
+        {
+            selected_body_id_.reset();
+        }
+    }
+}
+
+void SandboxApp::handle_camera_input()
+{
+    // Don't handle camera when ImGui wants the mouse
+    if (ImGui::GetIO().WantCaptureMouse)
+    {
+        return;
+    }
+
+    ImVec2 mouse_pos = ImGui::GetMousePos();
+
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    {
+        camera_.on_mouse_button(0, true, mouse_pos.x, mouse_pos.y);
+    }
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+    {
+        camera_.on_mouse_button(0, false, mouse_pos.x, mouse_pos.y);
+    }
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        camera_.on_mouse_button(1, true, mouse_pos.x, mouse_pos.y);
+    }
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+    {
+        camera_.on_mouse_button(1, false, mouse_pos.x, mouse_pos.y);
+    }
+
+    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+    {
+        camera_.on_mouse_move(mouse_pos.x, mouse_pos.y);
+    }
+
+    float scroll = ImGui::GetIO().MouseWheel;
+    if (scroll != 0.0f)
+    {
+        camera_.on_scroll(scroll);
+    }
 }
 
 render::DebugHUD::State SandboxApp::build_hud_state(float dt) const
