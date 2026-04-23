@@ -6,6 +6,7 @@ if(PHYNITY_BUILD_RENDER)
 	add_library(phynity_render STATIC
 		window.cpp
 		imgui_context.cpp
+		debug_hud.cpp
 	)
 	add_library(phynity::render ALIAS phynity_render)
 	set_target_properties(phynity_render PROPERTIES EXPORT_NAME render)

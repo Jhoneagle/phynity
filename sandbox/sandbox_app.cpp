@@ -4,6 +4,7 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstring>
 
 namespace phynity::app
 {
@@ -65,6 +66,8 @@ void SandboxApp::run()
 {
     while (!window_.should_close())
     {
+        frame_profiler_.begin_frame();
+
         window_.poll_events();
 
         // Compute delta time
@@ -92,11 +95,16 @@ void SandboxApp::run()
 
         imgui_context_.begin_frame();
 
-        // Toggle ImGui demo with F2
+        // Keyboard shortcuts
         if (ImGui::IsKeyPressed(ImGuiKey_F2))
         {
             show_imgui_demo_ = !show_imgui_demo_;
         }
+        if (ImGui::IsKeyPressed(ImGuiKey_F3))
+        {
+            debug_hud_.toggle();
+        }
+
         if (show_imgui_demo_)
         {
             ImGui::ShowDemoWindow(&show_imgui_demo_);
@@ -104,8 +112,14 @@ void SandboxApp::run()
 
         draw_ui();
 
+        // Draw HUD
+        auto hud_state = build_hud_state(dt);
+        debug_hud_.draw(hud_state);
+
         imgui_context_.end_frame();
         window_.swap_buffers();
+
+        frame_profiler_.end_frame();
     }
 }
 
@@ -173,6 +187,71 @@ void SandboxApp::draw_scenario_panel()
     }
 
     ImGui::End();
+}
+
+render::DebugHUD::State SandboxApp::build_hud_state(float dt) const
+{
+    render::DebugHUD::State state;
+
+    // Performance
+    state.fps = (dt > 0.0f) ? 1.0f / dt : 0.0f;
+    state.frame_time_ms = dt * 1000.0f;
+    state.frame_time_min_ms = static_cast<float>(frame_profiler_.get_min_frame_time(60)) / 1000.0f;
+    state.frame_time_max_ms = static_cast<float>(frame_profiler_.get_max_frame_time(60)) / 1000.0f;
+    state.frame_time_avg_ms = static_cast<float>(frame_profiler_.get_average_frame_time(60)) / 1000.0f;
+
+    // Physics diagnostics
+    auto diag = physics_context_.diagnostics();
+    state.particle_count = diag.particle_count;
+    state.body_count = diag.body_count;
+    state.constraint_count = diag.constraint_count;
+    state.total_ke = diag.total_kinetic_energy;
+    state.total_linear_ke = diag.total_linear_ke;
+    state.total_angular_ke = diag.total_angular_ke;
+    state.total_momentum_x = diag.total_momentum.x;
+    state.total_momentum_y = diag.total_momentum.y;
+    state.total_momentum_z = diag.total_momentum.z;
+    state.total_angular_momentum_x = diag.total_angular_momentum.x;
+    state.total_angular_momentum_y = diag.total_angular_momentum.y;
+    state.total_angular_momentum_z = diag.total_angular_momentum.z;
+
+    // Simulation state
+    auto ts_stats = physics_context_.timestep_statistics();
+    state.physics_step_count = ts_stats.total_steps;
+    state.simulated_time = ts_stats.accumulated_time;
+    state.timestep_size = physics_context_.target_timestep();
+    state.determinism_enabled = physics_context_.config().use_determinism;
+    state.worker_count = physics_context_.config().job_workers;
+
+    // Profiler zones — pick the key high-level zones
+    static const char *zone_names[] = {
+        "RigidBodySystem::update",
+        "RigidBodySystem::collisions",
+        "RigidBodySystem::constraint_solving",
+        "integration",
+        "collision_resolution",
+        "apply_force_fields",
+    };
+
+    state.zone_count = 0;
+    for (const char *name : zone_names)
+    {
+        if (state.zone_count >= render::DebugHUD::MAX_ZONES)
+        {
+            break;
+        }
+        auto stats = frame_profiler_.get_zone_stats(name, 60);
+        if (stats.call_count > 0)
+        {
+            auto &zone = state.zones[state.zone_count];
+            zone.name = name;
+            zone.avg_us = static_cast<float>(stats.average_duration_us());
+            zone.max_us = static_cast<float>(stats.max_duration_us);
+            ++state.zone_count;
+        }
+    }
+
+    return state;
 }
 
 } // namespace phynity::app

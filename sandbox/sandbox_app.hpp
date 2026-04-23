@@ -3,6 +3,8 @@
 #include "demo_scenarios.hpp"
 #include "physics_context.hpp"
 
+#include <core/diagnostics/frame_profiler.hpp>
+#include <render/debug_hud.hpp>
 #include <render/imgui_context.hpp>
 #include <render/window.hpp>
 
@@ -44,10 +46,15 @@ private:
     double last_frame_time_ = 0.0;
     bool show_imgui_demo_ = false;
 
+    // Debug HUD
+    render::DebugHUD debug_hud_;
+    diagnostics::FrameProfiler frame_profiler_{120};
+
     void register_scenarios();
     void load_scenario(int index);
     void draw_ui();
     void draw_scenario_panel();
+    render::DebugHUD::State build_hud_state(float dt) const;
 };
 
 } // namespace phynity::app
