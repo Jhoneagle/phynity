@@ -13,6 +13,7 @@ if(PHYNITY_BUILD_RENDER)
 		picking.cpp
 		body_inspector.cpp
 		constraint_inspector.cpp
+		help_overlay.cpp
 	)
 	add_library(phynity::render ALIAS phynity_render)
 	set_target_properties(phynity_render PROPERTIES EXPORT_NAME render)

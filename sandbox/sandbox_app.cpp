@@ -117,6 +117,10 @@ void SandboxApp::run()
         imgui_context_.begin_frame();
 
         // Keyboard shortcuts
+        if (ImGui::IsKeyPressed(ImGuiKey_F1))
+        {
+            help_overlay_.toggle();
+        }
         if (ImGui::IsKeyPressed(ImGuiKey_F2))
         {
             show_imgui_demo_ = !show_imgui_demo_;
@@ -137,9 +141,10 @@ void SandboxApp::run()
 
         draw_ui();
 
-        // Draw HUD
+        // Draw HUD and help
         auto hud_state = build_hud_state(dt);
         debug_hud_.draw(hud_state);
+        help_overlay_.draw();
 
         imgui_context_.end_frame();
         window_.swap_buffers();

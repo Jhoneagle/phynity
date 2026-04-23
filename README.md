@@ -11,8 +11,8 @@ phynity/
 ├── src/              Engine library (the physics engine itself)
 │   ├── core/         Math, physics, jobs, serialization, diagnostics
 │   ├── platform/     Threading and OS abstractions
-│   └── render/       Optional visualization (placeholder)
-├── sandbox/          Demo/sandbox application that uses the engine
+│   └── render/       Optional visualization (ImGui/GLFW/OpenGL)
+├── sandbox/          Interactive sandbox application with debug UI
 ├── tests/            Unit and validation tests
 ├── cmake/            Build helpers and install config
 └── tools/            Dev scripts (format, build, run, etc.)
@@ -123,3 +123,44 @@ This project uses clang-tidy for local static analysis and in CI.
 ```
 
 The script configures the selected CMake preset, ensures `compile_commands.json` exists, and runs `clang-tidy` over `src`, `sandbox` and `tests` (`*.cpp`, `*.hpp`, `*.h`) using the repository's `.clang-tidy` settings.
+
+## Interactive Sandbox
+
+The sandbox application provides an interactive windowed environment for
+visualizing and debugging physics simulations.
+
+### Dependencies
+
+- **Dear ImGui** — immediate-mode debug UI
+- **GLFW** — cross-platform window management and input
+- **OpenGL 3.3** — wireframe rendering
+
+All installed via vcpkg. To build without the render module (e.g., for CI or
+headless environments), set `-DPHYNITY_BUILD_RENDER=OFF`.
+
+### Running
+
+```bash
+# Interactive windowed mode (default)
+./build/release/phynity_sandbox
+
+# Headless console mode (runs all scenarios and prints diagnostics)
+./build/release/phynity_sandbox --headless
+```
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| F1 | Toggle help overlay |
+| F2 | Toggle ImGui demo window |
+| F3 | Toggle debug HUD |
+| Space | Play / Pause simulation |
+| Left Arrow | Step backward (when paused) |
+| Right Arrow | Step forward (when paused) |
+| `[` / `]` | Decrease / Increase speed |
+| Left Drag | Orbit camera |
+| Right Drag | Pan camera |
+| Scroll | Zoom camera |
+| Home | Reset camera |
+| Left Click | Select body (opens inspector) |

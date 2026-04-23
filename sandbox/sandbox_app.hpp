@@ -8,6 +8,7 @@
 #include <render/camera.hpp>
 #include <render/constraint_inspector.hpp>
 #include <render/debug_hud.hpp>
+#include <render/help_overlay.hpp>
 #include <render/imgui_context.hpp>
 #include <render/picking.hpp>
 #include <render/scene_renderer.hpp>
@@ -54,9 +55,10 @@ private:
     double last_frame_time_ = 0.0;
     bool show_imgui_demo_ = false;
 
-    // Debug HUD and timeline
+    // Debug HUD, timeline, and help
     render::DebugHUD debug_hud_;
     render::TimelineScrubber timeline_scrubber_;
+    render::HelpOverlay help_overlay_;
     diagnostics::FrameProfiler frame_profiler_{120};
 
     // Scene rendering and picking
