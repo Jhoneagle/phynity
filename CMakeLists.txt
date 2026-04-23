@@ -38,12 +38,75 @@ endif()
 include(cmake/compiler_options.cmake OPTIONAL)
 include(cmake/warnings.cmake OPTIONAL)
 include(cmake/sanitizers.cmake OPTIONAL)
+include(GNUInstallDirs)
 
-# Project components
+# Engine library components
 add_subdirectory(src/core)
 add_subdirectory(src/platform)
 add_subdirectory(src/render)
-add_subdirectory(src/app)
+
+# Umbrella library target: consumers link phynity::phynity to get everything
+add_library(phynity_engine INTERFACE)
+add_library(phynity::phynity ALIAS phynity_engine)
+set_target_properties(phynity_engine PROPERTIES EXPORT_NAME phynity)
+target_link_libraries(phynity_engine INTERFACE
+    phynity::core
+    phynity::platform
+    phynity::render
+)
+
+# Install rules
+include(CMakePackageConfigHelpers)
+
+install(TARGETS phynity_engine phynity_core phynity_platform phynity_render
+    EXPORT phynityTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(DIRECTORY src/core/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/core
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+    PATTERN "CMakeLists.txt" EXCLUDE
+)
+install(DIRECTORY src/platform/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/platform
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+    PATTERN "CMakeLists.txt" EXCLUDE
+)
+install(DIRECTORY src/render/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/render
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+    PATTERN "CMakeLists.txt" EXCLUDE
+)
+
+install(EXPORT phynityTargets
+    FILE phynityTargets.cmake
+    NAMESPACE phynity::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/phynity
+)
+
+configure_package_config_file(
+    cmake/phynityConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/phynityConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/phynity
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/phynityConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/phynityConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/phynityConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/phynity
+)
+
+# Sandbox demo application
+option(PHYNITY_BUILD_SANDBOX "Build sandbox demos" ON)
+if(PHYNITY_BUILD_SANDBOX)
+    add_subdirectory(sandbox)
+endif()
 
 # Tests
 if(PHYNITY_BUILD_TESTS)

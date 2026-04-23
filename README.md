@@ -1,8 +1,25 @@
-# Physics Engine / Simulation Project
+# Phynity - Physics Engine
 
-A modern C++ physics engine and simulation playground focused on
+A modern C++ physics engine library and simulation sandbox focused on
 learning, experimentation, and long-term evolution toward an
 industry-grade solution.
+
+## Project Structure
+
+```
+phynity/
+├── src/              Engine library (the physics engine itself)
+│   ├── core/         Math, physics, jobs, serialization, diagnostics
+│   ├── platform/     Threading and OS abstractions
+│   └── render/       Optional visualization (placeholder)
+├── sandbox/          Demo/sandbox application that uses the engine
+├── tests/            Unit and validation tests
+├── cmake/            Build helpers and install config
+└── tools/            Dev scripts (format, build, run, etc.)
+```
+
+The engine (`src/`) is a standalone library. The sandbox (`sandbox/`) is a
+separate executable that consumes the library for manual testing and demos.
 
 ## Goals
 
@@ -25,6 +42,27 @@ This project uses CMake and vcpkg (manifest mode).
 ```bash
 cmake --preset debug
 cmake --build --preset debug
+```
+
+## Using as a Library
+
+After building, install the library:
+
+```bash
+cmake --install build/release --prefix /path/to/install
+```
+
+Then in your own CMake project:
+
+```cmake
+find_package(phynity 0.1 REQUIRED)
+target_link_libraries(my_app PRIVATE phynity::phynity)
+```
+
+```cpp
+#include <core/math/vectors/vec3.hpp>
+#include <core/physics/particles/particle_system.hpp>
+#include <platform/threading.hpp>
 ```
 
 ## Development Tools
@@ -84,4 +122,4 @@ This project uses clang-tidy for local static analysis and in CI.
 .\tools\static_analysis.bat debug
 ```
 
-The script configures the selected CMake preset, ensures `compile_commands.json` exists, and runs `clang-tidy` over `src` and `tests` (`*.cpp`, `*.hpp`, `*.h`) using the repository's `.clang-tidy` settings.
+The script configures the selected CMake preset, ensures `compile_commands.json` exists, and runs `clang-tidy` over `src`, `sandbox` and `tests` (`*.cpp`, `*.hpp`, `*.h`) using the repository's `.clang-tidy` settings.

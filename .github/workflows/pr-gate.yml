@@ -193,7 +193,7 @@ jobs:
               echo ""
               FAILED=1
             fi
-          done < <(find src tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0)
+          done < <(find src sandbox tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) -print0)
           if [ $FAILED -eq 1 ]; then
             echo "Format check failed. Run 'tools/format.sh' locally to fix."
             exit 1
@@ -243,7 +243,7 @@ jobs:
             run-clang-tidy -p . -j "$(nproc)"
           else
             # Fallback to sequential if run-clang-tidy not available
-            find ../../src ../../tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | sort | while read file; do
+            find ../../src ../../sandbox ../../tests -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) | sort | while read file; do
               echo "Analyzing: $file"
               clang-tidy -p . "$file"
             done

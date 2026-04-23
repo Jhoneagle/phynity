@@ -21,6 +21,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Performance monitoring (M): automated benchmark regression detection with per-test thresholds, historical tracking (CSV/DB), performance dashboard for frame time/memory trends, alerts for > 5% regressions.✅
 - CI/CD infrastructure (M): GitHub Actions workflows for Windows/Linux/macOS, automated test gating on PRs, flakiness detection, artifact archival; deterministic test retry logic for intermittent failures.✅
 - Platform and concurrency (M): task graph builder, work-stealing thread pool, pinned tasks for cache locality; deterministic replay of job schedules.✅
+- Library architecture (M): engine as installable library (core + platform + render) with CMake find_package support; separate sandbox demo executable.✅
 - Tooling and UI (M): in-engine debug HUD, timeline scrubber for stepping, detachable inspectors for bodies/constraints.
 - Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.
 - Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.

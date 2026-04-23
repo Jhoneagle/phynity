@@ -50,8 +50,8 @@ if not exist "%BUILD_DIR%\compile_commands.json" (
     if errorlevel 1 exit /b 1
 )
 
-echo Running clang-tidy over src\ and tests\ (*.cpp,*.hpp,*.h) using %BUILD_DIR%\compile_commands.json...
-powershell -NoProfile -Command "$files = Get-ChildItem -Path src,tests -Include *.cpp,*.hpp,*.h -Recurse | Sort-Object FullName; $failed = $false; foreach ($f in $files) { Write-Host ('Analyzing: ' + $f.FullName); clang-tidy -p '%BUILD_DIR%' $f.FullName; if ($LASTEXITCODE -ne 0) { $failed = $true } }; if ($failed) { exit 1 }"
+echo Running clang-tidy over src\, sandbox\ and tests\ (*.cpp,*.hpp,*.h) using %BUILD_DIR%\compile_commands.json...
+powershell -NoProfile -Command "$files = Get-ChildItem -Path src,sandbox,tests -Include *.cpp,*.hpp,*.h -Recurse | Sort-Object FullName; $failed = $false; foreach ($f in $files) { Write-Host ('Analyzing: ' + $f.FullName); clang-tidy -p '%BUILD_DIR%' $f.FullName; if ($LASTEXITCODE -ne 0) { $failed = $true } }; if ($failed) { exit 1 }"
 if errorlevel 1 (
     echo.
     echo Static analysis issues found.

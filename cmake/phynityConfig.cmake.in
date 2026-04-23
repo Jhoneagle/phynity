@@ -1,0 +1,4 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+include("${CMAKE_CURRENT_LIST_DIR}/phynityTargets.cmake")
+check_required_components(phynity)

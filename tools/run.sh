@@ -7,7 +7,7 @@ set -euo pipefail
 preset="${1:-debug}"
 os="$(uname -s || echo unknown)"
 
-exe_path="build/$preset/src/app/phynity_demo"
+exe_path="build/$preset/sandbox/phynity_sandbox"
 
 if [[ "$os" == MINGW* || "$os" == MSYS* || "$os" == CYGWIN* ]]; then
   exe_path+=".exe"

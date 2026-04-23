@@ -106,7 +106,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $files = @("build/release-lto/src/app/phynity_demo.exe")
+          $files = @("build/release-lto/sandbox/phynity_sandbox.exe")
           $dlls = Get-ChildItem -Path "build/release-lto" -Filter *.dll -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
           $files += $dlls
           Compress-Archive -Path $files -DestinationPath "dist/phynity-${{ github.ref_name }}-windows.zip" -Force
@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          tar -czf "dist/phynity-${GITHUB_REF_NAME}-${{ matrix.os }}.tar.gz" -C build/release-lto/src/app phynity_demo
+          tar -czf "dist/phynity-${GITHUB_REF_NAME}-${{ matrix.os }}.tar.gz" -C build/release-lto/sandbox phynity_sandbox
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4

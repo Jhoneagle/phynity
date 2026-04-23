@@ -5,7 +5,7 @@ rem Usage: tools\run.bat [preset]
 set PRESET=%1
 if "%PRESET%"=="" set PRESET=debug
 
-set EXE=build\%PRESET%\src\app\phynity_demo.exe
+set EXE=build\%PRESET%\sandbox\phynity_sandbox.exe
 if not exist "%EXE%" (
   echo Executable not found: %EXE%
   echo Build first with: tools\build.bat %PRESET%

@@ -1,8 +1,11 @@
 add_library(phynity_core)
 add_library(phynity::core ALIAS phynity_core)
+set_target_properties(phynity_core PROPERTIES EXPORT_NAME core)
 
 target_include_directories(phynity_core PUBLIC
-	${CMAKE_SOURCE_DIR}/src/core
+	$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/core>
+	$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 # Job system sources

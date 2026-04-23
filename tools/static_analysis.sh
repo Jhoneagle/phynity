@@ -43,7 +43,7 @@ while read -r file; do
     if ! clang-tidy -p "$build_dir" "$file"; then
         failed=1
     fi
-done < <(find src tests -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) | sort)
+done < <(find src sandbox tests -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) | sort)
 
 if [[ $failed -ne 0 ]]; then
     echo ""

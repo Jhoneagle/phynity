@@ -67,16 +67,17 @@ Thin abstractions over OS and compiler features such as:
 Visualization and debugging tools only.
 Depends on core, never the other way around.
 
-### app/
-Executable entry points and experiment sandboxes.
-Minimal logic; orchestration only.
+### sandbox/
+Standalone demo/sandbox executable that consumes the engine library.
+Contains `PhysicsContext` (high-level facade), demo scenarios, and rigid body demos.
+Lives at the project root, outside `src/`, to emphasize the library/consumer boundary.
 
 ## Dependency Rules
 
 - core must not depend on render
 - core currently has a narrow dependency on platform for threading and allocation instrumentation; reducing that coupling remains a valid cleanup target
 - render may depend on core
-- app may depend on everything
+- sandbox may depend on everything (it is a consumer, not part of the library)
 
 ## Physics Subsystem Details
 
@@ -163,7 +164,7 @@ This is validated through reference-based tests comparing against analytical sol
 
 ### Integration Points
 
-**Application Layer** (`app/`)
+**Sandbox** (`sandbox/`)
 - `PhysicsContext`: Manages subsystem lifecycle and configuration
 - `main.cpp` + scenario orchestration entry points
 - Demo executable via `tools/run.(bat|sh)`
