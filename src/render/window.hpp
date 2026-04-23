@@ -31,6 +31,9 @@ public:
     /// Get current framebuffer size in pixels
     void get_framebuffer_size(int &width, int &height) const;
 
+    /// Clear the framebuffer and set viewport to match window size
+    void begin_render_frame(float r, float g, float b, float a = 1.0f);
+
     /// Get the underlying GLFW window handle
     GLFWwindow *handle() const
     {

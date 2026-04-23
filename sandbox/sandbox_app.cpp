@@ -6,7 +6,6 @@
 #include <core/physics/shapes/capsule.hpp>
 #include <core/physics/shapes/sphere.hpp>
 
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 
 #include <algorithm>
@@ -96,12 +95,10 @@ void SandboxApp::run()
         }
 
         // Render
+        window_.begin_render_frame(0.15f, 0.15f, 0.18f);
         int fb_width = 0;
         int fb_height = 0;
         window_.get_framebuffer_size(fb_width, fb_height);
-        glViewport(0, 0, fb_width, fb_height);
-        glClearColor(0.15f, 0.15f, 0.18f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Handle camera input
         handle_camera_input();

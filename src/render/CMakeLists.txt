@@ -24,8 +24,8 @@ if(PHYNITY_BUILD_RENDER)
 	)
 
 	target_link_libraries(phynity_render
-		PUBLIC phynity::core
-		PRIVATE imgui::imgui glfw OpenGL::GL
+		PUBLIC phynity::core imgui::imgui
+		PRIVATE glfw OpenGL::GL
 	)
 
 	target_compile_definitions(phynity_render PUBLIC PHYNITY_HAS_RENDER=1)
