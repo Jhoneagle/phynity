@@ -7,6 +7,7 @@ if(PHYNITY_BUILD_RENDER)
 		window.cpp
 		imgui_context.cpp
 		debug_hud.cpp
+		timeline_scrubber.cpp
 	)
 	add_library(phynity::render ALIAS phynity_render)
 	set_target_properties(phynity_render PROPERTIES EXPORT_NAME render)

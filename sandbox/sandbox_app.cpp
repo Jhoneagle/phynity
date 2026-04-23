@@ -126,6 +126,44 @@ void SandboxApp::run()
 void SandboxApp::draw_ui()
 {
     draw_scenario_panel();
+
+    // Timeline scrubber
+    if (current_scenario_)
+    {
+        render::TimelineScrubber::State ts_state;
+        ts_state.timeline_size = physics_context_.timeline_size();
+        ts_state.current_frame = physics_context_.current_frame_index();
+        ts_state.is_paused = physics_context_.is_paused();
+        ts_state.speed_multiplier = physics_context_.speed();
+        ts_state.simulated_time = physics_context_.timestep_statistics().accumulated_time;
+
+        auto action = timeline_scrubber_.draw(ts_state);
+
+        switch (action.type)
+        {
+            case render::TimelineScrubber::ActionType::Play:
+                physics_context_.resume();
+                break;
+            case render::TimelineScrubber::ActionType::Pause:
+                physics_context_.pause();
+                break;
+            case render::TimelineScrubber::ActionType::StepForward:
+                physics_context_.step_forward();
+                break;
+            case render::TimelineScrubber::ActionType::StepBackward:
+                physics_context_.step_backward();
+                break;
+            case render::TimelineScrubber::ActionType::SeekToFrame:
+                physics_context_.pause();
+                physics_context_.seek_to_frame(action.target_frame);
+                break;
+            case render::TimelineScrubber::ActionType::SetSpeed:
+                physics_context_.set_speed(action.target_speed);
+                break;
+            case render::TimelineScrubber::ActionType::None:
+                break;
+        }
+    }
 }
 
 void SandboxApp::draw_scenario_panel()

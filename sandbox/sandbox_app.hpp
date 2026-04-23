@@ -6,6 +6,7 @@
 #include <core/diagnostics/frame_profiler.hpp>
 #include <render/debug_hud.hpp>
 #include <render/imgui_context.hpp>
+#include <render/timeline_scrubber.hpp>
 #include <render/window.hpp>
 
 #include <functional>
@@ -46,8 +47,9 @@ private:
     double last_frame_time_ = 0.0;
     bool show_imgui_demo_ = false;
 
-    // Debug HUD
+    // Debug HUD and timeline
     render::DebugHUD debug_hud_;
+    render::TimelineScrubber timeline_scrubber_;
     diagnostics::FrameProfiler frame_profiler_{120};
 
     void register_scenarios();
