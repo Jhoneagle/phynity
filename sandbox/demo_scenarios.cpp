@@ -1,8 +1,11 @@
 #include "demo_scenarios.hpp"
 
 #include <core/physics/config/physics_constants.hpp>
+#include <core/physics/constraints/hinge_joint.hpp>
+#include <core/physics/shapes/box.hpp>
 
 #include <cmath>
+#include <memory>
 
 namespace phynity::app::scenarios
 {
@@ -141,6 +144,116 @@ void HighDrag::setup(PhysicsContext &context)
     // Spawn particles with initial velocity in a viscous medium
     context.spawn_particle(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(20.0f, 0.0f, 0.0f), 1.0f);
     context.spawn_particle(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(-20.0f, 0.0f, 0.0f), 1.0f);
+}
+
+// ============================================================================
+// Rigid Body Scenarios
+// ============================================================================
+
+void BoxStacking::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.clear_bodies();
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+    context.set_drag(0.0f);
+
+    auto &system = context.rigid_body_system();
+
+    // Ground (static box)
+    auto ground_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(10.0f, 0.5f, 10.0f));
+    system.spawn_body(Vec3f(0.0f, -1.0f, 0.0f), Quatf(), ground_shape, 0.0f);
+
+    // Tower of boxes
+    auto box_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+    const int num_boxes = 5;
+    const float box_height = 1.1f;
+
+    for (int i = 0; i < num_boxes; ++i)
+    {
+        float y = 0.5f + static_cast<float>(i) * box_height;
+        system.spawn_body(Vec3f(0.0f, y, 0.0f), Quatf(), box_shape, 1.0f);
+    }
+}
+
+void TowerTopple::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.clear_bodies();
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+    context.set_drag(0.0f);
+
+    auto &system = context.rigid_body_system();
+
+    // Ground
+    auto ground_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(10.0f, 0.5f, 10.0f));
+    system.spawn_body(Vec3f(0.0f, -1.0f, 0.0f), Quatf(), ground_shape, 0.0f);
+
+    // Tower of boxes
+    auto box_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(0.5f, 0.5f, 0.5f));
+    const int num_boxes = 5;
+    const float box_height = 1.1f;
+
+    for (int i = 0; i < num_boxes; ++i)
+    {
+        float y = 0.5f + static_cast<float>(i) * box_height;
+        system.spawn_body(Vec3f(0.0f, y, 0.0f), Quatf(), box_shape, 1.0f);
+    }
+
+    elapsed_ = 0.0f;
+    impulse_applied_ = false;
+}
+
+void TowerTopple::step_callback(PhysicsContext &context, float dt)
+{
+    elapsed_ += dt;
+
+    // Apply impulse after 2 seconds of settling
+    if (!impulse_applied_ && elapsed_ >= 2.0f)
+    {
+        auto *top_body = context.rigid_body_system().get_body(5); // Body IDs: 0=ground, 1-5=boxes
+        if (top_body != nullptr)
+        {
+            Vec3f impulse = Vec3f(10.0f, 0.0f, 0.0f);
+            top_body->velocity += impulse * top_body->inv_mass;
+        }
+        impulse_applied_ = true;
+    }
+}
+
+void HingeDoor::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.clear_bodies();
+    context.set_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+    context.set_drag(0.0f);
+
+    auto &system = context.rigid_body_system();
+
+    // Frame (static)
+    auto frame_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(2.0f, 3.0f, 0.1f));
+    system.spawn_body(Vec3f(0.0f, 0.0f, 0.0f), Quatf(), frame_shape, 0.0f);
+
+    // Door (dynamic)
+    auto door_shape = std::make_shared<phynity::physics::shapes::BoxShape>(Vec3f(0.05f, 3.0f, 1.0f));
+    auto door_id = system.spawn_body(Vec3f(1.0f, 0.0f, 0.0f), Quatf(), door_shape, 5.0f);
+
+    auto *frame_body = system.get_body(0);
+    auto *door_body = system.get_body(door_id);
+
+    // Hinge constraint at door pivot
+    system.add_constraint(std::make_unique<phynity::physics::constraints::HingeJoint>(
+        frame_body,
+        door_body,
+        Vec3f(0.0f, 1.5f, 0.0f),  // Pivot on frame
+        Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
+        Vec3f(0.0f, 1.0f, 0.0f)    // Hinge axis (vertical)
+        ));
+
+    // Apply initial spin
+    if (door_body != nullptr)
+    {
+        door_body->angular_velocity = Vec3f(0.0f, 2.0f, 0.0f);
+    }
 }
 
 } // namespace phynity::app::scenarios

@@ -10,6 +10,7 @@
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/material.hpp>
 #include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 
 #include <memory>
 
@@ -25,6 +26,7 @@ using phynity::physics::ForceField;
 using phynity::physics::GravityField;
 using phynity::physics::Material;
 using phynity::physics::ParticleSystem;
+using phynity::physics::RigidBodySystem;
 using phynity::physics::TimestepController;
 using phynity::physics::constants::EARTH_GRAVITY;
 
@@ -47,9 +49,23 @@ public:
         bool record_schedule = false; ///< Record task execution schedule
         std::string record_schedule_path; ///< Path to save recorded schedule
         std::string replay_schedule_path; ///< If non-empty, replay from this file
+        RigidBodySystem::Config rigid_body_config{}; ///< Rigid body system configuration
 
         /// Default constructor initializes all fields to defaults above
         Config() = default;
+    };
+
+    /// Unified diagnostics aggregating both particle and rigid body systems
+    struct Diagnostics
+    {
+        size_t particle_count = 0;
+        size_t body_count = 0;
+        size_t constraint_count = 0;
+        float total_kinetic_energy = 0.0f;
+        float total_linear_ke = 0.0f;
+        float total_angular_ke = 0.0f;
+        Vec3f total_momentum = Vec3f(0.0f);
+        Vec3f total_angular_momentum = Vec3f(0.0f);
     };
 
     /// Constructor with default or custom configuration
@@ -108,27 +124,54 @@ public:
     }
 
     // ========================================================================
+    // Rigid Body Management (delegates to RigidBodySystem)
+    // ========================================================================
+
+    /// Spawn a new rigid body
+    phynity::physics::RigidBodyID spawn_body(const Vec3f &position,
+                                              const phynity::math::quaternions::Quatf &orientation,
+                                              std::shared_ptr<phynity::physics::shapes::Shape> shape,
+                                              float mass = 1.0f,
+                                              const Material &material = Material{});
+
+    /// Clear all rigid bodies
+    void clear_bodies();
+
+    /// Get the number of active rigid bodies
+    size_t body_count() const;
+
+    /// Get direct access to the rigid body system
+    RigidBodySystem &rigid_body_system()
+    {
+        return rigid_body_system_;
+    }
+    const RigidBodySystem &rigid_body_system() const
+    {
+        return rigid_body_system_;
+    }
+
+    // ========================================================================
     // Force Field Management
     // ========================================================================
 
-    /// Set gravity acceleration
+    /// Set gravity acceleration (applies to both particle and rigid body systems)
     void set_gravity(const Vec3f &gravity);
 
-    /// Set air drag coefficient
+    /// Set air drag coefficient (particle system only)
     void set_drag(float drag_coefficient);
 
-    /// Clear all force fields
+    /// Clear all force fields (both systems)
     void clear_force_fields();
 
-    /// Get the number of active force fields
+    /// Get the number of active force fields (particle system)
     size_t force_field_count() const;
 
     // ========================================================================
     // Diagnostics
     // ========================================================================
 
-    /// Get current system diagnostics (energy, momentum, particle count)
-    ParticleSystem::Diagnostics diagnostics() const;
+    /// Get unified diagnostics aggregating both particle and rigid body systems
+    Diagnostics diagnostics() const;
 
     /// Get timestep controller statistics
     const TimestepController::Statistics &timestep_statistics() const;
@@ -152,13 +195,14 @@ public:
 private:
     Config config_;
     ParticleSystem particle_system_;
+    RigidBodySystem rigid_body_system_;
     TimestepController timestep_controller_;
     JobSystem job_system_;
     std::unique_ptr<phynity::jobs::TaskExecutor> task_executor_;
     std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
     std::unique_ptr<phynity::jobs::ScheduleReplayer> schedule_replayer_;
 
-    /// Initialize force fields based on configuration
+    /// Initialize force fields based on configuration (both systems)
     void initialize_force_fields();
 
     /// Save recorded schedule to disk (called by destructor if recording)

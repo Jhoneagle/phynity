@@ -2,11 +2,15 @@
 
 #include "physics_context.hpp"
 
+#include <core/physics/shapes/box.hpp>
+#include <core/physics/shapes/sphere.hpp>
+
 #include <string>
 
 namespace phynity::app::scenarios
 {
 
+using phynity::math::quaternions::Quatf;
 using phynity::math::vectors::Vec3f;
 using phynity::physics::Material;
 
@@ -187,6 +191,66 @@ public:
     const char *description() const override
     {
         return "Particles in viscous medium with high drag coefficient";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
+// ============================================================================
+// Rigid Body Scenario Implementations
+// ============================================================================
+
+/// Tower of boxes settling under gravity
+class BoxStacking : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Box Stacking";
+    }
+
+    const char *description() const override
+    {
+        return "Tower of rigid body boxes settling under gravity";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
+/// Tower with impulse applied to cause toppling
+class TowerTopple : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Tower Topple";
+    }
+
+    const char *description() const override
+    {
+        return "Box tower settling then hit by horizontal impulse";
+    }
+
+    void setup(PhysicsContext &context) override;
+    void step_callback(PhysicsContext &context, float dt) override;
+
+private:
+    float elapsed_ = 0.0f;
+    bool impulse_applied_ = false;
+};
+
+/// Revolving door with hinge constraint
+class HingeDoor : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Hinge Door";
+    }
+
+    const char *description() const override
+    {
+        return "Door swinging on a hinge constraint with initial angular velocity";
     }
 
     void setup(PhysicsContext &context) override;

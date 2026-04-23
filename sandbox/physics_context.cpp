@@ -13,6 +13,7 @@ PhysicsContext::PhysicsContext() : PhysicsContext(Config())
 
 PhysicsContext::PhysicsContext(const Config &config)
     : config_(config),
+      rigid_body_system_(config.rigid_body_config),
       timestep_controller_(1.0f / config.target_fps,
                            config.max_timestep,
                            config.use_determinism ? TimestepController::OverflowMode::SUBDIVIDE
@@ -69,11 +70,13 @@ void PhysicsContext::save_schedule()
 void PhysicsContext::initialize_force_fields()
 {
     particle_system_.clear_force_fields();
+    rigid_body_system_.clear_force_fields();
 
-    // Add gravity field
+    // Add gravity field to both systems
     particle_system_.add_force_field(std::make_unique<GravityField>(config_.gravity));
+    rigid_body_system_.add_force_field(std::make_unique<GravityField>(config_.gravity));
 
-    // Add drag field if configured
+    // Add drag field if configured (particle system only)
     if (config_.air_drag > 0.0f)
     {
         particle_system_.add_force_field(std::make_unique<DragField>(config_.air_drag));
@@ -88,6 +91,7 @@ void PhysicsContext::update(float delta_time)
     while ((dt = timestep_controller_.step()) > 0.0f)
     {
         particle_system_.update(dt);
+        rigid_body_system_.update(dt);
     }
 }
 
@@ -96,6 +100,7 @@ void PhysicsContext::step_deterministic()
     // Manually perform one physics step
     float dt = 1.0f / config_.target_fps;
     particle_system_.update(dt);
+    rigid_body_system_.update(dt);
 }
 
 void PhysicsContext::reset_accumulator()
@@ -130,6 +135,25 @@ size_t PhysicsContext::particle_count() const
     return particle_system_.particleCount();
 }
 
+phynity::physics::RigidBodyID PhysicsContext::spawn_body(const Vec3f &position,
+                                                         const phynity::math::quaternions::Quatf &orientation,
+                                                         std::shared_ptr<phynity::physics::shapes::Shape> shape,
+                                                         float mass,
+                                                         const Material &material)
+{
+    return rigid_body_system_.spawn_body(position, orientation, std::move(shape), mass, material);
+}
+
+void PhysicsContext::clear_bodies()
+{
+    rigid_body_system_.clear_bodies();
+}
+
+size_t PhysicsContext::body_count() const
+{
+    return rigid_body_system_.body_count();
+}
+
 void PhysicsContext::set_gravity(const Vec3f &gravity)
 {
     config_.gravity = gravity;
@@ -145,6 +169,7 @@ void PhysicsContext::set_drag(float drag_coefficient)
 void PhysicsContext::clear_force_fields()
 {
     particle_system_.clear_force_fields();
+    rigid_body_system_.clear_force_fields();
 }
 
 size_t PhysicsContext::force_field_count() const
@@ -152,9 +177,27 @@ size_t PhysicsContext::force_field_count() const
     return particle_system_.force_field_count();
 }
 
-ParticleSystem::Diagnostics PhysicsContext::diagnostics() const
+PhysicsContext::Diagnostics PhysicsContext::diagnostics() const
 {
-    return particle_system_.compute_diagnostics();
+    Diagnostics diag;
+
+    // Particle system diagnostics
+    const auto particle_diag = particle_system_.compute_diagnostics();
+    diag.particle_count = particle_diag.particle_count;
+    diag.total_kinetic_energy += particle_diag.total_kinetic_energy;
+    diag.total_momentum += particle_diag.total_momentum;
+
+    // Rigid body system diagnostics
+    const auto &rb_diag = rigid_body_system_.get_diagnostics();
+    diag.body_count = rb_diag.body_count;
+    diag.constraint_count = rigid_body_system_.get_constraints().size();
+    diag.total_linear_ke = rb_diag.total_linear_ke;
+    diag.total_angular_ke = rb_diag.total_angular_ke;
+    diag.total_kinetic_energy += rb_diag.total_kinetic_energy;
+    diag.total_momentum += rb_diag.total_momentum;
+    diag.total_angular_momentum = rb_diag.total_angular_momentum;
+
+    return diag;
 }
 
 const TimestepController::Statistics &PhysicsContext::timestep_statistics() const
@@ -170,9 +213,21 @@ void PhysicsContext::print_diagnostics() const
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "=== Physics Diagnostics ===\n";
     std::cout << "Particles: " << diag.particle_count << '\n';
+    std::cout << "Rigid Bodies: " << diag.body_count << '\n';
+    std::cout << "Constraints: " << diag.constraint_count << '\n';
     std::cout << "Kinetic Energy: " << diag.total_kinetic_energy << " J\n";
+    if (diag.body_count > 0)
+    {
+        std::cout << "  Linear KE: " << diag.total_linear_ke << " J\n";
+        std::cout << "  Angular KE: " << diag.total_angular_ke << " J\n";
+    }
     std::cout << "Momentum: [" << diag.total_momentum.x << ", " << diag.total_momentum.y << ", "
               << diag.total_momentum.z << "]\n";
+    if (diag.body_count > 0)
+    {
+        std::cout << "Angular Momentum: [" << diag.total_angular_momentum.x << ", "
+                  << diag.total_angular_momentum.y << ", " << diag.total_angular_momentum.z << "]\n";
+    }
     std::cout << "Physics Steps: " << ts_stats.total_steps << '\n';
     std::cout << "Accumulated Time: " << ts_stats.accumulated_time << "s\n";
     std::cout << "Max Accumulated: " << ts_stats.max_accumulated_time << "s\n";
