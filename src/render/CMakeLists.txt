@@ -11,6 +11,8 @@ if(PHYNITY_BUILD_RENDER)
 		camera.cpp
 		scene_renderer.cpp
 		picking.cpp
+		body_inspector.cpp
+		constraint_inspector.cpp
 	)
 	add_library(phynity::render ALIAS phynity_render)
 	set_target_properties(phynity_render PROPERTIES EXPORT_NAME render)

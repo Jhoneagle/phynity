@@ -1,5 +1,7 @@
 #include "sandbox_app.hpp"
 
+#include <core/math/quaternions/quat_conversions.hpp>
+#include <core/physics/dynamics/inertia.hpp>
 #include <core/physics/shapes/box.hpp>
 #include <core/physics/shapes/capsule.hpp>
 #include <core/physics/shapes/sphere.hpp>
@@ -64,6 +66,10 @@ void SandboxApp::load_scenario(int index)
     current_scenario_ = scenario_registry_[static_cast<size_t>(index)].create();
     current_scenario_->setup(physics_context_);
     active_scenario_ = index;
+
+    // Clear selection and inspectors
+    selected_body_id_.reset();
+    open_body_inspectors_.clear();
 }
 
 void SandboxApp::run()
@@ -145,6 +151,7 @@ void SandboxApp::run()
 void SandboxApp::draw_ui()
 {
     draw_scenario_panel();
+    draw_inspectors();
 
     // Timeline scrubber
     if (current_scenario_)
@@ -246,6 +253,114 @@ void SandboxApp::draw_scenario_panel()
     ImGui::End();
 }
 
+void SandboxApp::draw_inspectors()
+{
+    // Draw body inspectors for each open body
+    std::vector<int> to_close;
+    for (int body_id : open_body_inspectors_)
+    {
+        auto *rb = physics_context_.rigid_body_system().get_body(body_id);
+        if (rb == nullptr)
+        {
+            to_close.push_back(body_id);
+            continue;
+        }
+
+        render::BodyInspectorData data;
+        data.id = rb->id;
+        data.active = rb->active;
+        data.lifetime = rb->lifetime;
+        data.position = rb->position;
+        data.orientation = rb->orientation;
+
+        const float rad_to_deg = 180.0f / 3.14159265f;
+        auto euler = phynity::math::quaternions::toEulerAngles(rb->orientation);
+        data.euler_angles = Vec3f(euler.x * rad_to_deg, euler.y * rad_to_deg, euler.z * rad_to_deg);
+
+        data.velocity = rb->velocity;
+        data.force_accumulator = rb->force_accumulator;
+        data.mass = rb->get_mass();
+        data.inv_mass = rb->inv_mass;
+        data.angular_velocity = rb->angular_velocity;
+        data.torque_accumulator = rb->torque_accumulator;
+
+        if (rb->shape)
+        {
+            data.shape_type = static_cast<int>(rb->shape->get_type());
+            switch (rb->shape->get_type())
+            {
+                case phynity::physics::shapes::ShapeType::Sphere:
+                    data.shape_dimensions =
+                        Vec3f(static_cast<const phynity::physics::shapes::SphereShape *>(rb->shape.get())->radius,
+                              0.0f, 0.0f);
+                    break;
+                case phynity::physics::shapes::ShapeType::Box:
+                    data.shape_dimensions =
+                        static_cast<const phynity::physics::shapes::BoxShape *>(rb->shape.get())->half_extents;
+                    break;
+                case phynity::physics::shapes::ShapeType::Capsule:
+                {
+                    const auto *cap = static_cast<const phynity::physics::shapes::CapsuleShape *>(rb->shape.get());
+                    data.shape_dimensions = Vec3f(cap->radius, cap->half_height, 0.0f);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        data.bounding_radius = rb->collision_radius;
+
+        data.restitution = rb->material.restitution;
+        data.friction = rb->material.friction;
+        data.linear_damping = rb->material.linear_damping;
+        data.angular_damping = rb->material.angular_damping;
+
+        float linear_ke = 0.5f * rb->get_mass() * rb->velocity.squaredLength();
+        float angular_ke = phynity::physics::inertia::compute_angular_kinetic_energy(
+            rb->inertia_tensor, rb->angular_velocity);
+        data.linear_ke = linear_ke;
+        data.angular_ke = angular_ke;
+        data.total_ke = linear_ke + angular_ke;
+        data.linear_momentum = rb->momentum();
+        data.angular_momentum = rb->angular_momentum();
+
+        bool open = true;
+        auto edit = body_inspector_.draw(data, physics_context_.is_paused(), open);
+
+        if (!open)
+        {
+            to_close.push_back(body_id);
+            continue;
+        }
+
+        // Apply edits when paused
+        if (physics_context_.is_paused())
+        {
+            if (edit.new_position.has_value())
+            {
+                rb->position = edit.new_position.value();
+            }
+            if (edit.new_velocity.has_value())
+            {
+                rb->velocity = edit.new_velocity.value();
+            }
+            if (edit.new_angular_velocity.has_value())
+            {
+                rb->angular_velocity = edit.new_angular_velocity.value();
+            }
+            if (edit.new_mass.has_value())
+            {
+                rb->set_mass(edit.new_mass.value());
+            }
+        }
+    }
+
+    for (int id : to_close)
+    {
+        open_body_inspectors_.erase(id);
+    }
+}
+
 render::SceneRenderer::State SandboxApp::build_scene_state() const
 {
     render::SceneRenderer::State state;
@@ -339,6 +454,7 @@ void SandboxApp::handle_picking(int fb_width, int fb_height)
         if (result.has_value())
         {
             selected_body_id_ = result->body_id;
+            open_body_inspectors_.insert(result->body_id);
         }
         else
         {
