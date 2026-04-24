@@ -18,6 +18,7 @@ namespace fs = std::filesystem;
 
 namespace
 {
+#ifdef GOLDEN_CAPTURE_MODE
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 
@@ -30,7 +31,6 @@ std::string get_golden_dir()
 #endif
 }
 
-#ifdef GOLDEN_CAPTURE_MODE
 std::string trim_wrapping_quotes(std::string value)
 {
     if (value.size() >= 2 && value.front() == '"' && value.back() == '"')
