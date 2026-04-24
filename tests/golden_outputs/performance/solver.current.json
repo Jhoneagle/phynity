@@ -1,6 +1,6 @@
 {
   "scenario": "solver",
-  "milliseconds": 7.366000,
+  "milliseconds": 7.743000,
   "iterations": 200,
   "workload": 64,
   "notes": "Constraint solver with synthetic contacts",

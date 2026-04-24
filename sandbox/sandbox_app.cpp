@@ -6,10 +6,9 @@
 #include <core/physics/shapes/capsule.hpp>
 #include <core/physics/shapes/sphere.hpp>
 
-#include <imgui.h>
-
 #include <algorithm>
 #include <cstring>
+#include <imgui.h>
 
 namespace phynity::app
 {
@@ -23,32 +22,21 @@ SandboxApp::SandboxApp()
 void SandboxApp::register_scenarios()
 {
     // Particle scenarios
-    scenario_registry_.push_back(
-        {"Gravity Well", [] { return std::make_unique<scenarios::GravityWell>(); }});
-    scenario_registry_.push_back(
-        {"Particle Spread", [] { return std::make_unique<scenarios::ParticleSpread>(); }});
-    scenario_registry_.push_back(
-        {"Projectile Motion", [] { return std::make_unique<scenarios::ProjectileMotion>(); }});
-    scenario_registry_.push_back(
-        {"Drag Interaction", [] { return std::make_unique<scenarios::DragInteraction>(); }});
-    scenario_registry_.push_back(
-        {"Orbit Stability", [] { return std::make_unique<scenarios::OrbitStability>(); }});
+    scenario_registry_.push_back({"Gravity Well", [] { return std::make_unique<scenarios::GravityWell>(); }});
+    scenario_registry_.push_back({"Particle Spread", [] { return std::make_unique<scenarios::ParticleSpread>(); }});
+    scenario_registry_.push_back({"Projectile Motion", [] { return std::make_unique<scenarios::ProjectileMotion>(); }});
+    scenario_registry_.push_back({"Drag Interaction", [] { return std::make_unique<scenarios::DragInteraction>(); }});
+    scenario_registry_.push_back({"Orbit Stability", [] { return std::make_unique<scenarios::OrbitStability>(); }});
     scenario_registry_.push_back(
         {"Multi-Particle Collision", [] { return std::make_unique<scenarios::MultiParticleCollision>(); }});
-    scenario_registry_.push_back(
-        {"Low Gravity", [] { return std::make_unique<scenarios::LowGravity>(); }});
-    scenario_registry_.push_back(
-        {"Zero Gravity", [] { return std::make_unique<scenarios::ZeroGravity>(); }});
-    scenario_registry_.push_back(
-        {"High Drag", [] { return std::make_unique<scenarios::HighDrag>(); }});
+    scenario_registry_.push_back({"Low Gravity", [] { return std::make_unique<scenarios::LowGravity>(); }});
+    scenario_registry_.push_back({"Zero Gravity", [] { return std::make_unique<scenarios::ZeroGravity>(); }});
+    scenario_registry_.push_back({"High Drag", [] { return std::make_unique<scenarios::HighDrag>(); }});
 
     // Rigid body scenarios
-    scenario_registry_.push_back(
-        {"Box Stacking", [] { return std::make_unique<scenarios::BoxStacking>(); }});
-    scenario_registry_.push_back(
-        {"Tower Topple", [] { return std::make_unique<scenarios::TowerTopple>(); }});
-    scenario_registry_.push_back(
-        {"Hinge Door", [] { return std::make_unique<scenarios::HingeDoor>(); }});
+    scenario_registry_.push_back({"Box Stacking", [] { return std::make_unique<scenarios::BoxStacking>(); }});
+    scenario_registry_.push_back({"Tower Topple", [] { return std::make_unique<scenarios::TowerTopple>(); }});
+    scenario_registry_.push_back({"Hinge Door", [] { return std::make_unique<scenarios::HingeDoor>(); }});
 }
 
 void SandboxApp::load_scenario(int index)
@@ -244,9 +232,9 @@ void SandboxApp::draw_scenario_panel()
         ImGui::Text("Constraints: %zu", diag.constraint_count);
         ImGui::Text("Total KE: %.3f J", static_cast<double>(diag.total_kinetic_energy));
         ImGui::Text("Momentum: [%.2f, %.2f, %.2f]",
-                     static_cast<double>(diag.total_momentum.x),
-                     static_cast<double>(diag.total_momentum.y),
-                     static_cast<double>(diag.total_momentum.z));
+                    static_cast<double>(diag.total_momentum.x),
+                    static_cast<double>(diag.total_momentum.y),
+                    static_cast<double>(diag.total_momentum.z));
     }
     else
     {
@@ -295,7 +283,8 @@ void SandboxApp::draw_inspectors()
                 case phynity::physics::shapes::ShapeType::Sphere:
                     data.shape_dimensions =
                         Vec3f(static_cast<const phynity::physics::shapes::SphereShape *>(rb->shape.get())->radius,
-                              0.0f, 0.0f);
+                              0.0f,
+                              0.0f);
                     break;
                 case phynity::physics::shapes::ShapeType::Box:
                     data.shape_dimensions =
@@ -319,8 +308,8 @@ void SandboxApp::draw_inspectors()
         data.angular_damping = rb->material.angular_damping;
 
         float linear_ke = 0.5f * rb->get_mass() * rb->velocity.squaredLength();
-        float angular_ke = phynity::physics::inertia::compute_angular_kinetic_energy(
-            rb->inertia_tensor, rb->angular_velocity);
+        float angular_ke =
+            phynity::physics::inertia::compute_angular_kinetic_energy(rb->inertia_tensor, rb->angular_velocity);
         data.linear_ke = linear_ke;
         data.angular_ke = angular_ke;
         data.total_ke = linear_ke + angular_ke;
@@ -385,10 +374,8 @@ render::SceneRenderer::State SandboxApp::build_scene_state() const
             {
                 case phynity::physics::shapes::ShapeType::Sphere:
                     vis.type = render::SceneRenderer::ShapeType::Sphere;
-                    vis.dimensions =
-                        Vec3f(static_cast<const phynity::physics::shapes::SphereShape *>(rb.shape.get())->radius,
-                              0.0f,
-                              0.0f);
+                    vis.dimensions = Vec3f(
+                        static_cast<const phynity::physics::shapes::SphereShape *>(rb.shape.get())->radius, 0.0f, 0.0f);
                     break;
                 case phynity::physics::shapes::ShapeType::Box:
                     vis.type = render::SceneRenderer::ShapeType::Box;
@@ -451,8 +438,7 @@ void SandboxApp::handle_picking(int fb_width, int fb_height)
     {
         ImVec2 mouse_pos = ImGui::GetMousePos();
         auto scene_state = build_scene_state();
-        auto result =
-            render::pick_body(camera_, mouse_pos.x, mouse_pos.y, fb_width, fb_height, scene_state);
+        auto result = render::pick_body(camera_, mouse_pos.x, mouse_pos.y, fb_width, fb_height, scene_state);
 
         if (result.has_value())
         {

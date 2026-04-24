@@ -43,7 +43,7 @@ public:
 
 private:
     std::vector<PhysicsSnapshot> buffer_;
-    size_t head_ = 0;  // Next write position
+    size_t head_ = 0; // Next write position
     size_t count_ = 0; // Number of valid entries
 };
 

@@ -59,11 +59,11 @@ float bounding_radius_for_body(const SceneRenderer::BodyVisual &body)
 } // namespace
 
 std::optional<PickResult> pick_body(const Camera &camera,
-                                     float screen_x,
-                                     float screen_y,
-                                     int viewport_width,
-                                     int viewport_height,
-                                     const SceneRenderer::State &state)
+                                    float screen_x,
+                                    float screen_y,
+                                    int viewport_width,
+                                    int viewport_height,
+                                    const SceneRenderer::State &state)
 {
     Vec3f ray_origin = camera.get_position();
     Vec3f ray_dir = camera.screen_to_ray(screen_x, screen_y, viewport_width, viewport_height);

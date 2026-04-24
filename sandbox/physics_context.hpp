@@ -178,10 +178,10 @@ public:
 
     /// Spawn a new rigid body
     phynity::physics::RigidBodyID spawn_body(const Vec3f &position,
-                                              const phynity::math::quaternions::Quatf &orientation,
-                                              std::shared_ptr<phynity::physics::shapes::Shape> shape,
-                                              float mass = 1.0f,
-                                              const Material &material = Material{});
+                                             const phynity::math::quaternions::Quatf &orientation,
+                                             std::shared_ptr<phynity::physics::shapes::Shape> shape,
+                                             float mass = 1.0f,
+                                             const Material &material = Material{});
 
     /// Clear all rigid bodies
     void clear_bodies();

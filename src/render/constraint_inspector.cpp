@@ -1,8 +1,7 @@
 #include "constraint_inspector.hpp"
 
-#include <imgui.h>
-
 #include <cstdio>
+#include <imgui.h>
 
 namespace phynity::render
 {

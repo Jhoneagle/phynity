@@ -3,9 +3,8 @@
 #include <core/math/quaternions/quat_conversions.hpp>
 
 #define GL_SILENCE_DEPRECATION
-#include <GLFW/glfw3.h>
-
 #include <cmath>
+#include <GLFW/glfw3.h>
 
 namespace phynity::render
 {
@@ -152,9 +151,18 @@ void SceneRenderer::draw_wireframe_box(const Vec3f &pos, const Quatf &orient, co
 
     // 12 edges
     static const int edges[][2] = {
-        {0, 1}, {2, 3}, {4, 5}, {6, 7}, // z-edges
-        {0, 2}, {1, 3}, {4, 6}, {5, 7}, // y-edges
-        {0, 4}, {1, 5}, {2, 6}, {3, 7}, // x-edges
+        {0, 1},
+        {2, 3},
+        {4, 5},
+        {6, 7}, // z-edges
+        {0, 2},
+        {1, 3},
+        {4, 6},
+        {5, 7}, // y-edges
+        {0, 4},
+        {1, 5},
+        {2, 6},
+        {3, 7}, // x-edges
     };
 
     glBegin(GL_LINES);

@@ -1,6 +1,6 @@
 {
   "scenario": "gjk",
-  "milliseconds": 1.944000,
+  "milliseconds": 1.987000,
   "iterations": 2000,
   "workload": 2,
   "notes": "GJK distance between convex shapes",

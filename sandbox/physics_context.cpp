@@ -307,8 +307,8 @@ void PhysicsContext::print_diagnostics() const
               << diag.total_momentum.z << "]\n";
     if (diag.body_count > 0)
     {
-        std::cout << "Angular Momentum: [" << diag.total_angular_momentum.x << ", "
-                  << diag.total_angular_momentum.y << ", " << diag.total_angular_momentum.z << "]\n";
+        std::cout << "Angular Momentum: [" << diag.total_angular_momentum.x << ", " << diag.total_angular_momentum.y
+                  << ", " << diag.total_angular_momentum.z << "]\n";
     }
     std::cout << "Physics Steps: " << ts_stats.total_steps << '\n';
     std::cout << "Accumulated Time: " << ts_stats.accumulated_time << "s\n";

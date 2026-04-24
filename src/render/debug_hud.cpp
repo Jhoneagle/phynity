@@ -30,9 +30,9 @@ void DebugHUD::draw_performance_panel(const State &state)
         ImGui::Text("FPS: %.1f", static_cast<double>(state.fps));
         ImGui::Text("Frame Time: %.2f ms", static_cast<double>(state.frame_time_ms));
         ImGui::Text("  Min: %.2f  Max: %.2f  Avg: %.2f ms",
-                     static_cast<double>(state.frame_time_min_ms),
-                     static_cast<double>(state.frame_time_max_ms),
-                     static_cast<double>(state.frame_time_avg_ms));
+                    static_cast<double>(state.frame_time_min_ms),
+                    static_cast<double>(state.frame_time_max_ms),
+                    static_cast<double>(state.frame_time_avg_ms));
         ImGui::Text("Physics Steps: %llu", static_cast<unsigned long long>(state.physics_step_count));
 
         if (state.zone_count > 0)
@@ -98,15 +98,15 @@ void DebugHUD::draw_physics_panel(const State &state)
 
         ImGui::Separator();
         ImGui::Text("Momentum: [%.2f, %.2f, %.2f]",
-                     static_cast<double>(state.total_momentum_x),
-                     static_cast<double>(state.total_momentum_y),
-                     static_cast<double>(state.total_momentum_z));
+                    static_cast<double>(state.total_momentum_x),
+                    static_cast<double>(state.total_momentum_y),
+                    static_cast<double>(state.total_momentum_z));
         if (state.body_count > 0)
         {
             ImGui::Text("Angular Mom: [%.2f, %.2f, %.2f]",
-                         static_cast<double>(state.total_angular_momentum_x),
-                         static_cast<double>(state.total_angular_momentum_y),
-                         static_cast<double>(state.total_angular_momentum_z));
+                        static_cast<double>(state.total_angular_momentum_x),
+                        static_cast<double>(state.total_angular_momentum_y),
+                        static_cast<double>(state.total_angular_momentum_z));
         }
     }
     ImGui::End();

@@ -13,8 +13,8 @@ void HelpOverlay::draw()
     }
 
     const ImVec2 viewport_size = ImGui::GetMainViewport()->Size;
-    ImGui::SetNextWindowPos(ImVec2(viewport_size.x * 0.5f, viewport_size.y * 0.5f), ImGuiCond_Appearing,
-                            ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(
+        ImVec2(viewport_size.x * 0.5f, viewport_size.y * 0.5f), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(360, 380), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("Keyboard Shortcuts", &visible_))

@@ -1,13 +1,13 @@
 {
   "scenario": "complex_deterministic_scene",
-  "milliseconds": 258.247000,
+  "milliseconds": 259.647000,
   "iterations": 100,
   "workload": 60,
   "notes": "Full scene simulation (10 rigid bodies + 50 particles) with periodic snapshots",
-  "samples_ms": [17.202000, 17.681000, 17.438000, 17.250000, 17.243000, 17.393000, 17.270000, 17.236000, 17.202000, 17.280000, 17.133000, 16.983000, 17.017000, 16.970000, 16.949000],
-  "median_ms": 17.236000,
-  "mean_ms": 17.216467,
-  "stddev_ms": 0.189580,
-  "peak_rss_kb": 6540,
+  "samples_ms": [17.116000, 17.007000, 17.082000, 17.974000, 17.238000, 16.986000, 16.933000, 17.409000, 17.242000, 17.138000, 17.194000, 17.271000, 17.648000, 17.577000, 17.832000],
+  "median_ms": 17.238000,
+  "mean_ms": 17.309800,
+  "stddev_ms": 0.304589,
+  "peak_rss_kb": 6536,
   "allocator_delta_bytes": 13288
 }

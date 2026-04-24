@@ -241,13 +241,13 @@ void HingeDoor::setup(PhysicsContext &context)
     auto *door_body = system.get_body(door_id);
 
     // Hinge constraint at door pivot
-    system.add_constraint(std::make_unique<phynity::physics::constraints::HingeJoint>(
-        frame_body,
-        door_body,
-        Vec3f(0.0f, 1.5f, 0.0f),  // Pivot on frame
-        Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
-        Vec3f(0.0f, 1.0f, 0.0f)    // Hinge axis (vertical)
-        ));
+    system.add_constraint(
+        std::make_unique<phynity::physics::constraints::HingeJoint>(frame_body,
+                                                                    door_body,
+                                                                    Vec3f(0.0f, 1.5f, 0.0f), // Pivot on frame
+                                                                    Vec3f(-0.05f, 1.5f, 0.0f), // Pivot on door
+                                                                    Vec3f(0.0f, 1.0f, 0.0f) // Hinge axis (vertical)
+                                                                    ));
 
     // Apply initial spin
     if (door_body != nullptr)

@@ -39,9 +39,9 @@ public:
 private:
     Vec3f target_ = Vec3f(0.0f, 2.0f, 0.0f);
     float distance_ = 15.0f;
-    float yaw_ = 0.3f;   // radians
-    float pitch_ = 0.4f;  // radians
-    float fov_ = 60.0f;   // degrees
+    float yaw_ = 0.3f; // radians
+    float pitch_ = 0.4f; // radians
+    float fov_ = 60.0f; // degrees
     float near_ = 0.1f;
     float far_ = 500.0f;
 

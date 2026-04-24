@@ -1,8 +1,7 @@
 #include "body_inspector.hpp"
 
-#include <imgui.h>
-
 #include <cstdio>
+#include <imgui.h>
 
 namespace phynity::render
 {
@@ -40,8 +39,8 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         return edit;
     }
 
-    ImGui::Text("ID: %d  Active: %s  Lifetime: %.2f", data.id, data.active ? "yes" : "no",
-                static_cast<double>(data.lifetime));
+    ImGui::Text(
+        "ID: %d  Active: %s  Lifetime: %.2f", data.id, data.active ? "yes" : "no", static_cast<double>(data.lifetime));
 
     // Transform section
     if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
@@ -57,20 +56,20 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         else
         {
             ImGui::Text("Position: [%.3f, %.3f, %.3f]",
-                         static_cast<double>(data.position.x),
-                         static_cast<double>(data.position.y),
-                         static_cast<double>(data.position.z));
+                        static_cast<double>(data.position.x),
+                        static_cast<double>(data.position.y),
+                        static_cast<double>(data.position.z));
         }
 
         ImGui::Text("Orientation: [%.3f, %.3f, %.3f, %.3f]",
-                     static_cast<double>(data.orientation.w),
-                     static_cast<double>(data.orientation.x),
-                     static_cast<double>(data.orientation.y),
-                     static_cast<double>(data.orientation.z));
+                    static_cast<double>(data.orientation.w),
+                    static_cast<double>(data.orientation.x),
+                    static_cast<double>(data.orientation.y),
+                    static_cast<double>(data.orientation.z));
         ImGui::Text("Euler (deg): [%.1f, %.1f, %.1f]",
-                     static_cast<double>(data.euler_angles.x),
-                     static_cast<double>(data.euler_angles.y),
-                     static_cast<double>(data.euler_angles.z));
+                    static_cast<double>(data.euler_angles.x),
+                    static_cast<double>(data.euler_angles.y),
+                    static_cast<double>(data.euler_angles.z));
     }
 
     // Dynamics section
@@ -87,15 +86,15 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         else
         {
             ImGui::Text("Velocity: [%.3f, %.3f, %.3f]",
-                         static_cast<double>(data.velocity.x),
-                         static_cast<double>(data.velocity.y),
-                         static_cast<double>(data.velocity.z));
+                        static_cast<double>(data.velocity.x),
+                        static_cast<double>(data.velocity.y),
+                        static_cast<double>(data.velocity.z));
         }
 
         ImGui::Text("Force: [%.3f, %.3f, %.3f]",
-                     static_cast<double>(data.force_accumulator.x),
-                     static_cast<double>(data.force_accumulator.y),
-                     static_cast<double>(data.force_accumulator.z));
+                    static_cast<double>(data.force_accumulator.x),
+                    static_cast<double>(data.force_accumulator.y),
+                    static_cast<double>(data.force_accumulator.z));
 
         float mass = data.mass;
         if (is_paused && data.mass > 0.0f)
@@ -107,8 +106,8 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         }
         else
         {
-            ImGui::Text("Mass: %.3f kg  (inv: %.6f)", static_cast<double>(data.mass),
-                         static_cast<double>(data.inv_mass));
+            ImGui::Text(
+                "Mass: %.3f kg  (inv: %.6f)", static_cast<double>(data.mass), static_cast<double>(data.inv_mass));
         }
 
         ImGui::Separator();
@@ -124,15 +123,15 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         else
         {
             ImGui::Text("Ang Velocity: [%.3f, %.3f, %.3f]",
-                         static_cast<double>(data.angular_velocity.x),
-                         static_cast<double>(data.angular_velocity.y),
-                         static_cast<double>(data.angular_velocity.z));
+                        static_cast<double>(data.angular_velocity.x),
+                        static_cast<double>(data.angular_velocity.y),
+                        static_cast<double>(data.angular_velocity.z));
         }
 
         ImGui::Text("Torque: [%.3f, %.3f, %.3f]",
-                     static_cast<double>(data.torque_accumulator.x),
-                     static_cast<double>(data.torque_accumulator.y),
-                     static_cast<double>(data.torque_accumulator.z));
+                    static_cast<double>(data.torque_accumulator.x),
+                    static_cast<double>(data.torque_accumulator.y),
+                    static_cast<double>(data.torque_accumulator.z));
     }
 
     // Shape section
@@ -140,9 +139,9 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
     {
         ImGui::Text("Type: %s", shape_type_name(data.shape_type));
         ImGui::Text("Dimensions: [%.3f, %.3f, %.3f]",
-                     static_cast<double>(data.shape_dimensions.x),
-                     static_cast<double>(data.shape_dimensions.y),
-                     static_cast<double>(data.shape_dimensions.z));
+                    static_cast<double>(data.shape_dimensions.x),
+                    static_cast<double>(data.shape_dimensions.y),
+                    static_cast<double>(data.shape_dimensions.z));
         ImGui::Text("Bounding Radius: %.3f", static_cast<double>(data.bounding_radius));
     }
 
@@ -162,13 +161,13 @@ BodyInspectorEdit BodyInspector::draw(const BodyInspectorData &data, bool is_pau
         ImGui::Text("Angular KE: %.4f J", static_cast<double>(data.angular_ke));
         ImGui::Text("Total KE: %.4f J", static_cast<double>(data.total_ke));
         ImGui::Text("Lin Momentum: [%.3f, %.3f, %.3f]",
-                     static_cast<double>(data.linear_momentum.x),
-                     static_cast<double>(data.linear_momentum.y),
-                     static_cast<double>(data.linear_momentum.z));
+                    static_cast<double>(data.linear_momentum.x),
+                    static_cast<double>(data.linear_momentum.y),
+                    static_cast<double>(data.linear_momentum.z));
         ImGui::Text("Ang Momentum: [%.3f, %.3f, %.3f]",
-                     static_cast<double>(data.angular_momentum.x),
-                     static_cast<double>(data.angular_momentum.y),
-                     static_cast<double>(data.angular_momentum.z));
+                    static_cast<double>(data.angular_momentum.x),
+                    static_cast<double>(data.angular_momentum.y),
+                    static_cast<double>(data.angular_momentum.z));
     }
 
     ImGui::End();

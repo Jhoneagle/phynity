@@ -39,9 +39,8 @@ std::array<float, 16> Camera::view_matrix() const
     Vec3f up(0.0f, 1.0f, 0.0f);
 
     // right = forward x up
-    Vec3f right(forward.y * up.z - forward.z * up.y,
-                forward.z * up.x - forward.x * up.z,
-                forward.x * up.y - forward.y * up.x);
+    Vec3f right(
+        forward.y * up.z - forward.z * up.y, forward.z * up.x - forward.x * up.z, forward.x * up.y - forward.y * up.x);
     float rlen = std::sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
     if (rlen > 0.0f)
     {
@@ -78,8 +77,8 @@ std::array<float, 16> Camera::view_matrix() const
 
 std::array<float, 16> Camera::projection_matrix(int viewport_width, int viewport_height) const
 {
-    float aspect = (viewport_height > 0) ? static_cast<float>(viewport_width) / static_cast<float>(viewport_height)
-                                         : 1.0f;
+    float aspect =
+        (viewport_height > 0) ? static_cast<float>(viewport_width) / static_cast<float>(viewport_height) : 1.0f;
     float fov_rad = fov_ * 3.14159265f / 180.0f;
     float f = 1.0f / std::tan(fov_rad * 0.5f);
 
@@ -159,8 +158,8 @@ Vec3f Camera::screen_to_ray(float screen_x, float screen_y, int viewport_width, 
     // Inverse projection: NDC -> view-space direction
     float fov_rad = fov_ * 3.14159265f / 180.0f;
     float f = 1.0f / std::tan(fov_rad * 0.5f);
-    float aspect = (viewport_height > 0) ? static_cast<float>(viewport_width) / static_cast<float>(viewport_height)
-                                         : 1.0f;
+    float aspect =
+        (viewport_height > 0) ? static_cast<float>(viewport_width) / static_cast<float>(viewport_height) : 1.0f;
 
     float view_x = ndc_x * aspect / f;
     float view_y = ndc_y / f;
@@ -190,9 +189,7 @@ Vec3f Camera::screen_to_ray(float screen_x, float screen_y, int viewport_width, 
         right.z /= rlen;
     }
 
-    Vec3f up(right.y * fwd.z - right.z * fwd.y,
-             right.z * fwd.x - right.x * fwd.z,
-             right.x * fwd.y - right.y * fwd.x);
+    Vec3f up(right.y * fwd.z - right.z * fwd.y, right.z * fwd.x - right.x * fwd.z, right.x * fwd.y - right.y * fwd.x);
 
     // Ray direction in world space
     Vec3f ray_dir(right.x * view_x + up.x * view_y + fwd.x * view_z,

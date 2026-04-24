@@ -1,6 +1,5 @@
-#include <core/serialization/simulation_timeline.hpp>
-
 #include <catch2/catch_test_macros.hpp>
+#include <core/serialization/simulation_timeline.hpp>
 
 using phynity::serialization::PhysicsSnapshot;
 using phynity::serialization::SimulationTimeline;
