@@ -19,6 +19,10 @@ target_compile_definitions(serialization_round_trip_test PRIVATE
 	GOLDEN_FILES_DIR=${GOLDEN_FILES_DIR_ABS}
 )
 
+target_compile_definitions(replay_round_trip_test PRIVATE
+	GOLDEN_FILES_DIR=${GOLDEN_FILES_DIR_ABS}
+)
+
 if(GOLDEN_CAPTURE_MODE)
 	target_compile_definitions(serialization_round_trip_test PRIVATE GOLDEN_CAPTURE_MODE)
 endif()

@@ -51,10 +51,11 @@ void SimulationTimeline::truncate(size_t new_size)
         return;
     }
 
-    // Move head back to just after the new_size-th element
+    const size_t old_count = count_;
+    const size_t oldest = (head_ + buffer_.size() - old_count) % buffer_.size();
+
     count_ = new_size;
-    size_t start = (head_ + buffer_.size() - count_) % buffer_.size();
-    head_ = (start + count_) % buffer_.size();
+    head_ = (oldest + count_) % buffer_.size();
 }
 
 } // namespace phynity::serialization

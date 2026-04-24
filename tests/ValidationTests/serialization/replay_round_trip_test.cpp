@@ -5,9 +5,9 @@
 #include <core/serialization/replay_writer.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
 
-#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <vector>
 
 using namespace phynity::serialization;
@@ -18,6 +18,18 @@ namespace fs = std::filesystem;
 
 namespace
 {
+#define STRINGIFY(x) #x
+#define STRINGIFY_EXPANDED(x) STRINGIFY(x)
+
+std::string get_golden_dir()
+{
+#ifdef GOLDEN_FILES_DIR
+    return STRINGIFY_EXPANDED(GOLDEN_FILES_DIR);
+#else
+    return "tests/golden_outputs";
+#endif
+}
+
 #ifdef GOLDEN_CAPTURE_MODE
 std::string trim_wrapping_quotes(std::string value)
 {
@@ -170,11 +182,8 @@ TEST_CASE("Replay capture integration - particle system 60 frames", "[serializat
     fs::path replay_path = fixture.temp_dir / "particle_capture.replay";
 
 #ifdef GOLDEN_CAPTURE_MODE
-    if (const char *golden_root = std::getenv("GOLDEN_FILES_DIR"); golden_root != nullptr)
-    {
-        replay_path =
-            fs::path(trim_wrapping_quotes(golden_root)) / "serialization" / "replays" / "determinism_particle.replay";
-    }
+    replay_path =
+        fs::path(trim_wrapping_quotes(get_golden_dir())) / "serialization" / "replays" / "determinism_particle.replay";
 #endif
 
     fs::create_directories(replay_path.parent_path());
