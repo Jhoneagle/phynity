@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         bool headless = false;
         for (int i = 1; i < argc; ++i)
         {
-            if (std::strcmp(argv[i], "--headless") == 0)
+            if (std::strcmp(argv[i], "--headless") == 0) // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             {
                 headless = true;
             }

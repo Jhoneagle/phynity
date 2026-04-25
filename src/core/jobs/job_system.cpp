@@ -224,9 +224,13 @@ void JobSystemImpl::wait(JobHandle handle)
 
     std::unique_lock<std::mutex> lock(slot.done_mutex);
     slot.done_cv.wait(lock,
-                      [&slot] { return slot.completed.load(std::memory_order_acquire); });
+                      [&slot, &handle] {
+                          return slot.completed.load(std::memory_order_acquire) ||
+                                 slot.generation.load(std::memory_order_acquire) != handle.generation;
+                      });
 
-    // Only clear fn if this slot still belongs to our job (not yet recycled by submit_impl)
+    // Only clear fn if this slot still belongs to our job (not yet recycled by submit_impl).
+    // The generation guard prevents wiping a new job's function after slot reuse.
     if (slot.generation.load(std::memory_order_acquire) == handle.generation)
     {
         slot.fn = nullptr;
