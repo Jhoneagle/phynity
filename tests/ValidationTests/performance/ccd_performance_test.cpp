@@ -16,19 +16,6 @@ using namespace phynity::test::helpers::constants;
 namespace
 {
 
-bool is_slow_env()
-{
-#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_UNDEFINED__)
-    return true;
-#endif
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) || __has_feature(undefined_behavior_sanitizer)
-    return true;
-#endif
-#endif
-    return phynity::tests::timing::global_timing_profile().is_noisy;
-}
-
 struct PerfResult
 {
     double milliseconds;
