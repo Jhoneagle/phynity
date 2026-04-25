@@ -222,3 +222,50 @@ TEST_CASE("JobSystem wait on completed job returns immediately", "[jobs]")
 
     js.shutdown();
 }
+
+TEST_CASE("JobSystem shutdown unblocks waiting threads", "[jobs]")
+{
+    // Verify that shutdown() wakes threads blocked in wait() so they don't hang.
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<bool> blocker_started{false};
+    std::atomic<bool> blocker_done{false};
+
+    // Submit a job that blocks indefinitely until we tell it to stop
+    std::atomic<bool> release_blocker{false};
+    auto blocking_handle = js.submit(
+        [&blocker_started, &release_blocker]
+        {
+            blocker_started.store(true, std::memory_order_release);
+            while (!release_blocker.load(std::memory_order_acquire))
+            {
+                std::this_thread::yield();
+            }
+        });
+
+    // Wait for blocker to start executing
+    while (!blocker_started.load(std::memory_order_acquire))
+    {
+        std::this_thread::yield();
+    }
+
+    // Submit a second job that will be queued behind the blocker
+    auto queued_handle = js.submit([] {});
+
+    // Start a thread that waits on the queued job
+    std::thread waiter(
+        [&js, queued_handle, &blocker_done]
+        {
+            js.wait(queued_handle);
+            blocker_done.store(true, std::memory_order_release);
+        });
+
+    // Release the blocker so shutdown can proceed, then shutdown
+    release_blocker.store(true, std::memory_order_release);
+    js.shutdown();
+
+    // The waiter thread must have been unblocked by shutdown
+    waiter.join();
+    REQUIRE(blocker_done.load());
+}

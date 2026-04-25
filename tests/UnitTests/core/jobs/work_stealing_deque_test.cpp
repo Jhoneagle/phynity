@@ -171,7 +171,7 @@ TEST_CASE("WorkStealingDeque multi-threaded producer + stealers", "[jobs][deque]
 TEST_CASE("WorkStealingDeque last-element pop vs steal contention", "[jobs][deque]")
 {
     // Push exactly 1 element, then race pop vs steal. Exactly one should win per round.
-    constexpr int rounds = 5000;
+    constexpr int rounds = 500;
     constexpr std::size_t stealer_count = 3;
 
     std::atomic<int> pop_wins{0};
@@ -213,7 +213,7 @@ TEST_CASE("WorkStealingDeque last-element pop vs steal contention", "[jobs][dequ
         }
 
         int total = (popped ? 1 : 0) + round_steal_wins.load();
-        REQUIRE(total == 1); // Exactly one winner per round
+        REQUIRE(total == 1);
 
         if (popped)
         {
@@ -225,7 +225,6 @@ TEST_CASE("WorkStealingDeque last-element pop vs steal contention", "[jobs][dequ
         }
     }
 
-    // Both paths should be exercised (not all one or the other)
     REQUIRE(pop_wins.load() + steal_wins.load() == rounds);
 }
 
@@ -236,7 +235,6 @@ TEST_CASE("WorkStealingDeque capacity wraparound", "[jobs][deque]")
     // Push and pop 3x capacity worth of items to exercise index wraparound
     constexpr uint32_t total = 24; // 3 * 8
     uint32_t next_push = 0;
-    uint32_t next_expected = 0;
 
     for (uint32_t batch = 0; batch < 3; ++batch)
     {

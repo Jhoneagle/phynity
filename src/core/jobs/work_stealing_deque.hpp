@@ -58,16 +58,14 @@ public:
 
         if (t <= b)
         {
-            // Non-empty
             const uint32_t index = static_cast<uint32_t>(b) & mask_;
             item = buffer_[index].load(std::memory_order_relaxed);
 
             if (t == b)
             {
-                // Last element - race with steal
+                // Last element — CAS resolves race with steal
                 if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
                 {
-                    // Lost race to a thief
                     bottom_.store(t + 1, std::memory_order_relaxed);
                     return false;
                 }
@@ -76,7 +74,6 @@ public:
             return true;
         }
 
-        // Empty
         bottom_.store(t, std::memory_order_relaxed);
         return false;
     }
