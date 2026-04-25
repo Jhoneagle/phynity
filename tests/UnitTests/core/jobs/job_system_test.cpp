@@ -182,7 +182,7 @@ TEST_CASE("JobSystem concurrent submit/complete stress", "[jobs]")
     for (uint32_t t = 0; t < num_submitters; ++t)
     {
         submitters.emplace_back(
-            [&js, &counter, jobs_per_submitter]
+            [&js, &counter]
             {
                 std::vector<JobHandle> handles;
                 handles.reserve(jobs_per_submitter);
@@ -234,7 +234,7 @@ TEST_CASE("JobSystem shutdown unblocks waiting threads", "[jobs]")
 
     // Submit a job that blocks indefinitely until we tell it to stop
     std::atomic<bool> release_blocker{false};
-    auto blocking_handle = js.submit(
+    js.submit(
         [&blocker_started, &release_blocker]
         {
             blocker_started.store(true, std::memory_order_release);
