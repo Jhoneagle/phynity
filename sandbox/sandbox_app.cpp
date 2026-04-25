@@ -183,6 +183,7 @@ void SandboxApp::draw_ui()
     }
 }
 
+// NOLINTBEGIN(cppcoreguidelines-pro-type-vararg,cppcoreguidelines-pro-type-static-cast-downcast)
 void SandboxApp::draw_scenario_panel()
 {
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
@@ -425,6 +426,7 @@ render::SceneRenderer::State SandboxApp::build_scene_state() const
 
     return state;
 }
+// NOLINTEND(cppcoreguidelines-pro-type-vararg,cppcoreguidelines-pro-type-static-cast-downcast)
 
 void SandboxApp::handle_picking(int fb_width, int fb_height)
 {

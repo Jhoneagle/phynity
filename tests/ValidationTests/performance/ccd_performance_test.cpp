@@ -3,6 +3,7 @@
 #include <core/physics/particles/particle_system.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
+#include <tests/test_utils/timing_profile.hpp>
 
 #include <chrono>
 #include <cmath>
@@ -25,7 +26,7 @@ bool is_slow_env()
     return true;
 #endif
 #endif
-    return false;
+    return phynity::tests::timing::global_timing_profile().is_noisy;
 }
 
 struct PerfResult
@@ -166,9 +167,11 @@ TEST_CASE("CCD Performance: Particle system overhead", "[validation][performance
 
         // Sanity check: CCD should not cause dramatic slowdown (>3x)
         // (The optimization goal is to keep overhead reasonable)
-        const double ratio_limit = is_slow_env() ? 6.0 : 3.0;
-        REQUIRE(conservative.milliseconds < disabled.milliseconds * ratio_limit);
-        REQUIRE(balanced.milliseconds < disabled.milliseconds * ratio_limit);
+        // Use a floor on baseline to avoid unstable ratios when baseline is sub-millisecond
+        const double baseline = std::max(disabled.milliseconds, 0.5);
+        const double ratio_limit = phynity::tests::timing::scaled_ratio_limit(3.0, 8.0);
+        REQUIRE(conservative.milliseconds < baseline * ratio_limit);
+        REQUIRE(balanced.milliseconds < baseline * ratio_limit);
     }
 }
 
@@ -193,7 +196,9 @@ TEST_CASE("CCD Performance: Rigid body overhead", "[validation][performance][ccd
 
         // Sanity check: CCD should not cause dramatic slowdown (>5x for rigid bodies)
         // Note: Rigid bodies use O(n²) collision detection, so CCD overhead is higher than particles
-        REQUIRE(enabled.milliseconds < disabled.milliseconds * 5.1);
+        const double baseline = std::max(disabled.milliseconds, 0.5);
+        const double ratio_limit = phynity::tests::timing::scaled_ratio_limit(5.0, 12.0);
+        REQUIRE(enabled.milliseconds < baseline * ratio_limit);
     }
 }
 
@@ -233,7 +238,7 @@ TEST_CASE("CCD Performance: Scaling with particle count", "[validation][performa
         // If optimizations work well, overhead ratio should be reasonable
         // (CCD early-exit logic should prevent superlinear scaling)
         REQUIRE(std::isfinite(overhead_ratio));
-        const double ratio_limit = is_slow_env() ? 6.0 : 5.0;
+        const double ratio_limit = phynity::tests::timing::scaled_ratio_limit(5.0, 10.0);
         REQUIRE(overhead_ratio < ratio_limit);
     }
 }

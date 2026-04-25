@@ -189,14 +189,17 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
 
     auto &slot = job_pool_[slot_index];
 
-    // Spin-wait until the previous occupant is consumed (completed or generation mismatch).
+    // Spin-wait until the previous occupant is consumed.
     // With pool_capacity_=4096 and typical ~20 tasks/frame, this never spins in practice.
     while (slot.generation.load(std::memory_order_acquire) != 0 && !slot.completed.load(std::memory_order_acquire))
     {
         platform::yield_thread();
     }
 
-    slot.reset(std::move(job), generation);
+    {
+        std::lock_guard<std::mutex> lock(slot.done_mutex);
+        slot.reset(std::move(job), generation);
+    }
 
     worker_queues_[target_worker]->push(job_id);
     pending_work_.fetch_add(1, std::memory_order_release);
@@ -219,21 +222,15 @@ void JobSystemImpl::wait(JobHandle handle)
     uint32_t slot_index = handle.id % pool_capacity_;
     auto &slot = job_pool_[slot_index];
 
-    // Check generation to ensure we're waiting on the right job
-    if (slot.generation.load(std::memory_order_acquire) != handle.generation)
-    {
-        return; // already recycled
-    }
-
     std::unique_lock<std::mutex> lock(slot.done_mutex);
     slot.done_cv.wait(lock,
-                      [&slot, &handle] {
-                          return slot.completed.load() ||
-                                 slot.generation.load(std::memory_order_acquire) != handle.generation;
-                      });
+                      [&slot, &handle] { return slot.completed.load(std::memory_order_acquire); });
 
-    // Clear the fn to release captured resources promptly
-    slot.fn = nullptr;
+    // Only clear fn if this slot still belongs to our job (not yet recycled by submit_impl)
+    if (slot.generation.load(std::memory_order_acquire) == handle.generation)
+    {
+        slot.fn = nullptr;
+    }
 }
 
 void JobSystemImpl::worker_loop(uint32_t worker_index)
@@ -270,9 +267,12 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
             if (static_cast<bool>(slot.fn))
             {
                 slot.fn();
-                slot.completed.store(true, std::memory_order_release);
-                slot.done_cv.notify_all();
             }
+
+            // Mark completed even if fn was null (defensive against external clearing).
+            // This ensures any waiter unblocks rather than hanging indefinitely.
+            slot.completed.store(true, std::memory_order_release);
+            slot.done_cv.notify_all();
 
             pending_work_.fetch_sub(1, std::memory_order_release);
         }

@@ -49,12 +49,14 @@ void SceneRenderer::draw_ground_grid()
 
     const float extent = 20.0f;
     const float step = 2.0f;
-    for (float i = -extent; i <= extent; i += step)
+    const int steps = static_cast<int>(2.0f * extent / step);
+    for (int idx = 0; idx <= steps; ++idx)
     {
-        glVertex3f(i, 0.0f, -extent);
-        glVertex3f(i, 0.0f, extent);
-        glVertex3f(-extent, 0.0f, i);
-        glVertex3f(extent, 0.0f, i);
+        float pos = -extent + static_cast<float>(idx) * step;
+        glVertex3f(pos, 0.0f, -extent);
+        glVertex3f(pos, 0.0f, extent);
+        glVertex3f(-extent, 0.0f, pos);
+        glVertex3f(extent, 0.0f, pos);
     }
 
     glEnd();

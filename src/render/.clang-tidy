@@ -1,0 +1,6 @@
+---
+# Render directory override: suppress checks incompatible with ImGui's C-style vararg API.
+InheritParentConfig: true
+Checks: |
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,

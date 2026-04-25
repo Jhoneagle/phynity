@@ -42,8 +42,7 @@ public:
             std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
             buffer_[index] = item;
         }
-        std::atomic_thread_fence(std::memory_order_release);
-        bottom_.store(b + 1, std::memory_order_relaxed);
+        bottom_.store(b + 1, std::memory_order_release);
         return true;
     }
 

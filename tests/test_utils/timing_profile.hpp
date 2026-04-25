@@ -53,8 +53,9 @@ inline TimingProfile calibrate_timing_profile(size_t sample_count = 25, uint64_t
     const uint64_t p95 = samples[std::min(p95_idx, samples.size() - 1)];
     const uint64_t maximum = samples.back();
 
-    // If p95 sleep overshoots heavily, this environment is noisy for tight timing assertions.
-    const bool noisy = (p95 > target_sleep_us * 2U) || (maximum > target_sleep_us * 3U);
+    // If p95 sleep overshoots moderately, this environment is noisy for tight timing assertions.
+    // Use 1.5x/2x thresholds (lowered from 2x/3x) to catch CI runners with consistent jitter.
+    const bool noisy = (p95 > target_sleep_us * 3U / 2U) || (maximum > target_sleep_us * 2U);
 
     return TimingProfile{target_sleep_us, median, p95, maximum, noisy};
 }

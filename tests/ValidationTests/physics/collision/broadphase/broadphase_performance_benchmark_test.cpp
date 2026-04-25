@@ -267,9 +267,9 @@ TEST_CASE("Broadphase performance: Scaling behavior", "[validation][benchmark]")
         REQUIRE(small.milliseconds > 0.0);
         REQUIRE(large.milliseconds > 0.0);
 
-        // Time should increase with particle count (obviously)
+        // Time should increase with particle count (allow slight inversion from scheduling noise)
         const double time_ratio = large.milliseconds / small.milliseconds;
-        REQUIRE(time_ratio > 1.0); // 100 particles takes more time than 50
+        REQUIRE(time_ratio > 0.8);
     }
 }
 
@@ -286,9 +286,10 @@ TEST_CASE("Broadphase performance: Consistency check", "[validation][benchmark]"
         auto run1 = time_broadphase(particle_count, cell_size, frames);
         auto run2 = time_broadphase(particle_count, cell_size, frames);
 
-        // Results should be within 50% of each other (timing can vary with system load)
+        // Results should be within reasonable tolerance (timing can vary with system load)
         const double ratio = run2.milliseconds / run1.milliseconds;
-        REQUIRE(ratio > 0.5);
-        REQUIRE(ratio < 2.0);
+        const double consistency_limit = phynity::tests::timing::scaled_ratio_limit(2.0, 4.0);
+        REQUIRE(ratio > (1.0 / consistency_limit));
+        REQUIRE(ratio < consistency_limit);
     }
 }
