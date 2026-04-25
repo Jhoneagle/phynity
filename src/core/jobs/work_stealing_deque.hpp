@@ -4,8 +4,7 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
-#include <mutex>
-#include <vector>
+#include <type_traits>
 
 namespace phynity::jobs
 {
@@ -15,12 +14,18 @@ namespace phynity::jobs
 /// The owning thread pushes/pops from the bottom (LIFO - cache-hot work).
 /// Thief threads steal from the top (FIFO - load balancing).
 /// Fixed capacity with power-of-2 sizing.
+///
+/// T must be trivially copyable and fit in a std::atomic (<=8 bytes).
+/// Buffer elements are std::atomic<T> — no mutex needed.
 template <typename T> class WorkStealingDeque
 {
+    static_assert(std::is_trivially_copyable_v<T>, "WorkStealingDeque requires trivially copyable T");
+    static_assert(sizeof(T) <= 8, "WorkStealingDeque requires sizeof(T) <= 8 for lock-free atomics");
+
 public:
-    explicit WorkStealingDeque(uint32_t capacity_log2 = 10) : mask_((1u << capacity_log2) - 1)
+    explicit WorkStealingDeque(uint32_t capacity_log2 = 10)
+        : mask_((1u << capacity_log2) - 1), buffer_(new std::atomic<T>[static_cast<size_t>(mask_) + 1]{})
     {
-        buffer_.resize(mask_ + 1);
     }
 
     WorkStealingDeque(const WorkStealingDeque &) = delete;
@@ -38,10 +43,7 @@ public:
         }
 
         const uint32_t index = static_cast<uint32_t>(b) & mask_;
-        {
-            std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
-            buffer_[index] = item;
-        }
+        buffer_[index].store(item, std::memory_order_relaxed);
         bottom_.store(b + 1, std::memory_order_release);
         return true;
     }
@@ -58,10 +60,7 @@ public:
         {
             // Non-empty
             const uint32_t index = static_cast<uint32_t>(b) & mask_;
-            {
-                std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
-                item = buffer_[index];
-            }
+            item = buffer_[index].load(std::memory_order_relaxed);
 
             if (t == b)
             {
@@ -95,10 +94,7 @@ public:
         }
 
         const uint32_t index = static_cast<uint32_t>(t) & mask_;
-        {
-            std::lock_guard<std::mutex> slot_lock(buffer_mutex_);
-            item = buffer_[index];
-        }
+        item = buffer_[index].load(std::memory_order_relaxed);
 
         if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
         {
@@ -119,8 +115,7 @@ public:
 private:
     // Read-only after construction — safe to share cache lines with each other
     uint32_t mask_;
-    std::vector<T> buffer_;
-    mutable std::mutex buffer_mutex_;
+    std::unique_ptr<std::atomic<T>[]> buffer_;
 
     // Contended atomics on separate cache lines to prevent false sharing.
     // top_ is CAS'd by thieves; bottom_ is modified by the owner.

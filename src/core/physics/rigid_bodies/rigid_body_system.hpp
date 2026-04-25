@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <core/diagnostics/energy_monitor.hpp>
 #include <core/diagnostics/momentum_monitor.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
@@ -161,6 +162,7 @@ public:
     /// Add a force field (gravity, drag, wind, etc.)
     void add_force_field(std::unique_ptr<ForceField> field)
     {
+        assert(!in_parallel_update_ && "Cannot modify force fields during parallel update");
         const size_t previous_capacity = force_fields_.capacity();
         force_fields_.push_back(std::move(field));
         phynity::platform::track_vector_capacity_change(force_fields_, previous_capacity);
@@ -169,6 +171,7 @@ public:
     /// Remove all force fields
     void clear_force_fields()
     {
+        assert(!in_parallel_update_ && "Cannot modify force fields during parallel update");
         force_fields_.clear();
     }
 
@@ -179,6 +182,7 @@ public:
     /// Register a constraint (fixed joint, hinge, etc.)
     void add_constraint(std::unique_ptr<Constraint> constraint)
     {
+        assert(!in_parallel_update_ && "Cannot modify constraints during parallel update");
         const size_t previous_capacity = constraints_.capacity();
         constraints_.push_back(std::move(constraint));
         phynity::platform::track_vector_capacity_change(constraints_, previous_capacity);
@@ -446,7 +450,8 @@ private:
         const bool has_constraints = !constraints_.empty();
 
         // Invalidate cached schedule when topology changes
-        if (partitions != cached_partition_count_ || has_constraints != cached_has_constraints_)
+        if (partitions != cached_partition_count_ || has_constraints != cached_has_constraints_ ||
+            count != cached_item_count_)
         {
             cached_schedule_.reset();
         }
@@ -596,9 +601,12 @@ private:
             cached_schedule_ = TaskScheduler::build_schedule(graph);
             cached_partition_count_ = partitions;
             cached_has_constraints_ = has_constraints;
+            cached_item_count_ = count;
         }
 
+        in_parallel_update_ = true;
         task_executor_->execute(*cached_schedule_, graph);
+        in_parallel_update_ = false;
 
         // Post-graph serial: cleanup and diagnostics
         for (auto &rb : bodies_)
@@ -633,7 +641,11 @@ private:
     // Cached task schedule (topology-stable across frames)
     std::optional<phynity::jobs::TaskSchedule> cached_schedule_;
     uint32_t cached_partition_count_ = 0;
+    uint32_t cached_item_count_ = 0;
     bool cached_has_constraints_ = false;
+
+    // Debug guard: detects concurrent mutation of shared data during parallel execution
+    bool in_parallel_update_ = false;
 };
 
 } // namespace phynity::physics

@@ -2,6 +2,7 @@
 #include <core/jobs/job_system.hpp>
 
 #include <atomic>
+#include <thread>
 #include <vector>
 
 using namespace phynity::jobs;
@@ -157,6 +158,67 @@ TEST_CASE("JobSystem parallel_for small range uses serial", "[jobs]")
     {
         REQUIRE(order[i] == i);
     }
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem concurrent submit/complete stress", "[jobs]")
+{
+    // Stress test: submit many jobs from multiple threads to exercise slot reuse.
+    // With 4 workers and 8000 jobs (2x the 4096 pool), every slot is reused at least once.
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+    REQUIRE(js.is_running());
+
+    constexpr uint32_t total_jobs = 8000;
+    std::atomic<uint32_t> counter{0};
+
+    // Submit from 4 threads concurrently
+    constexpr uint32_t num_submitters = 4;
+    constexpr uint32_t jobs_per_submitter = total_jobs / num_submitters;
+    std::vector<std::thread> submitters;
+    submitters.reserve(num_submitters);
+
+    for (uint32_t t = 0; t < num_submitters; ++t)
+    {
+        submitters.emplace_back(
+            [&js, &counter, jobs_per_submitter]
+            {
+                std::vector<JobHandle> handles;
+                handles.reserve(jobs_per_submitter);
+
+                for (uint32_t i = 0; i < jobs_per_submitter; ++i)
+                {
+                    handles.push_back(js.submit([&counter] { counter.fetch_add(1, std::memory_order_relaxed); }));
+                }
+
+                js.wait_all(handles);
+            });
+    }
+
+    for (auto &t : submitters)
+    {
+        t.join();
+    }
+
+    REQUIRE(counter.load() == total_jobs);
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem wait on completed job returns immediately", "[jobs]")
+{
+    // Waiting on a job that has already completed should return without blocking
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> value{0};
+    auto handle = js.submit([&value] { value.store(42, std::memory_order_relaxed); });
+    js.wait(handle);
+    REQUIRE(value.load() == 42);
+
+    // Second wait on the same handle should return immediately (slot is Completed or Free)
+    js.wait(handle);
+    REQUIRE(value.load() == 42);
 
     js.shutdown();
 }

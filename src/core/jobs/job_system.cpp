@@ -7,6 +7,7 @@
 #include <platform/threading.hpp>
 
 #include <atomic>
+#include <cassert>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
@@ -18,21 +19,42 @@ namespace phynity::jobs
 // Internal PIMPL implementation intentionally uses compact naming and state layout.
 // NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
-/// Pre-allocated job slot. Uses generation counting to detect stale handles.
+/// Lifecycle states for a job slot. Packed into the low 2 bits of state_gen.
+enum class SlotState : uint32_t
+{
+    Free = 0,      // Slot available for reuse
+    Queued = 1,    // Job assigned, waiting in worker deque
+    Running = 2,   // Worker is executing the job function
+    Completed = 3, // Execution finished, waiter can collect
+};
+
+static constexpr uint32_t kStateBits = 2;
+static constexpr uint32_t kStateMask = 0x3;
+static constexpr uint32_t kGenShift = kStateBits;
+static constexpr uint32_t kGenMask = 0x3FFFFFFF; // 30-bit generation
+
+inline SlotState unpack_state(uint32_t packed)
+{
+    return static_cast<SlotState>(packed & kStateMask);
+}
+inline uint32_t unpack_gen(uint32_t packed)
+{
+    return packed >> kGenShift;
+}
+inline uint32_t pack(SlotState s, uint32_t gen)
+{
+    return (gen << kGenShift) | static_cast<uint32_t>(s);
+}
+
+/// Pre-allocated job slot with state machine lifecycle.
+/// Uses packed state+generation in a single atomic to prevent race conditions
+/// between slot reuse, execution, and completion.
 struct JobSlot
 {
     JobFn fn;
-    std::atomic<bool> completed{false};
-    std::atomic<uint32_t> generation{0}; // incremented on each reuse
+    std::atomic<uint32_t> state_gen{0}; // packed: [31:2]=generation, [1:0]=SlotState
     std::condition_variable done_cv;
-    std::mutex done_mutex;
-
-    void reset(JobFn f, uint32_t gen)
-    {
-        fn = std::move(f);
-        completed.store(false, std::memory_order_relaxed);
-        generation.store(gen, std::memory_order_release);
-    }
+    std::mutex done_mutex; // only for condition_variable wait/notify protocol
 };
 
 class JobSystemImpl
@@ -156,6 +178,9 @@ void JobSystemImpl::shutdown()
     }
     workers_.clear();
     worker_queues_.clear();
+
+    assert(pending_work_.load(std::memory_order_relaxed) == 0 &&
+           "pending_work_ counter drifted — submit/complete mismatch");
 }
 
 JobSystemImpl::~JobSystemImpl()
@@ -185,21 +210,34 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
 
     uint32_t job_id = next_job_id_.fetch_add(1, std::memory_order_relaxed);
     uint32_t slot_index = job_id % pool_capacity_;
-    uint32_t generation = job_id / pool_capacity_ + 1;
+    uint32_t gen = (job_id / pool_capacity_ + 1) & kGenMask;
 
     auto &slot = job_pool_[slot_index];
 
-    // Spin-wait until the previous occupant is consumed.
-    // With pool_capacity_=4096 and typical ~20 tasks/frame, this never spins in practice.
-    while (slot.generation.load(std::memory_order_acquire) != 0 && !slot.completed.load(std::memory_order_acquire))
+    // CAS loop: wait until slot is Free or Completed, then claim it as Queued.
+    // With pool_capacity_=4096 and typical ~20 tasks/frame, this rarely loops.
+    for (;;)
     {
+        uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
+        SlotState st = unpack_state(cur);
+
+        if (st == SlotState::Free || st == SlotState::Completed)
+        {
+            uint32_t desired = pack(SlotState::Queued, gen);
+            if (slot.state_gen.compare_exchange_weak(cur, desired, std::memory_order_acq_rel,
+                                                     std::memory_order_relaxed))
+            {
+                break; // We own the slot in Queued state
+            }
+            continue; // CAS failed, retry
+        }
+
+        // Slot is Queued or Running — previous job still in flight
         platform::yield_thread();
     }
 
-    {
-        std::lock_guard<std::mutex> lock(slot.done_mutex);
-        slot.reset(std::move(job), generation);
-    }
+    // We exclusively own the slot in Queued state with our generation.
+    slot.fn = std::move(job);
 
     worker_queues_[target_worker]->push(job_id);
     pending_work_.fetch_add(1, std::memory_order_release);
@@ -209,7 +247,7 @@ JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
         wake_cv_.notify_one();
     }
 
-    return JobHandle{job_id, generation};
+    return JobHandle{job_id, gen};
 }
 
 void JobSystemImpl::wait(JobHandle handle)
@@ -221,19 +259,24 @@ void JobSystemImpl::wait(JobHandle handle)
 
     uint32_t slot_index = handle.id % pool_capacity_;
     auto &slot = job_pool_[slot_index];
+    uint32_t completed_val = pack(SlotState::Completed, handle.generation);
 
     std::unique_lock<std::mutex> lock(slot.done_mutex);
     slot.done_cv.wait(lock,
-                      [&slot, &handle] {
-                          return slot.completed.load(std::memory_order_acquire) ||
-                                 slot.generation.load(std::memory_order_acquire) != handle.generation;
+                      [&slot, &handle, completed_val]
+                      {
+                          uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
+                          // Wake if: completed with our generation, OR generation changed (recycled)
+                          return cur == completed_val || unpack_gen(cur) != handle.generation;
                       });
 
-    // Only clear fn if this slot still belongs to our job (not yet recycled by submit_impl).
-    // The generation guard prevents wiping a new job's function after slot reuse.
-    if (slot.generation.load(std::memory_order_acquire) == handle.generation)
+    // If completed with our generation, transition to Free for reuse.
+    // Worker already cleared slot.fn before storing Completed.
+    uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
+    if (cur == completed_val)
     {
-        slot.fn = nullptr;
+        slot.state_gen.compare_exchange_strong(cur, pack(SlotState::Free, 0), std::memory_order_release,
+                                               std::memory_order_relaxed);
     }
 }
 
@@ -266,17 +309,36 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
         if (found)
         {
             uint32_t slot_index = job_id % pool_capacity_;
+            uint32_t expected_gen = (job_id / pool_capacity_ + 1) & kGenMask;
             auto &slot = job_pool_[slot_index];
 
-            if (static_cast<bool>(slot.fn))
-            {
-                slot.fn();
-            }
+            // CAS Queued->Running with generation validation.
+            // If CAS fails, the slot was recycled (stale job_id) — skip silently.
+            uint32_t expected = pack(SlotState::Queued, expected_gen);
+            uint32_t desired = pack(SlotState::Running, expected_gen);
 
-            // Mark completed even if fn was null (defensive against external clearing).
-            // This ensures any waiter unblocks rather than hanging indefinitely.
-            slot.completed.store(true, std::memory_order_release);
-            slot.done_cv.notify_all();
+            if (slot.state_gen.compare_exchange_strong(expected, desired, std::memory_order_acq_rel,
+                                                       std::memory_order_relaxed))
+            {
+                // CAS succeeded: we own execution rights.
+                // acquire on CAS ensures we see slot.fn written by submit_impl.
+                if (static_cast<bool>(slot.fn))
+                {
+                    slot.fn();
+                }
+
+                // Worker owns cleanup — clear fn before marking Completed.
+                slot.fn = nullptr;
+
+                // Transition Running->Completed (release publishes side-effects of fn())
+                slot.state_gen.store(pack(SlotState::Completed, expected_gen), std::memory_order_release);
+
+                // Notify waiters under done_mutex to prevent lost wakeups
+                {
+                    std::lock_guard<std::mutex> lock(slot.done_mutex);
+                    slot.done_cv.notify_all();
+                }
+            }
 
             pending_work_.fetch_sub(1, std::memory_order_release);
         }
