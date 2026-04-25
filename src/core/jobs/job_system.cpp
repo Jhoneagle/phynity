@@ -224,7 +224,7 @@ void JobSystemImpl::wait(JobHandle handle)
 
     std::unique_lock<std::mutex> lock(slot.done_mutex);
     slot.done_cv.wait(lock,
-                      [&slot, &handle] { return slot.completed.load(std::memory_order_acquire); });
+                      [&slot] { return slot.completed.load(std::memory_order_acquire); });
 
     // Only clear fn if this slot still belongs to our job (not yet recycled by submit_impl)
     if (slot.generation.load(std::memory_order_acquire) == handle.generation)
