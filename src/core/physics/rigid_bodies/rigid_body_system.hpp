@@ -446,6 +446,11 @@ private:
         const uint32_t count = static_cast<uint32_t>(bodies_.size());
         const uint32_t partitions = std::min(count, 4u);
 
+        // Reserve capacity to prevent reallocation (which would invalidate data pointers).
+        frame_range_data_.reserve(partitions * 4);
+        frame_collision_data_.reserve(1);
+        frame_constraint_data_.reserve(1);
+
         // Save start positions for CCD (reused member vector avoids per-frame allocation)
         frame_start_positions_.clear();
         frame_start_positions_.reserve(count);

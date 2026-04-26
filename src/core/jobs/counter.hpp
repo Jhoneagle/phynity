@@ -89,7 +89,8 @@ public:
     }
 
     /// Block until the counter reaches zero, then release the slot back to the pool.
-    void wait(CounterHandle handle, EventCount &ec)
+    /// If `running` is provided and becomes false, returns early without waiting.
+    void wait(CounterHandle handle, EventCount &ec, const std::atomic<bool> *running = nullptr)
     {
         if (!handle.valid())
         {
@@ -108,6 +109,10 @@ public:
             if (slot.value.load(std::memory_order_acquire) <= 0)
             {
                 release(handle);
+                return;
+            }
+            if (running && !running->load(std::memory_order_acquire))
+            {
                 return;
             }
 
@@ -129,6 +134,11 @@ public:
             {
                 ec.cancel_wait(token);
                 release(handle);
+                return;
+            }
+            if (running && !running->load(std::memory_order_acquire))
+            {
+                ec.cancel_wait(token);
                 return;
             }
             ec.wait(token);

@@ -562,6 +562,11 @@ private:
         const uint32_t count = static_cast<uint32_t>(particles_.size());
         const uint32_t partitions = std::min(count, 4u);
 
+        // Reserve capacity to prevent reallocation (which would invalidate data pointers).
+        // 4 partitioned tiers * partitions = max range data entries.
+        frame_range_data_.reserve(partitions * 4);
+        frame_collision_data_.reserve(1);
+
         JobGraph graph;
 
         auto clear_ids = graph.add_partitioned(

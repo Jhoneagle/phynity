@@ -145,17 +145,6 @@ public:
         wait(counter);
     }
 
-    // ========================================================================
-    // Legacy compatibility
-    // ========================================================================
-
-    /// Legacy JobHandle-style submit (wraps callable into inline data).
-    /// Returns a JobId that can be used with wait().
-    template <typename Fn> JobId submit_legacy(Fn &&fn)
-    {
-        return submit(std::forward<Fn>(fn), static_cast<const char *>(nullptr));
-    }
-
 private:
     template <typename Fn> JobId submit_callable(Fn &&fn, CounterHandle counter, const char *debug_name);
 
@@ -165,37 +154,28 @@ private:
 // Template implementation (must be in header)
 template <typename Fn> JobId JobSystem::submit_callable(Fn &&fn, CounterHandle counter, const char *debug_name)
 {
-    // For small, trivially copyable callables: store inline
-    if constexpr (std::is_trivially_copyable_v<std::decay_t<Fn>> && sizeof(std::decay_t<Fn>) <= kMaxInlineDataSize)
+    // Heap-allocate the callable. Lambdas with captures are not trivially copyable,
+    // so inline storage would require a more complex submission path that patches
+    // the Job's inline_data after allocation. For simplicity and correctness, always
+    // heap-allocate here. The raw function pointer API (used by physics systems)
+    // avoids this allocation entirely.
+    using FnType = std::decay_t<Fn>;
+    auto *heap_fn = new FnType(std::forward<Fn>(fn));
+
+    auto invoker = [](void *data)
     {
-        using FnType = std::decay_t<Fn>;
-        auto invoker = [](void *data)
-        {
-            auto *f = static_cast<FnType *>(data);
-            (*f)();
-        };
+        auto *f = static_cast<FnType *>(data);
+        (*f)();
+        delete f;
+    };
 
-        // We'll use a two-step approach: submit with a placeholder, then store inline data
-        // Actually, we need access to the Job slot. Use the raw API with a wrapper.
-        return submit(
-            +invoker, nullptr, // data will be patched by impl
-            counter, debug_name);
-    }
-    else
+    JobId id = submit(+invoker, static_cast<void *>(heap_fn), counter, debug_name);
+    if (!id.valid())
     {
-        // For non-trivially-copyable or larger callables: heap-allocate
-        using FnType = std::decay_t<Fn>;
-        auto *heap_fn = new FnType(std::forward<Fn>(fn));
-
-        auto invoker = [](void *data)
-        {
-            auto *f = static_cast<FnType *>(data);
-            (*f)();
-            delete f;
-        };
-
-        return submit(+invoker, static_cast<void *>(heap_fn), counter, debug_name);
+        // System not running — invoker won't execute, so clean up the heap allocation
+        delete heap_fn;
     }
+    return id;
 }
 
 } // namespace phynity::jobs

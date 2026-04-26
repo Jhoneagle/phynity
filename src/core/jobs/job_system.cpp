@@ -229,7 +229,25 @@ void JobSystemImpl::enqueue(JobId id, uint16_t affinity_hint)
             submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
     }
 
-    worker_queues_[target]->push(id.index);
+    // Try target queue first; if full, round-robin through others.
+    // This prevents silent job loss when a single deque is saturated.
+    bool pushed = worker_queues_[target]->push(id.index);
+    if (!pushed)
+    {
+        uint32_t queues = static_cast<uint32_t>(worker_queues_.size());
+        for (uint32_t offset = 1; offset < queues; ++offset)
+        {
+            uint32_t alt = (target + offset) % queues;
+            if (worker_queues_[alt]->push(id.index))
+            {
+                pushed = true;
+                break;
+            }
+        }
+    }
+    assert(pushed && "All worker deques full — increase deque capacity or reduce concurrent submissions");
+    (void) pushed;
+
     pending_work_.fetch_add(1, std::memory_order_release);
 
     {
@@ -251,12 +269,16 @@ void JobSystemImpl::wait(JobId id)
 
     auto &job = pool_.at(id);
 
+    // The completion signal is the eventcount notification + function pointer set to
+    // nullptr. We use pending_work_ as a synchronization bridge: the worker does a
+    // release store to pending_work_ after clearing function; we do an acquire fence
+    // before reading function to establish happens-before.
+
     // Spin briefly
     for (int spin = 0; spin < 64; ++spin)
     {
-        // A job is complete when its generation has advanced past what we expect,
-        // or we can check if the function has been cleared (completed jobs have fn=nullptr).
-        if (job.generation != id.generation || job.function == nullptr)
+        std::atomic_thread_fence(std::memory_order_acquire);
+        if (job.function == nullptr)
         {
             return;
         }
@@ -268,11 +290,12 @@ void JobSystemImpl::wait(JobId id)
 #endif
     }
 
-    // Fall back to eventcount
+    // Fall back to eventcount (mutex-based, provides full synchronization)
     for (;;)
     {
         auto token = completion_event_.prepare_wait();
-        if (job.generation != id.generation || job.function == nullptr)
+        std::atomic_thread_fence(std::memory_order_acquire);
+        if (job.function == nullptr)
         {
             completion_event_.cancel_wait(token);
             return;
@@ -288,7 +311,7 @@ void JobSystemImpl::wait(JobId id)
 
 void JobSystemImpl::wait(CounterHandle counter)
 {
-    counters_.wait(counter, completion_event_);
+    counters_.wait(counter, completion_event_, &running_);
 }
 
 // =============================================================================
@@ -521,11 +544,14 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
                 counters_.decrement(counter, completion_event_);
             }
 
-            // Mark job as complete (clear function pointer, advance generation)
+            // Mark job as complete (clear function pointer).
+            // Release fence ensures the nullptr write is visible to waiters
+            // that do an acquire fence before reading job.function.
             job.function = nullptr;
             job.data = nullptr;
+            std::atomic_thread_fence(std::memory_order_release);
 
-            // Notify anyone waiting on this specific job
+            // Notify anyone waiting on this specific job or a counter
             completion_event_.notify_all();
 
             pending_work_.fetch_sub(1, std::memory_order_release);
