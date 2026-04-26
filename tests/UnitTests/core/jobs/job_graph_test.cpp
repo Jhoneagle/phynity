@@ -251,7 +251,7 @@ TEST_CASE("JobGraph add_partitioned creates tier with dependencies", "[jobs][job
         items,
         parts,
         {},
-        [](uint32_t start, uint32_t end) -> JobDesc
+        [](uint32_t /*start*/, uint32_t /*end*/) -> JobDesc
         { return {.function = noop_fn, .debug_name = "tier0"}; },
         "tier0");
 
@@ -265,7 +265,7 @@ TEST_CASE("JobGraph add_partitioned creates tier with dependencies", "[jobs][job
         items,
         parts,
         tier0,
-        [](uint32_t start, uint32_t end) -> JobDesc
+        [](uint32_t /*start*/, uint32_t /*end*/) -> JobDesc
         { return {.function = noop_fn, .debug_name = "tier1"}; },
         "tier1");
 
@@ -287,7 +287,7 @@ TEST_CASE("JobGraph add_partitioned sets affinity hints", "[jobs][job_graph]")
         100,
         4,
         {},
-        [](uint32_t start, uint32_t end) -> JobDesc { return {.function = noop_fn}; },
+        [](uint32_t /*start*/, uint32_t /*end*/) -> JobDesc { return {.function = noop_fn}; },
         "test");
 
     for (uint32_t p = 0; p < 4; ++p)
@@ -304,7 +304,7 @@ TEST_CASE("JobGraph add_serial_after fans in from all prev_tier", "[jobs][job_gr
         100,
         4,
         {},
-        [](uint32_t start, uint32_t end) -> JobDesc { return {.function = noop_fn}; },
+        [](uint32_t /*start*/, uint32_t /*end*/) -> JobDesc { return {.function = noop_fn}; },
         "par");
 
     auto serial = graph.add_serial_after(tier0, {.function = noop_fn, .debug_name = "serial"});
@@ -322,17 +322,17 @@ TEST_CASE("JobGraph physics-like pipeline structure", "[jobs][job_graph]")
 
     auto clear = graph.add_partitioned(
         items, parts, {},
-        [](uint32_t s, uint32_t e) -> JobDesc { return {.function = noop_fn}; },
+        [](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = noop_fn}; },
         "clear");
 
     auto forces = graph.add_partitioned(
         items, parts, clear,
-        [](uint32_t s, uint32_t e) -> JobDesc { return {.function = noop_fn}; },
+        [](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = noop_fn}; },
         "forces");
 
     auto integrate = graph.add_partitioned(
         items, parts, forces,
-        [](uint32_t s, uint32_t e) -> JobDesc { return {.function = noop_fn}; },
+        [](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = noop_fn}; },
         "integrate");
 
     auto collisions = graph.add_serial_after(integrate, {.function = noop_fn, .debug_name = "collisions"});

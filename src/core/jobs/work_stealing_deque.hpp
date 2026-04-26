@@ -52,9 +52,8 @@ public:
     bool pop(T &item)
     {
         int64_t b = bottom_.load(std::memory_order_relaxed) - 1;
-        bottom_.store(b, std::memory_order_relaxed);
-        std::atomic_thread_fence(std::memory_order_seq_cst);
-        int64_t t = top_.load(std::memory_order_relaxed);
+        bottom_.store(b, std::memory_order_seq_cst);
+        int64_t t = top_.load(std::memory_order_seq_cst);
 
         if (t <= b)
         {
@@ -81,9 +80,8 @@ public:
     /// Steal an item from the top (any thread, FIFO).
     bool steal(T &item)
     {
-        int64_t t = top_.load(std::memory_order_acquire);
-        std::atomic_thread_fence(std::memory_order_seq_cst);
-        int64_t b = bottom_.load(std::memory_order_acquire);
+        int64_t t = top_.load(std::memory_order_seq_cst);
+        int64_t b = bottom_.load(std::memory_order_seq_cst);
 
         if (t >= b)
         {

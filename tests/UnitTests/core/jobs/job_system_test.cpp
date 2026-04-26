@@ -324,13 +324,6 @@ TEST_CASE("JobSystem submit_graph diamond DAG respects dependencies", "[jobs][gr
     std::atomic<int> counter{0};
     int order_a = -1, order_b = -1, order_c = -1, order_d = -1;
 
-    auto make_fn = [](int *order_ptr, std::atomic<int> *counter_ptr)
-    {
-        return [order_ptr, counter_ptr](void *)
-        { *order_ptr = counter_ptr->fetch_add(1); };
-    };
-
-    // Can't use lambdas with captures as JobFnPtr directly, so use a different approach
     struct OrderData
     {
         int *order;
@@ -456,17 +449,17 @@ TEST_CASE("JobSystem submit_graph physics-like pipeline", "[jobs][graph]")
 
     auto clear = graph.add_partitioned(
         items, parts, {},
-        [&](uint32_t s, uint32_t e) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "clear");
 
     auto forces = graph.add_partitioned(
         items, parts, clear,
-        [&](uint32_t s, uint32_t e) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "forces");
 
     auto integrate = graph.add_partitioned(
         items, parts, forces,
-        [&](uint32_t s, uint32_t e) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "integrate");
 
     graph.add_serial_after(integrate, {.function = +noop_fn, .data = &counter, .debug_name = "collisions"});
