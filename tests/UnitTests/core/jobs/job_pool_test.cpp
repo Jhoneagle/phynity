@@ -94,14 +94,14 @@ TEST_CASE("JobPool concurrent allocation produces unique ids", "[jobs][job_pool]
 {
     constexpr uint32_t pool_capacity = 64;
     constexpr uint32_t jobs_per_thread = 16;
-    constexpr int thread_count = 4;
+    constexpr uint32_t thread_count = 4;
 
     JobPool pool(pool_capacity);
 
     std::vector<std::vector<JobId>> thread_ids(thread_count);
 
     std::vector<std::thread> threads;
-    for (int t = 0; t < thread_count; ++t)
+    for (uint32_t t = 0; t < thread_count; ++t)
     {
         threads.emplace_back(
             [&pool, &thread_ids, t]
