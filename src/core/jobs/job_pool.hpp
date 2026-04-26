@@ -48,7 +48,7 @@ public:
         slot.data = nullptr;
         slot.predecessor_count.store(0, std::memory_order_relaxed);
         slot.dependent_count = 0;
-        slot.affinity_hint = std::numeric_limits<uint16_t>::max();
+        slot.affinity_hint = (std::numeric_limits<uint16_t>::max)();
         slot.generation = gen;
         slot.debug_name = nullptr;
         slot.overflow_offset = 0;

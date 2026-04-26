@@ -38,7 +38,7 @@ struct alignas(64) Job
     uint8_t inline_data[kMaxInlineDataSize]{};                   // 32
     std::atomic<int32_t> predecessor_count{0};                   // 4
     uint16_t dependent_count = 0;                                // 2
-    uint16_t affinity_hint = std::numeric_limits<uint16_t>::max(); // 2 (max = no preference)
+    uint16_t affinity_hint = (std::numeric_limits<uint16_t>::max)(); // 2 (max = no preference)
     uint32_t generation = 0;                                     // 4
     // padding: 4 bytes
 
@@ -57,7 +57,7 @@ struct JobDesc
 {
     JobFnPtr function = nullptr;
     void *data = nullptr;
-    uint16_t affinity_hint = std::numeric_limits<uint16_t>::max();
+    uint16_t affinity_hint = (std::numeric_limits<uint16_t>::max)();
     const char *debug_name = nullptr;
 };
 

@@ -176,7 +176,7 @@ public:
             auto desc = factory(start, end);
 
             // Override affinity_hint to match partition index for cache locality
-            if (desc.affinity_hint == std::numeric_limits<uint16_t>::max())
+            if (desc.affinity_hint == (std::numeric_limits<uint16_t>::max)())
             {
                 desc.affinity_hint = static_cast<uint16_t>(p);
             }

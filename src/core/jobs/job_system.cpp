@@ -164,12 +164,12 @@ JobSystemImpl::~JobSystemImpl()
 
 JobId JobSystemImpl::submit(JobFnPtr fn, void *data, const char *debug_name)
 {
-    return submit_impl(fn, data, CounterHandle{}, std::numeric_limits<uint16_t>::max(), debug_name);
+    return submit_impl(fn, data, CounterHandle{}, (std::numeric_limits<uint16_t>::max)(), debug_name);
 }
 
 JobId JobSystemImpl::submit(JobFnPtr fn, void *data, CounterHandle counter, const char *debug_name)
 {
-    return submit_impl(fn, data, counter, std::numeric_limits<uint16_t>::max(), debug_name);
+    return submit_impl(fn, data, counter, (std::numeric_limits<uint16_t>::max)(), debug_name);
 }
 
 CounterHandle JobSystemImpl::create_counter(int32_t count)
@@ -219,7 +219,7 @@ JobId JobSystemImpl::submit_impl(
 void JobSystemImpl::enqueue(JobId id, uint16_t affinity_hint)
 {
     uint32_t target;
-    if (affinity_hint != std::numeric_limits<uint16_t>::max() && affinity_hint < worker_queues_.size())
+    if (affinity_hint != (std::numeric_limits<uint16_t>::max)() && affinity_hint < worker_queues_.size())
     {
         target = affinity_hint;
     }
@@ -361,7 +361,7 @@ CounterHandle JobSystemImpl::submit_graph(const JobGraph &graph)
         // Wire up dependents: map graph-local indices to pool-allocated JobIds
         auto deps = graph.dependents(JobId{i, 0});
         uint32_t dep_count = static_cast<uint32_t>(deps.size());
-        job.dependent_count = static_cast<uint16_t>(std::min(dep_count, static_cast<uint32_t>(UINT16_MAX)));
+        job.dependent_count = static_cast<uint16_t>((std::min)(dep_count, static_cast<uint32_t>(UINT16_MAX)));
 
         if (dep_count <= kMaxInlineDependents)
         {
@@ -461,7 +461,7 @@ void JobSystemImpl::execute_serial(const JobGraph &graph)
 void JobSystemImpl::dispatch_dependents(Job &job)
 {
     uint32_t total = job.dependent_count;
-    uint32_t inline_count = std::min(total, static_cast<uint32_t>(kMaxInlineDependents));
+    uint32_t inline_count = (std::min)(total, static_cast<uint32_t>(kMaxInlineDependents));
 
     for (uint32_t d = 0; d < inline_count; ++d)
     {

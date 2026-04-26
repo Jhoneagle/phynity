@@ -130,7 +130,7 @@ public:
 
         for (uint32_t chunk_begin = begin; chunk_begin < end; chunk_begin += effective_grain)
         {
-            uint32_t chunk_end = std::min(chunk_begin + effective_grain, end);
+            uint32_t chunk_end = (std::min)(chunk_begin + effective_grain, end);
             submit(
                 [chunk_begin, chunk_end, &fn]()
                 {

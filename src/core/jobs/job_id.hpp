@@ -15,7 +15,7 @@ struct JobId
     uint32_t index = invalid_index;
     uint32_t generation = 0;
 
-    static constexpr uint32_t invalid_index = std::numeric_limits<uint32_t>::max();
+    static constexpr uint32_t invalid_index = (std::numeric_limits<uint32_t>::max)();
 
     [[nodiscard]] bool valid() const noexcept
     {
@@ -33,12 +33,12 @@ struct JobId
 /// Handle to a shared completion counter. Waiters block until the counter reaches zero.
 struct CounterHandle
 {
-    uint32_t index = std::numeric_limits<uint32_t>::max();
+    uint32_t index = (std::numeric_limits<uint32_t>::max)();
     uint32_t generation = 0;
 
     [[nodiscard]] bool valid() const noexcept
     {
-        return index != std::numeric_limits<uint32_t>::max();
+        return index != (std::numeric_limits<uint32_t>::max)();
     }
 
     bool operator==(const CounterHandle &other) const noexcept = default;
