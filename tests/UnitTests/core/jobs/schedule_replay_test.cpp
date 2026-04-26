@@ -25,9 +25,9 @@ TEST_CASE("ScheduleRecorder records tasks in order", "[jobs][schedule_replay]")
     ScheduleRecorder recorder;
 
     recorder.begin_frame(0);
-    recorder.record_task_start(TaskId{0}, 0);
-    recorder.record_task_start(TaskId{1}, 1);
-    recorder.record_task_start(TaskId{2}, 0);
+    recorder.record_task_start(JobId{0, 0}, 0);
+    recorder.record_task_start(JobId{1, 0}, 1);
+    recorder.record_task_start(JobId{2, 0}, 0);
     recorder.end_frame();
 
     REQUIRE(recorder.frames().size() == 1);
@@ -47,12 +47,12 @@ TEST_CASE("ScheduleRecorder multiple frames", "[jobs][schedule_replay]")
     ScheduleRecorder recorder;
 
     recorder.begin_frame(0);
-    recorder.record_task_start(TaskId{0}, 0);
+    recorder.record_task_start(JobId{0, 0}, 0);
     recorder.end_frame();
 
     recorder.begin_frame(1);
-    recorder.record_task_start(TaskId{0}, 0);
-    recorder.record_task_start(TaskId{1}, 1);
+    recorder.record_task_start(JobId{0, 0}, 0);
+    recorder.record_task_start(JobId{1, 0}, 1);
     recorder.end_frame();
 
     REQUIRE(recorder.frames().size() == 2);
@@ -68,13 +68,13 @@ TEST_CASE("Schedule save/load round-trip", "[jobs][schedule_replay]")
     ScheduleRecorder recorder;
 
     recorder.begin_frame(0);
-    recorder.record_task_start(TaskId{0}, 0);
-    recorder.record_task_start(TaskId{1}, 1);
-    recorder.record_task_start(TaskId{2}, 0);
+    recorder.record_task_start(JobId{0, 0}, 0);
+    recorder.record_task_start(JobId{1, 0}, 1);
+    recorder.record_task_start(JobId{2, 0}, 0);
     recorder.end_frame();
 
     recorder.begin_frame(1);
-    recorder.record_task_start(TaskId{3}, 2);
+    recorder.record_task_start(JobId{3, 0}, 2);
     recorder.end_frame();
 
     REQUIRE(recorder.save(path));
@@ -89,16 +89,18 @@ TEST_CASE("Schedule save/load round-trip", "[jobs][schedule_replay]")
     REQUIRE_FALSE(replayer.has_frame(2));
 
     // Frame 0: 3 tasks in recorded order
-    auto schedule0 = replayer.replay_schedule(0);
-    REQUIRE(schedule0.entries.size() == 3);
-    REQUIRE(schedule0.entries[0].id == TaskId{0});
-    REQUIRE(schedule0.entries[1].id == TaskId{1});
-    REQUIRE(schedule0.entries[2].id == TaskId{2});
+    const auto *tasks0 = replayer.frame_tasks(0);
+    REQUIRE(tasks0 != nullptr);
+    REQUIRE(tasks0->size() == 3);
+    REQUIRE((*tasks0)[0].task_id == 0);
+    REQUIRE((*tasks0)[1].task_id == 1);
+    REQUIRE((*tasks0)[2].task_id == 2);
 
     // Frame 1: 1 task
-    auto schedule1 = replayer.replay_schedule(1);
-    REQUIRE(schedule1.entries.size() == 1);
-    REQUIRE(schedule1.entries[0].id == TaskId{3});
+    const auto *tasks1 = replayer.frame_tasks(1);
+    REQUIRE(tasks1 != nullptr);
+    REQUIRE(tasks1->size() == 1);
+    REQUIRE((*tasks1)[0].task_id == 3);
 
     // Cleanup
     std::filesystem::remove(path);
@@ -121,11 +123,10 @@ TEST_CASE("ScheduleReplayer rejects invalid file", "[jobs][schedule_replay]")
     std::filesystem::remove(path);
 }
 
-TEST_CASE("ScheduleReplayer missing frame returns empty schedule", "[jobs][schedule_replay]")
+TEST_CASE("ScheduleReplayer missing frame returns nullptr", "[jobs][schedule_replay]")
 {
     ScheduleReplayer replayer;
-    auto schedule = replayer.replay_schedule(99);
-    REQUIRE(schedule.entries.empty());
+    REQUIRE(replayer.frame_tasks(99) == nullptr);
 }
 
 TEST_CASE("ScheduleRecorder clear resets state", "[jobs][schedule_replay]")
@@ -133,7 +134,7 @@ TEST_CASE("ScheduleRecorder clear resets state", "[jobs][schedule_replay]")
     ScheduleRecorder recorder;
 
     recorder.begin_frame(0);
-    recorder.record_task_start(TaskId{0}, 0);
+    recorder.record_task_start(JobId{0, 0}, 0);
     recorder.end_frame();
 
     REQUIRE(recorder.frames().size() == 1);

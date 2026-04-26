@@ -68,28 +68,15 @@ bool ScheduleReplayer::has_frame(uint32_t frame_index) const
     return frame_index_map_.contains(frame_index);
 }
 
-TaskSchedule ScheduleReplayer::replay_schedule(uint32_t frame_index) const
+const std::vector<ScheduleRecorder::TaskRecord> *ScheduleReplayer::frame_tasks(uint32_t frame_index) const
 {
-    TaskSchedule schedule;
-
     auto it = frame_index_map_.find(frame_index);
     if (it == frame_index_map_.end())
     {
-        return schedule;
+        return nullptr;
     }
 
-    const auto &frame = frames_[it->second];
-
-    // Tasks are already sorted by start_order (ScheduleRecorder sorts on end_frame).
-    // Each task gets its own tier to force serial execution in recorded order.
-    schedule.entries.reserve(frame.tasks.size());
-    for (uint32_t i = 0; i < frame.tasks.size(); ++i)
-    {
-        schedule.entries.push_back({.id = TaskId{frame.tasks[i].task_id}, .tier = i, .sequence = i});
-    }
-    schedule.tier_count = static_cast<uint32_t>(frame.tasks.size());
-
-    return schedule;
+    return &frames_[it->second].tasks;
 }
 
 void ScheduleReplayer::clear()

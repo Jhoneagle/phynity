@@ -16,7 +16,7 @@ void ScheduleRecorder::begin_frame(uint32_t frame_index)
     in_frame_.store(true, std::memory_order_release);
 }
 
-void ScheduleRecorder::record_task_start(TaskId id, uint32_t worker_index)
+void ScheduleRecorder::record_task_start(JobId id, uint32_t worker_index)
 {
     if (!in_frame_.load(std::memory_order_acquire))
     {
@@ -26,7 +26,7 @@ void ScheduleRecorder::record_task_start(TaskId id, uint32_t worker_index)
     uint32_t order = execution_counter_.fetch_add(1, std::memory_order_acq_rel);
 
     std::lock_guard<std::mutex> lock(record_mutex_);
-    current_frame_.tasks.push_back({.task_id = id.value, .worker_index = worker_index, .start_order = order});
+    current_frame_.tasks.push_back({.task_id = id.index, .worker_index = worker_index, .start_order = order});
 }
 
 void ScheduleRecorder::end_frame()

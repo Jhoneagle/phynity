@@ -6,56 +6,21 @@
 #include <platform/thread_affinity.hpp>
 #include <platform/threading.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
-#include <condition_variable>
-#include <deque>
-#include <mutex>
+#include <cstring>
 #include <vector>
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 
 namespace phynity::jobs
 {
 
 // Internal PIMPL implementation intentionally uses compact naming and state layout.
 // NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
-
-/// Lifecycle states for a job slot. Packed into the low 2 bits of state_gen.
-enum class SlotState : uint32_t
-{
-    Free = 0,      // Slot available for reuse
-    Queued = 1,    // Job assigned, waiting in worker deque
-    Running = 2,   // Worker is executing the job function
-    Completed = 3, // Execution finished, waiter can collect
-};
-
-static constexpr uint32_t kStateBits = 2;
-static constexpr uint32_t kStateMask = 0x3;
-static constexpr uint32_t kGenShift = kStateBits;
-static constexpr uint32_t kGenMask = 0x3FFFFFFF; // 30-bit generation
-
-inline SlotState unpack_state(uint32_t packed)
-{
-    return static_cast<SlotState>(packed & kStateMask);
-}
-inline uint32_t unpack_gen(uint32_t packed)
-{
-    return packed >> kGenShift;
-}
-inline uint32_t pack(SlotState s, uint32_t gen)
-{
-    return (gen << kGenShift) | static_cast<uint32_t>(s);
-}
-
-/// Pre-allocated job slot with state machine lifecycle.
-/// Uses packed state+generation in a single atomic to prevent race conditions
-/// between slot reuse, execution, and completion.
-struct JobSlot
-{
-    JobFn fn;
-    std::atomic<uint32_t> state_gen{0}; // packed: [31:2]=generation, [1:0]=SlotState
-    std::condition_variable done_cv;
-    std::mutex done_mutex; // only for condition_variable wait/notify protocol
-};
 
 class JobSystemImpl
 {
@@ -68,7 +33,7 @@ public:
 
     bool is_running() const noexcept
     {
-        return running_.load();
+        return running_.load(std::memory_order_acquire);
     }
     uint32_t worker_count() const noexcept
     {
@@ -79,13 +44,20 @@ public:
         return mode_;
     }
 
-    JobHandle submit(JobFn job);
-    JobHandle submit_to_worker(uint32_t worker_index, JobFn job);
-    void wait(JobHandle handle);
+    JobId submit(JobFnPtr fn, void *data, const char *debug_name);
+    JobId submit(JobFnPtr fn, void *data, CounterHandle counter, const char *debug_name);
+    void wait(JobId id);
+    void wait(CounterHandle counter);
+
+    CounterHandle create_counter(int32_t count);
+    CounterHandle submit_graph(const JobGraph &graph);
 
 private:
-    JobHandle submit_impl(JobFn job, uint32_t target_worker);
+    JobId submit_impl(JobFnPtr fn, void *data, CounterHandle counter, uint16_t affinity_hint, const char *debug_name);
+    void enqueue(JobId id, uint16_t affinity_hint);
+    void dispatch_dependents(Job &job);
     void worker_loop(uint32_t worker_index);
+    void execute_serial(const JobGraph &graph);
 
     std::atomic<bool> running_{false};
 
@@ -94,18 +66,17 @@ private:
 
     phynity::platform::TrackedVector<platform::Thread> workers_;
 
-    // Job pool: fixed-size ring buffer indexed by job_id % pool_capacity_
-    static constexpr uint32_t pool_capacity_ = 4096;
-    std::deque<JobSlot> job_pool_;
-    std::atomic<uint32_t> next_job_id_{1};
+    JobPool pool_{4096};
+    CounterPool counters_{256};
+    EventCount completion_event_;
 
-    // Per-worker work-stealing deques
+    // Per-worker work-stealing deques (stores raw alloc indices from pool)
     std::vector<std::unique_ptr<WorkStealingDeque<uint32_t>>> worker_queues_;
 
     // Round-robin submit distribution
     std::atomic<uint32_t> submit_counter_{0};
 
-    // Wakeup mechanism
+    // Wakeup mechanism for workers
     std::mutex wake_mutex_;
     std::condition_variable wake_cv_;
     std::atomic<int64_t> pending_work_{0};
@@ -134,9 +105,6 @@ void JobSystemImpl::start(const JobSystemConfig &config)
     uint32_t actual_workers =
         (mode_ == SchedulingMode::Deterministic || mode_ == SchedulingMode::DeterministicReplay) ? 1 : worker_count_;
 
-    // Initialize job pool
-    job_pool_.resize(pool_capacity_);
-
     // Create per-worker deques
     worker_queues_.clear();
     for (uint32_t i = 0; i < actual_workers; ++i)
@@ -145,7 +113,7 @@ void JobSystemImpl::start(const JobSystemConfig &config)
     }
 
     pending_work_.store(0);
-    running_.store(true);
+    running_.store(true, std::memory_order_release);
 
     for (uint32_t i = 0; i < actual_workers; ++i)
     {
@@ -160,13 +128,16 @@ void JobSystemImpl::shutdown()
         return;
     }
 
-    running_.store(false);
+    running_.store(false, std::memory_order_release);
 
     // Wake all workers
     {
         std::lock_guard<std::mutex> lock(wake_mutex_);
         wake_cv_.notify_all();
     }
+
+    // Also notify anyone blocked on completion events
+    completion_event_.notify_all();
 
     // Join all workers
     for (auto &worker : workers_)
@@ -179,17 +150,7 @@ void JobSystemImpl::shutdown()
     workers_.clear();
     worker_queues_.clear();
 
-    // Wake any threads blocked in wait() — they check running_ in their predicate
-    // after being notified, and will return early.
-    for (auto &slot : job_pool_)
-    {
-        std::lock_guard<std::mutex> lock(slot.done_mutex);
-        slot.done_cv.notify_all();
-    }
-
-    // Note: pending_work_ may be non-zero here if shutdown was called while jobs
-    // were still queued. This is expected — only drift (increment without matching
-    // decrement) would be a bug, which is caught by TSAN in concurrent tests.
+    pool_.clear_overflow();
 }
 
 JobSystemImpl::~JobSystemImpl()
@@ -197,159 +158,385 @@ JobSystemImpl::~JobSystemImpl()
     shutdown();
 }
 
-JobHandle JobSystemImpl::submit(JobFn job)
+// =============================================================================
+// Submission
+// =============================================================================
+
+JobId JobSystemImpl::submit(JobFnPtr fn, void *data, const char *debug_name)
 {
-    uint32_t target =
-        submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
-    return submit_impl(std::move(job), target);
+    return submit_impl(fn, data, CounterHandle{}, std::numeric_limits<uint16_t>::max(), debug_name);
 }
 
-JobHandle JobSystemImpl::submit_to_worker(uint32_t worker_index, JobFn job)
+JobId JobSystemImpl::submit(JobFnPtr fn, void *data, CounterHandle counter, const char *debug_name)
 {
-    uint32_t target = worker_index % static_cast<uint32_t>(worker_queues_.size());
-    return submit_impl(std::move(job), target);
+    return submit_impl(fn, data, counter, std::numeric_limits<uint16_t>::max(), debug_name);
 }
 
-JobHandle JobSystemImpl::submit_impl(JobFn job, uint32_t target_worker)
+CounterHandle JobSystemImpl::create_counter(int32_t count)
 {
-    if (!running_.load())
+    return counters_.acquire(count);
+}
+
+JobId JobSystemImpl::submit_impl(
+    JobFnPtr fn, void *data, CounterHandle counter, uint16_t affinity_hint, const char *debug_name)
+{
+    if (!running_.load(std::memory_order_acquire))
     {
-        return JobHandle{};
+        return JobId{};
     }
 
-    uint32_t job_id = next_job_id_.fetch_add(1, std::memory_order_relaxed);
-    uint32_t slot_index = job_id % pool_capacity_;
-    uint32_t gen = (job_id / pool_capacity_ + 1) & kGenMask;
+    JobId id = pool_.allocate();
+    auto &job = pool_.at(id);
 
-    auto &slot = job_pool_[slot_index];
+    job.function = fn;
+    job.data = data;
+    job.predecessor_count.store(0, std::memory_order_relaxed);
+    job.dependent_count = 0;
+    job.affinity_hint = affinity_hint;
+    job.debug_name = debug_name;
+    job.overflow_offset = 0;
+    job.overflow_count = 0;
 
-    // CAS loop: wait until slot is Free or Completed, then claim it as Queued.
-    // With pool_capacity_=4096 and typical ~20 tasks/frame, this rarely loops.
-    for (;;)
+    // Store counter handle in the job's inline_data if a counter is set.
+    // We pack the counter handle into the first 8 bytes of inline_data.
+    if (counter.valid())
     {
-        uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
-        SlotState st = unpack_state(cur);
-
-        if (st == SlotState::Free || st == SlotState::Completed)
-        {
-            uint32_t desired = pack(SlotState::Queued, gen);
-            if (slot.state_gen.compare_exchange_weak(cur, desired, std::memory_order_acquire,
-                                                     std::memory_order_relaxed))
-            {
-                break;
-            }
-            continue;
-        }
-
-        // Slot is Queued or Running — previous job still in flight
-        platform::yield_thread();
+        static_assert(sizeof(CounterHandle) <= kMaxInlineDataSize);
+        std::memcpy(job.inline_data, &counter, sizeof(CounterHandle));
+    }
+    else
+    {
+        // Clear the counter slot
+        CounterHandle empty{};
+        std::memcpy(job.inline_data, &empty, sizeof(CounterHandle));
     }
 
-    slot.fn = std::move(job);
+    // No predecessors — enqueue immediately
+    enqueue(id, affinity_hint);
+    return id;
+}
 
-    worker_queues_[target_worker]->push(job_id);
+void JobSystemImpl::enqueue(JobId id, uint16_t affinity_hint)
+{
+    uint32_t target;
+    if (affinity_hint != std::numeric_limits<uint16_t>::max() && affinity_hint < worker_queues_.size())
+    {
+        target = affinity_hint;
+    }
+    else
+    {
+        target =
+            submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
+    }
+
+    worker_queues_[target]->push(id.index);
     pending_work_.fetch_add(1, std::memory_order_release);
 
     {
         std::lock_guard<std::mutex> lock(wake_mutex_);
         wake_cv_.notify_one();
     }
-
-    return JobHandle{job_id, gen};
 }
 
-void JobSystemImpl::wait(JobHandle handle)
+// =============================================================================
+// Waiting
+// =============================================================================
+
+void JobSystemImpl::wait(JobId id)
 {
-    if (!handle.valid() || !running_.load())
+    if (!id.valid())
     {
         return;
     }
 
-    uint32_t slot_index = handle.id % pool_capacity_;
-    auto &slot = job_pool_[slot_index];
-    uint32_t completed_val = pack(SlotState::Completed, handle.generation);
+    auto &job = pool_.at(id);
 
-    std::unique_lock<std::mutex> lock(slot.done_mutex);
-    slot.done_cv.wait(lock,
-                      [&slot, &handle, completed_val, this]
-                      {
-                          if (!running_.load(std::memory_order_acquire))
-                          {
-                              return true;
-                          }
-                          uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
-                          return cur == completed_val || unpack_gen(cur) != handle.generation;
-                      });
-
-    // Worker already cleared slot.fn before storing Completed — safe to transition to Free.
-    uint32_t cur = slot.state_gen.load(std::memory_order_acquire);
-    if (cur == completed_val)
+    // Spin briefly
+    for (int spin = 0; spin < 64; ++spin)
     {
-        slot.state_gen.compare_exchange_strong(cur, pack(SlotState::Free, 0), std::memory_order_release,
-                                               std::memory_order_relaxed);
+        // A job is complete when its generation has advanced past what we expect,
+        // or we can check if the function has been cleared (completed jobs have fn=nullptr).
+        if (job.generation != id.generation || job.function == nullptr)
+        {
+            return;
+        }
+
+#if defined(_MSC_VER)
+        _mm_pause();
+#else
+        platform::yield_thread();
+#endif
+    }
+
+    // Fall back to eventcount
+    for (;;)
+    {
+        auto token = completion_event_.prepare_wait();
+        if (job.generation != id.generation || job.function == nullptr)
+        {
+            completion_event_.cancel_wait(token);
+            return;
+        }
+        if (!running_.load(std::memory_order_acquire))
+        {
+            completion_event_.cancel_wait(token);
+            return;
+        }
+        completion_event_.wait(token);
     }
 }
 
+void JobSystemImpl::wait(CounterHandle counter)
+{
+    counters_.wait(counter, completion_event_);
+}
+
+// =============================================================================
+// Graph submission
+// =============================================================================
+
+CounterHandle JobSystemImpl::submit_graph(const JobGraph &graph)
+{
+    const uint32_t n = graph.size();
+    if (n == 0)
+    {
+        return CounterHandle{};
+    }
+
+    // In deterministic mode, execute serially on the calling thread
+    if (mode_ == SchedulingMode::Deterministic || mode_ == SchedulingMode::DeterministicReplay || !running_.load())
+    {
+        execute_serial(graph);
+        return CounterHandle{};
+    }
+
+    // Allocate a completion counter for the entire graph
+    auto counter = counters_.acquire(static_cast<int32_t>(n));
+
+    // Phase 1: Allocate pool slots for all graph nodes
+    std::vector<JobId> pool_ids(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        pool_ids[i] = pool_.allocate();
+    }
+
+    // Phase 2: Configure each job slot with function, data, dependencies, and counter
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        const auto &desc = graph.desc(JobId{i, 0});
+        auto &job = pool_.at(pool_ids[i]);
+
+        job.function = desc.function;
+        job.data = desc.data;
+        job.affinity_hint = desc.affinity_hint;
+        job.debug_name = desc.debug_name;
+
+        // Set predecessor count from the graph
+        job.predecessor_count.store(static_cast<int32_t>(graph.predecessor_count(JobId{i, 0})),
+                                    std::memory_order_relaxed);
+
+        // Wire up dependents: map graph-local indices to pool-allocated JobIds
+        auto deps = graph.dependents(JobId{i, 0});
+        uint32_t dep_count = static_cast<uint32_t>(deps.size());
+        job.dependent_count = static_cast<uint16_t>(std::min(dep_count, static_cast<uint32_t>(UINT16_MAX)));
+
+        if (dep_count <= kMaxInlineDependents)
+        {
+            for (uint32_t d = 0; d < dep_count; ++d)
+            {
+                job.dependents[d] = pool_ids[deps[d].index];
+            }
+        }
+        else
+        {
+            // Store inline portion
+            for (uint32_t d = 0; d < kMaxInlineDependents; ++d)
+            {
+                job.dependents[d] = pool_ids[deps[d].index];
+            }
+
+            // Overflow portion
+            uint32_t overflow_count = dep_count - kMaxInlineDependents;
+            uint32_t offset = pool_.allocate_overflow(overflow_count);
+            job.overflow_offset = offset;
+            job.overflow_count = overflow_count;
+            for (uint32_t d = 0; d < overflow_count; ++d)
+            {
+                pool_.overflow_dependent(offset + d) = pool_ids[deps[kMaxInlineDependents + d].index];
+            }
+        }
+
+        // Store counter handle in inline_data
+        static_assert(sizeof(CounterHandle) <= kMaxInlineDataSize);
+        std::memcpy(job.inline_data, &counter, sizeof(CounterHandle));
+    }
+
+    // Phase 3: Enqueue all root nodes (predecessor_count == 0)
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        if (graph.predecessor_count(JobId{i, 0}) == 0)
+        {
+            enqueue(pool_ids[i], graph.desc(JobId{i, 0}).affinity_hint);
+        }
+    }
+
+    return counter;
+}
+
+void JobSystemImpl::execute_serial(const JobGraph &graph)
+{
+    // Kahn's algorithm: deterministic topological sort with stable tie-breaking
+    const uint32_t n = graph.size();
+    std::vector<uint32_t> in_degree(n);
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        in_degree[i] = graph.predecessor_count(JobId{i, 0});
+    }
+
+    std::vector<JobId> current;
+    for (uint32_t i = 0; i < n; ++i)
+    {
+        if (in_degree[i] == 0)
+        {
+            current.push_back(JobId{i, 0});
+        }
+    }
+    std::sort(current.begin(), current.end());
+
+    while (!current.empty())
+    {
+        std::vector<JobId> next;
+
+        for (const auto &id : current)
+        {
+            const auto &desc = graph.desc(id);
+            if (desc.function)
+            {
+                desc.function(desc.data);
+            }
+
+            for (const auto &child : graph.dependents(id))
+            {
+                assert(in_degree[child.index] > 0);
+                --in_degree[child.index];
+                if (in_degree[child.index] == 0)
+                {
+                    next.push_back(child);
+                }
+            }
+        }
+
+        std::sort(next.begin(), next.end());
+        current = std::move(next);
+    }
+}
+
+// =============================================================================
+// Dependency dispatch (called after a job completes)
+// =============================================================================
+
+void JobSystemImpl::dispatch_dependents(Job &job)
+{
+    uint32_t total = job.dependent_count;
+    uint32_t inline_count = std::min(total, static_cast<uint32_t>(kMaxInlineDependents));
+
+    for (uint32_t d = 0; d < inline_count; ++d)
+    {
+        JobId dep_id = job.dependents[d];
+        if (!dep_id.valid())
+        {
+            continue;
+        }
+
+        auto &dep_job = pool_.at(dep_id);
+        int32_t prev = dep_job.predecessor_count.fetch_sub(1, std::memory_order_acq_rel);
+        if (prev == 1)
+        {
+            // This was the last predecessor — enqueue the dependent
+            enqueue(dep_id, dep_job.affinity_hint);
+        }
+    }
+
+    // Overflow dependents
+    for (uint32_t d = 0; d < job.overflow_count; ++d)
+    {
+        JobId dep_id = pool_.overflow_dependent(job.overflow_offset + d);
+        if (!dep_id.valid())
+        {
+            continue;
+        }
+
+        auto &dep_job = pool_.at(dep_id);
+        int32_t prev = dep_job.predecessor_count.fetch_sub(1, std::memory_order_acq_rel);
+        if (prev == 1)
+        {
+            enqueue(dep_id, dep_job.affinity_hint);
+        }
+    }
+}
+
+// =============================================================================
+// Worker loop
+// =============================================================================
+
 void JobSystemImpl::worker_loop(uint32_t worker_index)
 {
-    // Best-effort CPU affinity for cache locality
     platform::set_thread_affinity(worker_index);
 
     auto &my_queue = *worker_queues_[worker_index];
     const uint32_t num_queues = static_cast<uint32_t>(worker_queues_.size());
 
-    while (running_.load())
+    while (running_.load(std::memory_order_acquire))
     {
-        uint32_t job_id = 0;
-        bool found = false;
-
-        found = my_queue.pop(job_id);
+        uint32_t slot_index = 0;
+        bool found = my_queue.pop(slot_index);
 
         if (!found)
         {
             for (uint32_t offset = 1; offset < num_queues && !found; ++offset)
             {
                 uint32_t victim = (worker_index + offset) % num_queues;
-                found = worker_queues_[victim]->steal(job_id);
+                found = worker_queues_[victim]->steal(slot_index);
             }
         }
 
         if (found)
         {
-            uint32_t slot_index = job_id % pool_capacity_;
-            uint32_t expected_gen = (job_id / pool_capacity_ + 1) & kGenMask;
-            auto &slot = job_pool_[slot_index];
+            auto &job = pool_[slot_index];
 
-            // CAS failure means the slot was recycled (stale job_id) — skip silently.
-            uint32_t expected = pack(SlotState::Queued, expected_gen);
-            uint32_t desired = pack(SlotState::Running, expected_gen);
-
-            if (slot.state_gen.compare_exchange_strong(expected, desired, std::memory_order_acq_rel,
-                                                       std::memory_order_relaxed))
+            // Execute the job
+            if (job.function)
             {
-                if (static_cast<bool>(slot.fn))
-                {
-                    slot.fn();
-                }
-
-                slot.fn = nullptr;
-                slot.state_gen.store(pack(SlotState::Completed, expected_gen), std::memory_order_release);
-
-                // Notify under done_mutex to prevent lost wakeups with CV
-                {
-                    std::lock_guard<std::mutex> lock(slot.done_mutex);
-                    slot.done_cv.notify_all();
-                }
+                job.function(job.data);
             }
+
+            // Dispatch dependents (atomic predecessor decrement)
+            dispatch_dependents(job);
+
+            // Decrement completion counter if set
+            CounterHandle counter;
+            std::memcpy(&counter, job.inline_data, sizeof(CounterHandle));
+            if (counter.valid())
+            {
+                counters_.decrement(counter, completion_event_);
+            }
+
+            // Mark job as complete (clear function pointer, advance generation)
+            job.function = nullptr;
+            job.data = nullptr;
+
+            // Notify anyone waiting on this specific job
+            completion_event_.notify_all();
 
             pending_work_.fetch_sub(1, std::memory_order_release);
         }
         else
         {
             std::unique_lock<std::mutex> lock(wake_mutex_);
-            wake_cv_.wait_for(lock,
-                              std::chrono::milliseconds(1),
-                              [this] { return pending_work_.load(std::memory_order_acquire) > 0 || !running_.load(); });
+            wake_cv_.wait_for(
+                lock,
+                std::chrono::milliseconds(1),
+                [this] { return pending_work_.load(std::memory_order_acquire) > 0 || !running_.load(); });
         }
     }
 }
@@ -405,29 +592,47 @@ SchedulingMode JobSystem::scheduling_mode() const noexcept
     return impl_ ? impl_->scheduling_mode() : SchedulingMode::Concurrent;
 }
 
-JobHandle JobSystem::submit(JobFn job)
+JobId JobSystem::submit(JobFnPtr fn, void *data, const char *debug_name)
 {
-    return impl_ ? impl_->submit(std::move(job)) : JobHandle{};
+    return impl_ ? impl_->submit(fn, data, debug_name) : JobId{};
 }
 
-JobHandle JobSystem::submit_to_worker(uint32_t worker_index, JobFn job)
+JobId JobSystem::submit(JobFnPtr fn, void *data, CounterHandle counter, const char *debug_name)
 {
-    return impl_ ? impl_->submit_to_worker(worker_index, std::move(job)) : JobHandle{};
+    return impl_ ? impl_->submit(fn, data, counter, debug_name) : JobId{};
 }
 
-void JobSystem::wait(JobHandle handle)
+void JobSystem::wait(JobId id)
 {
     if (impl_)
     {
-        impl_->wait(handle);
+        impl_->wait(id);
     }
 }
 
-void JobSystem::wait_all(std::span<const JobHandle> handles)
+void JobSystem::wait(CounterHandle counter)
 {
-    for (const auto &handle : handles)
+    if (impl_)
     {
-        wait(handle);
+        impl_->wait(counter);
+    }
+}
+
+CounterHandle JobSystem::create_counter(int32_t count)
+{
+    return impl_ ? impl_->create_counter(count) : CounterHandle{};
+}
+
+CounterHandle JobSystem::submit_graph(const JobGraph &graph)
+{
+    return impl_ ? impl_->submit_graph(graph) : CounterHandle{};
+}
+
+void JobSystem::wait_all(std::span<const JobId> ids)
+{
+    for (const auto &id : ids)
+    {
+        wait(id);
     }
 }
 

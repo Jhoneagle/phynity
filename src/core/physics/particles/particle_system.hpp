@@ -3,11 +3,8 @@
 #include <cassert>
 #include <core/diagnostics/physics_diagnostics_hub.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
+#include <core/jobs/job_graph.hpp>
 #include <core/jobs/job_system.hpp>
-#include <core/jobs/task_executor.hpp>
-#include <core/jobs/task_graph.hpp>
-#include <core/jobs/task_graph_builder.hpp>
-#include <core/jobs/task_scheduler.hpp>
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/physics/config/ccd_config.hpp>
 #include <core/physics/config/physics_constants.hpp>
@@ -321,8 +318,8 @@ public:
     {
         PROFILE_FUNCTION();
 
-        // Task-graph path: structured wavefront dispatch with cache affinity
-        if (task_executor_ && !particles_.empty())
+        // Graph path: dependency-driven dispatch with cache affinity
+        if (job_system_ && job_system_->is_running() && !particles_.empty())
         {
             update_with_task_graph(dt);
             return;
@@ -531,13 +528,9 @@ public:
         job_system_ = job_system;
     }
 
-    /// Provide a task executor for structured parallel update using task graphs.
-    /// When set, update() uses wavefront-based dispatch instead of ad-hoc parallel_for.
-    /// The executor is not owned by ParticleSystem.
-    void set_task_executor(phynity::jobs::TaskExecutor *executor)
-    {
-        task_executor_ = executor;
-    }
+    /// Provide a job system for parallel update using dependency-driven dispatch.
+    /// The system is not owned by ParticleSystem.
+    /// Note: also used for ad-hoc parallel_for in the non-graph fallback path.
 
     // ========================================================================
     // Accessors
@@ -569,115 +562,128 @@ private:
         const uint32_t count = static_cast<uint32_t>(particles_.size());
         const uint32_t partitions = std::min(count, 4u);
 
-        // Invalidate cached schedule when topology changes
-        if (partitions != cached_partition_count_ || collisions_enabled_ != cached_collisions_enabled_ ||
-            count != cached_item_count_)
-        {
-            cached_schedule_.reset();
-        }
+        JobGraph graph;
 
-        TaskGraph graph;
-
-        auto clear_ids = add_partitioned_tier(
-            graph,
+        auto clear_ids = graph.add_partitioned(
             count,
             partitions,
             {},
-            [this](uint32_t s, uint32_t e) -> JobFn
+            [this](uint32_t s, uint32_t e) -> JobDesc
             {
-                return [this, s, e]
-                {
-                    for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive())
-                            particles_[i].clear_forces();
-                };
+                auto *data = &frame_range_data_.emplace_back(RangeData{this, s, e, 0.0f});
+                return {.function =
+                            [](void *p)
+                        {
+                            auto *d = static_cast<RangeData *>(p);
+                            for (uint32_t i = d->start; i < d->end; ++i)
+                                if (d->self->particles_[i].is_alive())
+                                    d->self->particles_[i].clear_forces();
+                        },
+                        .data = data,
+                        .debug_name = "clear_forces"};
             },
             "clear_forces");
 
-        auto forces_ids = add_partitioned_tier(
-            graph,
+        auto forces_ids = graph.add_partitioned(
             count,
             partitions,
             clear_ids,
-            [this](uint32_t s, uint32_t e) -> JobFn
+            [this](uint32_t s, uint32_t e) -> JobDesc
             {
-                return [this, s, e]
-                {
-                    for (const auto &field : force_fields_)
-                        for (uint32_t i = s; i < e; ++i)
+                auto *data = &frame_range_data_.emplace_back(RangeData{this, s, e, 0.0f});
+                return {.function =
+                            [](void *p)
                         {
-                            Particle &p = particles_[i];
-                            if (!p.is_alive())
-                                continue;
-                            p.apply_force(field->apply(p.position, p.velocity, p.material.mass));
-                        }
-                };
+                            auto *d = static_cast<RangeData *>(p);
+                            for (const auto &field : d->self->force_fields_)
+                                for (uint32_t i = d->start; i < d->end; ++i)
+                                {
+                                    Particle &part = d->self->particles_[i];
+                                    if (!part.is_alive())
+                                        continue;
+                                    part.apply_force(field->apply(part.position, part.velocity, part.material.mass));
+                                }
+                        },
+                        .data = data,
+                        .debug_name = "apply_forces"};
             },
             "apply_forces");
 
-        auto accel_ids = add_partitioned_tier(
-            graph,
+        auto accel_ids = graph.add_partitioned(
             count,
             partitions,
             forces_ids,
-            [this](uint32_t s, uint32_t e) -> JobFn
+            [this](uint32_t s, uint32_t e) -> JobDesc
             {
-                return [this, s, e]
-                {
-                    for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive())
-                            particles_[i].update_acceleration();
-                };
+                auto *data = &frame_range_data_.emplace_back(RangeData{this, s, e, 0.0f});
+                return {.function =
+                            [](void *p)
+                        {
+                            auto *d = static_cast<RangeData *>(p);
+                            for (uint32_t i = d->start; i < d->end; ++i)
+                                if (d->self->particles_[i].is_alive())
+                                    d->self->particles_[i].update_acceleration();
+                        },
+                        .data = data,
+                        .debug_name = "update_accel"};
             },
             "update_accel");
 
-        auto integrate_ids = add_partitioned_tier(
-            graph,
+        auto integrate_ids = graph.add_partitioned(
             count,
             partitions,
             accel_ids,
-            [this, dt](uint32_t s, uint32_t e) -> JobFn
+            [this, dt](uint32_t s, uint32_t e) -> JobDesc
             {
-                return [this, s, e, dt]
-                {
-                    for (uint32_t i = s; i < e; ++i)
-                        if (particles_[i].is_alive())
-                            particles_[i].integrate(dt);
-                };
+                auto *data = &frame_range_data_.emplace_back(RangeData{this, s, e, dt});
+                return {.function =
+                            [](void *p)
+                        {
+                            auto *d = static_cast<RangeData *>(p);
+                            for (uint32_t i = d->start; i < d->end; ++i)
+                                if (d->self->particles_[i].is_alive())
+                                    d->self->particles_[i].integrate(d->dt);
+                        },
+                        .data = data,
+                        .debug_name = "integrate"};
             },
             "integrate");
 
         if (collisions_enabled_)
         {
-            add_serial_task_after(
-                graph,
-                integrate_ids,
-                [this, dt]
-                {
-                    ParticleCollisionContext ctx{constraint_solver_, constraints_, constraints_enabled_};
-                    collision_resolver_.resolve(particles_, dt, ccd_config_, ctx);
-                    if (diagnostics_hub_.has_active_collision_monitor())
-                    {
-                        const auto &stats = collision_resolver_.last_stats();
-                        diagnostics_hub_.report_collisions(
-                            stats.broadphase_candidates, stats.narrowphase_tests, stats.actual_collisions);
-                    }
-                },
-                "collisions");
-        }
+            auto *coll_data = &frame_collision_data_.emplace_back(CollisionData{this, dt});
 
-        // Use cached schedule when topology is stable (skip validate + Kahn's)
-        if (!cached_schedule_)
-        {
-            cached_schedule_ = TaskScheduler::build_schedule(graph);
-            cached_partition_count_ = partitions;
-            cached_collisions_enabled_ = collisions_enabled_;
-            cached_item_count_ = count;
+            graph.add_serial_after(
+                integrate_ids,
+                {.function =
+                     [](void *p)
+                 {
+                     auto *d = static_cast<CollisionData *>(p);
+                     ParticleCollisionContext ctx{d->self->constraint_solver_, d->self->constraints_,
+                                                 d->self->constraints_enabled_};
+                     d->self->collision_resolver_.resolve(d->self->particles_, d->dt, d->self->ccd_config_, ctx);
+                     if (d->self->diagnostics_hub_.has_active_collision_monitor())
+                     {
+                         const auto &stats = d->self->collision_resolver_.last_stats();
+                         d->self->diagnostics_hub_.report_collisions(
+                             stats.broadphase_candidates, stats.narrowphase_tests, stats.actual_collisions);
+                     }
+                 },
+                 .data = coll_data,
+                 .debug_name = "collisions"});
         }
 
         in_parallel_update_ = true;
-        task_executor_->execute(*cached_schedule_, graph);
+        auto done = job_system_->submit_graph(graph);
+        if (done.valid())
+        {
+            job_system_->wait(done);
+        }
         in_parallel_update_ = false;
+
+        // Clear per-frame data
+        frame_range_data_.clear();
+        frame_collision_data_.clear();
 
         if (diagnostics_hub_.has_active_physics_monitors())
         {
@@ -690,7 +696,6 @@ private:
     std::vector<Particle> particles_;
     std::vector<std::unique_ptr<ForceField>> force_fields_;
     phynity::jobs::JobSystem *job_system_ = nullptr;
-    phynity::jobs::TaskExecutor *task_executor_ = nullptr;
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
@@ -706,11 +711,21 @@ private:
     // Diagnostics monitoring (energy, momentum, collision stats)
     diagnostics::PhysicsDiagnosticsHub diagnostics_hub_;
 
-    // Cached task schedule (topology-stable across frames)
-    std::optional<phynity::jobs::TaskSchedule> cached_schedule_;
-    uint32_t cached_partition_count_ = 0;
-    uint32_t cached_item_count_ = 0;
-    bool cached_collisions_enabled_ = false;
+    // Per-frame data for job graph (avoids lambda captures, reused across frames)
+    struct RangeData
+    {
+        ParticleSystem *self;
+        uint32_t start;
+        uint32_t end;
+        float dt;
+    };
+    struct CollisionData
+    {
+        ParticleSystem *self;
+        float dt;
+    };
+    std::vector<RangeData> frame_range_data_;
+    std::vector<CollisionData> frame_collision_data_;
 
     // Debug guard: detects concurrent mutation of shared data during parallel execution
     bool in_parallel_update_ = false;

@@ -35,9 +35,7 @@ PhysicsContext::PhysicsContext(const Config &config)
 
         job_system_.start(job_config);
         particle_system_.set_job_system(&job_system_);
-
-        task_executor_ = std::make_unique<phynity::jobs::TaskExecutor>(job_system_);
-        particle_system_.set_task_executor(task_executor_.get());
+        rigid_body_system_.set_job_system(&job_system_);
 
         if (config_.record_schedule)
         {

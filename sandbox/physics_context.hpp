@@ -3,7 +3,6 @@
 #include <core/jobs/job_system.hpp>
 #include <core/jobs/schedule_recorder.hpp>
 #include <core/jobs/schedule_replayer.hpp>
-#include <core/jobs/task_executor.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/config/timestep_controller.hpp>
@@ -247,7 +246,6 @@ private:
     RigidBodySystem rigid_body_system_;
     TimestepController timestep_controller_;
     JobSystem job_system_;
-    std::unique_ptr<phynity::jobs::TaskExecutor> task_executor_;
     std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
     std::unique_ptr<phynity::jobs::ScheduleReplayer> schedule_replayer_;
 
