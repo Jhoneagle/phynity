@@ -61,3 +61,6 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-04-29T06:22:04Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25092538600,nightly-quality,linux,tsan-linux,unit.jobs.job_system,FLAKY_RECOVERED,3
 1,2026-04-29T06:22:04Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25092538600,nightly-quality,linux,tsan-linux,unit.jobs.task_executor,FLAKY_RECOVERED,3
 1,2026-04-29T06:22:04Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25092538600,nightly-quality,linux,tsan-linux,unit.jobs.work_stealing_deque,FAILED_AFTER_RETRY,3
+1,2026-04-30T06:51:29Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25149208420,nightly-quality,windows,performance-windows,validation.performance.ccd,FLAKY_RECOVERED,2
+1,2026-04-30T06:51:29Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25149208420,nightly-quality,linux,tsan-linux,unit.jobs.job_system,FAILED_AFTER_RETRY,3
+1,2026-04-30T06:51:29Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25149208420,nightly-quality,macos,tsan-macos,unit.jobs.task_executor,FLAKY_RECOVERED,2
