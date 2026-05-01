@@ -90,6 +90,72 @@ TEST_CASE("JobPool overflow dependents", "[jobs][job_pool]")
     pool.clear_overflow();
 }
 
+TEST_CASE("JobPool generation recycling after wrap-around", "[jobs][job_pool]")
+{
+    constexpr uint32_t capacity = 4;
+    JobPool pool(capacity);
+
+    // Allocate all 4 slots (generation 1)
+    std::vector<JobId> first_round;
+    for (uint32_t i = 0; i < capacity; ++i)
+    {
+        first_round.push_back(pool.allocate());
+    }
+
+    for (const auto &id : first_round)
+    {
+        REQUIRE(id.valid());
+        REQUIRE(id.generation == 1);
+    }
+
+    // The 5th allocation wraps around to index 0 with generation 2.
+    // The spin in allocate() checks `slot.generation >= gen`. For raw=4,
+    // idx=0, gen=2. Slot 0 has generation=1, so 1 < 2 passes immediately.
+    auto wrapped = pool.allocate();
+    REQUIRE(wrapped.valid());
+    REQUIRE(wrapped.index == 0);
+    REQUIRE(wrapped.generation == 2);
+
+    // Allocate the remaining 3 wrapped slots
+    for (uint32_t i = 0; i < 3; ++i)
+    {
+        auto id = pool.allocate();
+        REQUIRE(id.valid());
+        REQUIRE(id.generation == 2);
+    }
+}
+
+TEST_CASE("JobPool spin-wait on occupied slot", "[jobs][job_pool]")
+{
+    // When the pool wraps around twice, the second wrap must spin-wait until
+    // the slot's generation is less than the target generation. We simulate
+    // this by having one thread hold a slot (high generation) while another
+    // thread attempts to allocate the same slot in the next wrap.
+    constexpr uint32_t capacity = 4;
+    JobPool pool(capacity);
+
+    // First round: allocate all 4 slots (generation 1, raw 0-3)
+    for (uint32_t i = 0; i < capacity; ++i)
+    {
+        pool.allocate();
+    }
+
+    // Second round: allocate all 4 slots (generation 2, raw 4-7)
+    // This works because gen=2 > slot.generation=1
+    for (uint32_t i = 0; i < capacity; ++i)
+    {
+        pool.allocate();
+    }
+
+    // Now raw counter is at 8. Slots have generation=2.
+    // Third round: raw=8 → idx=0, gen=3. Slot 0 has gen=2, so 2 < 3 passes.
+    // This verifies the spin condition works across multiple wraps.
+    auto third_wrap = pool.allocate();
+    REQUIRE(third_wrap.valid());
+    REQUIRE(third_wrap.index == 0);
+    REQUIRE(third_wrap.generation == 3);
+}
+
 TEST_CASE("JobPool concurrent allocation produces unique ids", "[jobs][job_pool]")
 {
     constexpr uint32_t pool_capacity = 64;

@@ -527,10 +527,21 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
         {
             auto &job = pool_[slot_index];
 
-            // Execute the job
+            // Execute the job. Catch exceptions to prevent a throwing job from
+            // killing the worker thread, which would leave dependents and
+            // counters permanently stuck.
             if (job.function)
             {
-                job.function(job.data);
+                try
+                {
+                    job.function(job.data);
+                }
+                catch (...)
+                {
+                    // Job failed — fall through to still dispatch dependents,
+                    // decrement counters, and mark complete so the system
+                    // doesn't deadlock.
+                }
             }
 
             // Dispatch dependents (atomic predecessor decrement)

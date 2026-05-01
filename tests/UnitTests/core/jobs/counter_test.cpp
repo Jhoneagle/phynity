@@ -145,3 +145,34 @@ TEST_CASE("CounterPool decrement with invalid handle is safe", "[jobs][counter]"
     CounterHandle invalid;
     REQUIRE_FALSE(pool.decrement(invalid, ec));
 }
+
+TEST_CASE("CounterPool wait exits early when running flag is false", "[jobs][counter]")
+{
+    CounterPool pool(8);
+    EventCount ec;
+
+    auto handle = pool.acquire(5); // never decremented to zero
+    std::atomic<bool> running{true};
+    std::atomic<bool> wait_returned{false};
+
+    std::thread waiter(
+        [&]
+        {
+            pool.wait(handle, ec, &running);
+            wait_returned.store(true, std::memory_order_release);
+        });
+
+    // Give the waiter time to enter the spin/block loop
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    REQUIRE_FALSE(wait_returned.load(std::memory_order_acquire));
+
+    // Signal shutdown and wake the waiter
+    running.store(false, std::memory_order_release);
+    ec.notify_all();
+
+    waiter.join();
+    REQUIRE(wait_returned.load(std::memory_order_acquire));
+
+    // Counter was never decremented to zero
+    REQUIRE(pool.peek(handle) == 5);
+}

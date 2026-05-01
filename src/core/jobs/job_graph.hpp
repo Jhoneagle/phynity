@@ -36,11 +36,22 @@ public:
     }
 
     /// Declare that `before` must finish before `after` can start.
+    /// Duplicate edges are silently ignored to prevent inflated predecessor counts
+    /// that would cause `after` to never become ready during graph execution.
     void depend(JobId before, JobId after)
     {
         assert(before.valid() && before.index < descs_.size());
         assert(after.valid() && after.index < descs_.size());
         assert(before.index != after.index);
+
+        // Guard against duplicate edges
+        for (const auto &existing : adjacency_[before.index])
+        {
+            if (existing == after)
+            {
+                return;
+            }
+        }
 
         adjacency_[before.index].push_back(after);
         ++pred_counts_[after.index];

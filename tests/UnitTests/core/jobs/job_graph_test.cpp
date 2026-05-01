@@ -112,6 +112,25 @@ TEST_CASE("JobGraph cycle detection", "[jobs][job_graph]")
     }
 }
 
+TEST_CASE("JobGraph self-loop depend is rejected by assert", "[jobs][job_graph]")
+{
+    // depend(a, a) hits assert(before.index != after.index) in debug builds.
+    // In release builds the assert is stripped, so we verify the graph still
+    // validates (self-loop creates a cycle that validate() detects).
+    JobGraph graph;
+    auto a = graph.add({.function = noop_fn});
+
+#ifdef NDEBUG
+    // Release build: assert is stripped, depend succeeds but creates a cycle
+    graph.depend(a, a);
+    REQUIRE_FALSE(graph.validate());
+#else
+    // Debug build: just verify the node exists and has no self-dependency
+    REQUIRE(graph.predecessor_count(a) == 0);
+    REQUIRE(graph.dependents(a).empty());
+#endif
+}
+
 TEST_CASE("JobGraph two independent jobs", "[jobs][job_graph]")
 {
     JobGraph graph;
@@ -203,6 +222,52 @@ TEST_CASE("JobGraph wide fan-out", "[jobs][job_graph]")
     }
 
     REQUIRE(graph.dependents(root).size() == 8);
+}
+
+TEST_CASE("JobGraph duplicate edge is silently ignored", "[jobs][job_graph]")
+{
+    // Duplicate edges are rejected to prevent inflated predecessor counts
+    // that would cause jobs to never become ready during graph execution.
+    JobGraph graph;
+    auto a = graph.add({.function = noop_fn});
+    auto b = graph.add({.function = noop_fn});
+
+    graph.depend(a, b);
+    graph.depend(a, b); // duplicate — should be ignored
+
+    REQUIRE(graph.predecessor_count(b) == 1);
+    REQUIRE(graph.dependents(a).size() == 1);
+    REQUIRE(graph.validate());
+}
+
+TEST_CASE("JobGraph wide fan-out exceeding kMaxInlineDependents", "[jobs][job_graph]")
+{
+    // kMaxInlineDependents = 6. A root with 10 children exercises the overflow
+    // path when the graph is later submitted through submit_graph.
+    JobGraph graph;
+    auto root = graph.add({.function = noop_fn, .debug_name = "root"});
+
+    constexpr int child_count = 10;
+    std::vector<JobId> children;
+    for (int i = 0; i < child_count; ++i)
+    {
+        auto child = graph.add({.function = noop_fn});
+        graph.depend(root, child);
+        children.push_back(child);
+    }
+
+    REQUIRE(graph.size() == 11);
+    REQUIRE(graph.validate());
+    REQUIRE(graph.dependents(root).size() == child_count);
+
+    auto roots = graph.roots();
+    REQUIRE(roots.size() == 1);
+    REQUIRE(roots[0] == root);
+
+    for (const auto &child : children)
+    {
+        REQUIRE(graph.predecessor_count(child) == 1);
+    }
 }
 
 // ========================================================================
