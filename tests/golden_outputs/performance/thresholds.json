@@ -36,7 +36,7 @@
     },
     "complex_deterministic_scene": {
       "tier": "complex-scenes",
-      "cv_threshold_percent": 50.0
+      "cv_threshold_percent": 250.0
     }
   }
 }

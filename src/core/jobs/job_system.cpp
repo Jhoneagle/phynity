@@ -155,6 +155,32 @@ void JobSystemImpl::shutdown()
         }
     }
     workers_.clear();
+
+    // Drain remaining jobs from all deques. Jobs submitted via submit_callable
+    // heap-allocate the callable; the invoker frees it when executed. Jobs that
+    // were never picked up by a worker would leak without this drain.
+    for (auto &queue : worker_queues_)
+    {
+        uint32_t slot_index = 0;
+        while (queue->pop(slot_index))
+        {
+            auto &job = pool_[slot_index];
+            if (job.function && job.data)
+            {
+                try
+                {
+                    job.function(job.data);
+                }
+                catch (...)
+                {
+                    // Swallow — we only care about triggering cleanup.
+                }
+            }
+            job.function = nullptr;
+            job.data = nullptr;
+        }
+    }
+
     worker_queues_.clear();
 
     pool_.clear_overflow();
@@ -209,13 +235,13 @@ JobId JobSystemImpl::submit_impl(
     if (counter.valid())
     {
         static_assert(sizeof(CounterHandle) <= kMaxInlineDataSize);
-        std::memcpy(job.inline_data, &counter, sizeof(CounterHandle));
+        std::memcpy(static_cast<void *>(job.inline_data), &counter, sizeof(CounterHandle));
     }
     else
     {
         // Clear the counter slot
         CounterHandle empty{};
-        std::memcpy(job.inline_data, &empty, sizeof(CounterHandle));
+        std::memcpy(static_cast<void *>(job.inline_data), &empty, sizeof(CounterHandle));
     }
 
     // No predecessors — enqueue immediately
@@ -405,7 +431,7 @@ CounterHandle JobSystemImpl::submit_graph(const JobGraph &graph)
 
         // Store counter handle in inline_data
         static_assert(sizeof(CounterHandle) <= kMaxInlineDataSize);
-        std::memcpy(job.inline_data, &counter, sizeof(CounterHandle));
+        std::memcpy(static_cast<void *>(job.inline_data), &counter, sizeof(CounterHandle));
     }
 
     // Phase 3: Enqueue all root nodes (predecessor_count == 0)
@@ -567,7 +593,7 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
 
             // Decrement completion counter if set
             CounterHandle counter;
-            std::memcpy(&counter, job.inline_data, sizeof(CounterHandle));
+            std::memcpy(&counter, static_cast<const void *>(job.inline_data), sizeof(CounterHandle));
             if (counter.valid())
             {
                 counters_.decrement(counter, completion_event_);

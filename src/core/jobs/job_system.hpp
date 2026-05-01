@@ -164,9 +164,8 @@ template <typename Fn> JobId JobSystem::submit_callable(Fn &&fn, CounterHandle c
 
     auto invoker = [](void *data)
     {
-        auto *f = static_cast<FnType *>(data);
+        std::unique_ptr<FnType> f(static_cast<FnType *>(data));
         (*f)();
-        delete f;
     };
 
     JobId id = submit(+invoker, static_cast<void *>(heap_fn), counter, debug_name);

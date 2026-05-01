@@ -43,6 +43,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Pin CMake 3.x
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '~3.31'
+
       - name: Bootstrap vcpkg (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
