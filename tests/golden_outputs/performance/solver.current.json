@@ -1,9 +1,9 @@
 {
   "scenario": "solver",
-  "milliseconds": 5.060000,
+  "milliseconds": 4.859000,
   "iterations": 200,
   "workload": 64,
   "notes": "Constraint solver with synthetic contacts",
-  "peak_rss_kb": 15732,
+  "peak_rss_kb": 15704,
   "allocator_delta_bytes": 0
 }
