@@ -1,13 +1,13 @@
 {
   "scenario": "particle_integration_kernel",
-  "milliseconds": 8.219000,
+  "milliseconds": 4.011000,
   "iterations": 200,
   "workload": 100,
   "notes": "Pure particle integration kernel (position + velocity update per timestep)",
-  "samples_ms": [2.826000, 2.761000, 2.632000],
-  "median_ms": 2.761000,
-  "mean_ms": 2.739667,
-  "stddev_ms": 0.080624,
-  "peak_rss_kb": 6644,
+  "samples_ms": [1.374000, 1.319000, 1.318000],
+  "median_ms": 1.319000,
+  "mean_ms": 1.337000,
+  "stddev_ms": 0.026166,
+  "peak_rss_kb": 16420,
   "allocator_delta_bytes": 22864
 }

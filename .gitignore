@@ -53,6 +53,7 @@ dkms.conf
 
 build
 vcpkg_installed
+.vs
 
 # Temp
 AI-conversation.txt

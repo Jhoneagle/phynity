@@ -158,8 +158,8 @@ TEST_CASE("JobGraph affinity hints stored", "[jobs][job_graph]")
 TEST_CASE("JobGraph clear resets state", "[jobs][job_graph]")
 {
     JobGraph graph;
-    graph.add({.function = noop_fn});
-    graph.add({.function = noop_fn});
+    (void) graph.add({.function = noop_fn});
+    (void) graph.add({.function = noop_fn});
 
     REQUIRE(graph.size() == 2);
 

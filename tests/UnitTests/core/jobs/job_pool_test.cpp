@@ -137,14 +137,14 @@ TEST_CASE("JobPool spin-wait on occupied slot", "[jobs][job_pool]")
     // First round: allocate all 4 slots (generation 1, raw 0-3)
     for (uint32_t i = 0; i < capacity; ++i)
     {
-        pool.allocate();
+        (void) pool.allocate();
     }
 
     // Second round: allocate all 4 slots (generation 2, raw 4-7)
     // This works because gen=2 > slot.generation=1
     for (uint32_t i = 0; i < capacity; ++i)
     {
-        pool.allocate();
+        (void) pool.allocate();
     }
 
     // Now raw counter is at 8. Slots have generation=2.

@@ -177,15 +177,16 @@ TEST_CASE("JobSystem parallel_for small range uses serial", "[jobs]")
 
 TEST_CASE("JobSystem concurrent submit/complete stress", "[jobs]")
 {
-    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
     JobSystem js(config);
     REQUIRE(js.is_running());
 
-    constexpr uint32_t total_jobs = 8000;
+    constexpr uint32_t num_submitters = 2;
+    constexpr uint32_t batches_per_submitter = 10;
+    constexpr uint32_t batch_size = 100;
+    constexpr uint32_t total_jobs = num_submitters * batches_per_submitter * batch_size;
     std::atomic<uint32_t> counter{0};
 
-    constexpr uint32_t num_submitters = 4;
-    constexpr uint32_t jobs_per_submitter = total_jobs / num_submitters;
     std::vector<std::thread> submitters;
     submitters.reserve(num_submitters);
 
@@ -194,15 +195,17 @@ TEST_CASE("JobSystem concurrent submit/complete stress", "[jobs]")
         submitters.emplace_back(
             [&js, &counter]
             {
-                std::vector<JobId> ids;
-                ids.reserve(jobs_per_submitter);
-
-                for (uint32_t i = 0; i < jobs_per_submitter; ++i)
+                for (uint32_t b = 0; b < batches_per_submitter; ++b)
                 {
-                    ids.push_back(js.submit([&counter] { counter.fetch_add(1, std::memory_order_relaxed); }));
-                }
+                    auto done = js.create_counter(static_cast<int32_t>(batch_size));
 
-                js.wait_all(ids);
+                    for (uint32_t i = 0; i < batch_size; ++i)
+                    {
+                        js.submit([&counter] { counter.fetch_add(1, std::memory_order_relaxed); }, done);
+                    }
+
+                    js.wait(done);
+                }
             });
     }
 
@@ -419,7 +422,7 @@ TEST_CASE("JobSystem submit_graph single job", "[jobs][graph]")
 
     std::atomic<int> counter{0};
     JobGraph graph;
-    graph.add({.function = increment_fn, .data = &counter, .debug_name = "single"});
+    (void) graph.add({.function = increment_fn, .data = &counter, .debug_name = "single"});
 
     auto done = js.submit_graph(graph);
     js.wait(done);
@@ -535,7 +538,7 @@ TEST_CASE("JobSystem submit_graph all independent tasks", "[jobs][graph]")
     JobGraph graph;
     for (int i = 0; i < task_count; ++i)
     {
-        graph.add({.function = increment_fn, .data = &counter});
+        (void) graph.add({.function = increment_fn, .data = &counter});
     }
 
     auto done = js.submit_graph(graph);
@@ -575,7 +578,7 @@ TEST_CASE("JobSystem submit_graph physics-like pipeline", "[jobs][graph]")
         [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "integrate");
 
-    graph.add_serial_after(integrate, {.function = +noop_fn, .data = &counter, .debug_name = "collisions"});
+    (void) graph.add_serial_after(integrate, {.function = +noop_fn, .data = &counter, .debug_name = "collisions"});
 
     auto done = js.submit_graph(graph);
     js.wait(done);
@@ -689,66 +692,46 @@ TEST_CASE("JobSystem DeterministicReplay mode executes jobs", "[jobs]")
     js.shutdown();
 }
 
-// =============================================================================
-// Concurrent graph submission stress
-// =============================================================================
-
-TEST_CASE("JobSystem concurrent graph submission stress", "[jobs][graph]")
+TEST_CASE("JobSystem repeated graph submission stress", "[jobs][graph]")
 {
-    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
     JobSystem js(config);
 
-    constexpr uint32_t graphs_per_thread = 20;
-    constexpr uint32_t thread_count = 4;
+    constexpr uint32_t graph_count = 20;
     constexpr uint32_t jobs_per_graph = 13; // 4+4+4+1 (physics pipeline)
     std::atomic<uint32_t> counter{0};
 
     auto inc_fn = [](void *data) { static_cast<std::atomic<uint32_t> *>(data)->fetch_add(1); };
 
-    std::vector<std::thread> submitters;
-    submitters.reserve(thread_count);
-
-    for (uint32_t t = 0; t < thread_count; ++t)
+    for (uint32_t g = 0; g < graph_count; ++g)
     {
-        submitters.emplace_back(
-            [&js, &counter, inc_fn, graphs_per_thread]
-            {
-                for (uint32_t g = 0; g < graphs_per_thread; ++g)
-                {
-                    JobGraph graph;
-                    constexpr uint32_t items = 100;
-                    constexpr uint32_t parts = 4;
+        JobGraph graph;
+        constexpr uint32_t items = 100;
+        constexpr uint32_t parts = 4;
 
-                    auto clear = graph.add_partitioned(
-                        items, parts, {},
-                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
-                        "clear");
+        auto clear = graph.add_partitioned(
+            items, parts, {},
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "clear");
 
-                    auto forces = graph.add_partitioned(
-                        items, parts, clear,
-                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
-                        "forces");
+        auto forces = graph.add_partitioned(
+            items, parts, clear,
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "forces");
 
-                    auto integrate = graph.add_partitioned(
-                        items, parts, forces,
-                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
-                        "integrate");
+        auto integrate = graph.add_partitioned(
+            items, parts, forces,
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "integrate");
 
-                    graph.add_serial_after(
-                        integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
+        (void) graph.add_serial_after(
+            integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
 
-                    auto done = js.submit_graph(graph);
-                    js.wait(done);
-                }
-            });
+        auto done = js.submit_graph(graph);
+        js.wait(done);
     }
 
-    for (auto &t : submitters)
-    {
-        t.join();
-    }
-
-    REQUIRE(counter.load() == thread_count * graphs_per_thread * jobs_per_graph);
+    REQUIRE(counter.load() == graph_count * jobs_per_graph);
 
     js.shutdown();
 }

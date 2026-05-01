@@ -47,25 +47,24 @@ public:
     }
 
     /// Advance the epoch and wake one waiting thread.
+    /// The mutex is locked before advancing the epoch so that the epoch
+    /// change and the CV notification are atomic with respect to waiters
+    /// entering cv_.wait. Without this, a waiter can capture the new epoch
+    /// in prepare_wait() and then block forever because the notification
+    /// already fired before it entered cv_.wait.
     void notify_one() noexcept
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         epoch_.fetch_add(1, std::memory_order_release);
-        if (waiters_.load(std::memory_order_acquire) > 0)
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            cv_.notify_one();
-        }
+        cv_.notify_one();
     }
 
     /// Advance the epoch and wake all waiting threads.
     void notify_all() noexcept
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         epoch_.fetch_add(1, std::memory_order_release);
-        if (waiters_.load(std::memory_order_acquire) > 0)
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            cv_.notify_all();
-        }
+        cv_.notify_all();
     }
 
 private:

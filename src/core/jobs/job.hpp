@@ -30,6 +30,11 @@ static constexpr uint32_t kMaxInlineDataSize = 32;
 /// Layout (128 bytes = 2 cache lines):
 ///   Line 1: function, data, inline_data, predecessor_count, dependent_count, affinity_hint
 ///   Line 2: generation, debug_name, dependents[], overflow
+// MSVC C4324: structure was padded due to alignment specifier — intentional.
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4324)
+#endif
 struct alignas(64) Job
 {
     // === Cache line 1: execution data ===
@@ -48,6 +53,9 @@ struct alignas(64) Job
     uint32_t overflow_offset = 0;                                // 4 (index into pool's overflow array)
     uint32_t overflow_count = 0;                                 // 4 (number of overflow dependents)
 };
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 static_assert(sizeof(Job) == 128, "Job must be exactly 128 bytes (2 cache lines)");
 static_assert(alignof(Job) == 64, "Job must be cacheline-aligned");

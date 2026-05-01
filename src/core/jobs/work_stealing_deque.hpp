@@ -114,8 +114,16 @@ private:
 
     // Contended atomics on separate cache lines to prevent false sharing.
     // top_ is CAS'd by thieves; bottom_ is modified by the owner.
+    // MSVC C4324: structure was padded due to alignment specifier — intentional.
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4324)
+#endif
     alignas(64) std::atomic<int64_t> top_{0};
     alignas(64) std::atomic<int64_t> bottom_{0};
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 };
 
 } // namespace phynity::jobs
