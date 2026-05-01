@@ -5,10 +5,10 @@ Threshold: 3 incident(s)
 
 | Test | Incidents | Budget |
 | --- | ---: | --- |
-| unit.jobs.job_system | 11 | EXCEEDED |
+| unit.jobs.job_system | 12 | EXCEEDED |
 | unit.jobs.task_executor | 7 | EXCEEDED |
-| validation.physics.collision.broadphase_performance | 6 | EXCEEDED |
 | validation.performance.ccd | 6 | EXCEEDED |
+| validation.physics.collision.broadphase_performance | 5 | EXCEEDED |
 | unit.jobs.work_stealing_deque | 4 | EXCEEDED |
 | job_system_tests | 1 | OK |
 | unit.diagnostics.frame_profiler | 1 | OK |
