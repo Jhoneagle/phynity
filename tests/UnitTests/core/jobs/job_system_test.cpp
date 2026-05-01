@@ -754,7 +754,7 @@ TEST_CASE("JobSystem concurrent graph submission stress", "[jobs][graph]")
     for (uint32_t t = 0; t < thread_count; ++t)
     {
         submitters.emplace_back(
-            [&js, &counter, inc_fn, graphs_per_thread]
+            [&js, &counter, inc_fn]
             {
                 for (uint32_t g = 0; g < graphs_per_thread; ++g)
                 {
