@@ -97,6 +97,7 @@ TEST_CASE("CounterPool concurrent decrements", "[jobs][counter]")
     auto handle = pool.acquire(count);
 
     std::vector<std::thread> threads;
+    threads.reserve(count);
     std::atomic<int> zero_count{0};
 
     for (int i = 0; i < count; ++i)

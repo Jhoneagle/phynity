@@ -29,6 +29,7 @@ jobs:
             cxx: clang-cl
             build_type: Release
             triplet: x64-windows
+            build_render: 'ON'
 
           - os: linux
             runner: ubuntu-22.04
@@ -37,6 +38,7 @@ jobs:
             cxx: clang++
             build_type: Release
             triplet: x64-linux
+            build_render: 'OFF'
 
           - os: macos
             runner: macos-14
@@ -45,6 +47,7 @@ jobs:
             cxx: clang++
             build_type: Release
             triplet: arm64-osx
+            build_render: 'ON'
 
     steps:
       - name: Checkout repository
@@ -120,7 +123,7 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-        run: cmake --preset=release -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DPHYNITY_BUILD_TESTS=ON -DPHYNITY_WARNINGS_AS_ERRORS=ON -DPHYNITY_ENABLE_SANITIZERS=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
+        run: cmake --preset=release -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DPHYNITY_BUILD_TESTS=ON -DPHYNITY_BUILD_RENDER=${{ matrix.build_render }} -DPHYNITY_WARNINGS_AS_ERRORS=ON -DPHYNITY_ENABLE_SANITIZERS=OFF -DVCPKG_TARGET_TRIPLET=${{ matrix.triplet }}
 
       - name: Build
         run: cmake --build build/release --config ${{ matrix.build_type }} -j
@@ -239,7 +242,7 @@ jobs:
             vcpkg-linux-
 
       - name: Configure CMake for static analysis
-        run: cmake --preset=release -DCMAKE_BUILD_TYPE=Release -DPHYNITY_BUILD_TESTS=ON -DVCPKG_TARGET_TRIPLET=x64-linux
+        run: cmake --preset=release -DCMAKE_BUILD_TYPE=Release -DPHYNITY_BUILD_TESTS=ON -DPHYNITY_BUILD_RENDER=OFF -DVCPKG_TARGET_TRIPLET=x64-linux
 
       - name: Run clang-tidy
         run: |

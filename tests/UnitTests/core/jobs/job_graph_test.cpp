@@ -3,7 +3,7 @@
 
 using namespace phynity::jobs;
 
-static void noop_fn(void *) {}
+static void noop_fn(void * /*data*/) {}
 
 TEST_CASE("JobGraph empty graph validates", "[jobs][job_graph]")
 {

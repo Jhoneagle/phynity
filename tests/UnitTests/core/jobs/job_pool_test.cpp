@@ -195,5 +195,5 @@ TEST_CASE("JobPool concurrent allocation produces unique ids", "[jobs][job_pool]
         }
     }
 
-    REQUIRE(unique_ids.size() == thread_count * jobs_per_thread);
+    REQUIRE(unique_ids.size() == static_cast<size_t>(thread_count) * jobs_per_thread);
 }

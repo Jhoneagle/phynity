@@ -71,6 +71,7 @@ TEST_CASE("EventCount multiple waiters woken by notify_all", "[jobs][eventcount]
     std::atomic<int> woken_count{0};
 
     std::vector<std::thread> waiters;
+    waiters.reserve(num_waiters);
     for (int i = 0; i < num_waiters; ++i)
     {
         waiters.emplace_back(
