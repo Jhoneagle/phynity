@@ -73,6 +73,12 @@ private:
     // Per-worker work-stealing deques (stores raw alloc indices from pool)
     std::vector<std::unique_ptr<WorkStealingDeque<uint32_t>>> worker_queues_;
 
+    // Per-queue push mutex: the Chase-Lev deque's push() is single-producer only,
+    // but enqueue() can be called from any thread (external submitters, workers
+    // dispatching dependents). These mutexes serialize pushes to the same deque
+    // while keeping pop() and steal() lock-free.
+    std::vector<std::mutex> push_mutexes_;
+
     // Round-robin submit distribution
     std::atomic<uint32_t> submit_counter_{0};
 
@@ -105,8 +111,9 @@ void JobSystemImpl::start(const JobSystemConfig &config)
     uint32_t actual_workers =
         (mode_ == SchedulingMode::Deterministic || mode_ == SchedulingMode::DeterministicReplay) ? 1 : worker_count_;
 
-    // Create per-worker deques
+    // Create per-worker deques and their push mutexes
     worker_queues_.clear();
+    push_mutexes_ = std::vector<std::mutex>(actual_workers);
     for (uint32_t i = 0; i < actual_workers; ++i)
     {
         worker_queues_.push_back(std::make_unique<WorkStealingDeque<uint32_t>>(10)); // capacity 1024
@@ -231,13 +238,20 @@ void JobSystemImpl::enqueue(JobId id, uint16_t affinity_hint)
 
     // Try target queue first; if full, round-robin through others.
     // This prevents silent job loss when a single deque is saturated.
-    bool pushed = worker_queues_[target]->push(id.index);
+    // Each push is serialized per-queue because the Chase-Lev deque's push()
+    // is single-producer only, but enqueue() runs from arbitrary threads.
+    bool pushed = false;
+    {
+        std::lock_guard<std::mutex> lock(push_mutexes_[target]);
+        pushed = worker_queues_[target]->push(id.index);
+    }
     if (!pushed)
     {
         uint32_t queues = static_cast<uint32_t>(worker_queues_.size());
         for (uint32_t offset = 1; offset < queues; ++offset)
         {
             uint32_t alt = (target + offset) % queues;
+            std::lock_guard<std::mutex> lock(push_mutexes_[alt]);
             if (worker_queues_[alt]->push(id.index))
             {
                 pushed = true;
@@ -512,7 +526,11 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
     while (running_.load(std::memory_order_acquire))
     {
         uint32_t slot_index = 0;
-        bool found = my_queue.pop(slot_index);
+        bool found = false;
+        {
+            std::lock_guard<std::mutex> lock(push_mutexes_[worker_index]);
+            found = my_queue.pop(slot_index);
+        }
 
         if (!found)
         {
