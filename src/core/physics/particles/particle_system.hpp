@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <core/diagnostics/physics_diagnostics_hub.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
 #include <core/jobs/job_graph.hpp>
@@ -17,6 +16,7 @@
 #include <platform/allocation_tracker.hpp>
 
 #include <algorithm>
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -664,8 +664,8 @@ private:
                      [](void *p)
                  {
                      auto *d = static_cast<CollisionData *>(p);
-                     ParticleCollisionContext ctx{d->self->constraint_solver_, d->self->constraints_,
-                                                 d->self->constraints_enabled_};
+                     ParticleCollisionContext ctx{
+                         d->self->constraint_solver_, d->self->constraints_, d->self->constraints_enabled_};
                      d->self->collision_resolver_.resolve(d->self->particles_, d->dt, d->self->ccd_config_, ctx);
                      if (d->self->diagnostics_hub_.has_active_collision_monitor())
                      {

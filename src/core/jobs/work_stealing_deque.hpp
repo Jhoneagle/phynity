@@ -24,7 +24,7 @@ template <typename T> class WorkStealingDeque
 
 public:
     explicit WorkStealingDeque(uint32_t capacity_log2 = 10)
-        : mask_((1u << capacity_log2) - 1), buffer_(new std::atomic<T>[static_cast<size_t>(mask_) + 1]{})
+        : mask_((1u << capacity_log2) - 1), buffer_(new std::atomic<T>[static_cast<size_t>(mask_) + 1] {})
     {
     }
 

@@ -3,13 +3,13 @@
 #include "job.hpp"
 #include "job_id.hpp"
 
+#include <platform/threading.hpp>
+
 #include <atomic>
 #include <cassert>
 #include <cstdint>
 #include <mutex>
 #include <vector>
-
-#include <platform/threading.hpp>
 
 namespace phynity::jobs
 {

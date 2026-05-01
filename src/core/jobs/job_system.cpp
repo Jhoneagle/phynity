@@ -258,8 +258,7 @@ void JobSystemImpl::enqueue(JobId id, uint16_t affinity_hint)
     }
     else
     {
-        target =
-            submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
+        target = submit_counter_.fetch_add(1, std::memory_order_relaxed) % static_cast<uint32_t>(worker_queues_.size());
     }
 
     // Try target queue first; if full, round-robin through others.
@@ -614,10 +613,9 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
         else
         {
             std::unique_lock<std::mutex> lock(wake_mutex_);
-            wake_cv_.wait_for(
-                lock,
-                std::chrono::milliseconds(1),
-                [this] { return pending_work_.load(std::memory_order_acquire) > 0 || !running_.load(); });
+            wake_cv_.wait_for(lock,
+                              std::chrono::milliseconds(1),
+                              [this] { return pending_work_.load(std::memory_order_acquire) > 0 || !running_.load(); });
         }
     }
 }

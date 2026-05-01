@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <core/diagnostics/energy_monitor.hpp>
 #include <core/diagnostics/momentum_monitor.hpp>
 #include <core/diagnostics/profiling_macros.hpp>
@@ -15,6 +14,7 @@
 #include <core/physics/rigid_bodies/rigid_body_collision_resolver.hpp>
 #include <platform/allocation_tracker.hpp>
 
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <span>
@@ -578,41 +578,42 @@ private:
         {
             auto *con_data = &frame_constraint_data_.emplace_back(RBConstraintData{this, dt});
 
-            auto constraint_id = graph.add(
-                {.function =
-                     [](void *p)
-                 {
-                     auto *d = static_cast<RBConstraintData *>(p);
-                     d->self->active_constraints_cache_.clear();
-                     for (auto &c : d->self->constraints_)
-                         if (c && c->is_active())
-                             d->self->active_constraints_cache_.push_back(c.get());
+            auto constraint_id =
+                graph.add({.function =
+                               [](void *p)
+                           {
+                               auto *d = static_cast<RBConstraintData *>(p);
+                               d->self->active_constraints_cache_.clear();
+                               for (auto &c : d->self->constraints_)
+                                   if (c && c->is_active())
+                                       d->self->active_constraints_cache_.push_back(c.get());
 
-                     if (d->self->active_constraints_cache_.empty())
-                         return;
+                               if (d->self->active_constraints_cache_.empty())
+                                   return;
 
-                     const int iterations = d->self->config_.constraint_iterations;
-                     const float beta = d->self->config_.baumgarte_beta;
-                     const float threshold = 1e-5f;
+                               const int iterations = d->self->config_.constraint_iterations;
+                               const float beta = d->self->config_.baumgarte_beta;
+                               const float threshold = 1e-5f;
 
-                     for (int iter = 0; iter < iterations; ++iter)
-                     {
-                         float max_impulse = 0.0f;
-                         for (auto *constraint : d->self->active_constraints_cache_)
-                         {
-                             float error = constraint->compute_error();
-                             if (error < threshold)
-                                 continue;
-                             float impulse = std::min(beta * error * d->dt, d->self->config_.max_constraint_impulse);
-                             constraint->apply_impulse(impulse);
-                             max_impulse = std::max(max_impulse, std::abs(impulse));
-                         }
-                         if (max_impulse < threshold)
-                             break;
-                     }
-                 },
-                 .data = con_data,
-                 .debug_name = "rb_constraints"});
+                               for (int iter = 0; iter < iterations; ++iter)
+                               {
+                                   float max_impulse = 0.0f;
+                                   for (auto *constraint : d->self->active_constraints_cache_)
+                                   {
+                                       float error = constraint->compute_error();
+                                       if (error < threshold)
+                                           continue;
+                                       float impulse =
+                                           std::min(beta * error * d->dt, d->self->config_.max_constraint_impulse);
+                                       constraint->apply_impulse(impulse);
+                                       max_impulse = std::max(max_impulse, std::abs(impulse));
+                                   }
+                                   if (max_impulse < threshold)
+                                       break;
+                               }
+                           },
+                           .data = con_data,
+                           .debug_name = "rb_constraints"});
             graph.depend(collision_id, constraint_id);
         }
 

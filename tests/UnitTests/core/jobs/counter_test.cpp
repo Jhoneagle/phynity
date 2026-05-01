@@ -40,7 +40,7 @@ TEST_CASE("CounterPool decrement reaches zero", "[jobs][counter]")
     REQUIRE(pool.peek(handle) == 2);
     REQUIRE_FALSE(pool.decrement(handle, ec)); // 2 -> 1
     REQUIRE(pool.peek(handle) == 1);
-    REQUIRE(pool.decrement(handle, ec));       // 1 -> 0, returns true
+    REQUIRE(pool.decrement(handle, ec)); // 1 -> 0, returns true
     REQUIRE(pool.peek(handle) == 0);
 }
 
@@ -129,7 +129,7 @@ TEST_CASE("CounterPool stale handle decrement is safe", "[jobs][counter]")
 
     auto h1 = pool.acquire(1);
     pool.decrement(h1, ec); // 1 -> 0
-    pool.wait(h1, ec);      // releases the slot
+    pool.wait(h1, ec); // releases the slot
 
     auto h2 = pool.acquire(5); // reuses the slot with new generation
 

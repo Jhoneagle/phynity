@@ -134,7 +134,9 @@ TEST_CASE("JobSystem parallel_for deterministic mode runs serially", "[jobs]")
     }
     std::atomic<int> sequence{0};
 
-    js.parallel_for(0, count, 10,
+    js.parallel_for(0,
+                    count,
+                    10,
                     [&results, &sequence](uint32_t i)
                     { results[i].store(sequence.fetch_add(1, std::memory_order_relaxed), std::memory_order_relaxed); });
 
@@ -162,7 +164,9 @@ TEST_CASE("JobSystem parallel_for small range uses serial", "[jobs]")
     }
     std::atomic<int> sequence{0};
 
-    js.parallel_for(0, count, 10,
+    js.parallel_for(0,
+                    count,
+                    10,
                     [&results, &sequence](uint32_t i)
                     { results[i].store(sequence.fetch_add(1, std::memory_order_relaxed), std::memory_order_relaxed); });
 
@@ -324,7 +328,7 @@ TEST_CASE("JobSystem counter pool exhaustion", "[jobs]")
     // Wait on an invalid counter should be a no-op, not a hang.
     CounterHandle invalid;
     js.wait(invalid); // should return immediately
-    REQUIRE(true);    // just verify we didn't hang
+    REQUIRE(true); // just verify we didn't hang
 
     js.shutdown();
 }
@@ -564,17 +568,23 @@ TEST_CASE("JobSystem submit_graph physics-like pipeline", "[jobs][graph]")
     JobGraph graph;
 
     auto clear = graph.add_partitioned(
-        items, parts, {},
+        items,
+        parts,
+        {},
         [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "clear");
 
     auto forces = graph.add_partitioned(
-        items, parts, clear,
+        items,
+        parts,
+        clear,
         [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "forces");
 
     auto integrate = graph.add_partitioned(
-        items, parts, forces,
+        items,
+        parts,
+        forces,
         [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
         "integrate");
 
@@ -710,22 +720,27 @@ TEST_CASE("JobSystem repeated graph submission stress", "[jobs][graph]")
         constexpr uint32_t parts = 4;
 
         auto clear = graph.add_partitioned(
-            items, parts, {},
+            items,
+            parts,
+            {},
             [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
             "clear");
 
         auto forces = graph.add_partitioned(
-            items, parts, clear,
+            items,
+            parts,
+            clear,
             [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
             "forces");
 
         auto integrate = graph.add_partitioned(
-            items, parts, forces,
+            items,
+            parts,
+            forces,
             [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
             "integrate");
 
-        (void) graph.add_serial_after(
-            integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
+        (void) graph.add_serial_after(integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
 
         auto done = js.submit_graph(graph);
         js.wait(done);
@@ -763,22 +778,28 @@ TEST_CASE("JobSystem concurrent graph submission stress", "[jobs][graph]")
                     constexpr uint32_t parts = 4;
 
                     auto clear = graph.add_partitioned(
-                        items, parts, {},
+                        items,
+                        parts,
+                        {},
                         [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
                         "clear");
 
                     auto forces = graph.add_partitioned(
-                        items, parts, clear,
+                        items,
+                        parts,
+                        clear,
                         [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
                         "forces");
 
                     auto integrate = graph.add_partitioned(
-                        items, parts, forces,
+                        items,
+                        parts,
+                        forces,
                         [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
                         "integrate");
 
-                    (void) graph.add_serial_after(
-                        integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
+                    (void) graph.add_serial_after(integrate,
+                                                  {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
 
                     auto done = js.submit_graph(graph);
                     js.wait(done);
