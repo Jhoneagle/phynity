@@ -62,13 +62,14 @@ public:
 
             if (t == b)
             {
-                // Last element — CAS resolves race with steal
+                // Last element — CAS resolves race with steal.
+                // Use b+1 (not t+1) because compare_exchange_strong mutates t on failure.
                 if (!top_.compare_exchange_strong(t, t + 1, std::memory_order_seq_cst, std::memory_order_relaxed))
                 {
-                    bottom_.store(t + 1, std::memory_order_relaxed);
+                    bottom_.store(b + 1, std::memory_order_relaxed);
                     return false;
                 }
-                bottom_.store(t + 1, std::memory_order_relaxed);
+                bottom_.store(b + 1, std::memory_order_relaxed);
             }
             return true;
         }
