@@ -379,9 +379,11 @@ TEST_CASE("JobSystem shutdown with multiple external waiters", "[jobs]")
     JobSystem js(config);
 
     // Submit blocking jobs so waiters will actually block
+    constexpr int kNumJobs = 4;
     std::atomic<bool> release{false};
     std::vector<JobId> ids;
-    for (int i = 0; i < 4; ++i)
+    ids.reserve(kNumJobs);
+    for (int i = 0; i < kNumJobs; ++i)
     {
         ids.push_back(js.submit(
             [&release]
@@ -395,6 +397,7 @@ TEST_CASE("JobSystem shutdown with multiple external waiters", "[jobs]")
 
     // Spawn external waiter threads
     std::vector<std::thread> waiters;
+    waiters.reserve(kNumJobs);
     std::atomic<int> waiters_done{0};
     for (auto id : ids)
     {
