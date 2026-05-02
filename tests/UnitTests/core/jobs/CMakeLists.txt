@@ -7,32 +7,6 @@ phynity_target_defaults(job_system_test)
 
 add_test(NAME unit.jobs.job_system COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:job_system_test>)
 
-add_executable(task_graph_test task_graph_test.cpp)
-target_link_libraries(task_graph_test PRIVATE
-    phynity::core
-    Catch2::Catch2WithMain
-)
-phynity_target_defaults(task_graph_test)
-
-add_test(NAME unit.jobs.task_graph COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:task_graph_test>)
-
-add_executable(task_scheduler_test task_scheduler_test.cpp)
-target_link_libraries(task_scheduler_test PRIVATE
-    phynity::core
-    Catch2::Catch2WithMain
-)
-phynity_target_defaults(task_scheduler_test)
-
-add_test(NAME unit.jobs.task_scheduler COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:task_scheduler_test>)
-
-add_executable(task_executor_test task_executor_test.cpp)
-target_link_libraries(task_executor_test PRIVATE
-    phynity::core
-    Catch2::Catch2WithMain
-)
-phynity_target_defaults(task_executor_test)
-
-add_test(NAME unit.jobs.task_executor COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:task_executor_test>)
 
 add_executable(work_stealing_deque_test work_stealing_deque_test.cpp)
 target_link_libraries(work_stealing_deque_test PRIVATE
@@ -60,3 +34,48 @@ target_link_libraries(schedule_replay_test PRIVATE
 phynity_target_defaults(schedule_replay_test)
 
 add_test(NAME unit.jobs.schedule_replay COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:schedule_replay_test>)
+
+add_executable(job_id_test job_id_test.cpp)
+target_link_libraries(job_id_test PRIVATE
+    phynity::core
+    Catch2::Catch2WithMain
+)
+phynity_target_defaults(job_id_test)
+
+add_test(NAME unit.jobs.job_id COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:job_id_test>)
+
+add_executable(eventcount_test eventcount_test.cpp)
+target_link_libraries(eventcount_test PRIVATE
+    phynity::core
+    Catch2::Catch2WithMain
+)
+phynity_target_defaults(eventcount_test)
+
+add_test(NAME unit.jobs.eventcount COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:eventcount_test>)
+
+add_executable(counter_test counter_test.cpp)
+target_link_libraries(counter_test PRIVATE
+    phynity::core
+    Catch2::Catch2WithMain
+)
+phynity_target_defaults(counter_test)
+
+add_test(NAME unit.jobs.counter COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:counter_test>)
+
+add_executable(job_pool_test job_pool_test.cpp)
+target_link_libraries(job_pool_test PRIVATE
+    phynity::core
+    Catch2::Catch2WithMain
+)
+phynity_target_defaults(job_pool_test)
+
+add_test(NAME unit.jobs.job_pool COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:job_pool_test>)
+
+add_executable(job_graph_test job_graph_test.cpp)
+target_link_libraries(job_graph_test PRIVATE
+    phynity::core
+    Catch2::Catch2WithMain
+)
+phynity_target_defaults(job_graph_test)
+
+add_test(NAME unit.jobs.job_graph COMMAND ${CMAKE_COMMAND} -E env $<TARGET_FILE:job_graph_test>)

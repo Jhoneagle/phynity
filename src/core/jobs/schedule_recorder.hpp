@@ -1,6 +1,6 @@
 #pragma once
 
-#include "task_id.hpp"
+#include "job_id.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -30,7 +30,7 @@ public:
     };
 
     void begin_frame(uint32_t frame_index);
-    void record_task_start(TaskId id, uint32_t worker_index);
+    void record_task_start(JobId id, uint32_t worker_index);
     void end_frame();
 
     [[nodiscard]] const std::vector<FrameRecord> &frames() const

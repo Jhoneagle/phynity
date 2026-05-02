@@ -1,7 +1,6 @@
 #pragma once
 
 #include "schedule_recorder.hpp"
-#include "task_schedule.hpp"
 
 #include <cstdint>
 #include <string>
@@ -11,8 +10,9 @@
 namespace phynity::jobs
 {
 
-/// Loads a recorded schedule and produces TaskSchedules that replay
-/// the exact execution order from the recording.
+/// Loads a recorded schedule for deterministic replay.
+/// In the new system, replay schedules are consumed by the JobSystem's
+/// deterministic mode to execute tasks in the exact recorded order.
 class ScheduleReplayer
 {
 public:
@@ -20,9 +20,9 @@ public:
 
     [[nodiscard]] bool has_frame(uint32_t frame_index) const;
 
-    /// Produce a TaskSchedule where tasks are sequenced in the exact
-    /// recorded execution order. All tasks get tier 0 (serial replay).
-    [[nodiscard]] TaskSchedule replay_schedule(uint32_t frame_index) const;
+    /// Get the recorded task execution order for a given frame.
+    /// Returns the task records sorted by start_order.
+    [[nodiscard]] const std::vector<ScheduleRecorder::TaskRecord> *frame_tasks(uint32_t frame_index) const;
 
     [[nodiscard]] uint32_t frame_count() const
     {

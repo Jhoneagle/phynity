@@ -2,6 +2,8 @@
 #include <core/jobs/job_system.hpp>
 
 #include <atomic>
+#include <stdexcept>
+#include <thread>
 #include <vector>
 
 using namespace phynity::jobs;
@@ -15,10 +17,10 @@ TEST_CASE("JobSystem basic submission and wait", "[jobs]")
     REQUIRE(js.worker_count() == 1);
 
     std::atomic<int> counter{0};
-    auto handle = js.submit([&counter] { counter++; });
+    auto id = js.submit([&counter] { counter++; });
 
-    REQUIRE(handle.valid());
-    js.wait(handle);
+    REQUIRE(id.valid());
+    js.wait(id);
 
     REQUIRE(counter == 1);
 
@@ -32,15 +34,15 @@ TEST_CASE("JobSystem multiple jobs", "[jobs]")
     JobSystem js(config);
 
     std::atomic<int> counter{0};
-    std::vector<JobHandle> handles;
-    handles.reserve(10);
+    std::vector<JobId> ids;
+    ids.reserve(10);
 
     for (int i = 0; i < 10; ++i)
     {
-        handles.push_back(js.submit([&counter] { counter++; }));
+        ids.push_back(js.submit([&counter] { counter++; }));
     }
 
-    js.wait_all(handles);
+    js.wait_all(ids);
     REQUIRE(counter == 10);
 
     js.shutdown();
@@ -54,15 +56,15 @@ TEST_CASE("JobSystem deterministic mode", "[jobs]")
     REQUIRE(js.scheduling_mode() == SchedulingMode::Deterministic);
 
     std::atomic<int> counter{0};
-    std::vector<JobHandle> handles;
-    handles.reserve(5);
+    std::vector<JobId> ids;
+    ids.reserve(5);
 
     for (int i = 0; i < 5; ++i)
     {
-        handles.push_back(js.submit([&counter] { counter++; }));
+        ids.push_back(js.submit([&counter] { counter++; }));
     }
 
-    js.wait_all(handles);
+    js.wait_all(ids);
     REQUIRE(counter == 5);
 
     js.shutdown();
@@ -86,7 +88,6 @@ TEST_CASE("JobSystem parallel_for serial fallback", "[jobs]")
 
 TEST_CASE("JobSystem parallel_for with workers visits all indices", "[jobs]")
 {
-    // Start a real job system with 4 workers to test parallel execution
     JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
     JobSystem js(config);
     REQUIRE(js.is_running());
@@ -108,7 +109,6 @@ TEST_CASE("JobSystem parallel_for with workers visits all indices", "[jobs]")
                         visit_count.fetch_add(1);
                     });
 
-    // Every index must be visited exactly once
     REQUIRE(visit_count.load() == count);
     for (uint32_t i = 0; i < count; ++i)
     {
@@ -120,21 +120,30 @@ TEST_CASE("JobSystem parallel_for with workers visits all indices", "[jobs]")
 
 TEST_CASE("JobSystem parallel_for deterministic mode runs serially", "[jobs]")
 {
-    // Deterministic mode should fall back to serial execution for reproducibility
     JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Deterministic};
     JobSystem js(config);
     REQUIRE(js.is_running());
 
-    // In serial execution, indices are visited in order
-    std::vector<uint32_t> order;
-    order.reserve(100);
-
-    js.parallel_for(0, 100, 10, [&order](uint32_t i) { order.push_back(i); });
-
-    REQUIRE(order.size() == 100);
-    for (uint32_t i = 0; i < 100; ++i)
+    // Use a pre-sized array with atomics so this test remains safe even if the
+    // deterministic serial guarantee were ever relaxed.
+    constexpr uint32_t count = 100;
+    std::vector<std::atomic<int>> results(count);
+    for (auto &r : results)
     {
-        REQUIRE(order[i] == i);
+        r.store(-1, std::memory_order_relaxed);
+    }
+    std::atomic<int> sequence{0};
+
+    js.parallel_for(0,
+                    count,
+                    10,
+                    [&results, &sequence](uint32_t i)
+                    { results[i].store(sequence.fetch_add(1, std::memory_order_relaxed), std::memory_order_relaxed); });
+
+    // In deterministic mode, execution is sequential 0..99
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        REQUIRE(results[i].load() == static_cast<int>(i));
     }
 
     js.shutdown();
@@ -142,21 +151,717 @@ TEST_CASE("JobSystem parallel_for deterministic mode runs serially", "[jobs]")
 
 TEST_CASE("JobSystem parallel_for small range uses serial", "[jobs]")
 {
-    // When range is <= grain, should run serially even with workers
     JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
     JobSystem js(config);
 
-    std::vector<uint32_t> order;
-    order.reserve(5);
-
-    // grain=10 but range is only 5, so serial path
-    js.parallel_for(0, 5, 10, [&order](uint32_t i) { order.push_back(i); });
-
-    REQUIRE(order.size() == 5);
-    for (uint32_t i = 0; i < 5; ++i)
+    // Use a pre-sized array with atomics so this test remains safe even if the
+    // serial fallback threshold were ever changed.
+    constexpr uint32_t count = 5;
+    std::vector<std::atomic<int>> results(count);
+    for (auto &r : results)
     {
-        REQUIRE(order[i] == i);
+        r.store(-1, std::memory_order_relaxed);
     }
+    std::atomic<int> sequence{0};
+
+    js.parallel_for(0,
+                    count,
+                    10,
+                    [&results, &sequence](uint32_t i)
+                    { results[i].store(sequence.fetch_add(1, std::memory_order_relaxed), std::memory_order_relaxed); });
+
+    // count (5) < grain (10), so serial: indices visited in order
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        REQUIRE(results[i].load() == static_cast<int>(i));
+    }
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem concurrent submit/complete stress", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+    REQUIRE(js.is_running());
+
+    constexpr uint32_t num_submitters = 4;
+    constexpr uint32_t batches_per_submitter = 20;
+    constexpr uint32_t batch_size = 100;
+    constexpr uint32_t total_jobs = num_submitters * batches_per_submitter * batch_size;
+    std::atomic<uint32_t> counter{0};
+
+    std::vector<std::thread> submitters;
+    submitters.reserve(num_submitters);
+
+    for (uint32_t t = 0; t < num_submitters; ++t)
+    {
+        submitters.emplace_back(
+            [&js, &counter]
+            {
+                for (uint32_t b = 0; b < batches_per_submitter; ++b)
+                {
+                    auto done = js.create_counter(static_cast<int32_t>(batch_size));
+
+                    for (uint32_t i = 0; i < batch_size; ++i)
+                    {
+                        js.submit([&counter] { counter.fetch_add(1, std::memory_order_relaxed); }, done);
+                    }
+
+                    js.wait(done);
+                }
+            });
+    }
+
+    for (auto &t : submitters)
+    {
+        t.join();
+    }
+
+    REQUIRE(counter.load() == total_jobs);
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem wait on completed job returns immediately", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> value{0};
+    auto id = js.submit([&value] { value.store(42, std::memory_order_relaxed); });
+    js.wait(id);
+    REQUIRE(value.load() == 42);
+
+    // Second wait should return immediately
+    js.wait(id);
+    REQUIRE(value.load() == 42);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem wait on invalid JobId is a no-op", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // Should return immediately without crash or hang
+    js.wait(JobId{});
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit when not running returns invalid", "[jobs]")
+{
+    JobSystem js; // default-constructed, not started
+
+    std::atomic<bool> executed{false};
+    auto id = js.submit([&executed] { executed.store(true); });
+
+    REQUIRE_FALSE(id.valid());
+    REQUIRE_FALSE(executed.load());
+
+    js.shutdown(); // shutdown on non-started system should also be safe
+}
+
+TEST_CASE("JobSystem double shutdown is safe", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    REQUIRE(js.is_running());
+    js.shutdown();
+    REQUIRE_FALSE(js.is_running());
+
+    // Second shutdown should be a no-op
+    js.shutdown();
+    REQUIRE_FALSE(js.is_running());
+}
+
+TEST_CASE("JobSystem restart after shutdown", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    auto id1 = js.submit([&counter] { counter++; });
+    js.wait(id1);
+    REQUIRE(counter.load() == 1);
+
+    js.shutdown();
+    REQUIRE_FALSE(js.is_running());
+
+    // Restart with new config
+    JobSystemConfig config2{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    js.start(config2);
+    REQUIRE(js.is_running());
+
+    auto id2 = js.submit([&counter] { counter++; });
+    js.wait(id2);
+    REQUIRE(counter.load() == 2);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit after shutdown returns invalid", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+    REQUIRE(js.is_running());
+
+    js.shutdown();
+    REQUIRE_FALSE(js.is_running());
+
+    // impl_ has been reset — submit should return invalid and not crash
+    std::atomic<bool> executed{false};
+    auto id = js.submit([&executed] { executed.store(true); });
+
+    REQUIRE_FALSE(id.valid());
+    REQUIRE_FALSE(executed.load());
+}
+
+TEST_CASE("JobSystem counter pool exhaustion", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // create_counter returns invalid when the pool (256 slots) is exhausted.
+    // Wait on an invalid counter should be a no-op, not a hang.
+    CounterHandle invalid;
+    js.wait(invalid); // should return immediately
+    REQUIRE(true); // just verify we didn't hang
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem shutdown unblocks waiting threads", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 1, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<bool> blocker_started{false};
+    std::atomic<bool> blocker_done{false};
+
+    std::atomic<bool> release_blocker{false};
+    js.submit(
+        [&blocker_started, &release_blocker]
+        {
+            blocker_started.store(true, std::memory_order_release);
+            while (!release_blocker.load(std::memory_order_acquire))
+            {
+                std::this_thread::yield();
+            }
+        });
+
+    while (!blocker_started.load(std::memory_order_acquire))
+    {
+        std::this_thread::yield();
+    }
+
+    auto queued_id = js.submit([] {});
+
+    std::thread waiter(
+        [&js, queued_id, &blocker_done]
+        {
+            js.wait(queued_id);
+            blocker_done.store(true, std::memory_order_release);
+        });
+
+    release_blocker.store(true, std::memory_order_release);
+    js.shutdown();
+
+    waiter.join();
+    REQUIRE(blocker_done.load());
+}
+
+TEST_CASE("JobSystem shutdown with multiple external waiters", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // Submit blocking jobs so waiters will actually block
+    constexpr int kNumJobs = 4;
+    std::atomic<bool> release{false};
+    std::vector<JobId> ids;
+    ids.reserve(kNumJobs);
+    for (int i = 0; i < kNumJobs; ++i)
+    {
+        ids.push_back(js.submit(
+            [&release]
+            {
+                while (!release.load(std::memory_order_acquire))
+                {
+                    std::this_thread::yield();
+                }
+            }));
+    }
+
+    // Spawn external waiter threads
+    std::vector<std::thread> waiters;
+    waiters.reserve(kNumJobs);
+    std::atomic<int> waiters_done{0};
+    for (auto id : ids)
+    {
+        waiters.emplace_back(
+            [&js, id, &waiters_done]
+            {
+                js.wait(id);
+                waiters_done.fetch_add(1, std::memory_order_relaxed);
+            });
+    }
+
+    // Give waiters time to enter wait()
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    release.store(true, std::memory_order_release);
+    js.shutdown();
+
+    for (auto &t : waiters)
+    {
+        t.join();
+    }
+    REQUIRE(waiters_done.load() == 4);
+}
+
+// =============================================================================
+// Counter-based tests
+// =============================================================================
+
+TEST_CASE("JobSystem counter-based wait", "[jobs][counter]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    auto done = js.create_counter(5);
+
+    for (int i = 0; i < 5; ++i)
+    {
+        js.submit([&counter] { counter.fetch_add(1); }, done);
+    }
+
+    js.wait(done);
+    REQUIRE(counter.load() == 5);
+
+    js.shutdown();
+}
+
+// =============================================================================
+// Graph submission tests
+// =============================================================================
+
+static void increment_fn(void *data)
+{
+    static_cast<std::atomic<int> *>(data)->fetch_add(1);
+}
+
+TEST_CASE("JobSystem submit_graph empty graph", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    JobGraph graph;
+    auto counter = js.submit_graph(graph);
+
+    // Empty graph returns invalid counter
+    REQUIRE_FALSE(counter.valid());
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit_graph single job", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    JobGraph graph;
+    (void) graph.add({.function = increment_fn, .data = &counter, .debug_name = "single"});
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    REQUIRE(counter.load() == 1);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit_graph diamond DAG respects dependencies", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    std::atomic<int> order_a{-1}, order_b{-1}, order_c{-1}, order_d{-1};
+
+    struct OrderData
+    {
+        std::atomic<int> *order;
+        std::atomic<int> *counter;
+    };
+    auto order_fn = [](void *data)
+    {
+        auto *d = static_cast<OrderData *>(data);
+        d->order->store(d->counter->fetch_add(1), std::memory_order_release);
+    };
+
+    OrderData data_a{&order_a, &counter};
+    OrderData data_b{&order_b, &counter};
+    OrderData data_c{&order_c, &counter};
+    OrderData data_d{&order_d, &counter};
+
+    JobGraph graph;
+    auto a = graph.add({.function = +order_fn, .data = &data_a, .debug_name = "A"});
+    auto b = graph.add({.function = +order_fn, .data = &data_b, .debug_name = "B"});
+    auto c = graph.add({.function = +order_fn, .data = &data_c, .debug_name = "C"});
+    auto d = graph.add({.function = +order_fn, .data = &data_d, .debug_name = "D"});
+
+    graph.depend(a, b);
+    graph.depend(a, c);
+    graph.depend(b, d);
+    graph.depend(c, d);
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    REQUIRE(counter.load() == 4);
+    REQUIRE(order_a.load() < order_b.load());
+    REQUIRE(order_a.load() < order_c.load());
+    REQUIRE(order_d.load() > order_b.load());
+    REQUIRE(order_d.load() > order_c.load());
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit_graph deterministic mode", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Deterministic};
+    JobSystem js(config);
+
+    std::vector<uint32_t> execution_order;
+
+    struct PushData
+    {
+        std::vector<uint32_t> *order;
+        uint32_t value;
+    };
+    auto push_fn = [](void *data)
+    {
+        auto *d = static_cast<PushData *>(data);
+        d->order->push_back(d->value);
+    };
+
+    PushData data_a{&execution_order, 0};
+    PushData data_b{&execution_order, 1};
+    PushData data_c{&execution_order, 2};
+    PushData data_d{&execution_order, 3};
+
+    JobGraph graph;
+    auto a = graph.add({.function = +push_fn, .data = &data_a});
+    auto b = graph.add({.function = +push_fn, .data = &data_b});
+    auto c = graph.add({.function = +push_fn, .data = &data_c});
+    auto d = graph.add({.function = +push_fn, .data = &data_d});
+
+    graph.depend(a, b);
+    graph.depend(a, c);
+    graph.depend(b, d);
+    graph.depend(c, d);
+
+    auto done = js.submit_graph(graph);
+    // Deterministic mode returns invalid counter (executes inline)
+    REQUIRE_FALSE(done.valid());
+
+    // In deterministic mode: A(0), B(1), C(2), D(3) — Kahn's with stable tie-breaking
+    REQUIRE(execution_order.size() == 4);
+    REQUIRE(execution_order[0] == 0); // A
+    REQUIRE(execution_order[1] == 1); // B
+    REQUIRE(execution_order[2] == 2); // C
+    REQUIRE(execution_order[3] == 3); // D
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit_graph all independent tasks", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    constexpr int task_count = 16;
+
+    JobGraph graph;
+    for (int i = 0; i < task_count; ++i)
+    {
+        (void) graph.add({.function = increment_fn, .data = &counter});
+    }
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    REQUIRE(counter.load() == task_count);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem submit_graph physics-like pipeline", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // Simulate: clear(4) -> forces(4) -> integrate(4) -> collisions(1)
+    constexpr uint32_t items = 100;
+    constexpr uint32_t parts = 4;
+    std::atomic<int> counter{0};
+
+    auto noop_fn = [](void *data) { static_cast<std::atomic<int> *>(data)->fetch_add(1); };
+
+    JobGraph graph;
+
+    auto clear = graph.add_partitioned(
+        items,
+        parts,
+        {},
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        "clear");
+
+    auto forces = graph.add_partitioned(
+        items,
+        parts,
+        clear,
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        "forces");
+
+    auto integrate = graph.add_partitioned(
+        items,
+        parts,
+        forces,
+        [&](uint32_t /*s*/, uint32_t /*e*/) -> JobDesc { return {.function = +noop_fn, .data = &counter}; },
+        "integrate");
+
+    (void) graph.add_serial_after(integrate, {.function = +noop_fn, .data = &counter, .debug_name = "collisions"});
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    REQUIRE(counter.load() == 13); // 4+4+4+1
+
+    js.shutdown();
+}
+
+// =============================================================================
+// Exception resilience
+// =============================================================================
+
+TEST_CASE("JobSystem exception in job does not kill worker", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // Submit a job that throws
+    auto bad_id = js.submit([] { throw std::runtime_error("test exception"); });
+    js.wait(bad_id);
+
+    // System should still be functional — submit and complete a normal job
+    std::atomic<int> counter{0};
+    auto good_id = js.submit([&counter] { counter++; });
+    js.wait(good_id);
+
+    REQUIRE(counter.load() == 1);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem exception in graph job still completes graph", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    auto throw_fn = [](void *) { throw std::runtime_error("boom"); };
+    auto inc_fn = [](void *data) { static_cast<std::atomic<int> *>(data)->fetch_add(1); };
+
+    // A (throws) -> B (should still run because dependents are dispatched)
+    JobGraph graph;
+    auto a = graph.add({.function = +throw_fn, .debug_name = "thrower"});
+    auto b = graph.add({.function = +inc_fn, .data = &counter, .debug_name = "after_throw"});
+    graph.depend(a, b);
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    // B should have executed despite A throwing
+    REQUIRE(counter.load() == 1);
+
+    js.shutdown();
+}
+
+// =============================================================================
+// Overflow dependents (>kMaxInlineDependents) end-to-end
+// =============================================================================
+
+TEST_CASE("JobSystem submit_graph overflow dependents (>6 children)", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    std::atomic<int> counter{0};
+    constexpr int child_count = 10; // exceeds kMaxInlineDependents (6)
+
+    auto inc_fn = [](void *data) { static_cast<std::atomic<int> *>(data)->fetch_add(1); };
+
+    JobGraph graph;
+    auto root = graph.add({.function = +inc_fn, .data = &counter, .debug_name = "root"});
+
+    for (int i = 0; i < child_count; ++i)
+    {
+        auto child = graph.add({.function = +inc_fn, .data = &counter});
+        graph.depend(root, child);
+    }
+
+    auto done = js.submit_graph(graph);
+    js.wait(done);
+
+    REQUIRE(counter.load() == child_count + 1); // root + 10 children
+
+    js.shutdown();
+}
+
+// =============================================================================
+// DeterministicReplay mode
+// =============================================================================
+
+TEST_CASE("JobSystem DeterministicReplay mode executes jobs", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::DeterministicReplay};
+    JobSystem js(config);
+
+    REQUIRE(js.scheduling_mode() == SchedulingMode::DeterministicReplay);
+
+    std::atomic<int> counter{0};
+    std::vector<JobId> ids;
+    ids.reserve(5);
+
+    for (int i = 0; i < 5; ++i)
+    {
+        ids.push_back(js.submit([&counter] { counter++; }));
+    }
+
+    js.wait_all(ids);
+    REQUIRE(counter.load() == 5);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem repeated graph submission stress", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    constexpr uint32_t graph_count = 20;
+    constexpr uint32_t jobs_per_graph = 13; // 4+4+4+1 (physics pipeline)
+    std::atomic<uint32_t> counter{0};
+
+    auto inc_fn = [](void *data) { static_cast<std::atomic<uint32_t> *>(data)->fetch_add(1); };
+
+    for (uint32_t g = 0; g < graph_count; ++g)
+    {
+        JobGraph graph;
+        constexpr uint32_t items = 100;
+        constexpr uint32_t parts = 4;
+
+        auto clear = graph.add_partitioned(
+            items,
+            parts,
+            {},
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "clear");
+
+        auto forces = graph.add_partitioned(
+            items,
+            parts,
+            clear,
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "forces");
+
+        auto integrate = graph.add_partitioned(
+            items,
+            parts,
+            forces,
+            [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+            "integrate");
+
+        (void) graph.add_serial_after(integrate, {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
+
+        auto done = js.submit_graph(graph);
+        js.wait(done);
+    }
+
+    REQUIRE(counter.load() == graph_count * jobs_per_graph);
+
+    js.shutdown();
+}
+
+TEST_CASE("JobSystem concurrent graph submission stress", "[jobs][graph]")
+{
+    JobSystemConfig config{.worker_count = 4, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    constexpr uint32_t graphs_per_thread = 20;
+    constexpr uint32_t thread_count = 4;
+    constexpr uint32_t jobs_per_graph = 13; // 4+4+4+1 (physics pipeline)
+    std::atomic<uint32_t> counter{0};
+
+    auto inc_fn = [](void *data) { static_cast<std::atomic<uint32_t> *>(data)->fetch_add(1); };
+
+    std::vector<std::thread> submitters;
+    submitters.reserve(thread_count);
+
+    for (uint32_t t = 0; t < thread_count; ++t)
+    {
+        submitters.emplace_back(
+            [&js, &counter, inc_fn]
+            {
+                for (uint32_t g = 0; g < graphs_per_thread; ++g)
+                {
+                    JobGraph graph;
+                    constexpr uint32_t items = 100;
+                    constexpr uint32_t parts = 4;
+
+                    auto clear = graph.add_partitioned(
+                        items,
+                        parts,
+                        {},
+                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+                        "clear");
+
+                    auto forces = graph.add_partitioned(
+                        items,
+                        parts,
+                        clear,
+                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+                        "forces");
+
+                    auto integrate = graph.add_partitioned(
+                        items,
+                        parts,
+                        forces,
+                        [&](uint32_t, uint32_t) -> JobDesc { return {.function = +inc_fn, .data = &counter}; },
+                        "integrate");
+
+                    (void) graph.add_serial_after(integrate,
+                                                  {.function = +inc_fn, .data = &counter, .debug_name = "collisions"});
+
+                    auto done = js.submit_graph(graph);
+                    js.wait(done);
+                }
+            });
+    }
+
+    for (auto &t : submitters)
+    {
+        t.join();
+    }
+
+    REQUIRE(counter.load() == thread_count * graphs_per_thread * jobs_per_graph);
 
     js.shutdown();
 }

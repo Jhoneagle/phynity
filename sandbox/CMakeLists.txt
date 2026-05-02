@@ -37,9 +37,16 @@ phynity_target_defaults(sandbox_scenarios)
 phynity_apply_warnings(sandbox_scenarios)
 phynity_apply_sanitizers(sandbox_scenarios)
 
+# Sandbox application library (windowed UI, only when render is available)
+set(SANDBOX_APP_SOURCES "")
+if(PHYNITY_BUILD_RENDER)
+	set(SANDBOX_APP_SOURCES sandbox_app.cpp)
+endif()
+
 # Sandbox executable
 add_executable(phynity_sandbox
 	main.cpp
+	${SANDBOX_APP_SOURCES}
 	$<TARGET_OBJECTS:sandbox_context>
 	$<TARGET_OBJECTS:sandbox_scenarios>
 )

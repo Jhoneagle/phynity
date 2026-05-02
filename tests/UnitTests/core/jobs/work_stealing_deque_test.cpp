@@ -167,3 +167,94 @@ TEST_CASE("WorkStealingDeque multi-threaded producer + stealers", "[jobs][deque]
     }
     REQUIRE(total_size == item_count);
 }
+
+TEST_CASE("WorkStealingDeque last-element pop vs steal contention", "[jobs][deque]")
+{
+    // Push exactly 1 element, then race pop vs steal. Exactly one should win per round.
+    constexpr int rounds = 500;
+    constexpr std::size_t stealer_count = 3;
+
+    std::atomic<int> pop_wins{0};
+    std::atomic<int> steal_wins{0};
+
+    for (int round = 0; round < rounds; ++round)
+    {
+        WorkStealingDeque<int> deque(4);
+        deque.push(round);
+
+        std::atomic<bool> go{false};
+        std::atomic<int> round_steal_wins{0};
+
+        std::vector<std::thread> stealers;
+        for (std::size_t s = 0; s < stealer_count; ++s)
+        {
+            stealers.emplace_back(
+                [&deque, &go, &round_steal_wins]
+                {
+                    while (!go.load(std::memory_order_acquire))
+                    {
+                    }
+                    int val = 0;
+                    if (deque.steal(val))
+                    {
+                        round_steal_wins.fetch_add(1);
+                    }
+                });
+        }
+
+        go.store(true, std::memory_order_release);
+
+        int val = 0;
+        bool popped = deque.pop(val);
+
+        for (auto &t : stealers)
+        {
+            t.join();
+        }
+
+        int total = (popped ? 1 : 0) + round_steal_wins.load();
+        REQUIRE(total == 1);
+
+        if (popped)
+        {
+            pop_wins++;
+        }
+        else
+        {
+            steal_wins++;
+        }
+    }
+
+    REQUIRE(pop_wins.load() + steal_wins.load() == rounds);
+}
+
+TEST_CASE("WorkStealingDeque capacity wraparound", "[jobs][deque]")
+{
+    WorkStealingDeque<uint32_t> deque(3); // capacity 8
+
+    // Push and pop 3x capacity worth of items to exercise index wraparound
+    constexpr uint32_t total = 24; // 3 * 8
+    uint32_t next_push = 0;
+
+    for (uint32_t batch = 0; batch < 3; ++batch)
+    {
+        // Fill the deque
+        for (uint32_t i = 0; i < 8; ++i)
+        {
+            REQUIRE(deque.push(next_push));
+            next_push++;
+        }
+        REQUIRE_FALSE(deque.push(999)); // full
+
+        // Drain via pop (LIFO within batch)
+        std::vector<uint32_t> batch_items;
+        uint32_t val = 0;
+        while (deque.pop(val))
+        {
+            batch_items.push_back(val);
+        }
+        REQUIRE(batch_items.size() == 8);
+    }
+
+    REQUIRE(next_push == total);
+}

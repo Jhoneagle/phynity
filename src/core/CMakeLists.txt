@@ -11,9 +11,6 @@ target_include_directories(phynity_core PUBLIC
 # Job system sources
 target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/jobs/job_system.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/jobs/task_graph.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/jobs/task_scheduler.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/jobs/task_executor.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/jobs/schedule_recorder.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/jobs/schedule_replayer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/physics/constraints/constraint_graph.cpp
@@ -34,6 +31,7 @@ target_sources(phynity_core PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/snapshot_helpers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_writer.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialization/replay_reader.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/serialization/simulation_timeline.cpp
 )
 
 target_link_libraries(phynity_core PUBLIC phynity::platform)

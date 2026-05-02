@@ -1,11 +1,16 @@
 #include "demo_scenarios.hpp"
 #include "physics_context.hpp"
-#include "rigid_body_demos.hpp"
 
+#include <algorithm>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#if PHYNITY_HAS_RENDER
+#include "sandbox_app.hpp"
+#endif
 
 using phynity::app::PhysicsContext;
 using phynity::app::scenarios::Scenario;
@@ -25,7 +30,10 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
     // Setup the scenario
     scenario->setup(context);
 
-    std::cout << "Initial particle count: " << context.particle_count() << '\n';
+    auto initial_diag = context.diagnostics();
+    std::cout << "Initial particles: " << initial_diag.particle_count << '\n';
+    std::cout << "Initial rigid bodies: " << initial_diag.body_count << '\n';
+    std::cout << "Initial constraints: " << initial_diag.constraint_count << '\n';
     std::cout << "Initial force fields: " << context.force_field_count() << '\n';
     std::cout << "Running for " << duration_seconds << " seconds...\n\n";
 
@@ -35,10 +43,7 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
 
     for (int frame = 0; frame < frames; ++frame)
     {
-        // Update physics with frame time
         context.update(dt);
-
-        // Call scenario step callback if needed
         scenario->step_callback(context, dt);
 
         // Print diagnostics every 60 frames (~1 second)
@@ -48,9 +53,18 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
             auto diag = context.diagnostics();
 
             std::cout << std::fixed << std::setprecision(3);
-            std::cout << "t=" << std::setw(5) << elapsed_time << "s | "
-                      << "particles=" << std::setw(3) << diag.particle_count << " | "
-                      << "KE=" << std::setw(8) << diag.total_kinetic_energy << "J | "
+            std::cout << "t=" << std::setw(5) << elapsed_time << "s | ";
+
+            if (diag.particle_count > 0)
+            {
+                std::cout << "particles=" << std::setw(3) << diag.particle_count << " | ";
+            }
+            if (diag.body_count > 0)
+            {
+                std::cout << "bodies=" << std::setw(3) << diag.body_count << " | ";
+            }
+
+            std::cout << "KE=" << std::setw(8) << diag.total_kinetic_energy << "J | "
                       << "p_y=" << std::setw(8) << diag.total_momentum.y << '\n';
         }
     }
@@ -59,74 +73,64 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
     context.print_diagnostics();
 }
 
-int main()
+void run_headless()
+{
+    using namespace phynity::app::scenarios;
+
+    std::cout << "=== Phynity Physics Sandbox (headless) ===\n\n";
+
+    struct Entry
+    {
+        std::unique_ptr<Scenario> (*create)();
+        float duration;
+    };
+
+    // clang-format off
+    Entry entries[] = {
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<GravityWell>(); },              3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<ProjectileMotion>(); },         3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DragInteraction>(); },          5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<BoxStacking>(); },              3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<TowerTopple>(); },              7.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<HingeDoor>(); },                5.0f},
+    };
+    // clang-format on
+
+    for (auto &entry : entries)
+    {
+        run_scenario(entry.create(), entry.duration);
+    }
+
+    std::cout << "\n" << std::string(70, '=') << '\n';
+    std::cout << "All scenarios completed successfully!\n";
+    std::cout << std::string(70, '=') << '\n';
+}
+
+int main(int argc, char *argv[])
 {
     try
     {
-        std::cout << "=== Phynity Phase 2 - Application Integration ===\n";
-        std::cout << "Physics Context with Demo Scenarios\n\n";
-
-        // Create a collection of scenarios to demonstrate
-        std::vector<std::unique_ptr<Scenario>> scenarios;
-
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::GravityWell>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::ParticleSpread>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::ProjectileMotion>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::OrbitStability>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::MultiParticleCollision>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::DragInteraction>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::LowGravity>());
-        scenarios.push_back(std::make_unique<phynity::app::scenarios::ZeroGravity>());
-
-        std::cout << "Available Scenarios:\n";
-        for (size_t i = 0; i < scenarios.size(); ++i)
+        bool headless = false;
+        for (int i = 1; i < argc; ++i)
         {
-            std::cout << "  " << (i + 1) << ". " << scenarios[i]->name() << '\n';
+            if (std::strcmp(argv[i], "--headless") == 0) // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            {
+                headless = true;
+            }
         }
 
-        // Run a subset of scenarios for the demo
-        // In a full application, user would select which scenario to run
-        std::cout << "\nRunning selected scenarios (5 seconds each)...\n\n";
-
-        // Run Gravity Well
-        run_scenario(std::make_unique<phynity::app::scenarios::GravityWell>(), 3.0f);
-
-        // Run Projectile Motion
-        run_scenario(std::make_unique<phynity::app::scenarios::ProjectileMotion>(), 3.0f);
-
-        // Run Drag Interaction
-        run_scenario(std::make_unique<phynity::app::scenarios::DragInteraction>(), 5.0f);
-
-        // Run Rigid Body Demos
-        std::cout << "\n" << std::string(70, '=') << '\n';
-        std::cout << "RIGID BODY PHYSICS DEMOS\n";
-        std::cout << std::string(70, '=') << '\n';
-
-        // 1. Stacking Demo - Tower of boxes settling under gravity
+#if PHYNITY_HAS_RENDER
+        if (!headless)
         {
-            std::cout << "\n--- Stacking Demo: Tower of Boxes ---\n";
-            phynity::app::rigid_body_demos::StackingDemoRB stacking_demo;
-            stacking_demo.simulate(3.0f); // Run for 3 seconds
+            phynity::app::SandboxApp app;
+            app.run();
+            return 0;
         }
+#else
+        (void) headless;
+#endif
 
-        // 2. Topple Demo - Tower with impulse applied
-        {
-            std::cout << "\n--- Topple Demo: Impulse on Tower ---\n";
-            phynity::app::rigid_body_demos::ToppleDemoRB topple_demo;
-            topple_demo.simulate(); // Run for 5 seconds
-        }
-
-        // 3. Hinge Demo - Revolving door with constraint
-        {
-            std::cout << "\n--- Hinge Demo: Revolving Door ---\n";
-            phynity::app::rigid_body_demos::HingeDemoRB hinge_demo;
-            hinge_demo.simulate(5.0f); // Run for 5 seconds
-        }
-
-        std::cout << "\n" << std::string(70, '=') << '\n';
-        std::cout << "All scenarios completed successfully!\n";
-        std::cout << std::string(70, '=') << '\n';
-
+        run_headless();
         return 0;
     }
     catch (const std::exception &ex)
