@@ -38,8 +38,8 @@ static constexpr uint32_t kMaxInlineDataSize = 32;
 struct alignas(64) Job
 {
     // === Cache line 1: execution data ===
-    JobFnPtr function = nullptr; // 8
-    void *data = nullptr; // 8
+    std::atomic<JobFnPtr> function{nullptr}; // 8
+    std::atomic<void *> data{nullptr}; // 8
     uint8_t inline_data[kMaxInlineDataSize]{}; // 32
     std::atomic<int32_t> predecessor_count{0}; // 4
     uint16_t dependent_count = 0; // 2

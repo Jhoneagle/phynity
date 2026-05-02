@@ -373,6 +373,52 @@ TEST_CASE("JobSystem shutdown unblocks waiting threads", "[jobs]")
     REQUIRE(blocker_done.load());
 }
 
+TEST_CASE("JobSystem shutdown with multiple external waiters", "[jobs]")
+{
+    JobSystemConfig config{.worker_count = 2, .mode = SchedulingMode::Concurrent};
+    JobSystem js(config);
+
+    // Submit blocking jobs so waiters will actually block
+    std::atomic<bool> release{false};
+    std::vector<JobId> ids;
+    for (int i = 0; i < 4; ++i)
+    {
+        ids.push_back(js.submit(
+            [&release]
+            {
+                while (!release.load(std::memory_order_acquire))
+                {
+                    std::this_thread::yield();
+                }
+            }));
+    }
+
+    // Spawn external waiter threads
+    std::vector<std::thread> waiters;
+    std::atomic<int> waiters_done{0};
+    for (auto id : ids)
+    {
+        waiters.emplace_back(
+            [&js, id, &waiters_done]
+            {
+                js.wait(id);
+                waiters_done.fetch_add(1, std::memory_order_relaxed);
+            });
+    }
+
+    // Give waiters time to enter wait()
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+    release.store(true, std::memory_order_release);
+    js.shutdown();
+
+    for (auto &t : waiters)
+    {
+        t.join();
+    }
+    REQUIRE(waiters_done.load() == 4);
+}
+
 // =============================================================================
 // Counter-based tests
 // =============================================================================

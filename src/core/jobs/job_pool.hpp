@@ -45,8 +45,8 @@ public:
         }
 
         // Initialize the slot
-        slot.function = nullptr;
-        slot.data = nullptr;
+        slot.function.store(nullptr, std::memory_order_relaxed);
+        slot.data.store(nullptr, std::memory_order_relaxed);
         slot.predecessor_count.store(0, std::memory_order_relaxed);
         slot.dependent_count = 0;
         slot.affinity_hint = (std::numeric_limits<uint16_t>::max)();

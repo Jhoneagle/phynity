@@ -22,6 +22,23 @@ namespace phynity::jobs
 // Internal PIMPL implementation intentionally uses compact naming and state layout.
 // NOLINTBEGIN(readability-identifier-naming,misc-non-private-member-variables-in-classes,readability-function-cognitive-complexity,readability-convert-member-functions-to-static)
 
+/// RAII guard that tracks active external waiters so shutdown() can wait
+/// for them to exit before destroying pool memory.
+struct WaiterGuard
+{
+    std::atomic<uint32_t> &count;
+    explicit WaiterGuard(std::atomic<uint32_t> &c) : count(c)
+    {
+        count.fetch_add(1, std::memory_order_acq_rel);
+    }
+    ~WaiterGuard()
+    {
+        count.fetch_sub(1, std::memory_order_acq_rel);
+    }
+    WaiterGuard(const WaiterGuard &) = delete;
+    WaiterGuard &operator=(const WaiterGuard &) = delete;
+};
+
 class JobSystemImpl
 {
 public:
@@ -81,6 +98,10 @@ private:
 
     // Round-robin submit distribution
     std::atomic<uint32_t> submit_counter_{0};
+
+    // Tracks external threads currently inside wait() so shutdown()
+    // can defer pool destruction until they exit.
+    std::atomic<uint32_t> active_waiters_{0};
 
     // Wakeup mechanism for workers
     std::mutex wake_mutex_;
@@ -156,6 +177,15 @@ void JobSystemImpl::shutdown()
     }
     workers_.clear();
 
+    // Wait for external waiter threads to exit wait() before destroying
+    // pool memory. Re-notify in case a waiter entered ec.wait() after our
+    // initial notify_all().
+    while (active_waiters_.load(std::memory_order_acquire) > 0)
+    {
+        completion_event_.notify_all();
+        platform::yield_thread();
+    }
+
     // Drain remaining jobs from all deques. Jobs submitted via submit_callable
     // heap-allocate the callable; the invoker frees it when executed. Jobs that
     // were never picked up by a worker would leak without this drain.
@@ -165,19 +195,21 @@ void JobSystemImpl::shutdown()
         while (queue->pop(slot_index))
         {
             auto &job = pool_[slot_index];
-            if (job.function && job.data)
+            auto fn = job.function.load(std::memory_order_relaxed);
+            auto d = job.data.load(std::memory_order_relaxed);
+            if (fn && d)
             {
                 try
                 {
-                    job.function(job.data);
+                    fn(d);
                 }
                 catch (...)
                 {
                     // Swallow — we only care about triggering cleanup.
                 }
             }
-            job.function = nullptr;
-            job.data = nullptr;
+            job.function.store(nullptr, std::memory_order_relaxed);
+            job.data.store(nullptr, std::memory_order_relaxed);
         }
     }
 
@@ -221,8 +253,8 @@ JobId JobSystemImpl::submit_impl(
     JobId id = pool_.allocate();
     auto &job = pool_.at(id);
 
-    job.function = fn;
-    job.data = data;
+    job.function.store(fn, std::memory_order_relaxed);
+    job.data.store(data, std::memory_order_relaxed);
     job.predecessor_count.store(0, std::memory_order_relaxed);
     job.dependent_count = 0;
     job.affinity_hint = affinity_hint;
@@ -306,18 +338,20 @@ void JobSystemImpl::wait(JobId id)
         return;
     }
 
+    WaiterGuard guard(active_waiters_);
     auto &job = pool_.at(id);
 
-    // The completion signal is the eventcount notification + function pointer set to
-    // nullptr. We use pending_work_ as a synchronization bridge: the worker does a
-    // release store to pending_work_ after clearing function; we do an acquire fence
-    // before reading function to establish happens-before.
+    // The completion signal is function pointer atomically set to nullptr.
+    // The worker does a release store; we do an acquire load.
 
     // Spin briefly
     for (int spin = 0; spin < 64; ++spin)
     {
-        std::atomic_thread_fence(std::memory_order_acquire);
-        if (job.function == nullptr)
+        if (job.function.load(std::memory_order_acquire) == nullptr)
+        {
+            return;
+        }
+        if (!running_.load(std::memory_order_acquire))
         {
             return;
         }
@@ -333,8 +367,7 @@ void JobSystemImpl::wait(JobId id)
     for (;;)
     {
         auto token = completion_event_.prepare_wait();
-        std::atomic_thread_fence(std::memory_order_acquire);
-        if (job.function == nullptr)
+        if (job.function.load(std::memory_order_acquire) == nullptr)
         {
             completion_event_.cancel_wait(token);
             return;
@@ -350,6 +383,7 @@ void JobSystemImpl::wait(JobId id)
 
 void JobSystemImpl::wait(CounterHandle counter)
 {
+    WaiterGuard guard(active_waiters_);
     counters_.wait(counter, completion_event_, &running_);
 }
 
@@ -388,8 +422,8 @@ CounterHandle JobSystemImpl::submit_graph(const JobGraph &graph)
         const auto &desc = graph.desc(JobId{i, 0});
         auto &job = pool_.at(pool_ids[i]);
 
-        job.function = desc.function;
-        job.data = desc.data;
+        job.function.store(desc.function, std::memory_order_relaxed);
+        job.data.store(desc.data, std::memory_order_relaxed);
         job.affinity_hint = desc.affinity_hint;
         job.debug_name = desc.debug_name;
 
@@ -573,11 +607,12 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
             // Execute the job. Catch exceptions to prevent a throwing job from
             // killing the worker thread, which would leave dependents and
             // counters permanently stuck.
-            if (job.function)
+            auto fn = job.function.load(std::memory_order_relaxed);
+            if (fn)
             {
                 try
                 {
-                    job.function(job.data);
+                    fn(job.data.load(std::memory_order_relaxed));
                 }
                 catch (...)
                 {
@@ -598,12 +633,11 @@ void JobSystemImpl::worker_loop(uint32_t worker_index)
                 counters_.decrement(counter, completion_event_);
             }
 
-            // Mark job as complete (clear function pointer).
-            // Release fence ensures the nullptr write is visible to waiters
-            // that do an acquire fence before reading job.function.
-            job.function = nullptr;
-            job.data = nullptr;
-            std::atomic_thread_fence(std::memory_order_release);
+            // Mark job as complete. Store data first (relaxed), then function
+            // (release) — function==nullptr is the completion signal; acquire
+            // loads by waiters will see all prior writes.
+            job.data.store(nullptr, std::memory_order_relaxed);
+            job.function.store(nullptr, std::memory_order_release);
 
             // Notify anyone waiting on this specific job or a counter
             completion_event_.notify_all();
