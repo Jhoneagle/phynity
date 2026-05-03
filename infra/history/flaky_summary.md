@@ -10,5 +10,4 @@ Threshold: 3 incident(s)
 | validation.performance.ccd | 6 | EXCEEDED |
 | validation.physics.collision.broadphase_performance | 5 | EXCEEDED |
 | unit.jobs.work_stealing_deque | 5 | EXCEEDED |
-| job_system_tests | 1 | OK |
 | unit.diagnostics.frame_profiler | 1 | OK |
