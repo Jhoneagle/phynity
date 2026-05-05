@@ -67,3 +67,4 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-05-01T07:02:49Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25204030157,nightly-quality,linux,tsan-linux,unit.jobs.job_system,FAILED_AFTER_RETRY,3
 1,2026-05-02T06:06:04Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25244531652,nightly-quality,linux,tsan-linux,unit.jobs.work_stealing_deque,FLAKY_RECOVERED,3
 1,2026-05-02T06:06:04Z,67ef01e673214bf0e6b2233dac63e05461d50a5b,refs/heads/master,25244531652,nightly-quality,macos,tsan-macos,unit.jobs.job_system,FLAKY_RECOVERED,3
+1,2026-05-05T05:22:15Z,329e1c1a9c3a034fec84f7d7657f28575795d226,refs/heads/master,25359231291,nightly-quality,macos,performance-macos,validation.diagnostics.profiler_overhead,FLAKY_RECOVERED,2
