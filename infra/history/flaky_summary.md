@@ -5,9 +5,9 @@ Threshold: 3 incident(s)
 
 | Test | Incidents | Budget |
 | --- | ---: | --- |
-| unit.jobs.job_system | 7 | EXCEEDED |
-| unit.jobs.task_executor | 4 | EXCEEDED |
-| unit.jobs.work_stealing_deque | 4 | EXCEEDED |
+| unit.jobs.job_system | 6 | EXCEEDED |
+| unit.jobs.work_stealing_deque | 3 | EXCEEDED |
+| unit.jobs.task_executor | 3 | EXCEEDED |
 | validation.performance.ccd | 2 | OK |
 | unit.diagnostics.frame_profiler | 1 | OK |
 | validation.diagnostics.profiler_overhead | 1 | OK |
