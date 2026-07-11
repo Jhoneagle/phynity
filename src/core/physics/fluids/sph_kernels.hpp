@@ -73,6 +73,48 @@ inline Vec3f spiky_gradient(const Vec3f &r_vec, float r, float h) noexcept
     return r_vec * (coeff * diff * diff / r);
 }
 
+/// poly6 gradient: ∇W(r,h) = −945 / (32 π h⁹) · (h² − r²)² · r_vec for 0 ≤ r ≤ h.
+///
+/// Used by the color-field surface-tension term (Müller 2003), which builds the
+/// interface normal from the gradient of the poly6 kernel. Well-behaved at r = 0
+/// (the r_vec factor makes it vanish there), so no singularity guard is needed.
+/// @param r_vec Displacement vector r_i − r_j
+/// @param r2    Its squared magnitude ‖r_vec‖²
+/// @param h     Smoothing radius
+/// @return Gradient vector, or the zero vector when r > h
+inline Vec3f poly6_gradient(const Vec3f &r_vec, float r2, float h) noexcept
+{
+    const float h2 = h * h;
+    if (r2 < 0.0f || r2 > h2)
+    {
+        return Vec3f(0.0f);
+    }
+
+    const float h9 = h2 * h2 * h2 * h2 * h; // h⁹
+    const float coeff = -945.0f / (32.0f * constants::PI * h9);
+    const float diff = h2 - r2;
+    return r_vec * (coeff * diff * diff);
+}
+
+/// poly6 laplacian: ∇²W(r,h) = −945 / (32 π h⁹) · (h² − r²) · (3h² − 7r²) for 0 ≤ r ≤ h.
+///
+/// The curvature input for the color-field surface-tension term.
+/// @param r2 Squared distance ‖r_ij‖²
+/// @param h  Smoothing radius
+/// @return Laplacian value, or 0 when r > h
+inline float poly6_laplacian(float r2, float h) noexcept
+{
+    const float h2 = h * h;
+    if (r2 < 0.0f || r2 > h2)
+    {
+        return 0.0f;
+    }
+
+    const float h9 = h2 * h2 * h2 * h2 * h; // h⁹
+    const float coeff = -945.0f / (32.0f * constants::PI * h9);
+    return coeff * (h2 - r2) * (3.0f * h2 - 7.0f * r2);
+}
+
 /// Viscosity-kernel laplacian: ∇²W(r,h) = 45 / (π h⁶) · (h − r) for 0 ≤ r ≤ h.
 ///
 /// Non-negative and monotone decreasing to 0 at r = h.

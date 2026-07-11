@@ -187,6 +187,7 @@ public:
     {
         const float h = params_.smoothing_radius;
         const float mu = params_.viscosity;
+        const float sigma = params_.surface_tension;
 
         for (size_t i = 0; i < particles_.size(); ++i)
         {
@@ -194,6 +195,11 @@ public:
 
             // Body force (gravity).
             Vec3f force = ambient_gravity_ * pi.mass;
+
+            // Color-field accumulators for surface tension (Müller 2003):
+            // normal n = ∇c and curvature input ∇²c, built from the poly6 kernel.
+            Vec3f color_gradient(0.0f);
+            float color_laplacian = 0.0f;
 
             const float rho_i = pi.density;
             if (rho_i > kDensityEpsilon)
@@ -223,6 +229,25 @@ public:
                         const float lap = viscosity_laplacian(r, h);
                         force += (pj.velocity - pi.velocity) * (mu * pj.mass / rho_j * lap);
                     }
+
+                    // Surface tension color field: c = Σ_j (m_j/ρ_j) W_poly6.
+                    if (sigma > 0.0f)
+                    {
+                        const float vol_j = pj.mass / rho_j;
+                        color_gradient += poly6_gradient(r_vec, r * r, h) * vol_j;
+                        color_laplacian += poly6_laplacian(r * r, h) * vol_j;
+                    }
+                }
+            }
+
+            // Surface tension force f = −σ ∇²c · n̂, gated by a normal-magnitude
+            // threshold so the noisy interior (where ‖n‖ ≈ 0) contributes nothing.
+            if (sigma > 0.0f)
+            {
+                const float n_len = color_gradient.length();
+                if (n_len > params_.surface_tension_threshold)
+                {
+                    force += color_gradient * (-sigma * color_laplacian / n_len);
                 }
             }
 

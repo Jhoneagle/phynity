@@ -10,6 +10,8 @@ using Catch::Matchers::WithinRel;
 using phynity::math::vectors::Vec3f;
 using phynity::physics::constants::PI;
 using phynity::physics::fluids::poly6;
+using phynity::physics::fluids::poly6_gradient;
+using phynity::physics::fluids::poly6_laplacian;
 using phynity::physics::fluids::spiky_gradient;
 using phynity::physics::fluids::viscosity_laplacian;
 
@@ -122,6 +124,41 @@ TEST_CASE("spiky_gradient: antisymmetric under r_vec -> -r_vec", "[fluids][kerne
     const Vec3f g_pos = spiky_gradient(r_vec, r, h);
     const Vec3f g_neg = spiky_gradient(-r_vec, r, h);
     REQUIRE_THAT((g_pos + g_neg).length(), WithinAbs(0.0f, 1e-6f));
+}
+
+// ============================================================================
+// poly6 gradient / laplacian (surface-tension color field)
+// ============================================================================
+
+TEST_CASE("poly6_gradient: vanishes at r=0 and beyond support, antisymmetric", "[fluids][kernels][poly6grad]")
+{
+    const float h = 1.0f;
+    REQUIRE_THAT(poly6_gradient(Vec3f(0.0f), 0.0f, h).length(), WithinAbs(0.0f, 1e-6f));
+
+    const Vec3f beyond(1.2f, 0.0f, 0.0f);
+    REQUIRE_THAT(poly6_gradient(beyond, beyond.squaredLength(), h).length(), WithinAbs(0.0f, 1e-6f));
+
+    const Vec3f r_vec(0.3f, -0.1f, 0.2f);
+    const float r2 = r_vec.squaredLength();
+    REQUIRE_THAT((poly6_gradient(r_vec, r2, h) + poly6_gradient(-r_vec, r2, h)).length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("poly6_gradient: points opposite r_vec (toward denser region)", "[fluids][kernels][poly6grad]")
+{
+    // Coefficient is negative, so ∇W is antiparallel to r_vec = r_i − r_j — i.e.
+    // it points from i toward j (up the color-field gradient).
+    const float h = 1.0f;
+    const Vec3f r_vec(0.4f, 0.0f, 0.0f);
+    const Vec3f grad = poly6_gradient(r_vec, r_vec.squaredLength(), h);
+    REQUIRE(grad.x < 0.0f);
+}
+
+TEST_CASE("poly6_laplacian: negative near r=0, zero at support", "[fluids][kernels][poly6lap]")
+{
+    const float h = 1.0f;
+    REQUIRE(poly6_laplacian(0.0f, h) < 0.0f);
+    REQUIRE_THAT(poly6_laplacian(h * h, h), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(poly6_laplacian(h * h * 1.4f, h), WithinAbs(0.0f, 1e-6f));
 }
 
 // ============================================================================
