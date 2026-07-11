@@ -70,6 +70,11 @@ void PhysicsContext::initialize_force_fields()
     particle_system_.clear_force_fields();
     rigid_body_system_.clear_force_fields();
 
+    // Publish gravity as shared ambient state so medium-dependent fields
+    // (e.g. BuoyancyField) read a single, consistent "down" via the ForceContext.
+    particle_system_.set_ambient_gravity(config_.gravity);
+    rigid_body_system_.set_ambient_gravity(config_.gravity);
+
     // Add gravity field to both systems
     particle_system_.add_force_field(std::make_unique<GravityField>(config_.gravity));
     rigid_body_system_.add_force_field(std::make_unique<GravityField>(config_.gravity));

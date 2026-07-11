@@ -323,9 +323,12 @@ system.add_force_field(std::make_unique<WindField>(Vec3f(8.0f, 0.0f, 0.0f), 0.5f
 system.add_force_field(std::make_unique<SpringDamperField>(Vec3f(0.0f), 10.0f, 2.0f));
 
 // Buoyancy in water: light objects (ρ_object < ρ_fluid) float to the surface.
+// BuoyancyField reads "down" from the system's ambient gravity (shared via the
+// ForceContext), so publish it once with set_ambient_gravity — no per-field copy.
 Vec3f gravity(0.0f, -EARTH_GRAVITY, 0.0f);
+system.set_ambient_gravity(gravity);
 system.add_force_field(std::make_unique<GravityField>(gravity));
-system.add_force_field(std::make_unique<BuoyancyField>(WATER_DENSITY, 500.0f, /*surface=*/0.0f, gravity));
+system.add_force_field(std::make_unique<BuoyancyField>(WATER_DENSITY, 500.0f, /*surface=*/0.0f));
 system.add_force_field(std::make_unique<DragField>(1.5f)); // dissipates bobbing
 ```
 

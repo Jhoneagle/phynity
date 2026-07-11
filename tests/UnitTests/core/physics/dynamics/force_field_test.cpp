@@ -607,12 +607,16 @@ TEST_CASE("ForceField: Polymorphic usage of SpringDamperField", "[ForceField][po
 // Buoyancy Field Tests
 // ============================================================================
 
+// Gravity is supplied to buoyancy via the shared ForceContext (4th field), not
+// stored on the field — mirroring how the systems publish their ambient gravity.
+static constexpr Vec3f kTestGravity(0.0f, -10.0f, 0.0f);
+
 TEST_CASE("BuoyancyField: Submerged body pushed upward", "[ForceField][BuoyancyField]")
 {
     // fluid = object = 1000, mass 1 -> V = 0.001; gravity = (0,-10,0).
     // F = -gravity * fluid_density * V = (0, +10, 0).
-    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
-    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
+    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity});
 
     REQUIRE_THAT(force.x, WithinAbs(0.0f, 1e-6f));
     REQUIRE_THAT(force.y, WithinAbs(10.0f, 1e-5f));
@@ -622,8 +626,8 @@ TEST_CASE("BuoyancyField: Submerged body pushed upward", "[ForceField][BuoyancyF
 
 TEST_CASE("BuoyancyField: Body above surface gets no force", "[ForceField][BuoyancyField]")
 {
-    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
-    Vec3f force = buoyancy.apply({Vec3f(0.0f, 5.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
+    Vec3f force = buoyancy.apply({Vec3f(0.0f, 5.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity});
 
     REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
 }
@@ -632,36 +636,58 @@ TEST_CASE("BuoyancyField: Dense object correct magnitude", "[ForceField][Buoyanc
 {
     // object_density = 2000, mass 2 -> V = 0.001; fluid = 1000, gravity = (0,-10,0).
     // Buoyant force = fluid_density * V * |g| = 1000 * 0.001 * 10 = 10 (upward).
-    BuoyancyField buoyancy(1000.0f, 2000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
-    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 2.0f});
+    BuoyancyField buoyancy(1000.0f, 2000.0f, 0.0f);
+    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 2.0f, kTestGravity});
 
     REQUIRE_THAT(force.y, WithinAbs(10.0f, 1e-5f));
 }
 
 TEST_CASE("BuoyancyField: Velocity independent", "[ForceField][BuoyancyField]")
 {
-    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
 
-    Vec3f f1 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f});
-    Vec3f f2 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(3.0f, 7.0f, -2.0f), 1.0f});
+    Vec3f f1 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f, kTestGravity});
+    Vec3f f2 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(3.0f, 7.0f, -2.0f), 1.0f, kTestGravity});
 
     REQUIRE_THAT(f1.y, WithinAbs(f2.y, 1e-6f));
 }
 
 TEST_CASE("BuoyancyField: Force scales with mass (volume)", "[ForceField][BuoyancyField]")
 {
-    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
 
-    Vec3f f_m1 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f});
-    Vec3f f_m3 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 3.0f});
+    Vec3f f_m1 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity});
+    Vec3f f_m3 = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 3.0f, kTestGravity});
 
     REQUIRE_THAT(f_m3.y / f_m1.y, WithinAbs(3.0f, 1e-5f));
 }
 
+TEST_CASE("BuoyancyField: Reads gravity from the shared context", "[ForceField][BuoyancyField]")
+{
+    // Same field, two different ambient-gravity contexts: the force must track
+    // the context's gravity, proving no stale copy is held on the field.
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
+
+    Vec3f f_earthlike = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, Vec3f(0.0f, -10.0f, 0.0f)});
+    Vec3f f_strong = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, Vec3f(0.0f, -20.0f, 0.0f)});
+
+    REQUIRE_THAT(f_earthlike.y, WithinAbs(10.0f, 1e-5f));
+    REQUIRE_THAT(f_strong.y, WithinAbs(20.0f, 1e-5f));
+}
+
 TEST_CASE("BuoyancyField: Zero object density is safe", "[ForceField][BuoyancyField]")
 {
-    BuoyancyField buoyancy(1000.0f, 0.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
-    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    BuoyancyField buoyancy(1000.0f, 0.0f, 0.0f);
+    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity});
+
+    REQUIRE(std::isfinite(force.y));
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("BuoyancyField: Zero ambient gravity is safe", "[ForceField][BuoyancyField]")
+{
+    BuoyancyField buoyancy(1000.0f, 1000.0f, 0.0f);
+    Vec3f force = buoyancy.apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, Vec3f(0.0f)});
 
     REQUIRE(std::isfinite(force.y));
     REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
@@ -669,10 +695,9 @@ TEST_CASE("BuoyancyField: Zero object density is safe", "[ForceField][BuoyancyFi
 
 TEST_CASE("ForceField: Polymorphic usage of BuoyancyField", "[ForceField][polymorphism]")
 {
-    std::unique_ptr<ForceField> field =
-        std::make_unique<BuoyancyField>(1000.0f, 1000.0f, 0.0f, Vec3f(0.0f, -10.0f, 0.0f));
+    std::unique_ptr<ForceField> field = std::make_unique<BuoyancyField>(1000.0f, 1000.0f, 0.0f);
 
-    Vec3f force = field->apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    Vec3f force = field->apply({Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity});
     REQUIRE_THAT(force.y, WithinAbs(10.0f, 1e-5f));
     REQUIRE(std::string(field->name()) == "BuoyancyField");
 }

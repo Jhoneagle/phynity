@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 
 namespace phynity::physics
 {
@@ -26,9 +27,10 @@ using phynity::physics::shapes::AABB;
 /// ignore the new members, with no signature churn across every field/call site.
 struct ForceContext
 {
-    Vec3f position{0.0f}; ///< Current position of the body
-    Vec3f velocity{0.0f}; ///< Current velocity of the body
-    float mass{0.0f};     ///< Mass of the body
+    Vec3f position{0.0f};                  ///< Current position of the body
+    Vec3f velocity{0.0f};                  ///< Current velocity of the body
+    float mass{0.0f};                      ///< Mass of the body
+    Vec3f gravity{EARTH_GRAVITY_VECTOR};   ///< Ambient gravitational acceleration (shared environment state)
     // grows additively later: float charge; float volume; float temperature; ...
 };
 
@@ -318,31 +320,25 @@ class WindField : public ForceField
 private:
     Vec3f wind_velocity_;
     float drag_coefficient_;
-    bool bounded_;
-    AABB region_;
+    std::optional<AABB> region_; ///< Confining volume; unset means the wind acts everywhere
 
 public:
-    /// Unbounded constructor — the wind acts everywhere.
+    /// Constructor. Omit @p region (or pass std::nullopt) for wind that acts
+    /// everywhere; pass an AABB to confine the wind to that volume.
     /// @param wind_velocity Velocity of the air mass
     /// @param drag_coefficient Coupling strength (>= 0)
-    constexpr explicit WindField(const Vec3f &wind_velocity = Vec3f(0.0f), float drag_coefficient = 0.0f)
-        : wind_velocity_(wind_velocity), drag_coefficient_(drag_coefficient), bounded_(false), region_()
-    {
-    }
-
-    /// Bounded constructor — the wind acts only inside the given region.
-    /// @param wind_velocity Velocity of the air mass
-    /// @param drag_coefficient Coupling strength (>= 0)
-    /// @param region AABB volume the wind is confined to
-    WindField(const Vec3f &wind_velocity, float drag_coefficient, const AABB &region)
-        : wind_velocity_(wind_velocity), drag_coefficient_(drag_coefficient), bounded_(true), region_(region)
+    /// @param region Optional AABB the wind is confined to
+    constexpr explicit WindField(const Vec3f &wind_velocity = Vec3f(0.0f),
+                                 float drag_coefficient = 0.0f,
+                                 std::optional<AABB> region = std::nullopt)
+        : wind_velocity_(wind_velocity), drag_coefficient_(drag_coefficient), region_(region)
     {
     }
 
     /// Apply wind: F = c * (wind_velocity - velocity), gated to the region if bounded.
     Vec3f apply(const ForceContext &ctx) const override
     {
-        if (bounded_ && !region_.contains_point(ctx.position))
+        if (region_ && !region_->contains_point(ctx.position))
         {
             return Vec3f(0.0f);
         }
@@ -376,13 +372,13 @@ public:
     /// Whether the wind is confined to a bounded region
     constexpr bool is_bounded() const
     {
-        return bounded_;
+        return region_.has_value();
     }
 
     /// Get the bounding region (only meaningful when bounded)
     AABB region() const
     {
-        return region_;
+        return region_.value_or(AABB{});
     }
 
     const char *name() const override
@@ -466,37 +462,39 @@ public:
 /// The body's volume is derived from its mass and density: V = mass / object_density.
 /// A body fully above the surface receives no force. Submersion is treated as
 /// all-or-nothing about the surface plane (no partial-submersion ramp).
+///
+/// Gravity (which defines "down", the surface's up axis, and the force magnitude)
+/// is read from the shared ForceContext each step rather than stored, so buoyancy
+/// always tracks the system's ambient gravity — changing gravity mid-simulation
+/// (e.g. switching planets) can never leave a stale, divergent copy here.
 class BuoyancyField : public ForceField
 {
 private:
     float fluid_density_;   ///< Density of the surrounding fluid (kg/m³)
     float object_density_;  ///< Density of the body, used to derive its volume (kg/m³)
     float surface_height_;  ///< Height of the flat fluid surface along the up axis
-    Vec3f gravity_;         ///< Gravity vector (defines "down" and force magnitude)
 
 public:
-    /// Constructor with fluid/object densities, surface height, and gravity.
+    /// Constructor with fluid/object densities and surface height.
     /// @param fluid_density Density of the fluid (kg/m³)
     /// @param object_density Density of the body (kg/m³, > 0)
     /// @param surface_height Height of the fluid surface along the up axis
-    /// @param gravity Gravity vector (default: Earth gravity)
-    constexpr BuoyancyField(float fluid_density = 1000.0f, float object_density = 1000.0f, float surface_height = 0.0f,
-                            const Vec3f &gravity = EARTH_GRAVITY_VECTOR)
-        : fluid_density_(fluid_density), object_density_(object_density), surface_height_(surface_height),
-          gravity_(gravity)
+    constexpr BuoyancyField(float fluid_density = 1000.0f, float object_density = 1000.0f, float surface_height = 0.0f)
+        : fluid_density_(fluid_density), object_density_(object_density), surface_height_(surface_height)
     {
     }
 
     /// Apply buoyancy: upward force equal to the weight of displaced fluid.
+    /// Uses the ambient gravity supplied by the context to orient and scale the force.
     Vec3f apply(const ForceContext &ctx) const override
     {
         using phynity::math::utilities::is_zero;
-        if (is_zero(object_density_) || is_zero(gravity_.squaredLength()))
+        if (is_zero(object_density_) || is_zero(ctx.gravity.squaredLength()))
         {
             return Vec3f(0.0f);
         }
 
-        Vec3f up = gravity_.normalized() * -1.0f;
+        Vec3f up = ctx.gravity.normalized() * -1.0f;
         float depth = surface_height_ - ctx.position.dot(up);
         if (depth <= 0.0f)
         {
@@ -504,7 +502,7 @@ public:
         }
 
         float volume = ctx.mass / object_density_;
-        return gravity_ * (-fluid_density_ * volume);
+        return ctx.gravity * (-fluid_density_ * volume);
     }
 
     /// Get the fluid density
@@ -541,18 +539,6 @@ public:
     void set_surface_height(float height)
     {
         surface_height_ = height;
-    }
-
-    /// Get the gravity vector
-    constexpr Vec3f gravity() const
-    {
-        return gravity_;
-    }
-
-    /// Set the gravity vector
-    void set_gravity(const Vec3f &gravity)
-    {
-        gravity_ = gravity;
     }
 
     const char *name() const override

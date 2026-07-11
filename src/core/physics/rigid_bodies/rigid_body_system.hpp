@@ -173,6 +173,21 @@ public:
         force_fields_.clear();
     }
 
+    /// Set the ambient gravitational acceleration shared with force fields.
+    /// This is the single source of "down" that medium-dependent fields (e.g.
+    /// BuoyancyField) read via the ForceContext, so it stays consistent even
+    /// when gravity changes mid-simulation.
+    void set_ambient_gravity(const Vec3f &gravity)
+    {
+        ambient_gravity_ = gravity;
+    }
+
+    /// Get the ambient gravitational acceleration.
+    Vec3f ambient_gravity() const
+    {
+        return ambient_gravity_;
+    }
+
     // ========================================================================
     // Constraints
     // ========================================================================
@@ -246,7 +261,7 @@ public:
             {
                 for (auto &rb : bodies_)
                 {
-                    Vec3f force = field->apply({rb.position, rb.velocity, rb.get_mass()});
+                    Vec3f force = field->apply({rb.position, rb.velocity, rb.get_mass(), ambient_gravity_});
                     rb.force_accumulator += force;
                 }
             }
@@ -494,7 +509,8 @@ private:
                                 {
                                     Vec3f force = field->apply({d->self->bodies_[i].position,
                                                                 d->self->bodies_[i].velocity,
-                                                                d->self->bodies_[i].get_mass()});
+                                                                d->self->bodies_[i].get_mass(),
+                                                                d->self->ambient_gravity_});
                                     d->self->bodies_[i].force_accumulator += force;
                                 }
                         },
@@ -656,6 +672,7 @@ private:
     std::vector<Constraint *> active_constraints_cache_;
     RigidBodyCollisionResolver collision_resolver_;
     std::vector<Vec3f> frame_start_positions_; // reused per frame to avoid allocation
+    Vec3f ambient_gravity_ = constants::EARTH_GRAVITY_VECTOR; // shared with force fields via ForceContext
     RigidBodyID next_body_id_;
     Diagnostics diagnostics_;
     phynity::jobs::JobSystem *job_system_ = nullptr;

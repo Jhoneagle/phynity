@@ -171,11 +171,15 @@ void FloatingObjects::setup(PhysicsContext &context)
     const Vec3f gravity(0.0f, -EARTH_GRAVITY, 0.0f);
     const float surface_height = 0.0f;
 
+    // Publish gravity as the system's ambient "down"; BuoyancyField reads it from
+    // the shared ForceContext rather than holding its own copy.
+    context.particle_system().set_ambient_gravity(gravity);
+
     // Gravity pulls down, buoyancy (light objects in water) pushes up, and drag
     // dissipates the bobbing so the particles settle at the surface.
     context.particle_system().add_force_field(std::make_unique<phynity::physics::GravityField>(gravity));
     context.particle_system().add_force_field(
-        std::make_unique<phynity::physics::BuoyancyField>(WATER_DENSITY, 500.0f, surface_height, gravity));
+        std::make_unique<phynity::physics::BuoyancyField>(WATER_DENSITY, 500.0f, surface_height));
     context.particle_system().add_force_field(std::make_unique<phynity::physics::DragField>(1.5f));
 
     // Particles start submerged at various depths and rise to the surface.

@@ -72,9 +72,10 @@ TEST_CASE("Forces Validation - Buoyant particle settles near the surface", "[for
     const Vec3f gravity(0.0f, -EARTH_GRAVITY, 0.0f);
 
     // object_density < fluid_density => the body floats.
+    system.set_ambient_gravity(gravity); // BuoyancyField reads gravity from the shared context
     system.spawn(Vec3f(0.0f, -5.0f, 0.0f), Vec3f(0.0f), make_no_damping_material(mass));
     system.add_force_field(std::make_unique<GravityField>(gravity));
-    system.add_force_field(std::make_unique<BuoyancyField>(1000.0f, 500.0f, surface_height, gravity));
+    system.add_force_field(std::make_unique<BuoyancyField>(1000.0f, 500.0f, surface_height));
     system.add_force_field(std::make_unique<DragField>(2.0f)); // dissipate the oscillation
 
     float start_y = system.particles()[0].position.y;
