@@ -14,6 +14,22 @@ using phynity::physics::constants::EARTH_GRAVITY_VECTOR;
 using phynity::physics::constants::VELOCITY_EPSILON;
 
 /// ============================================================================
+/// Force Application Context
+/// ============================================================================
+
+/// Bundles the per-body state a force field reads when computing its force.
+/// Passing a context (rather than a fixed parameter list) lets future fields
+/// require new inputs additively: extend this struct and existing fields simply
+/// ignore the new members, with no signature churn across every field/call site.
+struct ForceContext
+{
+    Vec3f position{0.0f}; ///< Current position of the body
+    Vec3f velocity{0.0f}; ///< Current velocity of the body
+    float mass{0.0f};     ///< Mass of the body
+    // grows additively later: float charge; float volume; float temperature; ...
+};
+
+/// ============================================================================
 /// Abstract Force Field Base Class
 /// ============================================================================
 
@@ -24,12 +40,10 @@ class ForceField
 public:
     virtual ~ForceField() = default;
 
-    /// Apply the force field to a particle at a given position with given velocity.
-    /// @param position Current position of the particle
-    /// @param velocity Current velocity of the particle
-    /// @param mass Mass of the particle
+    /// Apply the force field to a body described by the given context.
+    /// @param ctx Per-body state (position, velocity, mass, ...)
     /// @return Force vector (in Newtons or equivalent units)
-    virtual Vec3f apply(const Vec3f &position, const Vec3f &velocity, float mass) const = 0;
+    virtual Vec3f apply(const ForceContext &ctx) const = 0;
 
     /// Returns a human-readable name for this force field
     virtual const char *name() const = 0;
@@ -54,9 +68,9 @@ public:
     }
 
     /// Apply gravity: F = m * g
-    Vec3f apply(const Vec3f & /*position*/, const Vec3f & /*velocity*/, float mass) const override
+    Vec3f apply(const ForceContext &ctx) const override
     {
-        return gravity_ * mass;
+        return gravity_ * ctx.mass;
     }
 
     /// Get the gravitational acceleration vector
@@ -94,9 +108,9 @@ public:
     }
 
     /// Apply linear drag: F = -drag_coefficient * velocity
-    Vec3f apply(const Vec3f & /*position*/, const Vec3f &velocity, float /*mass*/) const override
+    Vec3f apply(const ForceContext &ctx) const override
     {
-        return velocity * (-drag_coefficient_);
+        return ctx.velocity * (-drag_coefficient_);
     }
 
     /// Get the current drag coefficient
@@ -133,15 +147,15 @@ public:
     }
 
     /// Apply quadratic drag: F = -drag_coefficient * |velocity| * velocity
-    Vec3f apply(const Vec3f & /*position*/, const Vec3f &velocity, float /*mass*/) const override
+    Vec3f apply(const ForceContext &ctx) const override
     {
         using phynity::math::utilities::is_zero;
-        float speed = velocity.length();
+        float speed = ctx.velocity.length();
         if (is_zero(speed, VELOCITY_EPSILON))
         {
             return Vec3f(0.0f);
         }
-        return velocity * (-drag_coefficient_ * speed);
+        return ctx.velocity * (-drag_coefficient_ * speed);
     }
 
     /// Get the current drag coefficient
@@ -180,9 +194,9 @@ public:
     }
 
     /// Apply spring force: F = -k * (position - center)
-    Vec3f apply(const Vec3f &position, const Vec3f & /*velocity*/, float /*mass*/) const override
+    Vec3f apply(const ForceContext &ctx) const override
     {
-        Vec3f displacement = position - center_;
+        Vec3f displacement = ctx.position - center_;
         return displacement * (-spring_constant_);
     }
 

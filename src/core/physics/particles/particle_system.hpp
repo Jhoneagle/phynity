@@ -378,7 +378,7 @@ public:
                                                   {
                                                       return;
                                                   }
-                                                  Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                                                  Vec3f force = field->apply({p.position, p.velocity, p.material.mass});
                                                   p.apply_force(force);
                                               });
                 }
@@ -388,7 +388,7 @@ public:
                     {
                         if (p.is_alive())
                         {
-                            Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                            Vec3f force = field->apply({p.position, p.velocity, p.material.mass});
                             p.apply_force(force);
                         }
                     }
@@ -606,7 +606,7 @@ private:
                                     Particle &part = d->self->particles_[i];
                                     if (!part.is_alive())
                                         continue;
-                                    part.apply_force(field->apply(part.position, part.velocity, part.material.mass));
+                                    part.apply_force(field->apply({part.position, part.velocity, part.material.mass}));
                                 }
                         },
                         .data = data,

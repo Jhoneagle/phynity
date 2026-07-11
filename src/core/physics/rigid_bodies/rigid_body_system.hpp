@@ -246,7 +246,7 @@ public:
             {
                 for (auto &rb : bodies_)
                 {
-                    Vec3f force = field->apply(rb.position, rb.velocity, rb.get_mass());
+                    Vec3f force = field->apply({rb.position, rb.velocity, rb.get_mass()});
                     rb.force_accumulator += force;
                 }
             }
@@ -492,9 +492,9 @@ private:
                             for (auto &field : d->self->force_fields_)
                                 for (uint32_t i = d->start; i < d->end; ++i)
                                 {
-                                    Vec3f force = field->apply(d->self->bodies_[i].position,
-                                                               d->self->bodies_[i].velocity,
-                                                               d->self->bodies_[i].get_mass());
+                                    Vec3f force = field->apply({d->self->bodies_[i].position,
+                                                                d->self->bodies_[i].velocity,
+                                                                d->self->bodies_[i].get_mass()});
                                     d->self->bodies_[i].force_accumulator += force;
                                 }
                         },
