@@ -8,6 +8,7 @@
 #include <core/physics/config/timestep_controller.hpp>
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/material.hpp>
+#include <core/physics/fluids/sph_fluid_system.hpp>
 #include <core/physics/particles/particle_system.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/serialization/simulation_timeline.hpp>
@@ -29,6 +30,7 @@ using phynity::physics::Material;
 using phynity::physics::ParticleSystem;
 using phynity::physics::RigidBodySystem;
 using phynity::physics::TimestepController;
+using phynity::physics::fluids::SphFluidSystem;
 using phynity::physics::constants::EARTH_GRAVITY;
 
 /// Application-level physics context manager.
@@ -60,6 +62,7 @@ public:
     struct Diagnostics
     {
         size_t particle_count = 0;
+        size_t fluid_particle_count = 0;
         size_t body_count = 0;
         size_t constraint_count = 0;
         float total_kinetic_energy = 0.0f;
@@ -199,6 +202,23 @@ public:
     }
 
     // ========================================================================
+    // Fluid Management (SPH prototype — stepped with internal substepping)
+    // ========================================================================
+
+    /// Get direct access to the SPH fluid system. Scenarios spawn fluid
+    /// particles and set parameters/ambient gravity through this handle.
+    /// Note: fluid state is intentionally excluded from the timeline snapshot
+    /// (see plan non-goals), so step-backward does not rewind the fluid.
+    SphFluidSystem &sph_fluid_system()
+    {
+        return sph_fluid_system_;
+    }
+    const SphFluidSystem &sph_fluid_system() const
+    {
+        return sph_fluid_system_;
+    }
+
+    // ========================================================================
     // Force Field Management
     // ========================================================================
 
@@ -244,6 +264,7 @@ private:
     Config config_;
     ParticleSystem particle_system_;
     RigidBodySystem rigid_body_system_;
+    SphFluidSystem sph_fluid_system_;
     TimestepController timestep_controller_;
     JobSystem job_system_;
     std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
@@ -257,6 +278,11 @@ private:
 
     /// Initialize force fields based on configuration (both systems)
     void initialize_force_fields();
+
+    /// Advance the fluid system, subdividing dt so each SPH substep is within
+    /// the solver's stability limit (the render-rate dt of ~1/60 s is far too
+    /// large for explicit WCSPH). No-op when there are no fluid particles.
+    void step_fluid(float dt);
 
     /// Save recorded schedule to disk (called by destructor if recording)
     void save_schedule();

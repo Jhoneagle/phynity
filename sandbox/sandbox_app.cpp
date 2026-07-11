@@ -34,6 +34,7 @@ void SandboxApp::register_scenarios()
     scenario_registry_.push_back({"High Drag", [] { return std::make_unique<scenarios::HighDrag>(); }});
     scenario_registry_.push_back({"Wind Tunnel", [] { return std::make_unique<scenarios::WindTunnel>(); }});
     scenario_registry_.push_back({"Floating Objects", [] { return std::make_unique<scenarios::FloatingObjects>(); }});
+    scenario_registry_.push_back({"Dam Break (SPH)", [] { return std::make_unique<scenarios::DamBreak>(); }});
 
     // Rigid body scenarios
     scenario_registry_.push_back({"Box Stacking", [] { return std::make_unique<scenarios::BoxStacking>(); }});
@@ -231,6 +232,7 @@ void SandboxApp::draw_scenario_panel()
 
         auto diag = physics_context_.diagnostics();
         ImGui::Text("Particles: %zu", diag.particle_count);
+        ImGui::Text("Fluid Particles: %zu", diag.fluid_particle_count);
         ImGui::Text("Rigid Bodies: %zu", diag.body_count);
         ImGui::Text("Constraints: %zu", diag.constraint_count);
         ImGui::Text("Total KE: %.3f J", static_cast<double>(diag.total_kinetic_energy));
@@ -403,12 +405,24 @@ render::SceneRenderer::State SandboxApp::build_scene_state() const
 
     // Particles
     const auto &particles = physics_context_.particle_system().particles();
-    state.particles.reserve(particles.size());
+    const auto &fluid_particles = physics_context_.sph_fluid_system().particles();
+    state.particles.reserve(particles.size() + fluid_particles.size());
     for (const auto &p : particles)
     {
         render::SceneRenderer::ParticleVisual vis;
         vis.position = p.position;
         vis.radius = p.radius;
+        state.particles.push_back(vis);
+    }
+
+    // Fluid particles (SPH prototype): rendered as small spheres sized from the
+    // smoothing radius so a fluid volume reads as a body of particles.
+    const float fluid_render_radius = 0.35f * physics_context_.sph_fluid_system().parameters().smoothing_radius;
+    for (const auto &fp : fluid_particles)
+    {
+        render::SceneRenderer::ParticleVisual vis;
+        vis.position = fp.position;
+        vis.radius = fluid_render_radius;
         state.particles.push_back(vis);
     }
 

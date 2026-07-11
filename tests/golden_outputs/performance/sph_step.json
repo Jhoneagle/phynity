@@ -1,0 +1,13 @@
+{
+  "scenario": "sph_step",
+  "milliseconds": 5078.354000,
+  "iterations": 200,
+  "workload": 512,
+  "notes": "WCSPH full step (neighbors + density + pressure + forces + integrate + boundaries)",
+  "samples_ms": [1713.732000, 1689.864000, 1674.758000],
+  "median_ms": 1689.864000,
+  "mean_ms": 1692.784667,
+  "stddev_ms": 16.044540,
+  "peak_rss_kb": 15824,
+  "allocator_delta_bytes": 40
+}

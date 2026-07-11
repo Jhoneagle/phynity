@@ -1,4 +1,5 @@
 #include <catch2/catch_all.hpp>
+#include <core/physics/fluids/sph_fluid_system.hpp>
 #include <core/physics/particles/particle_system.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/serialization/snapshot_helpers.hpp>
@@ -372,6 +373,91 @@ PerfResult benchmark_complex_deterministic_scene(int rigid_body_count,
     return result;
 }
 
+/**
+ * Benchmark a full WCSPH step: rebuild neighbors → density → pressure → forces →
+ * integrate → boundaries, over a block of fluid seeded at rest density. Exercises
+ * the neighbor search and the O(N·neighbors) solver passes together.
+ */
+PerfResult benchmark_sph_step(int grid_dim, int frames, int num_samples = 3)
+{
+    using phynity::physics::fluids::mass_for_spacing;
+    using phynity::physics::fluids::SphFluidSystem;
+    using phynity::physics::fluids::SphParameters;
+    using phynity::physics::shapes::AABB;
+
+    phynity::platform::AllocatorDeltaScope allocator_scope;
+
+    const float spacing = 0.05f;
+    const float rho0 = 1000.0f;
+
+    auto make_system = [&]() -> SphFluidSystem
+    {
+        SphParameters params;
+        params.smoothing_radius = 0.1f;
+        params.rest_density = rho0;
+        params.stiffness = 100.0f;
+        params.viscosity = 0.05f;
+        params.clamp_negative_pressure = true;
+        params.boundary_restitution = 0.0f;
+        params.particle_mass = mass_for_spacing(rho0, spacing);
+        params.bounds = AABB(Vec3f(-1.0f), Vec3f(1.0f));
+
+        SphFluidSystem system(params);
+        system.set_ambient_gravity(Vec3f(0.0f, -9.81f, 0.0f));
+        for (int ix = 0; ix < grid_dim; ++ix)
+        {
+            for (int iy = 0; iy < grid_dim; ++iy)
+            {
+                for (int iz = 0; iz < grid_dim; ++iz)
+                {
+                    system.spawn(Vec3f(-0.2f + static_cast<float>(ix) * spacing,
+                                       -0.49f + static_cast<float>(iy) * spacing,
+                                       -0.2f + static_cast<float>(iz) * spacing));
+                }
+            }
+        }
+        return system;
+    };
+
+    PerfResult result;
+    result.scenario = "sph_step";
+    result.workload = grid_dim * grid_dim * grid_dim;
+    result.notes = "WCSPH full step (neighbors + density + pressure + forces + integrate + boundaries)";
+    if (num_samples > 0)
+    {
+        result.samples_ms.reserve(static_cast<std::vector<double>::size_type>(num_samples));
+    }
+
+    constexpr float kFluidDt = 0.0005f;
+    for (int sample = 0; sample < num_samples; ++sample)
+    {
+        SphFluidSystem system = make_system();
+
+        const auto start = std::chrono::high_resolution_clock::now();
+        for (int frame = 0; frame < frames; ++frame)
+        {
+            system.update(kFluidDt);
+        }
+        const auto end = std::chrono::high_resolution_clock::now();
+
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        result.samples_ms.push_back(static_cast<double>(duration.count()) / 1000.0);
+    }
+
+    double total_ms = 0.0;
+    for (double sample : result.samples_ms)
+    {
+        total_ms += sample;
+    }
+    result.milliseconds = total_ms;
+    result.iterations = frames;
+    compute_stats(result);
+    result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
+
+    return result;
+}
+
 } // anonymous namespace
 
 TEST_CASE("Core Kernel Performance: Particle integration", "[validation][performance][core-kernel]")
@@ -417,5 +503,27 @@ TEST_CASE("Complex Scene Performance: Deterministic simulation with snapshots",
 
         // Sanity check: full scene should be reasonably fast
         REQUIRE(result.milliseconds < 10000.0); // Should complete in under 10 seconds
+    }
+}
+
+TEST_CASE("Fluid Performance: WCSPH step", "[validation][performance][fluids]")
+{
+    const int grid_dim = 8; // 512 fluid particles
+    const int frames = 200;
+
+    SECTION("Measure full WCSPH step on a fluid block")
+    {
+        PerfResult result = benchmark_sph_step(grid_dim, frames);
+        REQUIRE(result.milliseconds > 0.0);
+
+        std::cout << "\n=== WCSPH Step Performance ===\n";
+        std::cout << "  Fluid particles: " << result.workload << "\n";
+        std::cout << "  Frames:          " << frames << "\n";
+        std::cout << "  Total time:      " << result.milliseconds << " ms\n";
+        std::cout << "  Per-frame avg:   " << (result.milliseconds / frames) << " ms\n";
+
+        write_perf_result(result);
+
+        REQUIRE(result.milliseconds < 30000.0); // generous ceiling for CI
     }
 }

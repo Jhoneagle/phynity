@@ -2,6 +2,7 @@
 
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/constraints/hinge_joint.hpp>
+#include <core/physics/fluids/sph_fluid_system.hpp>
 #include <core/physics/shapes/aabb.hpp>
 #include <core/physics/shapes/box.hpp>
 
@@ -186,6 +187,51 @@ void FloatingObjects::setup(PhysicsContext &context)
     context.spawn_particle(Vec3f(-2.0f, -4.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
     context.spawn_particle(Vec3f(0.0f, -6.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
     context.spawn_particle(Vec3f(2.0f, -2.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+}
+
+void DamBreak::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.clear_bodies();
+
+    using phynity::physics::fluids::mass_for_spacing;
+    using phynity::physics::fluids::SphParameters;
+    using phynity::physics::shapes::AABB;
+
+    auto &fluid = context.sph_fluid_system();
+    fluid.clear();
+
+    const float spacing = 0.05f;
+
+    SphParameters params;
+    params.smoothing_radius = 0.1f; // h = 2·spacing
+    params.rest_density = WATER_DENSITY;
+    params.stiffness = 100.0f;              // weakly compressible, CFL-friendly
+    params.viscosity = 0.05f;               // small: explicit viscosity is stiff
+    params.clamp_negative_pressure = true;  // suppress free-surface tensile instability
+    params.boundary_restitution = 0.0f;     // fully damped container walls
+    params.particle_mass = mass_for_spacing(WATER_DENSITY, spacing);
+    params.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
+    fluid.set_parameters(params);
+    fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+
+    // A tall column held against the left wall; released at t=0 it collapses.
+    // Seeded on a lattice with mass = ρ₀·spacing³ so it starts at rest density.
+    const int nx = 5;
+    const int ny = 14;
+    const int nz = 5;
+    for (int ix = 0; ix < nx; ++ix)
+    {
+        for (int iy = 0; iy < ny; ++iy)
+        {
+            for (int iz = 0; iz < nz; ++iz)
+            {
+                fluid.spawn(Vec3f(-0.48f + static_cast<float>(ix) * spacing,
+                                  -0.49f + static_cast<float>(iy) * spacing,
+                                  -0.12f + static_cast<float>(iz) * spacing));
+            }
+        }
+    }
 }
 
 // ============================================================================

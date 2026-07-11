@@ -100,7 +100,26 @@ void PhysicsContext::update(float delta_time)
     {
         particle_system_.update(dt);
         rigid_body_system_.update(dt);
+        step_fluid(dt);
         capture_timeline_frame();
+    }
+}
+
+void PhysicsContext::step_fluid(float dt)
+{
+    if (sph_fluid_system_.particle_count() == 0 || dt <= 0.0f)
+    {
+        return;
+    }
+
+    // Cap each SPH substep to keep the explicit solver stable regardless of the
+    // caller's (render-rate) dt.
+    constexpr float kMaxFluidSubstep = 0.0005f;
+    const int substeps = std::max(1, static_cast<int>(std::ceil(dt / kMaxFluidSubstep)));
+    const float sub_dt = dt / static_cast<float>(substeps);
+    for (int i = 0; i < substeps; ++i)
+    {
+        sph_fluid_system_.update(sub_dt);
     }
 }
 
@@ -110,6 +129,7 @@ void PhysicsContext::step_deterministic()
     float dt = 1.0f / config_.target_fps;
     particle_system_.update(dt);
     rigid_body_system_.update(dt);
+    step_fluid(dt);
     capture_timeline_frame();
 }
 
@@ -128,6 +148,7 @@ void PhysicsContext::step_forward()
     float dt = 1.0f / config_.target_fps;
     particle_system_.update(dt);
     rigid_body_system_.update(dt);
+    step_fluid(dt);
     capture_timeline_frame();
 }
 
@@ -271,6 +292,9 @@ PhysicsContext::Diagnostics PhysicsContext::diagnostics() const
     diag.particle_count = particle_diag.particle_count;
     diag.total_kinetic_energy += particle_diag.total_kinetic_energy;
     diag.total_momentum += particle_diag.total_momentum;
+
+    // Fluid particle count (SPH prototype; not folded into KE/momentum totals).
+    diag.fluid_particle_count = sph_fluid_system_.particle_count();
 
     // Rigid body system diagnostics
     const auto &rb_diag = rigid_body_system_.get_diagnostics();
