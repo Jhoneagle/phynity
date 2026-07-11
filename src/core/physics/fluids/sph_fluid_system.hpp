@@ -244,6 +244,60 @@ public:
         }
     }
 
+    /// Clamp particles to the container and reflect the inward-normal velocity
+    /// component with a restitution/damping factor.
+    ///
+    /// This is a simple prototype container wall: it applies no boundary
+    /// pressure, so near-wall particles are neighbor-deficient and can clump —
+    /// a standard SPH limitation. Ghost/boundary particles are a documented
+    /// follow-up, not prototype scope; validation assertions near walls stay
+    /// loose accordingly.
+    void resolve_boundaries()
+    {
+        const Vec3f &lo = params_.bounds.min;
+        const Vec3f &hi = params_.bounds.max;
+        const float e = params_.boundary_restitution;
+
+        for (FluidParticle &p : particles_)
+        {
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                if (p.position[axis] < lo[axis])
+                {
+                    p.position[axis] = lo[axis];
+                    if (p.velocity[axis] < 0.0f)
+                    {
+                        p.velocity[axis] = -p.velocity[axis] * e; // reflect + damp
+                    }
+                }
+                else if (p.position[axis] > hi[axis])
+                {
+                    p.position[axis] = hi[axis];
+                    if (p.velocity[axis] > 0.0f)
+                    {
+                        p.velocity[axis] = -p.velocity[axis] * e;
+                    }
+                }
+            }
+        }
+    }
+
+    // ========================================================================
+    // Full Step
+    // ========================================================================
+
+    /// Advance the fluid one timestep:
+    /// rebuild neighbors → density → pressure → forces → integrate → boundaries.
+    void update(float dt)
+    {
+        rebuild_neighbors();
+        compute_density();
+        compute_pressure();
+        compute_forces();
+        integrate(dt);
+        resolve_boundaries();
+    }
+
 protected:
     /// Densities below this are treated as degenerate and skipped to avoid
     /// dividing by ρ² in the pressure/viscosity accumulation.
