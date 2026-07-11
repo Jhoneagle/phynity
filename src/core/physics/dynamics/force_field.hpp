@@ -391,4 +391,73 @@ public:
     }
 };
 
+/// Spring–damper field (damped harmonic oscillator).
+/// Applies a restoring spring force plus a viscous damping force:
+/// F = -k * (position - center) - c * velocity.
+/// Unlike SpringField, this couples position and velocity so oscillations decay.
+class SpringDamperField : public ForceField
+{
+private:
+    Vec3f center_;
+    float spring_constant_;
+    float damping_;
+
+public:
+    /// Constructor with center, spring constant, and damping coefficient.
+    /// @param center The equilibrium position
+    /// @param spring_constant Spring stiffness (k), typically > 0
+    /// @param damping Viscous damping coefficient (c), typically >= 0
+    constexpr SpringDamperField(const Vec3f &center = Vec3f(0.0f), float spring_constant = 1.0f, float damping = 0.0f)
+        : center_(center), spring_constant_(spring_constant), damping_(damping)
+    {
+    }
+
+    /// Apply spring + damping: F = -k * (position - center) - c * velocity.
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        return (ctx.position - center_) * (-spring_constant_) + ctx.velocity * (-damping_);
+    }
+
+    /// Get equilibrium center
+    constexpr Vec3f center() const
+    {
+        return center_;
+    }
+
+    /// Set new equilibrium center
+    void set_center(const Vec3f &center)
+    {
+        center_ = center;
+    }
+
+    /// Get spring constant
+    constexpr float spring_constant() const
+    {
+        return spring_constant_;
+    }
+
+    /// Set new spring constant
+    void set_spring_constant(float k)
+    {
+        spring_constant_ = k;
+    }
+
+    /// Get damping coefficient
+    constexpr float damping() const
+    {
+        return damping_;
+    }
+
+    /// Set new damping coefficient
+    void set_damping(float c)
+    {
+        damping_ = c;
+    }
+
+    const char *name() const override
+    {
+        return "SpringDamperField";
+    }
+};
+
 } // namespace phynity::physics

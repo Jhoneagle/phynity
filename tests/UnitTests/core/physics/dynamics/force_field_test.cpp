@@ -13,6 +13,7 @@ using phynity::physics::ForceField;
 using phynity::physics::GravityField;
 using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
+using phynity::physics::SpringDamperField;
 using phynity::physics::SpringField;
 using phynity::physics::WindField;
 using phynity::physics::shapes::AABB;
@@ -539,4 +540,64 @@ TEST_CASE("ForceField: Polymorphic usage of WindField", "[ForceField][polymorphi
     Vec3f force = field->apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f});
     REQUIRE_THAT(force.x, WithinAbs(5.0f, 1e-6f));
     REQUIRE(std::string(field->name()) == "WindField");
+}
+
+// ============================================================================
+// Spring–Damper Field Tests
+// ============================================================================
+
+TEST_CASE("SpringDamperField: Zero force at equilibrium with zero velocity", "[ForceField][SpringDamperField]")
+{
+    Vec3f center(5.0f, 3.0f, -2.0f);
+    SpringDamperField sd(center, 2.0f, 0.5f);
+
+    Vec3f force = sd.apply({center, Vec3f(0.0f), 1.0f});
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+    REQUIRE(sd.name() == std::string("SpringDamperField"));
+}
+
+TEST_CASE("SpringDamperField: With zero damping matches SpringField", "[ForceField][SpringDamperField]")
+{
+    Vec3f center(0.0f);
+    Vec3f pos(10.0f, -4.0f, 2.0f);
+    Vec3f vel(3.0f, 3.0f, 3.0f);
+
+    SpringField spring(center, 2.0f);
+    SpringDamperField sd(center, 2.0f, 0.0f);
+
+    Vec3f f_spring = spring.apply({pos, vel, 1.0f});
+    Vec3f f_sd = sd.apply({pos, vel, 1.0f});
+
+    REQUIRE_THAT(f_sd.x, WithinAbs(f_spring.x, 1e-6f));
+    REQUIRE_THAT(f_sd.y, WithinAbs(f_spring.y, 1e-6f));
+    REQUIRE_THAT(f_sd.z, WithinAbs(f_spring.z, 1e-6f));
+}
+
+TEST_CASE("SpringDamperField: Damping opposes velocity", "[ForceField][SpringDamperField]")
+{
+    // At equilibrium, only the damping term acts: F = -c * v.
+    SpringDamperField sd(Vec3f(0.0f), 2.0f, 0.5f);
+    Vec3f force = sd.apply({Vec3f(0.0f), Vec3f(10.0f, 0.0f, 0.0f), 1.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(-5.0f, 1e-6f));
+    REQUIRE_THAT(force.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("SpringDamperField: Combined spring and damping", "[ForceField][SpringDamperField]")
+{
+    SpringDamperField sd(Vec3f(0.0f), 2.0f, 0.5f);
+    // F = -2 * (4, 0, 0) - 0.5 * (10, 0, 0) = (-8 - 5, 0, 0) = (-13, 0, 0)
+    Vec3f force = sd.apply({Vec3f(4.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), 1.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(-13.0f, 1e-6f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of SpringDamperField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<SpringDamperField>(Vec3f(0.0f), 2.0f, 0.5f);
+
+    Vec3f force = field->apply({Vec3f(4.0f, 0.0f, 0.0f), Vec3f(10.0f, 0.0f, 0.0f), 1.0f});
+    REQUIRE_THAT(force.x, WithinAbs(-13.0f, 1e-6f));
+    REQUIRE(std::string(field->name()) == "SpringDamperField");
 }
