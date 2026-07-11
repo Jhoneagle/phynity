@@ -26,6 +26,16 @@ constexpr Vec3f MOON_GRAVITY_VECTOR = Vec3f(0.0f, -MOON_GRAVITY, 0.0f);
 constexpr Vec3f ZERO_GRAVITY_VECTOR = Vec3f(0.0f, 0.0f, 0.0f);
 
 // ============================================================================
+// Fluid / Gas Densities
+// ============================================================================
+
+/// Density of fresh water (kg/m³)
+constexpr float WATER_DENSITY = physicsf::water_density; // 1000
+
+/// Density of air at sea level, ~20°C (kg/m³)
+constexpr float AIR_DENSITY = physicsf::air_density; // 1.225
+
+// ============================================================================
 // Collision and Simulation Tolerances
 // ============================================================================
 
