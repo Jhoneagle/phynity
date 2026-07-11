@@ -390,8 +390,44 @@ limitation) — treat wall-adjacent behavior as approximate.
 See the `Dam Break (SPH)` sandbox scenario for a runnable demo. The sandbox
 sub-steps the fluid internally so it stays stable at the render frame rate.
 
-Fluid state is intentionally **excluded from the snapshot/replay timeline** for
-the prototype (the solver itself is deterministic; persistence is deferred).
+### Position-based fluids (PBF)
+
+`PbfFluidSystem` is a sibling solver built on the *same* scaffolding (kernels,
+neighbor search, `FluidParticle`, `mass_for_spacing`, box boundary). Instead of an
+equation-of-state pressure force, it enforces incompressibility with an iterative
+**density-constraint projection** (Macklin & Müller 2013): each step predicts
+positions under gravity, then repeatedly computes per-particle Lagrange
+multipliers `λ` and position corrections `Δp` that drive density back toward `ρ₀`,
+before recovering velocities from the net position change.
+
+```cpp
+#include <core/physics/fluids/pbf_fluid_system.hpp>
+using namespace phynity::physics::fluids;
+
+PbfParameters params;
+params.sph = /* shared SphParameters: h, ρ₀, particle_mass, bounds */;
+params.solver_iterations = 10;          // more iterations ⇒ stiffer incompressibility
+params.clamp_density_deficiency = true; // compression-only: don't collapse the free surface
+params.xsph_c = 0.02f;                  // mild XSPH velocity smoothing
+
+PbfFluidSystem fluid(params);
+fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+// spawn a lattice as with WCSPH, then:
+fluid.update(dt);
+```
+
+Why PBF: because incompressibility is enforced by projection rather than an
+explicit stiff force, PBF stays stable and near rest density at timesteps where
+an equivalently-incompressible or viscous WCSPH fluid needs a much smaller `dt`.
+Two caveats mirror the WCSPH ones: **compression-only** projection
+(`clamp_density_deficiency`) is needed so the free surface is not pulled inward
+and collapsed, and the artificial-pressure tensile term (`scorr_k`) resists
+particle clumping (off by default; XSPH plus enough iterations suffice for the
+prototype pool). See the `Dam Break (PBF)` sandbox scenario.
+
+Fluid state (both WCSPH and PBF) is intentionally **excluded from the
+snapshot/replay timeline** for the prototype (the solvers themselves are
+deterministic; persistence is deferred).
 
 ## Determinism and Reproducibility
 

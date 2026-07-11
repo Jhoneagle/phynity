@@ -24,7 +24,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Library architecture (M): engine as installable library (core + platform + render) with CMake find_package support; separate sandbox demo executable.✅
 - Tooling and UI (M): in-engine debug HUD, timeline scrubber for stepping, detachable inspectors for bodies/constraints.✅
 - Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.✅
-- Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.
+- Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.✅ (WCSPH + PBF prototypes with viscosity, surface-tension and tensile terms; PBF's density-constraint projection covers the position-based sense of "pressure projection" — a true Eulerian grid pressure-projection solver remains the L-tier "Fluid and gas expansions" item.)
 - Thermodynamics hooks (M): temperature as scalar field, heat diffusion prototype, energy accounting to support conservation checks.
 - Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.
 

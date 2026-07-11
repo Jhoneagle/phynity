@@ -107,19 +107,34 @@ void PhysicsContext::update(float delta_time)
 
 void PhysicsContext::step_fluid(float dt)
 {
-    if (sph_fluid_system_.particle_count() == 0 || dt <= 0.0f)
+    if (dt <= 0.0f)
     {
         return;
     }
 
-    // Cap each SPH substep to keep the explicit solver stable regardless of the
+    // Cap each WCSPH substep to keep the explicit solver stable regardless of the
     // caller's (render-rate) dt.
-    constexpr float kMaxFluidSubstep = 0.0005f;
-    const int substeps = std::max(1, static_cast<int>(std::ceil(dt / kMaxFluidSubstep)));
-    const float sub_dt = dt / static_cast<float>(substeps);
-    for (int i = 0; i < substeps; ++i)
+    if (sph_fluid_system_.particle_count() > 0)
     {
-        sph_fluid_system_.update(sub_dt);
+        constexpr float kMaxSphSubstep = 0.0005f;
+        const int substeps = std::max(1, static_cast<int>(std::ceil(dt / kMaxSphSubstep)));
+        const float sub_dt = dt / static_cast<float>(substeps);
+        for (int i = 0; i < substeps; ++i)
+        {
+            sph_fluid_system_.update(sub_dt);
+        }
+    }
+
+    // PBF is stable at a larger substep than WCSPH.
+    if (pbf_fluid_system_.particle_count() > 0)
+    {
+        constexpr float kMaxPbfSubstep = 0.002f;
+        const int substeps = std::max(1, static_cast<int>(std::ceil(dt / kMaxPbfSubstep)));
+        const float sub_dt = dt / static_cast<float>(substeps);
+        for (int i = 0; i < substeps; ++i)
+        {
+            pbf_fluid_system_.update(sub_dt);
+        }
     }
 }
 
@@ -293,8 +308,8 @@ PhysicsContext::Diagnostics PhysicsContext::diagnostics() const
     diag.total_kinetic_energy += particle_diag.total_kinetic_energy;
     diag.total_momentum += particle_diag.total_momentum;
 
-    // Fluid particle count (SPH prototype; not folded into KE/momentum totals).
-    diag.fluid_particle_count = sph_fluid_system_.particle_count();
+    // Fluid particle count (SPH + PBF prototypes; not folded into KE/momentum totals).
+    diag.fluid_particle_count = sph_fluid_system_.particle_count() + pbf_fluid_system_.particle_count();
 
     // Rigid body system diagnostics
     const auto &rb_diag = rigid_body_system_.get_diagnostics();

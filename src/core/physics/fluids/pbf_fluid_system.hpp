@@ -292,6 +292,14 @@ private:
         {
             const float c_i = particles_[i].density * inv_rho0 - 1.0f;
 
+            // Compression-only: under-dense particles generate no correction, so
+            // the free surface is not pulled inward (see clamp_density_deficiency).
+            if (params_.clamp_density_deficiency && c_i < 0.0f)
+            {
+                lambda_[i] = 0.0f;
+                continue;
+            }
+
             // ∇_{p_i} C_i = (1/ρ₀) Σ_j m_j ∇W_ij  ;  ∇_{p_j} C_i = −(1/ρ₀) m_j ∇W_ij
             Vec3f grad_i(0.0f);
             float sum_grad2 = 0.0f;

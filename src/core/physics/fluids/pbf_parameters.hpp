@@ -17,6 +17,13 @@ struct PbfParameters
     int solver_iterations{4};   ///< Density-constraint projection iterations per step
     float relaxation{1.0e-4f};  ///< CFM relaxation ε in λ = −C / (Σ‖∇C‖² + ε)
 
+    /// Compression-only constraint: zero λ for under-dense (C < 0) particles so
+    /// the solver never pulls free-surface particles inward. Without this, a
+    /// free surface collapses (surface particles can never reach ρ₀, so the
+    /// constraint keeps contracting the fluid). The PBF analogue of WCSPH's
+    /// `clamp_negative_pressure`.
+    bool clamp_density_deficiency{true};
+
     // --- Stabilization (all off/negligible by default) ---
 
     /// Artificial-pressure tensile-instability correction (Macklin §4):

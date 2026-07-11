@@ -248,6 +248,24 @@ public:
     void setup(PhysicsContext &context) override;
 };
 
+/// Dam break solved with position-based fluids (PBF): the same collapsing column
+/// as DamBreak, but using the iterative density-constraint solver.
+class DamBreakPbf : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Dam Break (PBF)";
+    }
+
+    const char *description() const override
+    {
+        return "A column of position-based fluid (PBF) collapses and sloshes across a box";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
 // ============================================================================
 // Rigid Body Scenario Implementations
 // ============================================================================

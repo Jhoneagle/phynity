@@ -8,6 +8,7 @@
 #include <core/physics/config/timestep_controller.hpp>
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/dynamics/material.hpp>
+#include <core/physics/fluids/pbf_fluid_system.hpp>
 #include <core/physics/fluids/sph_fluid_system.hpp>
 #include <core/physics/particles/particle_system.hpp>
 #include <core/physics/rigid_bodies/rigid_body_system.hpp>
@@ -30,6 +31,7 @@ using phynity::physics::Material;
 using phynity::physics::ParticleSystem;
 using phynity::physics::RigidBodySystem;
 using phynity::physics::TimestepController;
+using phynity::physics::fluids::PbfFluidSystem;
 using phynity::physics::fluids::SphFluidSystem;
 using phynity::physics::constants::EARTH_GRAVITY;
 
@@ -218,6 +220,18 @@ public:
         return sph_fluid_system_;
     }
 
+    /// Get direct access to the PBF fluid system (position-based fluids). Like
+    /// the WCSPH system, it is stepped with internal substepping and excluded
+    /// from the timeline snapshot.
+    PbfFluidSystem &pbf_fluid_system()
+    {
+        return pbf_fluid_system_;
+    }
+    const PbfFluidSystem &pbf_fluid_system() const
+    {
+        return pbf_fluid_system_;
+    }
+
     // ========================================================================
     // Force Field Management
     // ========================================================================
@@ -265,6 +279,7 @@ private:
     ParticleSystem particle_system_;
     RigidBodySystem rigid_body_system_;
     SphFluidSystem sph_fluid_system_;
+    PbfFluidSystem pbf_fluid_system_;
     TimestepController timestep_controller_;
     JobSystem job_system_;
     std::unique_ptr<phynity::jobs::ScheduleRecorder> schedule_recorder_;
@@ -279,9 +294,10 @@ private:
     /// Initialize force fields based on configuration (both systems)
     void initialize_force_fields();
 
-    /// Advance the fluid system, subdividing dt so each SPH substep is within
-    /// the solver's stability limit (the render-rate dt of ~1/60 s is far too
-    /// large for explicit WCSPH). No-op when there are no fluid particles.
+    /// Advance the fluid systems, subdividing dt so each substep is within the
+    /// solvers' stability limits (the render-rate dt of ~1/60 s is far too large
+    /// for explicit WCSPH; PBF tolerates a larger substep). No-op when a system
+    /// has no particles.
     void step_fluid(float dt);
 
     /// Save recorded schedule to disk (called by destructor if recording)

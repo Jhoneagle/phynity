@@ -234,6 +234,50 @@ void DamBreak::setup(PhysicsContext &context)
     }
 }
 
+void DamBreakPbf::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.clear_bodies();
+
+    using phynity::physics::fluids::mass_for_spacing;
+    using phynity::physics::fluids::PbfParameters;
+    using phynity::physics::shapes::AABB;
+
+    auto &fluid = context.pbf_fluid_system();
+    fluid.clear();
+
+    const float spacing = 0.05f;
+
+    PbfParameters params;
+    params.sph.smoothing_radius = 0.1f; // h = 2·spacing
+    params.sph.rest_density = WATER_DENSITY;
+    params.sph.particle_mass = mass_for_spacing(WATER_DENSITY, spacing);
+    params.sph.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
+    params.solver_iterations = 10;
+    params.relaxation = 1.0e-4f;
+    params.clamp_density_deficiency = true; // compression-only ⇒ no free-surface collapse
+    params.xsph_c = 0.02f;                   // mild velocity smoothing
+    fluid.set_parameters(params);
+    fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+
+    // A tall column held against the left wall; released at t=0 it collapses.
+    const int nx = 5;
+    const int ny = 14;
+    const int nz = 5;
+    for (int ix = 0; ix < nx; ++ix)
+    {
+        for (int iy = 0; iy < ny; ++iy)
+        {
+            for (int iz = 0; iz < nz; ++iz)
+            {
+                fluid.spawn(Vec3f(-0.48f + static_cast<float>(ix) * spacing,
+                                  -0.49f + static_cast<float>(iy) * spacing,
+                                  -0.12f + static_cast<float>(iz) * spacing));
+            }
+        }
+    }
+}
+
 // ============================================================================
 // Rigid Body Scenarios
 // ============================================================================
