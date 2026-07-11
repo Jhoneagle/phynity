@@ -1,20 +1,24 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <core/math/quaternions/quat.hpp>
 #include <core/math/utilities/constants.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/particles/particle_system.hpp>
+#include <core/physics/rigid_bodies/rigid_body_system.hpp>
 #include <core/physics/shapes/aabb.hpp>
 #include <tests/test_utils/physics_test_helpers.hpp>
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 
 using namespace phynity::physics;
 using namespace phynity::physics::constants;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
+using phynity::math::quaternions::Quatf;
 using phynity::physics::shapes::AABB;
 using Catch::Matchers::WithinAbs;
 
@@ -195,4 +199,52 @@ TEST_CASE("Forces Validation - Point gravity supports a bound orbit", "[forces_v
     // The orbit stays bounded well away from both escape and the center.
     REQUIRE(min_radius > radius * 0.5f);
     REQUIRE(max_radius < radius * 2.0f);
+}
+
+// ----------------------------------------------------------------------------
+// BuoyancyField on the RIGID-BODY path: the rigid-body apply loop stamps the
+// system's ambient gravity into every ForceContext, and BuoyancyField must read
+// that (not a stored copy). This is the rigid-body counterpart to the
+// ParticleSystem buoyancy coverage above — a single integration step is checked
+// quantitatively so the numbers pin down that ctx.gravity actually drives the force.
+// ----------------------------------------------------------------------------
+
+TEST_CASE("Forces Validation - Rigid-body buoyancy reads the system's ambient gravity",
+          "[forces_validation]")
+{
+    const float dt = 0.001f;
+    const float mass = 1.0f;
+
+    // fluid_density == object_density == 1000, mass == 1 => submerged volume
+    // V = mass / object_density = 1e-3 m³, so the Archimedes force magnitude is
+    // fluid_density * V * |g| = |g| (numerically). With no gravity field present,
+    // buoyancy is the only force, so after one step v.y = (|F|/m) * dt = |g| * dt.
+    auto step_and_get_vy = [&](const Vec3f &gravity) {
+        RigidBodySystem system;
+        system.set_ambient_gravity(gravity);
+        system.add_force_field(std::make_unique<BuoyancyField>(1000.0f, 1000.0f, 0.0f));
+
+        // Submerged (below the surface at y = 0). No shape: a lone body has no
+        // collision pairs, so narrowphase never dereferences the (null) shape.
+        RigidBodyID id =
+            system.spawn_body(Vec3f(0.0f, -5.0f, 0.0f), Quatf(), nullptr, mass, make_no_damping_material(mass));
+
+        system.update(dt);
+
+        const RigidBody *body = system.get_body(id);
+        REQUIRE(body != nullptr);
+        REQUIRE(std::isfinite(body->velocity.y));
+        return body->velocity.y;
+    };
+
+    const float vy_g10 = step_and_get_vy(Vec3f(0.0f, -10.0f, 0.0f));
+    const float vy_g20 = step_and_get_vy(Vec3f(0.0f, -20.0f, 0.0f));
+
+    // Pushed upward (out of the fluid), with the exact Archimedes magnitude...
+    REQUIRE(vy_g10 > 0.0f);
+    REQUIRE_THAT(vy_g10, WithinAbs(10.0f * dt, 1e-5f));
+    REQUIRE_THAT(vy_g20, WithinAbs(20.0f * dt, 1e-5f));
+
+    // ...and the force tracks the ambient gravity: doubling |g| doubles it.
+    REQUIRE_THAT(vy_g20 / vy_g10, WithinAbs(2.0f, 1e-4f));
 }
