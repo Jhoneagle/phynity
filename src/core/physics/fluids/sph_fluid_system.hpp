@@ -4,8 +4,10 @@
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/fluids/fluid_neighbor_search.hpp>
 #include <core/physics/fluids/fluid_particle.hpp>
+#include <core/physics/fluids/sph_kernels.hpp>
 #include <core/physics/fluids/sph_parameters.hpp>
 
+#include <algorithm>
 #include <vector>
 
 namespace phynity::physics::fluids
@@ -123,6 +125,53 @@ public:
             position_cache_[i] = particles_[i].position;
         }
         neighbor_search_.rebuild(position_cache_, params_.smoothing_radius);
+    }
+
+    // ========================================================================
+    // Solver Passes
+    // ========================================================================
+
+    /// Density pass: ρ_i = Σ_j m_j · poly6(‖r_ij‖², h), including the self term
+    /// at r = 0. Assumes `rebuild_neighbors()` has run this step.
+    void compute_density()
+    {
+        const float h = params_.smoothing_radius;
+        const float self_w = poly6(0.0f, h);
+
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            FluidParticle &pi = particles_[i];
+            float density = pi.mass * self_w; // self contribution (r = 0)
+
+            for (const uint32_t j : neighbor_search_.neighbors(i))
+            {
+                const FluidParticle &pj = particles_[j];
+                const float r2 = (pi.position - pj.position).squaredLength();
+                density += pj.mass * poly6(r2, h);
+            }
+
+            pi.density = density;
+        }
+    }
+
+    /// Pressure pass: linear equation of state p_i = k·(ρ_i − ρ₀).
+    /// When `clamp_negative_pressure` is set, negative (tensile) pressure is
+    /// clamped to 0 to suppress the tensile instability that pulls particles
+    /// into clumps.
+    void compute_pressure()
+    {
+        const float k = params_.stiffness;
+        const float rho0 = params_.rest_density;
+
+        for (FluidParticle &p : particles_)
+        {
+            float pressure = k * (p.density - rho0);
+            if (params_.clamp_negative_pressure)
+            {
+                pressure = std::max(0.0f, pressure);
+            }
+            p.pressure = pressure;
+        }
     }
 
 protected:
