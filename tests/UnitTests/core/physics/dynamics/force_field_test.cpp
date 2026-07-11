@@ -2,6 +2,7 @@
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/shapes/aabb.hpp>
 
 #include <cmath>
 
@@ -13,6 +14,8 @@ using phynity::physics::GravityField;
 using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
 using phynity::physics::SpringField;
+using phynity::physics::WindField;
+using phynity::physics::shapes::AABB;
 
 // ============================================================================
 // Gravity Field Tests
@@ -467,4 +470,73 @@ TEST_CASE("ForceField: Polymorphic usage of PointGravityField", "[ForceField][po
     Vec3f force = field->apply({Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
     REQUIRE_THAT(force.x, WithinAbs(-10.0f, 1e-4f));
     REQUIRE(std::string(field->name()) == "PointGravityField");
+}
+
+// ============================================================================
+// Wind Field Tests (bounded drag volume)
+// ============================================================================
+
+TEST_CASE("WindField: Drives body toward wind velocity", "[ForceField][WindField]")
+{
+    WindField wind(Vec3f(10.0f, 0.0f, 0.0f), 0.5f);
+    // Body at rest: F = 0.5 * (10 - 0) = 5 in +x.
+    Vec3f force = wind.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(5.0f, 1e-6f));
+    REQUIRE_THAT(force.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
+    REQUIRE(wind.name() == std::string("WindField"));
+}
+
+TEST_CASE("WindField: Zero force when body matches wind", "[ForceField][WindField]")
+{
+    WindField wind(Vec3f(10.0f, 0.0f, 0.0f), 0.5f);
+    Vec3f force = wind.apply({Vec3f(0.0f), Vec3f(10.0f, 0.0f, 0.0f), 1.0f});
+
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("WindField: Opposes motion against the wind", "[ForceField][WindField]")
+{
+    WindField wind(Vec3f(0.0f), 0.5f); // still air
+    // Body moving +x through still air is dragged back: F = 0.5 * (0 - 10) = -5.
+    Vec3f force = wind.apply({Vec3f(0.0f), Vec3f(10.0f, 0.0f, 0.0f), 1.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(-5.0f, 1e-6f));
+}
+
+TEST_CASE("WindField: Unbounded acts everywhere", "[ForceField][WindField]")
+{
+    WindField wind(Vec3f(10.0f, 0.0f, 0.0f), 0.5f);
+
+    Vec3f f_here = wind.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f});
+    Vec3f f_far = wind.apply({Vec3f(1000.0f, -500.0f, 200.0f), Vec3f(0.0f), 1.0f});
+
+    REQUIRE(!wind.is_bounded());
+    REQUIRE_THAT(f_here.x, WithinAbs(f_far.x, 1e-6f));
+}
+
+TEST_CASE("WindField: Bounded region gates the force", "[ForceField][WindField]")
+{
+    AABB region(Vec3f(-1.0f, -1.0f, -1.0f), Vec3f(1.0f, 1.0f, 1.0f));
+    WindField wind(Vec3f(10.0f, 0.0f, 0.0f), 0.5f, region);
+
+    REQUIRE(wind.is_bounded());
+
+    // Inside the region: wind applies.
+    Vec3f inside = wind.apply({Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    REQUIRE_THAT(inside.x, WithinAbs(5.0f, 1e-6f));
+
+    // Outside the region: no force.
+    Vec3f outside = wind.apply({Vec3f(5.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    REQUIRE_THAT(outside.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of WindField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<WindField>(Vec3f(10.0f, 0.0f, 0.0f), 0.5f);
+
+    Vec3f force = field->apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f});
+    REQUIRE_THAT(force.x, WithinAbs(5.0f, 1e-6f));
+    REQUIRE(std::string(field->name()) == "WindField");
 }

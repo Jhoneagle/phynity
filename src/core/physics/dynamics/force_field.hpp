@@ -3,6 +3,7 @@
 #include <core/math/utilities/float_comparison.hpp>
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/config/physics_constants.hpp>
+#include <core/physics/shapes/aabb.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -13,6 +14,7 @@ namespace phynity::physics
 using phynity::math::vectors::Vec3f;
 using phynity::physics::constants::EARTH_GRAVITY_VECTOR;
 using phynity::physics::constants::VELOCITY_EPSILON;
+using phynity::physics::shapes::AABB;
 
 /// ============================================================================
 /// Force Application Context
@@ -304,6 +306,88 @@ public:
     const char *name() const override
     {
         return "PointGravityField";
+    }
+};
+
+/// Wind / drag volume — pushes bodies toward a target wind velocity.
+/// Applies F = c * (wind_velocity - velocity), i.e. a linear drag relative to a
+/// moving air mass rather than to still air. Optionally gated to an AABB region,
+/// so the wind only acts on bodies inside a bounded volume.
+class WindField : public ForceField
+{
+private:
+    Vec3f wind_velocity_;
+    float drag_coefficient_;
+    bool bounded_;
+    AABB region_;
+
+public:
+    /// Unbounded constructor — the wind acts everywhere.
+    /// @param wind_velocity Velocity of the air mass
+    /// @param drag_coefficient Coupling strength (>= 0)
+    constexpr explicit WindField(const Vec3f &wind_velocity = Vec3f(0.0f), float drag_coefficient = 0.0f)
+        : wind_velocity_(wind_velocity), drag_coefficient_(drag_coefficient), bounded_(false), region_()
+    {
+    }
+
+    /// Bounded constructor — the wind acts only inside the given region.
+    /// @param wind_velocity Velocity of the air mass
+    /// @param drag_coefficient Coupling strength (>= 0)
+    /// @param region AABB volume the wind is confined to
+    WindField(const Vec3f &wind_velocity, float drag_coefficient, const AABB &region)
+        : wind_velocity_(wind_velocity), drag_coefficient_(drag_coefficient), bounded_(true), region_(region)
+    {
+    }
+
+    /// Apply wind: F = c * (wind_velocity - velocity), gated to the region if bounded.
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        if (bounded_ && !region_.contains_point(ctx.position))
+        {
+            return Vec3f(0.0f);
+        }
+        return (wind_velocity_ - ctx.velocity) * drag_coefficient_;
+    }
+
+    /// Get the wind velocity
+    constexpr Vec3f wind_velocity() const
+    {
+        return wind_velocity_;
+    }
+
+    /// Set the wind velocity
+    void set_wind_velocity(const Vec3f &wind_velocity)
+    {
+        wind_velocity_ = wind_velocity;
+    }
+
+    /// Get the drag coefficient
+    constexpr float drag_coefficient() const
+    {
+        return drag_coefficient_;
+    }
+
+    /// Set the drag coefficient
+    void set_drag_coefficient(float coefficient)
+    {
+        drag_coefficient_ = coefficient;
+    }
+
+    /// Whether the wind is confined to a bounded region
+    constexpr bool is_bounded() const
+    {
+        return bounded_;
+    }
+
+    /// Get the bounding region (only meaningful when bounded)
+    AABB region() const
+    {
+        return region_;
+    }
+
+    const char *name() const override
+    {
+        return "WindField";
     }
 };
 
