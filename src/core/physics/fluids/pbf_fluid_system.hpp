@@ -313,7 +313,11 @@ private:
             }
             sum_grad2 += grad_i.squaredLength(); // ‖∇_{p_i} C_i‖²
 
-            lambda_[i] = -c_i / (sum_grad2 + eps);
+            // Guard the CFM denominator: with relaxation ε = 0 an isolated
+            // particle (zero gradient sum) would divide by zero and produce a
+            // non-finite λ. A degenerate denominator ⇒ no correction (λ = 0).
+            const float denom = sum_grad2 + eps;
+            lambda_[i] = (denom > kDensityEpsilon) ? -c_i / denom : 0.0f;
         }
     }
 

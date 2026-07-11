@@ -94,8 +94,16 @@ public:
     }
 
     /// Neighbors of particle i (indices only, ascending), as a zero-copy span.
+    ///
+    /// Returns an empty span if `i` is out of range for the last rebuild (e.g. a
+    /// query before the first rebuild, or after particles were added without one),
+    /// so a stale index can never index `neighbor_offsets_` out of bounds.
     [[nodiscard]] std::span<const uint32_t> neighbors(size_t i) const
     {
+        if (i + 1 >= neighbor_offsets_.size())
+        {
+            return {};
+        }
         const size_t begin = neighbor_offsets_[i];
         const size_t end = neighbor_offsets_[i + 1];
         return std::span<const uint32_t>(neighbor_data_.data() + begin, end - begin);
