@@ -67,6 +67,28 @@ TEST_CASE("FluidNeighborSearch: neighbor lists are ascending (canonical order)",
     }
 }
 
+TEST_CASE("FluidNeighborSearch: neighbor lists contain no duplicates", "[fluids][neighbors]")
+{
+    // The underlying SpatialGrid's cell hash is not collision-free for large
+    // offset coordinates, so its 27-cell gather can return a particle more than
+    // once; the neighbor search must dedupe. Un-deduped lists silently inflate
+    // density and break pairwise force cancellation.
+    std::vector<Vec3f> positions = {
+        Vec3f(0.0f, 0.0f, 0.0f),   Vec3f(0.2f, 0.05f, 0.0f), Vec3f(-0.15f, 0.1f, 0.05f),
+        Vec3f(0.1f, -0.2f, 0.1f),  Vec3f(-0.1f, -0.1f, -0.1f), Vec3f(0.25f, 0.2f, -0.05f),
+    };
+    FluidNeighborSearch search;
+    search.rebuild(positions, 1.0f);
+
+    for (size_t i = 0; i < positions.size(); ++i)
+    {
+        auto n = search.neighbors(i);
+        std::vector<uint32_t> copy(n.begin(), n.end());
+        copy.erase(std::unique(copy.begin(), copy.end()), copy.end());
+        REQUIRE(copy.size() == n.size()); // sorted + already unique
+    }
+}
+
 TEST_CASE("FluidNeighborSearch: identical input yields identical ordering (determinism)", "[fluids][neighbors]")
 {
     std::vector<Vec3f> positions;

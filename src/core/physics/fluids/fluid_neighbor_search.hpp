@@ -78,8 +78,17 @@ public:
                 }
             }
 
-            // Canonical ascending order for a stable summation order.
-            std::sort(neighbor_data_.begin() + static_cast<std::ptrdiff_t>(run_start), neighbor_data_.end());
+            // Canonical ascending order for a stable summation order, and
+            // deduplicate: SpatialGrid's 27-cell gather can return the same
+            // particle more than once (its Cantor cell hash is not collision-free
+            // for large offset coordinates, so distinct cells may alias to one
+            // bucket). Its contract explicitly leaves dedup to the caller.
+            // Un-deduped lists would double-count neighbors — inflating density
+            // and, worse, breaking the pairwise force cancellation that
+            // momentum conservation depends on.
+            const auto run_begin = neighbor_data_.begin() + static_cast<std::ptrdiff_t>(run_start);
+            std::sort(run_begin, neighbor_data_.end());
+            neighbor_data_.erase(std::unique(run_begin, neighbor_data_.end()), neighbor_data_.end());
             neighbor_offsets_[i + 1] = neighbor_data_.size();
         }
     }

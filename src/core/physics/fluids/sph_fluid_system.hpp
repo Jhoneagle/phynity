@@ -174,7 +174,81 @@ public:
         }
     }
 
+    /// Force pass: pressure (Monaghan symmetric), viscosity (Müller), and the
+    /// ambient body force. Assumes density and pressure are current.
+    ///
+    /// Pressure uses Monaghan's symmetric coefficient p_i/ρ_i² + p_j/ρ_j², which
+    /// is symmetric in i,j while ∇W_ij = −∇W_ji, so pairwise pressure forces are
+    /// exactly equal-and-opposite ⇒ total linear momentum is conserved for any
+    /// configuration (not just uniform density). Viscosity's (v_j−v_i)/ρ_j term
+    /// is only momentum-symmetric at uniform density; acceptable for the
+    /// prototype and flagged for a symmetric-viscosity follow-up.
+    void compute_forces()
+    {
+        const float h = params_.smoothing_radius;
+        const float mu = params_.viscosity;
+
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            FluidParticle &pi = particles_[i];
+
+            // Body force (gravity).
+            Vec3f force = ambient_gravity_ * pi.mass;
+
+            const float rho_i = pi.density;
+            if (rho_i > kDensityEpsilon)
+            {
+                const float p_over_rho2_i = pi.pressure / (rho_i * rho_i);
+
+                for (const uint32_t j : neighbor_search_.neighbors(i))
+                {
+                    const FluidParticle &pj = particles_[j];
+                    const float rho_j = pj.density;
+                    if (rho_j <= kDensityEpsilon)
+                    {
+                        continue;
+                    }
+
+                    const Vec3f r_vec = pi.position - pj.position;
+                    const float r = r_vec.length();
+
+                    // Pressure (Monaghan symmetric): the spiky gradient guards r≈0.
+                    const float p_over_rho2_j = pj.pressure / (rho_j * rho_j);
+                    const Vec3f grad = spiky_gradient(r_vec, r, h);
+                    force += grad * (-pi.mass * pj.mass * (p_over_rho2_i + p_over_rho2_j));
+
+                    // Viscosity (Müller): diffuses relative velocity.
+                    if (mu > 0.0f)
+                    {
+                        const float lap = viscosity_laplacian(r, h);
+                        force += (pj.velocity - pi.velocity) * (mu * pj.mass / rho_j * lap);
+                    }
+                }
+            }
+
+            pi.force = force;
+        }
+    }
+
+    /// Semi-implicit (symplectic) Euler integration, matching Particle::integrate:
+    /// v += (f/m)·dt, then x += v·dt.
+    void integrate(float dt)
+    {
+        for (FluidParticle &p : particles_)
+        {
+            if (p.mass > 0.0f)
+            {
+                p.velocity += p.force * (dt / p.mass);
+            }
+            p.position += p.velocity * dt;
+        }
+    }
+
 protected:
+    /// Densities below this are treated as degenerate and skipped to avoid
+    /// dividing by ρ² in the pressure/viscosity accumulation.
+    static constexpr float kDensityEpsilon = 1e-6f;
+
     std::vector<FluidParticle> particles_;
     FluidNeighborSearch neighbor_search_;
     SphParameters params_{};
