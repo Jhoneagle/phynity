@@ -460,4 +460,105 @@ public:
     }
 };
 
+/// Buoyancy field for simple fluids (Archimedes' principle).
+/// A body submerged below a flat fluid surface experiences an upward force equal
+/// to the weight of the displaced fluid: F = -gravity * ρ_fluid * V_submerged.
+/// The body's volume is derived from its mass and density: V = mass / object_density.
+/// A body fully above the surface receives no force. Submersion is treated as
+/// all-or-nothing about the surface plane (no partial-submersion ramp).
+class BuoyancyField : public ForceField
+{
+private:
+    float fluid_density_;   ///< Density of the surrounding fluid (kg/m³)
+    float object_density_;  ///< Density of the body, used to derive its volume (kg/m³)
+    float surface_height_;  ///< Height of the flat fluid surface along the up axis
+    Vec3f gravity_;         ///< Gravity vector (defines "down" and force magnitude)
+
+public:
+    /// Constructor with fluid/object densities, surface height, and gravity.
+    /// @param fluid_density Density of the fluid (kg/m³)
+    /// @param object_density Density of the body (kg/m³, > 0)
+    /// @param surface_height Height of the fluid surface along the up axis
+    /// @param gravity Gravity vector (default: Earth gravity)
+    constexpr BuoyancyField(float fluid_density = 1000.0f, float object_density = 1000.0f, float surface_height = 0.0f,
+                            const Vec3f &gravity = EARTH_GRAVITY_VECTOR)
+        : fluid_density_(fluid_density), object_density_(object_density), surface_height_(surface_height),
+          gravity_(gravity)
+    {
+    }
+
+    /// Apply buoyancy: upward force equal to the weight of displaced fluid.
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        using phynity::math::utilities::is_zero;
+        if (is_zero(object_density_) || is_zero(gravity_.squaredLength()))
+        {
+            return Vec3f(0.0f);
+        }
+
+        Vec3f up = gravity_.normalized() * -1.0f;
+        float depth = surface_height_ - ctx.position.dot(up);
+        if (depth <= 0.0f)
+        {
+            return Vec3f(0.0f);
+        }
+
+        float volume = ctx.mass / object_density_;
+        return gravity_ * (-fluid_density_ * volume);
+    }
+
+    /// Get the fluid density
+    constexpr float fluid_density() const
+    {
+        return fluid_density_;
+    }
+
+    /// Set the fluid density
+    void set_fluid_density(float density)
+    {
+        fluid_density_ = density;
+    }
+
+    /// Get the object density
+    constexpr float object_density() const
+    {
+        return object_density_;
+    }
+
+    /// Set the object density
+    void set_object_density(float density)
+    {
+        object_density_ = density;
+    }
+
+    /// Get the fluid surface height
+    constexpr float surface_height() const
+    {
+        return surface_height_;
+    }
+
+    /// Set the fluid surface height
+    void set_surface_height(float height)
+    {
+        surface_height_ = height;
+    }
+
+    /// Get the gravity vector
+    constexpr Vec3f gravity() const
+    {
+        return gravity_;
+    }
+
+    /// Set the gravity vector
+    void set_gravity(const Vec3f &gravity)
+    {
+        gravity_ = gravity;
+    }
+
+    const char *name() const override
+    {
+        return "BuoyancyField";
+    }
+};
+
 } // namespace phynity::physics
