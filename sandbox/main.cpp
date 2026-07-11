@@ -90,6 +90,8 @@ void run_headless()
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<GravityWell>(); },              3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<ProjectileMotion>(); },         3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DragInteraction>(); },          5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<WindTunnel>(); },               5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<FloatingObjects>(); },          5.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<BoxStacking>(); },              3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<TowerTopple>(); },              7.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<HingeDoor>(); },                5.0f},

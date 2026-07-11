@@ -2,6 +2,7 @@
 
 #include <core/physics/config/physics_constants.hpp>
 #include <core/physics/constraints/hinge_joint.hpp>
+#include <core/physics/shapes/aabb.hpp>
 #include <core/physics/shapes/box.hpp>
 
 #include <cmath>
@@ -144,6 +145,43 @@ void HighDrag::setup(PhysicsContext &context)
     // Spawn particles with initial velocity in a viscous medium
     context.spawn_particle(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(20.0f, 0.0f, 0.0f), 1.0f);
     context.spawn_particle(Vec3f(0.0f, 5.0f, 0.0f), Vec3f(-20.0f, 0.0f, 0.0f), 1.0f);
+}
+
+void WindTunnel::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+
+    // A bounded wind volume blowing in +x through a horizontal corridor.
+    const phynity::physics::shapes::AABB region(Vec3f(-6.0f, -2.0f, -2.0f), Vec3f(6.0f, 2.0f, 2.0f));
+    context.particle_system().add_force_field(
+        std::make_unique<phynity::physics::WindField>(Vec3f(8.0f, 0.0f, 0.0f), 0.5f, region));
+
+    // Particles start at rest at the upwind edge of the corridor.
+    context.spawn_particle(Vec3f(-5.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+    context.spawn_particle(Vec3f(-5.0f, 1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+    context.spawn_particle(Vec3f(-5.0f, -1.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+}
+
+void FloatingObjects::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+
+    const Vec3f gravity(0.0f, -EARTH_GRAVITY, 0.0f);
+    const float surface_height = 0.0f;
+
+    // Gravity pulls down, buoyancy (light objects in water) pushes up, and drag
+    // dissipates the bobbing so the particles settle at the surface.
+    context.particle_system().add_force_field(std::make_unique<phynity::physics::GravityField>(gravity));
+    context.particle_system().add_force_field(
+        std::make_unique<phynity::physics::BuoyancyField>(WATER_DENSITY, 500.0f, surface_height, gravity));
+    context.particle_system().add_force_field(std::make_unique<phynity::physics::DragField>(1.5f));
+
+    // Particles start submerged at various depths and rise to the surface.
+    context.spawn_particle(Vec3f(-2.0f, -4.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+    context.spawn_particle(Vec3f(0.0f, -6.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
+    context.spawn_particle(Vec3f(2.0f, -2.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), make_no_damping_material(1.0f));
 }
 
 // ============================================================================
