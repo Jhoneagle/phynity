@@ -7,6 +7,7 @@
 #include <core/physics/fluids/pbf_parameters.hpp>
 #include <core/physics/fluids/sph_kernels.hpp>
 
+#include <cmath>
 #include <vector>
 
 namespace phynity::physics::fluids
@@ -173,6 +174,90 @@ public:
             iterate();
         }
         finalize(dt);
+        apply_vorticity_confinement(dt); // no-op when ε = 0
+        apply_xsph();                    // no-op when c = 0
+    }
+
+    /// XSPH velocity smoothing: v_i += c·Σ_j (v_j−v_i)·W_poly6/ρ_j.
+    /// Reduces velocity noise without adding net momentum (the pairwise term is
+    /// antisymmetric at uniform density). No-op when `xsph_c == 0`. Uses the
+    /// predicted-position neighbor lists and the densities from the last iterate.
+    void apply_xsph()
+    {
+        const float c = params_.xsph_c;
+        if (c == 0.0f || particles_.empty())
+        {
+            return;
+        }
+
+        const float h = params_.sph.smoothing_radius;
+        xsph_delta_.assign(particles_.size(), Vec3f(0.0f));
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            Vec3f dv(0.0f);
+            for (const uint32_t j : neighbor_search_.neighbors(i))
+            {
+                const float rho_j = particles_[j].density;
+                if (rho_j <= kDensityEpsilon)
+                {
+                    continue;
+                }
+                const float r2 = (predicted_[i] - predicted_[j]).squaredLength();
+                dv += (particles_[j].velocity - particles_[i].velocity) * (poly6(r2, h) / rho_j);
+            }
+            xsph_delta_[i] = dv * c;
+        }
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            particles_[i].velocity += xsph_delta_[i];
+        }
+    }
+
+    /// Vorticity confinement: reintroduces the rotational detail that the
+    /// constraint solve damps out. No-op when `vorticity_epsilon == 0`.
+    void apply_vorticity_confinement(float dt)
+    {
+        const float eps = params_.vorticity_epsilon;
+        if (eps == 0.0f || particles_.empty())
+        {
+            return;
+        }
+
+        const float h = params_.sph.smoothing_radius;
+
+        // ω_i = Σ_j (v_j − v_i) × ∇W_ij.
+        omega_.assign(particles_.size(), Vec3f(0.0f));
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            Vec3f omega(0.0f);
+            for (const uint32_t j : neighbor_search_.neighbors(i))
+            {
+                const Vec3f r_vec = predicted_[i] - predicted_[j];
+                const float r = r_vec.length();
+                const Vec3f vij = particles_[j].velocity - particles_[i].velocity;
+                omega += vij.cross(spiky_gradient(r_vec, r, h));
+            }
+            omega_[i] = omega;
+        }
+
+        // η_i = ∇|ω| ≈ Σ_j |ω_j|·∇W_ij ; f_i = ε·(η̂_i × ω_i); v_i += dt·f_i.
+        for (size_t i = 0; i < particles_.size(); ++i)
+        {
+            Vec3f eta(0.0f);
+            for (const uint32_t j : neighbor_search_.neighbors(i))
+            {
+                const Vec3f r_vec = predicted_[i] - predicted_[j];
+                const float r = r_vec.length();
+                eta += spiky_gradient(r_vec, r, h) * omega_[j].length();
+            }
+            const float eta_len = eta.length();
+            if (eta_len > kDensityEpsilon)
+            {
+                const Vec3f n = eta * (1.0f / eta_len);
+                const Vec3f force = n.cross(omega_[i]) * eps;
+                particles_[i].velocity += force * dt;
+            }
+        }
     }
 
     /// Density at the predicted positions: ρ_i = Σ_j m_j·poly6(‖r*_ij‖², h),
@@ -232,6 +317,12 @@ private:
         const float rho0 = params_.sph.rest_density;
         const float inv_rho0 = (rho0 > 0.0f) ? 1.0f / rho0 : 0.0f;
 
+        // Precompute the tensile-correction reference weight W(Δq) once.
+        const bool use_scorr = params_.scorr_k > 0.0f;
+        const float dq = params_.scorr_dq * h;
+        const float w_dq = poly6(dq * dq, h);
+        const bool scorr_ok = use_scorr && w_dq > 0.0f;
+
         delta_position_.assign(particles_.size(), Vec3f(0.0f));
         for (size_t i = 0; i < particles_.size(); ++i)
         {
@@ -240,7 +331,16 @@ private:
             {
                 const Vec3f r_vec = predicted_[i] - predicted_[j];
                 const float r = r_vec.length();
-                const float scale = (lambda_[i] + lambda_[j]) * inv_rho0;
+
+                float s_corr = 0.0f;
+                if (scorr_ok)
+                {
+                    // s_corr = −k·(W(r)/W(Δq))ⁿ  — an artificial repulsive pressure.
+                    const float ratio = poly6(r * r, h) / w_dq;
+                    s_corr = -params_.scorr_k * std::pow(ratio, params_.scorr_n);
+                }
+
+                const float scale = (lambda_[i] + lambda_[j] + s_corr) * inv_rho0;
                 dp += spiky_gradient(r_vec, r, h) * scale;
             }
             delta_position_[i] = dp;
@@ -273,6 +373,10 @@ private:
         }
     }
 
+    /// Densities below this are treated as degenerate and skipped to avoid
+    /// dividing by ρ in the XSPH/vorticity accumulation.
+    static constexpr float kDensityEpsilon = 1e-6f;
+
     std::vector<FluidParticle> particles_;
     FluidNeighborSearch neighbor_search_;
     PbfParameters params_{};
@@ -282,6 +386,8 @@ private:
     std::vector<Vec3f> predicted_;
     std::vector<float> lambda_;
     std::vector<Vec3f> delta_position_;
+    std::vector<Vec3f> xsph_delta_;
+    std::vector<Vec3f> omega_;
 };
 
 } // namespace phynity::physics::fluids

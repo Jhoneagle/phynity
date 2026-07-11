@@ -16,6 +16,21 @@ struct PbfParameters
     SphParameters sph{};        ///< Shared kernel/rest-density/mass/bounds settings
     int solver_iterations{4};   ///< Density-constraint projection iterations per step
     float relaxation{1.0e-4f};  ///< CFM relaxation ε in λ = −C / (Σ‖∇C‖² + ε)
+
+    // --- Stabilization (all off/negligible by default) ---
+
+    /// Artificial-pressure tensile-instability correction (Macklin §4):
+    /// s_corr = −k·(W(r)/W(Δq))ⁿ added inside Δp. Prevents particle clumping and
+    /// gives a surface-tension-like clustering. `scorr_k == 0` disables it.
+    float scorr_k{0.0f};    ///< Strength k (0 = off)
+    float scorr_dq{0.2f};   ///< Reference distance Δq as a fraction of h
+    float scorr_n{4.0f};    ///< Exponent n
+
+    /// XSPH velocity smoothing: v_i += c·Σ_j (v_j−v_i)·W/ρ_j. `xsph_c == 0` off.
+    float xsph_c{0.0f};
+
+    /// Vorticity confinement strength ε. `vorticity_epsilon == 0` off.
+    float vorticity_epsilon{0.0f};
 };
 
 } // namespace phynity::physics::fluids
