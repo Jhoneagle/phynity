@@ -4,6 +4,7 @@
 #include <core/math/vectors/vec3.hpp>
 #include <core/physics/config/physics_constants.hpp>
 
+#include <algorithm>
 #include <memory>
 
 namespace phynity::physics
@@ -227,6 +228,82 @@ public:
     const char *name() const override
     {
         return "SpringField";
+    }
+};
+
+/// Radial ("point source") gravity field — a gravity well.
+/// Applies an inverse-square attraction toward a center: F = m * strength / r² * dir_to_center,
+/// where strength = G·M. A minimum-distance softening clamp bounds the force near the center
+/// to avoid singularities.
+class PointGravityField : public ForceField
+{
+private:
+    Vec3f center_;
+    float strength_;     ///< G·M (gravitational parameter)
+    float min_distance_; ///< Softening clamp on the effective distance
+
+public:
+    /// Constructor with center, strength, and softening distance.
+    /// @param center The location of the attracting mass
+    /// @param strength Gravitational parameter G·M (>= 0 for attraction)
+    /// @param min_distance Minimum effective distance (softening clamp, > 0)
+    constexpr PointGravityField(const Vec3f &center = Vec3f(0.0f), float strength = 1.0f, float min_distance = 1e-3f)
+        : center_(center), strength_(strength), min_distance_(min_distance)
+    {
+    }
+
+    /// Apply radial gravity: F = m * strength / r² toward the center.
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        using phynity::math::utilities::is_zero;
+        Vec3f d = center_ - ctx.position;
+        float r2 = std::max(d.squaredLength(), min_distance_ * min_distance_);
+        if (is_zero(r2))
+        {
+            return Vec3f(0.0f);
+        }
+        return d.normalized() * (ctx.mass * strength_ / r2);
+    }
+
+    /// Get the center of attraction
+    constexpr Vec3f center() const
+    {
+        return center_;
+    }
+
+    /// Set the center of attraction
+    void set_center(const Vec3f &center)
+    {
+        center_ = center;
+    }
+
+    /// Get the gravitational parameter (G·M)
+    constexpr float strength() const
+    {
+        return strength_;
+    }
+
+    /// Set the gravitational parameter (G·M)
+    void set_strength(float strength)
+    {
+        strength_ = strength;
+    }
+
+    /// Get the softening minimum distance
+    constexpr float min_distance() const
+    {
+        return min_distance_;
+    }
+
+    /// Set the softening minimum distance
+    void set_min_distance(float min_distance)
+    {
+        min_distance_ = min_distance;
+    }
+
+    const char *name() const override
+    {
+        return "PointGravityField";
     }
 };
 

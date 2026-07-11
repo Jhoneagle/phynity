@@ -10,6 +10,7 @@ using phynity::math::vectors::Vec3f;
 using phynity::physics::DragField;
 using phynity::physics::ForceField;
 using phynity::physics::GravityField;
+using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
 using phynity::physics::SpringField;
 
@@ -395,4 +396,75 @@ TEST_CASE("ForceField: Zero spring constant", "[ForceField][edge-cases]")
     Vec3f force = spring.apply({Vec3f(100.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
 
     REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+// ============================================================================
+// Point Gravity Field Tests (radial gravity well)
+// ============================================================================
+
+TEST_CASE("PointGravityField: Pulls toward center", "[ForceField][PointGravityField]")
+{
+    PointGravityField well(Vec3f(0.0f), 10.0f);
+    // Particle to the right of the center should be pulled left (-x).
+    Vec3f force = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+
+    REQUIRE(force.x < 0.0f);
+    REQUIRE_THAT(force.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
+    REQUIRE(well.name() == std::string("PointGravityField"));
+}
+
+TEST_CASE("PointGravityField: Inverse-square falloff", "[ForceField][PointGravityField]")
+{
+    PointGravityField well(Vec3f(0.0f), 10.0f, 1e-3f);
+
+    Vec3f f_near = well.apply({Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    Vec3f f_far = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+
+    // At r=1: |F| = 10; at r=2: |F| = 10/4 = 2.5. Ratio should be 4.
+    REQUIRE_THAT(std::abs(f_near.x), WithinAbs(10.0f, 1e-4f));
+    REQUIRE_THAT(std::abs(f_far.x), WithinAbs(2.5f, 1e-4f));
+    REQUIRE_THAT(std::abs(f_near.x) / std::abs(f_far.x), WithinAbs(4.0f, 1e-4f));
+}
+
+TEST_CASE("PointGravityField: Proportional to mass", "[ForceField][PointGravityField]")
+{
+    PointGravityField well(Vec3f(0.0f), 10.0f, 1e-3f);
+
+    Vec3f f_m1 = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    Vec3f f_m5 = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 5.0f});
+
+    REQUIRE_THAT(f_m5.x / f_m1.x, WithinAbs(5.0f, 1e-4f));
+}
+
+TEST_CASE("PointGravityField: Softening clamp bounds force near center", "[ForceField][PointGravityField]")
+{
+    // With min_distance = 1, r² is clamped so the force at the center is finite.
+    PointGravityField well(Vec3f(0.0f), 10.0f, 1.0f);
+    Vec3f force = well.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f});
+
+    // At the exact center dir is zero -> zero force, and never NaN/Inf.
+    REQUIRE(std::isfinite(force.x));
+    REQUIRE(std::isfinite(force.y));
+    REQUIRE(std::isfinite(force.z));
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("PointGravityField: Velocity independent", "[ForceField][PointGravityField]")
+{
+    PointGravityField well(Vec3f(0.0f), 10.0f, 1e-3f);
+
+    Vec3f f1 = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f, 0.0f, 0.0f), 1.0f});
+    Vec3f f2 = well.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(10.0f, -3.0f, 7.0f), 1.0f});
+
+    REQUIRE_THAT(f1.x, WithinAbs(f2.x, 1e-6f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of PointGravityField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<PointGravityField>(Vec3f(0.0f), 10.0f, 1e-3f);
+
+    Vec3f force = field->apply({Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f});
+    REQUIRE_THAT(force.x, WithinAbs(-10.0f, 1e-4f));
+    REQUIRE(std::string(field->name()) == "PointGravityField");
 }
