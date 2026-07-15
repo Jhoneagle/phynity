@@ -638,4 +638,103 @@ public:
     }
 };
 
+/// Electrostatic field from a fixed point charge (Coulomb's law).
+/// Applies F = k * q * Q * r̂ / r² on a test charge q, where Q is the fixed source
+/// charge, k is the Coulomb constant (simulation units), and r̂ points from the
+/// source toward the test charge. Like-sign charges (q·Q > 0) repel; opposite-sign
+/// attract. A minimum-distance softening clamp bounds the force near the source to
+/// avoid the 1/r² singularity — mirroring PointGravityField, but with the base
+/// direction inverted (away from, not toward, the source) and a signed coupling.
+class PointChargeField : public ForceField
+{
+private:
+    Vec3f center_;
+    float source_charge_; ///< Fixed source charge Q
+    float coulomb_constant_; ///< k (simulation units)
+    float min_distance_; ///< Softening clamp on the effective distance
+
+public:
+    /// Constructor with source location, charge, coupling constant, and softening.
+    /// @param center Location of the fixed source charge
+    /// @param source_charge Source charge Q (may be negative)
+    /// @param coulomb_constant Coulomb constant k (simulation units)
+    /// @param min_distance Minimum effective distance (softening clamp, > 0)
+    constexpr PointChargeField(const Vec3f &center = Vec3f(0.0f),
+                               float source_charge = 1.0f,
+                               float coulomb_constant = constants::COULOMB_CONSTANT,
+                               float min_distance = 1e-3f)
+        : center_(center),
+          source_charge_(source_charge),
+          coulomb_constant_(coulomb_constant),
+          min_distance_(min_distance)
+    {
+    }
+
+    /// Apply the Coulomb force: F = k * q * Q * r̂ / r² (repulsive for like signs).
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        using phynity::math::utilities::is_zero;
+        Vec3f d = ctx.position - center_; // points away from the source
+        float r2 = std::max(d.squaredLength(), min_distance_ * min_distance_);
+        if (is_zero(r2))
+        {
+            return Vec3f(0.0f);
+        }
+        return d.normalized() * (coulomb_constant_ * ctx.charge * source_charge_ / r2);
+    }
+
+    /// Get the source location
+    constexpr Vec3f center() const
+    {
+        return center_;
+    }
+
+    /// Set the source location
+    void set_center(const Vec3f &center)
+    {
+        center_ = center;
+    }
+
+    /// Get the source charge Q
+    constexpr float source_charge() const
+    {
+        return source_charge_;
+    }
+
+    /// Set the source charge Q
+    void set_source_charge(float source_charge)
+    {
+        source_charge_ = source_charge;
+    }
+
+    /// Get the Coulomb constant k
+    constexpr float coulomb_constant() const
+    {
+        return coulomb_constant_;
+    }
+
+    /// Set the Coulomb constant k
+    void set_coulomb_constant(float coulomb_constant)
+    {
+        coulomb_constant_ = coulomb_constant;
+    }
+
+    /// Get the softening minimum distance
+    constexpr float min_distance() const
+    {
+        return min_distance_;
+    }
+
+    /// Set the softening minimum distance
+    void set_min_distance(float min_distance)
+    {
+        min_distance_ = min_distance;
+    }
+
+    const char *name() const override
+    {
+        return "PointChargeField";
+    }
+};
+
 } // namespace phynity::physics

@@ -13,6 +13,7 @@ using phynity::physics::DragField;
 using phynity::physics::ForceField;
 using phynity::physics::GravityField;
 using phynity::physics::MagneticField;
+using phynity::physics::PointChargeField;
 using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
 using phynity::physics::SpringDamperField;
@@ -802,6 +803,75 @@ TEST_CASE("ForceField: Polymorphic usage of MagneticField", "[ForceField][polymo
     Vec3f force = field->apply({Vec3f(0.0f), Vec3f(1.0f, 0.0f, 0.0f), 1.0f, kTestGravity, 1.0f});
     REQUIRE_THAT(force.y, WithinAbs(-1.0f, 1e-6f));
     REQUIRE(std::string(field->name()) == "MagneticField");
+}
+
+// ============================================================================
+// Point Charge Field Tests (fixed electrostatic source)
+// ============================================================================
+
+TEST_CASE("PointChargeField: Like charges repel (force points away from source)",
+          "[ForceField][PointChargeField]")
+{
+    // Source Q = +1 at origin, k = 1. Test charge +1 to the right is pushed further right.
+    PointChargeField source(Vec3f(0.0f), 1.0f, 1.0f);
+    Vec3f force = source.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+
+    REQUIRE(force.x > 0.0f);
+    REQUIRE_THAT(force.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
+    REQUIRE(source.name() == std::string("PointChargeField"));
+}
+
+TEST_CASE("PointChargeField: Opposite charges attract", "[ForceField][PointChargeField]")
+{
+    // Source Q = +1, test charge -1: force points back toward the source (-x).
+    PointChargeField source(Vec3f(0.0f), 1.0f, 1.0f);
+    Vec3f force = source.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, -1.0f});
+
+    REQUIRE(force.x < 0.0f);
+}
+
+TEST_CASE("PointChargeField: Inverse-square falloff", "[ForceField][PointChargeField]")
+{
+    PointChargeField source(Vec3f(0.0f), 10.0f, 1.0f, 1e-3f);
+
+    Vec3f f_near = source.apply({Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+    Vec3f f_far = source.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+
+    // At r=1: |F| = k*q*Q = 10; at r=2: 10/4 = 2.5. Ratio 4.
+    REQUIRE_THAT(std::abs(f_near.x), WithinAbs(10.0f, 1e-4f));
+    REQUIRE_THAT(std::abs(f_far.x), WithinAbs(2.5f, 1e-4f));
+    REQUIRE_THAT(std::abs(f_near.x) / std::abs(f_far.x), WithinAbs(4.0f, 1e-4f));
+}
+
+TEST_CASE("PointChargeField: Softening clamp bounds force near source", "[ForceField][PointChargeField]")
+{
+    // At the exact source location the direction is zero -> zero force, never NaN/Inf.
+    PointChargeField source(Vec3f(0.0f), 10.0f, 1.0f, 1.0f);
+    Vec3f force = source.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+
+    REQUIRE(std::isfinite(force.x));
+    REQUIRE(std::isfinite(force.y));
+    REQUIRE(std::isfinite(force.z));
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("PointChargeField: Zero test charge feels no force", "[ForceField][PointChargeField]")
+{
+    PointChargeField source(Vec3f(0.0f), 10.0f, 1.0f);
+    Vec3f force = source.apply({Vec3f(2.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 0.0f});
+
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of PointChargeField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<PointChargeField>(Vec3f(0.0f), 1.0f, 1.0f, 1e-3f);
+
+    // Like charges: +1 test charge at x=1 pushed in +x with |F| = 1.
+    Vec3f force = field->apply({Vec3f(1.0f, 0.0f, 0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+    REQUIRE_THAT(force.x, WithinAbs(1.0f, 1e-4f));
+    REQUIRE(std::string(field->name()) == "PointChargeField");
 }
 
 TEST_CASE("BuoyancyField: Dense object correct magnitude", "[ForceField][BuoyancyField]")
