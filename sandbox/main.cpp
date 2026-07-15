@@ -99,6 +99,8 @@ void run_headless()
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<FloatingObjects>(); },          5.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DamBreak>(); },                 3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DamBreakPbf>(); },              3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<CyclotronDemo>(); },            5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<ChargedCloud>(); },             5.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<BoxStacking>(); },              3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<TowerTopple>(); },              7.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<HingeDoor>(); },                5.0f},

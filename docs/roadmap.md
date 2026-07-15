@@ -26,7 +26,7 @@ This roadmap is organized by time horizon and anchored to the current architectu
 - Fields and forces (M): configurable gravity fields, wind/drag volumes, springs/dampers, buoyancy for simple fluids.✅
 - Fluids track (M): particle-based fluids (SPH/PBF) prototype, viscosity/tension terms, pressure projection experiments.✅ (WCSPH + PBF prototypes with viscosity, surface-tension and tensile terms; PBF's density-constraint projection covers the position-based sense of "pressure projection" — a true Eulerian grid pressure-projection solver remains the L-tier "Fluid and gas expansions" item.)
 - Thermodynamics hooks (M): temperature as scalar field, heat diffusion prototype, energy accounting to support conservation checks.
-- Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.
+- Electromagnetism starter (M): charged particles with Coulomb forces, simple magnetic field lines, Lorentz force integration.✅ (Uniform-E, Lorentz/uniform-B, and fixed point-charge `ForceField`s plus a mutual particle–particle Coulomb pass and a field-line visualization tracer; charges/coupling are simulation units. Lorentz uses semi-implicit Euler — energy-bounded, not energy-exact; a Boris pusher and grid-based field solvers/induction/conductive coupling remain the L-tier "Electromagnetism and fields" item.)
 
 ## Long Term (9–18 months)
 

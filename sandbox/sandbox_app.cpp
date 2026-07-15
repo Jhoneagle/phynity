@@ -37,6 +37,10 @@ void SandboxApp::register_scenarios()
     scenario_registry_.push_back({"Dam Break (SPH)", [] { return std::make_unique<scenarios::DamBreak>(); }});
     scenario_registry_.push_back({"Dam Break (PBF)", [] { return std::make_unique<scenarios::DamBreakPbf>(); }});
 
+    // Electromagnetism scenarios
+    scenario_registry_.push_back({"Cyclotron", [] { return std::make_unique<scenarios::CyclotronDemo>(); }});
+    scenario_registry_.push_back({"Charged Cloud", [] { return std::make_unique<scenarios::ChargedCloud>(); }});
+
     // Rigid body scenarios
     scenario_registry_.push_back({"Box Stacking", [] { return std::make_unique<scenarios::BoxStacking>(); }});
     scenario_registry_.push_back({"Tower Topple", [] { return std::make_unique<scenarios::TowerTopple>(); }});

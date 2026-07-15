@@ -1,0 +1,13 @@
+{
+  "scenario": "coulomb_step",
+  "milliseconds": 1429.725000,
+  "iterations": 200,
+  "workload": 256,
+  "notes": "Mutual particle-particle Coulomb (direct O(N²) all-pairs) full step",
+  "samples_ms": [431.768000, 530.491000, 467.466000],
+  "median_ms": 467.466000,
+  "mean_ms": 476.575000,
+  "stddev_ms": 40.814933,
+  "peak_rss_kb": 16080,
+  "allocator_delta_bytes": 55112
+}

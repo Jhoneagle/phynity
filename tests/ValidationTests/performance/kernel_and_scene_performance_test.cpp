@@ -458,6 +458,79 @@ PerfResult benchmark_sph_step(int grid_dim, int frames, int num_samples = 3)
     return result;
 }
 
+/**
+ * Benchmark the mutual particle-particle Coulomb pass: a charged cloud stepped
+ * with the O(N²) all-pairs interaction enabled. Captures the cost of the pass so
+ * its quadratic scaling has a regression baseline.
+ */
+PerfResult benchmark_coulomb_step(int particle_count, int frames, int num_samples = 3)
+{
+    phynity::platform::AllocatorDeltaScope allocator_scope;
+    constexpr float seed_max = 2147483647.0f;
+
+    auto make_system = [&]() -> ParticleSystem
+    {
+        ParticleSystem system;
+        system.set_ambient_gravity(Vec3f(0.0f));
+        system.enable_coulomb(true);
+        system.set_coulomb_params(1.0f, 0.1f);
+
+        unsigned int seed = 1337;
+        auto rand_float = [&seed](float min, float max) -> float
+        {
+            seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+            float normalized = static_cast<float>(seed) / seed_max;
+            return min + normalized * (max - min);
+        };
+
+        for (int i = 0; i < particle_count; ++i)
+        {
+            Material mat = make_no_damping_material(1.0f);
+            mat.charge = (i % 2 == 0) ? 1.0f : -1.0f;
+            Vec3f pos(rand_float(-2.0f, 2.0f), rand_float(-2.0f, 2.0f), rand_float(-2.0f, 2.0f));
+            system.spawn(pos, Vec3f(0.0f), mat);
+        }
+        return system;
+    };
+
+    PerfResult result;
+    result.scenario = "coulomb_step";
+    result.workload = particle_count;
+    result.notes = "Mutual particle-particle Coulomb (direct O(N²) all-pairs) full step";
+    if (num_samples > 0)
+    {
+        result.samples_ms.reserve(static_cast<std::vector<double>::size_type>(num_samples));
+    }
+
+    for (int sample = 0; sample < num_samples; ++sample)
+    {
+        ParticleSystem system = make_system();
+
+        const auto start = std::chrono::high_resolution_clock::now();
+        for (int frame = 0; frame < frames; ++frame)
+        {
+            system.update(DETERMINISTIC_TIMESTEP);
+        }
+        const auto end = std::chrono::high_resolution_clock::now();
+
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        result.samples_ms.push_back(static_cast<double>(duration.count()) / 1000.0);
+    }
+
+    double total_ms = 0.0;
+    for (double sample : result.samples_ms)
+    {
+        total_ms += sample;
+    }
+    result.milliseconds = total_ms;
+    result.iterations = frames;
+    compute_stats(result);
+    result.peak_rss_kb = phynity::platform::get_peak_rss_kb();
+    result.allocator_delta_bytes = allocator_scope.delta_bytes();
+
+    return result;
+}
+
 } // anonymous namespace
 
 TEST_CASE("Core Kernel Performance: Particle integration", "[validation][performance][core-kernel]")
@@ -521,6 +594,28 @@ TEST_CASE("Fluid Performance: WCSPH step", "[validation][performance][fluids]")
         std::cout << "  Frames:          " << frames << "\n";
         std::cout << "  Total time:      " << result.milliseconds << " ms\n";
         std::cout << "  Per-frame avg:   " << (result.milliseconds / frames) << " ms\n";
+
+        write_perf_result(result);
+
+        REQUIRE(result.milliseconds < 30000.0); // generous ceiling for CI
+    }
+}
+
+TEST_CASE("Electromagnetism Performance: Mutual Coulomb step", "[validation][performance][electromagnetism]")
+{
+    const int particle_count = 256;
+    const int frames = 200;
+
+    SECTION("Measure the O(N²) mutual Coulomb pass on a charged cloud")
+    {
+        PerfResult result = benchmark_coulomb_step(particle_count, frames);
+        REQUIRE(result.milliseconds > 0.0);
+
+        std::cout << "\n=== Mutual Coulomb Step Performance ===\n";
+        std::cout << "  Charged particles: " << result.workload << "\n";
+        std::cout << "  Frames:            " << frames << "\n";
+        std::cout << "  Total time:        " << result.milliseconds << " ms\n";
+        std::cout << "  Per-frame avg:     " << (result.milliseconds / frames) << " ms\n";
 
         write_perf_result(result);
 

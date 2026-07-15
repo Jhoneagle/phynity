@@ -10,6 +10,7 @@
 #include <core/physics/constraints/constraint.hpp>
 #include <core/physics/constraints/constraint_solver.hpp>
 #include <core/physics/constraints/fixed_joint.hpp>
+#include <core/physics/dynamics/coulomb_interaction.hpp>
 #include <core/physics/dynamics/force_field.hpp>
 #include <core/physics/particles/particle.hpp>
 #include <core/physics/particles/particle_collision_resolver.hpp>
@@ -204,6 +205,48 @@ public:
     }
 
     // ========================================================================
+    // Mutual (particle-particle) Coulomb Interaction
+    // ========================================================================
+
+    /// Enable or disable the optional mutual electrostatic (Coulomb) pass.
+    /// When enabled, every charged particle interacts with every other via a
+    /// direct O(N²) symmetric force accumulation each step.
+    void enable_coulomb(bool enabled)
+    {
+        coulomb_enabled_ = enabled;
+    }
+
+    /// Check whether the mutual Coulomb pass is enabled.
+    bool coulomb_enabled() const
+    {
+        return coulomb_enabled_;
+    }
+
+    /// Set mutual Coulomb parameters.
+    /// @param coulomb_constant Coupling constant k (simulation units)
+    /// @param min_distance Softening clamp bounding the 1/r² singularity (> 0)
+    void set_coulomb_params(float coulomb_constant, float min_distance)
+    {
+        coulomb_constant_ = coulomb_constant;
+        if (min_distance > 0.0f)
+        {
+            coulomb_min_distance_ = min_distance;
+        }
+    }
+
+    /// Get the mutual Coulomb coupling constant k.
+    float coulomb_constant() const
+    {
+        return coulomb_constant_;
+    }
+
+    /// Get the mutual Coulomb softening distance.
+    float coulomb_min_distance() const
+    {
+        return coulomb_min_distance_;
+    }
+
+    // ========================================================================
     // Constraint Management (Phase 5: Constraint Framework)
     // ========================================================================
 
@@ -333,8 +376,12 @@ public:
     {
         PROFILE_FUNCTION();
 
-        // Graph path: dependency-driven dispatch with cache affinity
-        if (job_system_ && job_system_->is_running() && !particles_.empty())
+        // Graph path: dependency-driven dispatch with cache affinity.
+        // The mutual Coulomb pass is an all-pairs coupling the per-partition graph
+        // does not yet express, so when it is enabled we fall through to the
+        // serial-force path rather than silently dropping it. Graph-path Coulomb
+        // (a serial pre-barrier / partitioned reduction) is a documented follow-up.
+        if (job_system_ && job_system_->is_running() && !particles_.empty() && !coulomb_enabled_)
         {
             update_with_task_graph(dt);
             return;
@@ -393,8 +440,11 @@ public:
                                                   {
                                                       return;
                                                   }
-                                                  Vec3f force = field->apply(
-                                                      {p.position, p.velocity, p.material.mass, ambient_gravity_});
+                                                  Vec3f force = field->apply({p.position,
+                                                                             p.velocity,
+                                                                             p.material.mass,
+                                                                             ambient_gravity_,
+                                                                             p.material.charge});
                                                   p.apply_force(force);
                                               });
                 }
@@ -404,12 +454,20 @@ public:
                     {
                         if (p.is_alive())
                         {
-                            Vec3f force = field->apply({p.position, p.velocity, p.material.mass, ambient_gravity_});
+                            Vec3f force = field->apply(
+                                {p.position, p.velocity, p.material.mass, ambient_gravity_, p.material.charge});
                             p.apply_force(force);
                         }
                     }
                 }
             }
+        }
+
+        // Step 2b: Mutual particle-particle Coulomb (optional, serial all-pairs)
+        if (coulomb_enabled_)
+        {
+            PROFILE_SCOPE("coulomb_interaction");
+            accumulate_coulomb_forces(particles_, coulomb_constant_, coulomb_min_distance_);
         }
 
         // Step 3: Update accelerations from accumulated forces
@@ -622,8 +680,11 @@ private:
                                     Particle &part = d->self->particles_[i];
                                     if (!part.is_alive())
                                         continue;
-                                    part.apply_force(field->apply(
-                                        {part.position, part.velocity, part.material.mass, d->self->ambient_gravity_}));
+                                    part.apply_force(field->apply({part.position,
+                                                                   part.velocity,
+                                                                   part.material.mass,
+                                                                   d->self->ambient_gravity_,
+                                                                   part.material.charge}));
                                 }
                         },
                         .data = data,
@@ -721,6 +782,11 @@ private:
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
+
+    // Mutual (particle-particle) Coulomb interaction (optional, serial pass)
+    bool coulomb_enabled_ = false;
+    float coulomb_constant_ = constants::COULOMB_CONSTANT;
+    float coulomb_min_distance_ = 1e-3f;
 
     // Ambient gravitational acceleration shared with force fields via ForceContext.
     Vec3f ambient_gravity_ = constants::EARTH_GRAVITY_VECTOR;
