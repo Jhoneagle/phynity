@@ -334,6 +334,101 @@ system.add_force_field(std::make_unique<DragField>(1.5f)); // dissipates bobbing
 
 See the `Wind Tunnel` and `Floating Objects` sandbox scenarios for runnable demos.
 
+## Fluids (SPH prototype)
+
+Beyond the per-particle force fields above, Phynity includes a **particle-based
+fluid solver** as a third peer subsystem alongside `ParticleSystem` and
+`RigidBodySystem`. Fluids cannot be modeled as a `ForceField`: SPH's
+density → pressure → force dependency couples each particle to its neighbors
+across multiple passes, which the pure per-particle `apply(ctx)` contract cannot
+express. `SphFluidSystem` therefore owns its own particles, neighbor search,
+parameters, and step pipeline.
+
+The prototype implements **weakly-compressible SPH (WCSPH)** with the classic
+Müller (2003) kernels — poly6 (density), spiky gradient (pressure), and the
+viscosity laplacian — a linear equation of state, Monaghan's momentum-conserving
+symmetric pressure force, and an optional color-field surface-tension term. It
+reuses the engine's `SpatialGrid` (cell size = smoothing radius) for a
+deterministic fixed-radius neighbor search.
+
+```cpp
+#include <core/physics/fluids/sph_fluid_system.hpp>
+using namespace phynity::physics::fluids;
+
+SphParameters params;
+params.smoothing_radius = 0.1f;          // kernel support h
+params.rest_density = WATER_DENSITY;     // ρ₀
+params.stiffness = 100.0f;               // EOS: p = k·(ρ − ρ₀)
+params.viscosity = 0.05f;                // Müller viscosity μ
+params.clamp_negative_pressure = true;   // suppress free-surface tensile instability
+params.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
+
+// particle_mass and rest_density are NOT independent: for a lattice of spacing s
+// to start at rest, mass ≈ ρ₀·s³. Always size mass through mass_for_spacing().
+const float spacing = 0.05f;             // h = 2·spacing is a good ratio
+params.particle_mass = mass_for_spacing(params.rest_density, spacing);
+
+SphFluidSystem fluid(params);
+fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+
+// Seed a block on the lattice, then step:
+for (/* ix, iy, iz over the block */)
+    fluid.spawn(origin + Vec3f(ix, iy, iz) * spacing);
+
+fluid.update(dt); // rebuild neighbors → density → pressure → forces → integrate → boundaries
+```
+
+**Stability caveat.** WCSPH is explicit and subject to a CFL-like timestep limit:
+higher `stiffness` (a stiffer fluid) needs a smaller `dt`, and because the
+viscosity term is integrated explicitly, a large `viscosity` is unconditionally
+unstable at a given `dt`/`h`. The defaults above are tuned for a stable prototype
+pool; if a fluid "explodes," lower `dt`, lower `stiffness`, or lower `viscosity`.
+The box boundary is a simple clamp-and-reflect container with no boundary
+pressure, so near-wall particles are neighbor-deficient (a standard SPH
+limitation) — treat wall-adjacent behavior as approximate.
+
+See the `Dam Break (SPH)` sandbox scenario for a runnable demo. The sandbox
+sub-steps the fluid internally so it stays stable at the render frame rate.
+
+### Position-based fluids (PBF)
+
+`PbfFluidSystem` is a sibling solver built on the *same* scaffolding (kernels,
+neighbor search, `FluidParticle`, `mass_for_spacing`, box boundary). Instead of an
+equation-of-state pressure force, it enforces incompressibility with an iterative
+**density-constraint projection** (Macklin & Müller 2013): each step predicts
+positions under gravity, then repeatedly computes per-particle Lagrange
+multipliers `λ` and position corrections `Δp` that drive density back toward `ρ₀`,
+before recovering velocities from the net position change.
+
+```cpp
+#include <core/physics/fluids/pbf_fluid_system.hpp>
+using namespace phynity::physics::fluids;
+
+PbfParameters params;
+params.sph = /* shared SphParameters: h, ρ₀, particle_mass, bounds */;
+params.solver_iterations = 10;          // more iterations ⇒ stiffer incompressibility
+params.clamp_density_deficiency = true; // compression-only: don't collapse the free surface
+params.xsph_c = 0.02f;                  // mild XSPH velocity smoothing
+
+PbfFluidSystem fluid(params);
+fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
+// spawn a lattice as with WCSPH, then:
+fluid.update(dt);
+```
+
+Why PBF: because incompressibility is enforced by projection rather than an
+explicit stiff force, PBF stays stable and near rest density at timesteps where
+an equivalently-incompressible or viscous WCSPH fluid needs a much smaller `dt`.
+Two caveats mirror the WCSPH ones: **compression-only** projection
+(`clamp_density_deficiency`) is needed so the free surface is not pulled inward
+and collapsed, and the artificial-pressure tensile term (`scorr_k`) resists
+particle clumping (off by default; XSPH plus enough iterations suffice for the
+prototype pool). See the `Dam Break (PBF)` sandbox scenario.
+
+Fluid state (both WCSPH and PBF) is intentionally **excluded from the
+snapshot/replay timeline** for the prototype (the solvers themselves are
+deterministic; persistence is deferred).
+
 ## Determinism and Reproducibility
 
 Both scales support **deterministic simulation**:

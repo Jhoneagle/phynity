@@ -11,6 +11,7 @@
 - **Particle Simulation v2**: Deterministic particle physics engine with force fields and collisions
 - **Collision System**: Broadphase + narrowphase + contact resolution pipeline
 - **Constraint System**: Solver, contact constraints, fixed joints
+- **Fluids Track**: Particle-based fluid prototypes — weakly-compressible SPH and position-based fluids (PBF) — with viscosity, surface-tension, and tensile terms
 
 ### 📋 Planned
 - **Parallel Core Expansion**: Scheduling improvements and task graph tooling

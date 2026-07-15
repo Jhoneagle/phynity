@@ -32,6 +32,7 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
 
     auto initial_diag = context.diagnostics();
     std::cout << "Initial particles: " << initial_diag.particle_count << '\n';
+    std::cout << "Initial fluid particles: " << initial_diag.fluid_particle_count << '\n';
     std::cout << "Initial rigid bodies: " << initial_diag.body_count << '\n';
     std::cout << "Initial constraints: " << initial_diag.constraint_count << '\n';
     std::cout << "Initial force fields: " << context.force_field_count() << '\n';
@@ -58,6 +59,10 @@ void run_scenario(std::unique_ptr<Scenario> scenario, float duration_seconds = 5
             if (diag.particle_count > 0)
             {
                 std::cout << "particles=" << std::setw(3) << diag.particle_count << " | ";
+            }
+            if (diag.fluid_particle_count > 0)
+            {
+                std::cout << "fluid=" << std::setw(4) << diag.fluid_particle_count << " | ";
             }
             if (diag.body_count > 0)
             {
@@ -92,6 +97,8 @@ void run_headless()
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DragInteraction>(); },          5.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<WindTunnel>(); },               5.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<FloatingObjects>(); },          5.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DamBreak>(); },                 3.0f},
+        {[] () -> std::unique_ptr<Scenario> { return std::make_unique<DamBreakPbf>(); },              3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<BoxStacking>(); },              3.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<TowerTopple>(); },              7.0f},
         {[] () -> std::unique_ptr<Scenario> { return std::make_unique<HingeDoor>(); },                5.0f},
