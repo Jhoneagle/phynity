@@ -17,15 +17,15 @@ using phynity::physics::shapes::AABB;
 /// *bounded/finite* behavior rather than exact trajectories.
 struct SphParameters
 {
-    float smoothing_radius{0.1f};         ///< Kernel support radius h (world units)
-    float rest_density{WATER_DENSITY};    ///< Target rest density ρ₀ (kg/m³)
-    float stiffness{2000.0f};             ///< EOS stiffness k in p = k·(ρ − ρ₀)
-    float viscosity{0.1f};                ///< Dynamic viscosity μ (Müller viscosity term)
-    float surface_tension{0.0f};          ///< Surface-tension coefficient σ (off by default)
+    float smoothing_radius{0.1f}; ///< Kernel support radius h (world units)
+    float rest_density{WATER_DENSITY}; ///< Target rest density ρ₀ (kg/m³)
+    float stiffness{2000.0f}; ///< EOS stiffness k in p = k·(ρ − ρ₀)
+    float viscosity{0.1f}; ///< Dynamic viscosity μ (Müller viscosity term)
+    float surface_tension{0.0f}; ///< Surface-tension coefficient σ (off by default)
     float surface_tension_threshold{1.0f}; ///< Min ‖∇color‖ before tension applies (noise gate)
-    float particle_mass{0.125f};          ///< Per-particle mass; keep consistent via mass_for_spacing()
-    float boundary_restitution{0.3f};     ///< Normal-velocity damping on wall reflection [0,1]
-    bool clamp_negative_pressure{false};  ///< If true, clamp p to ≥ 0 (suppresses tensile instability)
+    float particle_mass{0.125f}; ///< Per-particle mass; keep consistent via mass_for_spacing()
+    float boundary_restitution{0.3f}; ///< Normal-velocity damping on wall reflection [0,1]
+    bool clamp_negative_pressure{false}; ///< If true, clamp p to ≥ 0 (suppresses tensile instability)
     AABB bounds{Vec3f(-1.0f), Vec3f(1.0f)}; ///< Container the fluid is confined to
 };
 

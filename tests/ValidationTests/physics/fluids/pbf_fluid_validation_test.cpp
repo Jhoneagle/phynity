@@ -38,10 +38,10 @@ PbfParameters stable_params()
     p.sph.rest_density = kRestDensity;
     p.sph.particle_mass = mass_for_spacing(kRestDensity, kSpacing);
     p.sph.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
-    p.solver_iterations = 10;         // enough to converge incompressibility
+    p.solver_iterations = 10; // enough to converge incompressibility
     p.relaxation = 1.0e-4f;
     p.clamp_density_deficiency = true; // compression-only ⇒ no free-surface collapse
-    p.xsph_c = 0.02f;                  // mild velocity smoothing
+    p.xsph_c = 0.02f; // mild velocity smoothing
     return p;
 }
 
@@ -53,7 +53,8 @@ template <typename S> void seed_block(S &system, int nx, int ny, int nz, const V
         {
             for (int iz = 0; iz < nz; ++iz)
             {
-                system.spawn(origin + Vec3f(static_cast<float>(ix) * kSpacing, static_cast<float>(iy) * kSpacing,
+                system.spawn(origin + Vec3f(static_cast<float>(ix) * kSpacing,
+                                            static_cast<float>(iy) * kSpacing,
                                             static_cast<float>(iz) * kSpacing));
             }
         }
@@ -136,7 +137,7 @@ TEST_CASE("PBF Validation - Dropped block settles within bounds", "[fluids_valid
         }
     }
 
-    REQUIRE(min_y_seen < 0.0f);        // it fell
+    REQUIRE(min_y_seen < 0.0f); // it fell
     REQUIRE(max_speed(system) < 6.0f); // stayed bounded
 
     float min_x = 1e9f;

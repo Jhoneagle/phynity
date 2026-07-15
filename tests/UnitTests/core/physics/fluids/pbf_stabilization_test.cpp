@@ -15,7 +15,7 @@ PbfParameters base_params()
 {
     PbfParameters p;
     p.sph.smoothing_radius = 1.0f;
-    p.sph.rest_density = 1000.0f;              // sparse pairs are rarefied ⇒ constraint attracts
+    p.sph.rest_density = 1000.0f; // sparse pairs are rarefied ⇒ constraint attracts
     p.sph.particle_mass = 0.125f;
     p.sph.bounds = AABB(Vec3f(-10.0f), Vec3f(10.0f)); // no walls
     p.solver_iterations = 4;

@@ -32,8 +32,8 @@ TEST_CASE("FluidNeighborSearch: finds neighbors within h, excludes beyond h", "[
     search.rebuild(positions, h);
 
     auto n0 = search.neighbors(0);
-    REQUIRE(contains(n0, 1));  // within h
-    REQUIRE(contains(n0, 2));  // exactly at h (inclusive)
+    REQUIRE(contains(n0, 1)); // within h
+    REQUIRE(contains(n0, 2)); // exactly at h (inclusive)
     REQUIRE_FALSE(contains(n0, 3)); // beyond h
     REQUIRE_FALSE(contains(n0, 0)); // self excluded
 }
@@ -74,8 +74,12 @@ TEST_CASE("FluidNeighborSearch: neighbor lists contain no duplicates", "[fluids]
     // once; the neighbor search must dedupe. Un-deduped lists silently inflate
     // density and break pairwise force cancellation.
     std::vector<Vec3f> positions = {
-        Vec3f(0.0f, 0.0f, 0.0f),   Vec3f(0.2f, 0.05f, 0.0f), Vec3f(-0.15f, 0.1f, 0.05f),
-        Vec3f(0.1f, -0.2f, 0.1f),  Vec3f(-0.1f, -0.1f, -0.1f), Vec3f(0.25f, 0.2f, -0.05f),
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Vec3f(0.2f, 0.05f, 0.0f),
+        Vec3f(-0.15f, 0.1f, 0.05f),
+        Vec3f(0.1f, -0.2f, 0.1f),
+        Vec3f(-0.1f, -0.1f, -0.1f),
+        Vec3f(0.25f, 0.2f, -0.05f),
     };
     FluidNeighborSearch search;
     search.rebuild(positions, 1.0f);

@@ -22,9 +22,9 @@ struct FluidParticle
 {
     Vec3f position{0.0f}; ///< Current position in world space
     Vec3f velocity{0.0f}; ///< Current velocity
-    Vec3f force{0.0f};    ///< Accumulated force this step (WCSPH)
-    float mass{0.0f};     ///< Particle mass (kg); tie to rest density via mass_for_spacing()
-    float density{0.0f};  ///< SPH density estimate ρ_i (scratch, recomputed each step)
+    Vec3f force{0.0f}; ///< Accumulated force this step (WCSPH)
+    float mass{0.0f}; ///< Particle mass (kg); tie to rest density via mass_for_spacing()
+    float density{0.0f}; ///< SPH density estimate ρ_i (scratch, recomputed each step)
     float pressure{0.0f}; ///< EOS pressure p_i (scratch, recomputed each step)
 };
 

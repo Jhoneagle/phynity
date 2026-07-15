@@ -206,10 +206,10 @@ void DamBreak::setup(PhysicsContext &context)
     SphParameters params;
     params.smoothing_radius = 0.1f; // h = 2·spacing
     params.rest_density = WATER_DENSITY;
-    params.stiffness = 100.0f;              // weakly compressible, CFL-friendly
-    params.viscosity = 0.05f;               // small: explicit viscosity is stiff
-    params.clamp_negative_pressure = true;  // suppress free-surface tensile instability
-    params.boundary_restitution = 0.0f;     // fully damped container walls
+    params.stiffness = 100.0f; // weakly compressible, CFL-friendly
+    params.viscosity = 0.05f; // small: explicit viscosity is stiff
+    params.clamp_negative_pressure = true; // suppress free-surface tensile instability
+    params.boundary_restitution = 0.0f; // fully damped container walls
     params.particle_mass = mass_for_spacing(WATER_DENSITY, spacing);
     params.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
     fluid.set_parameters(params);
@@ -256,7 +256,7 @@ void DamBreakPbf::setup(PhysicsContext &context)
     params.solver_iterations = 10;
     params.relaxation = 1.0e-4f;
     params.clamp_density_deficiency = true; // compression-only ⇒ no free-surface collapse
-    params.xsph_c = 0.02f;                   // mild velocity smoothing
+    params.xsph_c = 0.02f; // mild velocity smoothing
     fluid.set_parameters(params);
     fluid.set_ambient_gravity(Vec3f(0.0f, -EARTH_GRAVITY, 0.0f));
 

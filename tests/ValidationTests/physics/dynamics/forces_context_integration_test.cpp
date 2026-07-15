@@ -12,10 +12,10 @@
 using namespace phynity::app;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
+using Catch::Matchers::WithinAbs;
 using phynity::math::quaternions::Quatf;
 using phynity::physics::BuoyancyField;
 using phynity::physics::RigidBodyID;
-using Catch::Matchers::WithinAbs;
 
 // ============================================================================
 // PhysicsContext force-field integration tests
@@ -45,8 +45,7 @@ PhysicsContext::Config make_serial_config()
 // set_gravity() is the single publish point: it must reach both systems.
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Forces Integration - set_gravity publishes ambient gravity to both systems",
-          "[forces_validation][context]")
+TEST_CASE("Forces Integration - set_gravity publishes ambient gravity to both systems", "[forces_validation][context]")
 {
     PhysicsContext::Config config = make_serial_config();
     config.gravity = Vec3f(0.0f, -9.81f, 0.0f);
@@ -81,24 +80,24 @@ TEST_CASE("Forces Integration - set_gravity publishes ambient gravity to both sy
 // stored/default copy — with gravity off, buoyancy produces no lift at all.
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Forces Integration - Rigid-body buoyancy tracks gravity set via set_gravity",
-          "[forces_validation][context]")
+TEST_CASE("Forces Integration - Rigid-body buoyancy tracks gravity set via set_gravity", "[forces_validation][context]")
 {
     const int steps = 240; // 2 seconds at 120 fps
     const float mass = 1.0f;
-    const float start_y = -3.0f;   // start well below the fluid surface
+    const float start_y = -3.0f; // start well below the fluid surface
     const float surface_y = 0.0f;
 
     // A submerged, less-dense-than-water body: object 500 < fluid 1000 => floats.
-    auto run_with_gravity = [&](const Vec3f &gravity) {
+    auto run_with_gravity = [&](const Vec3f &gravity)
+    {
         PhysicsContext ctx(make_serial_config());
         ctx.set_gravity(gravity); // publishes to both systems; also (re)adds a GravityField
 
         // Added AFTER set_gravity so it survives the field reset set_gravity performs.
         ctx.rigid_body_system().add_force_field(std::make_unique<BuoyancyField>(1000.0f, 500.0f, surface_y));
 
-        RigidBodyID id = ctx.spawn_body(
-            Vec3f(0.0f, start_y, 0.0f), Quatf(), nullptr, mass, make_no_damping_material(mass));
+        RigidBodyID id =
+            ctx.spawn_body(Vec3f(0.0f, start_y, 0.0f), Quatf(), nullptr, mass, make_no_damping_material(mass));
 
         float max_y = start_y;
         for (int i = 0; i < steps; ++i)
@@ -115,7 +114,7 @@ TEST_CASE("Forces Integration - Rigid-body buoyancy tracks gravity set via set_g
     // With real gravity, net upward force lifts the body out of the depths and
     // up to the surface region.
     const float max_y_earth = run_with_gravity(Vec3f(0.0f, -9.81f, 0.0f));
-    REQUIRE(max_y_earth > start_y);          // it rose...
+    REQUIRE(max_y_earth > start_y); // it rose...
     REQUIRE(max_y_earth > surface_y - 0.5f); // ...essentially reaching the surface
 
     // With gravity published as zero, buoyancy has nothing to scale against: the

@@ -52,8 +52,12 @@ TEST_CASE("compute_forces: N-particle cluster conserves linear momentum (pressur
     // Irregular cluster so densities/pressures genuinely differ per particle —
     // the Monaghan form must still sum forces to ~0.
     const std::vector<Vec3f> pts = {
-        Vec3f(0.0f, 0.0f, 0.0f),   Vec3f(0.2f, 0.05f, 0.0f), Vec3f(-0.15f, 0.1f, 0.05f),
-        Vec3f(0.1f, -0.2f, 0.1f),  Vec3f(-0.1f, -0.1f, -0.1f), Vec3f(0.25f, 0.2f, -0.05f),
+        Vec3f(0.0f, 0.0f, 0.0f),
+        Vec3f(0.2f, 0.05f, 0.0f),
+        Vec3f(-0.15f, 0.1f, 0.05f),
+        Vec3f(0.1f, -0.2f, 0.1f),
+        Vec3f(-0.1f, -0.1f, -0.1f),
+        Vec3f(0.25f, 0.2f, -0.05f),
     };
     for (const auto &p : pts)
     {

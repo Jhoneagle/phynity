@@ -13,9 +13,9 @@ namespace phynity::physics::fluids
 /// added in a later phase and default to off/negligible.
 struct PbfParameters
 {
-    SphParameters sph{};        ///< Shared kernel/rest-density/mass/bounds settings
-    int solver_iterations{4};   ///< Density-constraint projection iterations per step
-    float relaxation{1.0e-4f};  ///< CFM relaxation ε in λ = −C / (Σ‖∇C‖² + ε)
+    SphParameters sph{}; ///< Shared kernel/rest-density/mass/bounds settings
+    int solver_iterations{4}; ///< Density-constraint projection iterations per step
+    float relaxation{1.0e-4f}; ///< CFM relaxation ε in λ = −C / (Σ‖∇C‖² + ε)
 
     /// Compression-only constraint: zero λ for under-dense (C < 0) particles so
     /// the solver never pulls free-surface particles inward. Without this, a
@@ -29,9 +29,9 @@ struct PbfParameters
     /// Artificial-pressure tensile-instability correction (Macklin §4):
     /// s_corr = −k·(W(r)/W(Δq))ⁿ added inside Δp. Prevents particle clumping and
     /// gives a surface-tension-like clustering. `scorr_k == 0` disables it.
-    float scorr_k{0.0f};    ///< Strength k (0 = off)
-    float scorr_dq{0.2f};   ///< Reference distance Δq as a fraction of h
-    float scorr_n{4.0f};    ///< Exponent n
+    float scorr_k{0.0f}; ///< Strength k (0 = off)
+    float scorr_dq{0.2f}; ///< Reference distance Δq as a fraction of h
+    float scorr_n{4.0f}; ///< Exponent n
 
     /// XSPH velocity smoothing: v_i += c·Σ_j (v_j−v_i)·W/ρ_j. `xsph_c == 0` off.
     float xsph_c{0.0f};

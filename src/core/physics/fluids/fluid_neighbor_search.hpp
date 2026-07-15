@@ -123,8 +123,8 @@ public:
 
 private:
     SpatialGrid grid_{1.0f};
-    std::vector<uint32_t> neighbor_data_;   ///< Flat CSR neighbor indices
-    std::vector<size_t> neighbor_offsets_;  ///< CSR row offsets (size = count + 1)
+    std::vector<uint32_t> neighbor_data_; ///< Flat CSR neighbor indices
+    std::vector<size_t> neighbor_offsets_; ///< CSR row offsets (size = count + 1)
     float smoothing_radius_{0.0f};
 };
 

@@ -31,9 +31,9 @@ using phynity::physics::Material;
 using phynity::physics::ParticleSystem;
 using phynity::physics::RigidBodySystem;
 using phynity::physics::TimestepController;
+using phynity::physics::constants::EARTH_GRAVITY;
 using phynity::physics::fluids::PbfFluidSystem;
 using phynity::physics::fluids::SphFluidSystem;
-using phynity::physics::constants::EARTH_GRAVITY;
 
 /// Application-level physics context manager.
 /// Handles lifecycle management of the particle system, timestep controller,

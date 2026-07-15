@@ -106,8 +106,8 @@ TEST_CASE("PBF: iterating a compressed cluster drives peak density toward rest",
         {
             for (int iz = 0; iz < 4; ++iz)
             {
-                system.spawn(Vec3f(static_cast<float>(ix) * packed, static_cast<float>(iy) * packed,
-                                   static_cast<float>(iz) * packed));
+                system.spawn(Vec3f(
+                    static_cast<float>(ix) * packed, static_cast<float>(iy) * packed, static_cast<float>(iz) * packed));
             }
         }
     }

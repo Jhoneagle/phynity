@@ -40,11 +40,11 @@ SphParameters stable_params()
     SphParameters p;
     p.smoothing_radius = kSmoothing;
     p.rest_density = kRestDensity;
-    p.stiffness = 100.0f;       // c ≈ 10 m/s (weakly compressible, CFL-friendly)
-    p.viscosity = 0.05f;        // small: explicit viscosity is stiff at this dt/h
+    p.stiffness = 100.0f; // c ≈ 10 m/s (weakly compressible, CFL-friendly)
+    p.viscosity = 0.05f; // small: explicit viscosity is stiff at this dt/h
     p.surface_tension = 0.0f;
     p.clamp_negative_pressure = true; // suppress free-surface tensile instability
-    p.boundary_restitution = 0.0f;    // fully damped container walls
+    p.boundary_restitution = 0.0f; // fully damped container walls
     p.particle_mass = mass_for_spacing(kRestDensity, kSpacing);
     p.bounds = AABB(Vec3f(-0.5f), Vec3f(0.5f));
     return p;
@@ -58,7 +58,8 @@ void seed_block(SphFluidSystem &system, int nx, int ny, int nz, float spacing, c
         {
             for (int iz = 0; iz < nz; ++iz)
             {
-                system.spawn(origin + Vec3f(static_cast<float>(ix) * spacing, static_cast<float>(iy) * spacing,
+                system.spawn(origin + Vec3f(static_cast<float>(ix) * spacing,
+                                            static_cast<float>(iy) * spacing,
                                             static_cast<float>(iz) * spacing));
             }
         }

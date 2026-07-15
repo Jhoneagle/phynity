@@ -30,9 +30,9 @@ TEST_CASE("resolve_boundaries: clamps position and reflects+damps normal velocit
 
     const auto &p = system.particles()[0];
     REQUIRE_THAT(p.position.y, WithinAbs(-1.0f, 1e-6f)); // clamped to wall
-    REQUIRE(p.velocity.y > 0.0f);                        // reflected (now moving up)
-    REQUIRE(p.velocity.y < 5.0f);                        // and damped (lost normal momentum)
-    REQUIRE_THAT(p.velocity.y, WithinAbs(1.5f, 1e-6f));  // 5 * restitution 0.3
+    REQUIRE(p.velocity.y > 0.0f); // reflected (now moving up)
+    REQUIRE(p.velocity.y < 5.0f); // and damped (lost normal momentum)
+    REQUIRE_THAT(p.velocity.y, WithinAbs(1.5f, 1e-6f)); // 5 * restitution 0.3
 }
 
 TEST_CASE("resolve_boundaries: tangential velocity is untouched", "[fluids][boundary]")

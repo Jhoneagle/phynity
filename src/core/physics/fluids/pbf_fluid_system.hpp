@@ -175,7 +175,7 @@ public:
         }
         finalize(dt);
         apply_vorticity_confinement(dt); // no-op when ε = 0
-        apply_xsph();                    // no-op when c = 0
+        apply_xsph(); // no-op when c = 0
     }
 
     /// XSPH velocity smoothing: v_i += c·Σ_j (v_j−v_i)·W_poly6/ρ_j.

@@ -27,10 +27,10 @@ using phynity::physics::shapes::AABB;
 /// ignore the new members, with no signature churn across every field/call site.
 struct ForceContext
 {
-    Vec3f position{0.0f};                  ///< Current position of the body
-    Vec3f velocity{0.0f};                  ///< Current velocity of the body
-    float mass{0.0f};                      ///< Mass of the body
-    Vec3f gravity{EARTH_GRAVITY_VECTOR};   ///< Ambient gravitational acceleration (shared environment state)
+    Vec3f position{0.0f}; ///< Current position of the body
+    Vec3f velocity{0.0f}; ///< Current velocity of the body
+    float mass{0.0f}; ///< Mass of the body
+    Vec3f gravity{EARTH_GRAVITY_VECTOR}; ///< Ambient gravitational acceleration (shared environment state)
     // grows additively later: float charge; float volume; float temperature; ...
 };
 
@@ -243,7 +243,7 @@ class PointGravityField : public ForceField
 {
 private:
     Vec3f center_;
-    float strength_;     ///< G·M (gravitational parameter)
+    float strength_; ///< G·M (gravitational parameter)
     float min_distance_; ///< Softening clamp on the effective distance
 
 public:
@@ -470,9 +470,9 @@ public:
 class BuoyancyField : public ForceField
 {
 private:
-    float fluid_density_;   ///< Density of the surrounding fluid (kg/m³)
-    float object_density_;  ///< Density of the body, used to derive its volume (kg/m³)
-    float surface_height_;  ///< Height of the flat fluid surface along the up axis
+    float fluid_density_; ///< Density of the surrounding fluid (kg/m³)
+    float object_density_; ///< Density of the body, used to derive its volume (kg/m³)
+    float surface_height_; ///< Height of the flat fluid surface along the up axis
 
 public:
     /// Constructor with fluid/object densities and surface height.

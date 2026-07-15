@@ -15,8 +15,8 @@ SphParameters tension_only_params(float sigma, float threshold)
     SphParameters p;
     p.smoothing_radius = 1.0f;
     p.rest_density = 1000.0f;
-    p.stiffness = 0.0f;   // no pressure force
-    p.viscosity = 0.0f;   // no viscosity force
+    p.stiffness = 0.0f; // no pressure force
+    p.viscosity = 0.0f; // no viscosity force
     p.surface_tension = sigma;
     p.surface_tension_threshold = threshold;
     return p;
@@ -73,8 +73,8 @@ TEST_CASE("surface tension: an isolated blob pulls its edges inward (cohesion)",
 
     // Three particles in a line, centroid at the origin.
     system.spawn(Vec3f(-0.2f, 0.0f, 0.0f), Vec3f(0.0f), 0.2f); // left  (index 0)
-    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), 0.2f);  // center(index 1)
-    system.spawn(Vec3f(0.2f, 0.0f, 0.0f), Vec3f(0.0f), 0.2f);  // right (index 2)
+    system.spawn(Vec3f(0.0f, 0.0f, 0.0f), Vec3f(0.0f), 0.2f); // center(index 1)
+    system.spawn(Vec3f(0.2f, 0.0f, 0.0f), Vec3f(0.0f), 0.2f); // right (index 2)
     system.rebuild_neighbors();
     system.compute_density();
     system.compute_pressure();

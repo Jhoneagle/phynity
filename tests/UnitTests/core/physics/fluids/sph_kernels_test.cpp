@@ -30,7 +30,7 @@ TEST_CASE("poly6: value at r=0 matches closed form", "[fluids][kernels][poly6]")
 TEST_CASE("poly6: vanishes at and beyond the support radius", "[fluids][kernels][poly6]")
 {
     const float h = 2.0f;
-    REQUIRE_THAT(poly6(h * h, h), WithinAbs(0.0f, 1e-6f));       // r = h
+    REQUIRE_THAT(poly6(h * h, h), WithinAbs(0.0f, 1e-6f)); // r = h
     REQUIRE_THAT(poly6(h * h * 1.5f, h), WithinAbs(0.0f, 1e-6f)); // r > h
 }
 
