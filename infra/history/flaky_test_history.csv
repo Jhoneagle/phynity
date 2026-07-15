@@ -78,3 +78,4 @@ schema_version,recorded_at_utc,git_sha,git_ref,workflow_run_id,workflow_name,os,
 1,2026-06-16T07:34:59Z,329e1c1a9c3a034fec84f7d7657f28575795d226,refs/heads/master,27601587508,nightly-quality,macos,performance-macos,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,3
 1,2026-06-17T07:20:04Z,329e1c1a9c3a034fec84f7d7657f28575795d226,refs/heads/master,27672328262,nightly-quality,macos,performance-macos,validation.performance.ccd,FLAKY_RECOVERED,2
 1,2026-06-21T06:58:50Z,329e1c1a9c3a034fec84f7d7657f28575795d226,refs/heads/master,27896523809,nightly-quality,macos,performance-macos,validation.physics.collision.broadphase_performance,FLAKY_RECOVERED,2
+1,2026-07-15T04:59:01Z,329e1c1a9c3a034fec84f7d7657f28575795d226,refs/heads/master,29390088333,nightly-quality,macos,tsan-macos,unit.diagnostics.timer,FLAKY_RECOVERED,2
