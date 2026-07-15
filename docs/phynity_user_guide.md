@@ -280,7 +280,9 @@ struct ForceContext {
     Vec3f position{0.0f};
     Vec3f velocity{0.0f};
     float mass{0.0f};
-    // extended additively over time (charge, volume, temperature, ...)
+    Vec3f gravity{...};   // ambient "down", shared via set_ambient_gravity
+    float charge{0.0f};   // read by the electromagnetic fields
+    // extended additively over time (volume, temperature, ...)
 };
 
 Vec3f ForceField::apply(const ForceContext &ctx) const;
@@ -302,6 +304,14 @@ are not part of the serialization snapshot — reconstruct them on setup.
 | `WindField` | `F = c·(wind - v)`, optional AABB region | wind / bounded drag volumes |
 | `SpringDamperField` | `F = -k·(x - center) - c·v` | damped oscillator |
 | `BuoyancyField` | `F = -g·ρ_fluid·(m/ρ_object)` below surface | buoyancy for simple fluids |
+| `UniformElectricField` | `F = q·E` | charged particle in a uniform E field |
+| `MagneticField` | `F = q·(v × B)` | Lorentz force / cyclotron motion |
+| `PointChargeField` | `F = k·q·Q·r̂/r² away from source` | fixed electrostatic source (softened) |
+
+The last three read the body's `charge` (set on its `Material`). Charges and the
+Coulomb constant `k` are **simulation units**, not SI — tune them like
+`PointGravityField`'s `G·M`, not from physical constants. See **Electromagnetism**
+below for the mutual (particle–particle) Coulomb pass and the integrator caveat.
 
 ### Examples
 
@@ -428,6 +438,60 @@ prototype pool). See the `Dam Break (PBF)` sandbox scenario.
 Fluid state (both WCSPH and PBF) is intentionally **excluded from the
 snapshot/replay timeline** for the prototype (the solvers themselves are
 deterministic; persistence is deferred).
+
+## Electromagnetism
+
+Phynity models charged particles two ways, split by whether the force is
+neighbor-coupled:
+
+- **Field forces** (uniform E, uniform B/Lorentz, fixed point charge) are ordinary
+  `ForceField`s — pure per-particle functions of the body's `charge`, position, and
+  velocity — so they ride the existing `ParticleSystem` pipeline unchanged (see the
+  **Force Fields** table above).
+- **Mutual particle–particle Coulomb** is neighbor-coupled (every charge feels every
+  other), which the per-body `ForceField` contract cannot express. It is instead an
+  optional force-accumulation pass over the particle system, enabled like collisions.
+
+Give a particle a charge through its `Material`, then add the fields and/or enable
+the mutual pass:
+
+```cpp
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/particles/particle_system.hpp>
+using namespace phynity::physics;
+
+ParticleSystem system;
+system.set_ambient_gravity(Vec3f(0.0f)); // isolate the EM forces
+
+// A charged particle: set charge on its Material (simulation units).
+Material mat; mat.mass = 1.0f; mat.charge = 1.0f;
+system.spawn(Vec3f(0.0f), Vec3f(2.0f, 0.0f, 0.0f), mat);
+
+// Uniform B along +z -> the charge gyrates (cyclotron motion) in the xy-plane.
+system.add_force_field(std::make_unique<MagneticField>(Vec3f(0.0f, 0.0f, 1.0f)));
+
+// Mutual Coulomb between all charged particles (direct O(N²), off by default).
+system.enable_coulomb(true);
+system.set_coulomb_params(/*k=*/1.0f, /*min_distance=*/0.1f);
+```
+
+**Magnetic integration caveat.** The engine integrates with semi-implicit Euler,
+which is *not* energy-conserving for the velocity-dependent magnetic force: a
+cyclotron orbit slowly gains energy and spirals outward (~a few percent per orbit at
+small `dt`). This is a documented, expected limitation of the starter — validate
+magnetic scenes over short runs at small `dt` and against *expected energy/momentum
+ranges*, not exact conservation. Electric and point-charge forces are
+velocity-independent and have no such issue. (A Boris-style pusher, which conserves
+energy for `v × B`, is the natural follow-up if energy-exact long runs are needed.)
+
+**Mutual Coulomb notes.** The pairwise force is exactly equal-and-opposite (Newton's
+third law), so total linear momentum is conserved; the fixed ascending-index pair
+order keeps the summation deterministic. The pass is direct O(N²) — Coulomb is
+long-range (no natural cutoff), so no spatial acceleration is used (a grid cutoff
+would be a physical approximation and is deferred). When the pass is enabled the
+system runs its serial force path rather than the parallel job graph.
+
+See the `Cyclotron` and `Charged Cloud` sandbox scenarios for runnable demos.
 
 ## Determinism and Reproducibility
 

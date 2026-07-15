@@ -267,6 +267,46 @@ public:
 };
 
 // ============================================================================
+// Electromagnetism Scenario Implementations
+// ============================================================================
+
+/// Cyclotron: charged particles gyrate in a uniform magnetic field, tracing
+/// circular orbits (slowly spiraling out under semi-implicit Euler).
+class CyclotronDemo : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Cyclotron";
+    }
+
+    const char *description() const override
+    {
+        return "Charged particles orbiting in a uniform magnetic field (Lorentz force)";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
+/// Charged cloud: a cloud of positive and negative charges interacting through
+/// mutual (particle-particle) Coulomb forces.
+class ChargedCloud : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Charged Cloud";
+    }
+
+    const char *description() const override
+    {
+        return "A cloud of positive and negative charges under mutual Coulomb interaction";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
+// ============================================================================
 // Rigid Body Scenario Implementations
 // ============================================================================
 

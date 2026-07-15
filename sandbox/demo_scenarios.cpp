@@ -279,6 +279,71 @@ void DamBreakPbf::setup(PhysicsContext &context)
 }
 
 // ============================================================================
+// Electromagnetism Scenarios
+// ============================================================================
+
+void CyclotronDemo::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+
+    // No gravity: isolate the Lorentz force so the orbits stay clean.
+    context.particle_system().set_ambient_gravity(Vec3f(0.0f));
+
+    // Uniform magnetic field along +z; motion is in the xy-plane.
+    const Vec3f b_field(0.0f, 0.0f, 1.0f);
+    context.particle_system().add_force_field(std::make_unique<phynity::physics::MagneticField>(b_field));
+
+    // A few charges launched perpendicular to B trace circular orbits of radius
+    // r = m|v| / (|q||B|); heavier / faster particles trace wider circles.
+    struct Launch
+    {
+        Vec3f position;
+        Vec3f velocity;
+        float mass;
+        float charge;
+    };
+    const Launch launches[] = {
+        {Vec3f(0.0f, 0.0f, 0.0f), Vec3f(2.0f, 0.0f, 0.0f), 1.0f, 1.0f},
+        {Vec3f(-3.0f, 0.0f, 0.0f), Vec3f(3.0f, 0.0f, 0.0f), 1.0f, 1.0f},
+        {Vec3f(3.0f, 0.0f, 0.0f), Vec3f(0.0f, 2.0f, 0.0f), 2.0f, -1.0f},
+    };
+    for (const Launch &l : launches)
+    {
+        Material mat = make_no_damping_material(l.mass);
+        mat.charge = l.charge;
+        context.spawn_particle(l.position, l.velocity, mat);
+    }
+}
+
+void ChargedCloud::setup(PhysicsContext &context)
+{
+    context.clear_particles();
+    context.particle_system().clear_force_fields();
+    context.particle_system().set_ambient_gravity(Vec3f(0.0f));
+
+    // Enable the mutual particle-particle Coulomb pass (direct O(N²)).
+    context.particle_system().enable_coulomb(true);
+    context.particle_system().set_coulomb_params(2.0f, 0.1f);
+
+    // Alternating positive/negative charges on a small lattice, seeded at rest;
+    // like charges repel, opposite attract, and the cloud self-organizes.
+    const int nx = 4;
+    const int ny = 4;
+    const float spacing = 1.0f;
+    for (int ix = 0; ix < nx; ++ix)
+    {
+        for (int iy = 0; iy < ny; ++iy)
+        {
+            Material mat = make_no_damping_material(1.0f);
+            mat.charge = ((ix + iy) % 2 == 0) ? 1.0f : -1.0f;
+            const Vec3f pos(static_cast<float>(ix) * spacing - 1.5f, static_cast<float>(iy) * spacing - 1.5f, 0.0f);
+            context.spawn_particle(pos, Vec3f(0.0f), mat);
+        }
+    }
+}
+
+// ============================================================================
 // Rigid Body Scenarios
 // ============================================================================
 
