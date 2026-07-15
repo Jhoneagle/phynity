@@ -12,6 +12,7 @@ using phynity::physics::BuoyancyField;
 using phynity::physics::DragField;
 using phynity::physics::ForceField;
 using phynity::physics::GravityField;
+using phynity::physics::MagneticField;
 using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
 using phynity::physics::SpringDamperField;
@@ -727,6 +728,80 @@ TEST_CASE("ForceField: Polymorphic usage of UniformElectricField", "[ForceField]
     Vec3f force = field->apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 2.0f});
     REQUIRE_THAT(force.x, WithinAbs(6.0f, 1e-6f));
     REQUIRE(std::string(field->name()) == "UniformElectricField");
+}
+
+// ============================================================================
+// Magnetic Field (Lorentz force) Tests
+// ============================================================================
+//
+// These are force-level checks and are independent of the integrator; the
+// dynamic (orbit-level) energy-drift consequences are exercised in the
+// validation tests, not here.
+
+TEST_CASE("MagneticField: Force perpendicular to velocity and field", "[ForceField][MagneticField]")
+{
+    MagneticField bfield(Vec3f(0.0f, 0.0f, 1.0f)); // B along +z
+    Vec3f velocity(1.0f, 0.0f, 0.0f); // v along +x
+    Vec3f force = bfield.apply({Vec3f(0.0f), velocity, 1.0f, kTestGravity, 1.0f});
+
+    // F = q (v × B) = 1 * ((1,0,0) × (0,0,1)) = (0, -1, 0).
+    REQUIRE_THAT(force.dot(velocity), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.dot(Vec3f(0.0f, 0.0f, 1.0f)), WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.y, WithinAbs(-1.0f, 1e-6f));
+    REQUIRE(bfield.name() == std::string("MagneticField"));
+}
+
+TEST_CASE("MagneticField: Force reverses with charge sign", "[ForceField][MagneticField]")
+{
+    MagneticField bfield(Vec3f(0.0f, 0.0f, 1.0f));
+    Vec3f velocity(1.0f, 0.0f, 0.0f);
+
+    Vec3f pos = bfield.apply({Vec3f(0.0f), velocity, 1.0f, kTestGravity, 1.0f});
+    Vec3f neg = bfield.apply({Vec3f(0.0f), velocity, 1.0f, kTestGravity, -1.0f});
+
+    REQUIRE_THAT(neg.x, WithinAbs(-pos.x, 1e-6f));
+    REQUIRE_THAT(neg.y, WithinAbs(-pos.y, 1e-6f));
+    REQUIRE_THAT(neg.z, WithinAbs(-pos.z, 1e-6f));
+}
+
+TEST_CASE("MagneticField: Zero force when velocity parallel to field", "[ForceField][MagneticField]")
+{
+    MagneticField bfield(Vec3f(0.0f, 0.0f, 2.0f));
+    // v parallel to B -> v × B = 0.
+    Vec3f force = bfield.apply({Vec3f(0.0f), Vec3f(0.0f, 0.0f, 5.0f), 1.0f, kTestGravity, 3.0f});
+
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("MagneticField: Zero force at rest", "[ForceField][MagneticField]")
+{
+    MagneticField bfield(Vec3f(0.0f, 0.0f, 1.0f));
+    Vec3f force = bfield.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 4.0f});
+
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("MagneticField: Magnitude equals q|v||B|sin(theta)", "[ForceField][MagneticField]")
+{
+    MagneticField bfield(Vec3f(0.0f, 0.0f, 3.0f)); // |B| = 3
+    // v at 90 degrees to B: |F| = q |v| |B| = 2 * 4 * 3 = 24.
+    Vec3f force = bfield.apply({Vec3f(0.0f), Vec3f(4.0f, 0.0f, 0.0f), 1.0f, kTestGravity, 2.0f});
+    REQUIRE_THAT(force.length(), WithinAbs(24.0f, 1e-5f));
+
+    // v at 45 degrees in the x-z plane: perpendicular component is |v|sin(45).
+    Vec3f v45(4.0f, 0.0f, 4.0f);
+    Vec3f f45 = bfield.apply({Vec3f(0.0f), v45, 1.0f, kTestGravity, 2.0f});
+    float expected = 2.0f * v45.length() * 3.0f * std::sin(phynity::physics::constants::PI / 4.0f);
+    REQUIRE_THAT(f45.length(), WithinAbs(expected, 1e-4f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of MagneticField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<MagneticField>(Vec3f(0.0f, 0.0f, 1.0f));
+
+    Vec3f force = field->apply({Vec3f(0.0f), Vec3f(1.0f, 0.0f, 0.0f), 1.0f, kTestGravity, 1.0f});
+    REQUIRE_THAT(force.y, WithinAbs(-1.0f, 1e-6f));
+    REQUIRE(std::string(field->name()) == "MagneticField");
 }
 
 TEST_CASE("BuoyancyField: Dense object correct magnitude", "[ForceField][BuoyancyField]")

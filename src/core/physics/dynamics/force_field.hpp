@@ -592,4 +592,50 @@ public:
     }
 };
 
+/// Uniform magnetic field. Applies the Lorentz magnetic force on a moving charged
+/// body: F = q * (v × B). The force is always perpendicular to the velocity, so it
+/// changes direction but not speed — a charge moving perpendicular to B traces a
+/// circle (cyclotron motion) of radius r = m|v| / (|q||B|).
+///
+/// Note on integration: because the force depends on velocity, stepping it with the
+/// engine's semi-implicit Euler integrator (which evaluates the force at the
+/// previous velocity) is not energy-conserving — kinetic energy drifts upward and a
+/// closed orbit slowly spirals outward. This is acceptable for short runs at small
+/// dt; a Boris-style velocity update would be required for energy-exact long runs.
+class MagneticField : public ForceField
+{
+private:
+    Vec3f field_;
+
+public:
+    /// Constructor with the magnetic field vector.
+    /// @param field Magnetic flux density B (simulation units)
+    constexpr explicit MagneticField(const Vec3f &field = Vec3f(0.0f)) : field_(field)
+    {
+    }
+
+    /// Apply the Lorentz magnetic force: F = q * (v × B)
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        return ctx.velocity.cross(field_) * ctx.charge;
+    }
+
+    /// Get the magnetic field vector
+    constexpr Vec3f field() const
+    {
+        return field_;
+    }
+
+    /// Set the magnetic field vector
+    void set_field(const Vec3f &field)
+    {
+        field_ = field;
+    }
+
+    const char *name() const override
+    {
+        return "MagneticField";
+    }
+};
+
 } // namespace phynity::physics
