@@ -65,7 +65,7 @@ inline void accumulate_coulomb_forces(std::vector<Particle> &particles,
             // F on i = k q_i q_j r̂ / r² (repulsive for like signs).
             Vec3f force = d.normalized() * (coulomb_constant * pi.material.charge * pj.material.charge / r2);
             pi.apply_force(force);
-            pj.apply_force(force * -1.0f);
+            pj.apply_force(-force);
         }
     }
 }

@@ -636,7 +636,7 @@ TEST_CASE("BuoyancyField: Body above surface gets no force", "[ForceField][Buoya
 }
 
 // ============================================================================
-// ForceContext charge member (Phase 0 plumbing)
+// ForceContext charge member
 // ============================================================================
 
 TEST_CASE("ForceContext: Carries charge with a zero default", "[ForceField][ForceContext]")
