@@ -31,7 +31,8 @@ struct ForceContext
     Vec3f velocity{0.0f}; ///< Current velocity of the body
     float mass{0.0f}; ///< Mass of the body
     Vec3f gravity{EARTH_GRAVITY_VECTOR}; ///< Ambient gravitational acceleration (shared environment state)
-    // grows additively later: float charge; float volume; float temperature; ...
+    float charge{0.0f}; ///< Electric charge of the body (read by electromagnetic fields)
+    // grows additively later: float volume; float temperature; ...
 };
 
 /// ============================================================================

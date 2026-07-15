@@ -36,6 +36,17 @@ constexpr float WATER_DENSITY = physicsf::water_density; // 1000
 constexpr float AIR_DENSITY = physicsf::air_density; // 1.225
 
 // ============================================================================
+// Electromagnetism
+// ============================================================================
+
+/// Coulomb constant for electrostatic forces, in SIMULATION UNITS (not SI).
+/// The real value (k_e ≈ 8.99e9 N·m²/C²) combined with elementary charges
+/// (~1.6e-19 C) yields unusable scales for a toy simulation, so this is a
+/// tunable demo-scale knob — mirroring how PointGravityField takes strength = G·M
+/// rather than raw G. Charges are likewise arbitrary simulation units.
+constexpr float COULOMB_CONSTANT = 1.0f;
+
+// ============================================================================
 // Collision and Simulation Tolerances
 // ============================================================================
 

@@ -28,22 +28,30 @@ struct Material
     /// F_drag = -drag_coefficient * velocity
     float drag_coefficient = 0.0f;
 
+    /// Electric charge (simulation units, may be negative). Read by the
+    /// electromagnetic force fields; zero for uncharged particles.
+    float charge = 0.0f;
+
     /// Default constructor creates standard particle material
     constexpr Material() = default;
 
-    /// Constructor with explicit values
+    /// Constructor with explicit values.
+    /// @note charge is a trailing parameter so existing positional call sites
+    ///       (preset factories, test helpers) keep compiling unchanged.
     constexpr Material(float m,
                        float rest = 0.8f,
                        float fric = 0.3f,
                        float lin_damp = 0.01f,
                        float ang_damp = 0.01f,
-                       float drag = 0.0f)
+                       float drag = 0.0f,
+                       float charge_value = 0.0f)
         : mass(m),
           restitution(rest),
           friction(fric),
           linear_damping(lin_damp),
           angular_damping(ang_damp),
-          drag_coefficient(drag)
+          drag_coefficient(drag),
+          charge(charge_value)
     {
     }
 };

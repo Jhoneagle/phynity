@@ -393,8 +393,11 @@ public:
                                                   {
                                                       return;
                                                   }
-                                                  Vec3f force = field->apply(
-                                                      {p.position, p.velocity, p.material.mass, ambient_gravity_});
+                                                  Vec3f force = field->apply({p.position,
+                                                                             p.velocity,
+                                                                             p.material.mass,
+                                                                             ambient_gravity_,
+                                                                             p.material.charge});
                                                   p.apply_force(force);
                                               });
                 }
@@ -404,7 +407,8 @@ public:
                     {
                         if (p.is_alive())
                         {
-                            Vec3f force = field->apply({p.position, p.velocity, p.material.mass, ambient_gravity_});
+                            Vec3f force = field->apply(
+                                {p.position, p.velocity, p.material.mass, ambient_gravity_, p.material.charge});
                             p.apply_force(force);
                         }
                     }
@@ -622,8 +626,11 @@ private:
                                     Particle &part = d->self->particles_[i];
                                     if (!part.is_alive())
                                         continue;
-                                    part.apply_force(field->apply(
-                                        {part.position, part.velocity, part.material.mass, d->self->ambient_gravity_}));
+                                    part.apply_force(field->apply({part.position,
+                                                                   part.velocity,
+                                                                   part.material.mass,
+                                                                   d->self->ambient_gravity_,
+                                                                   part.material.charge}));
                                 }
                         },
                         .data = data,

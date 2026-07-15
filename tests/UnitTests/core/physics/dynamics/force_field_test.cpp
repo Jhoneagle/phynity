@@ -632,6 +632,34 @@ TEST_CASE("BuoyancyField: Body above surface gets no force", "[ForceField][Buoya
     REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
 }
 
+// ============================================================================
+// ForceContext charge member (Phase 0 plumbing)
+// ============================================================================
+
+TEST_CASE("ForceContext: Carries charge with a zero default", "[ForceField][ForceContext]")
+{
+    using phynity::physics::ForceContext;
+
+    ForceContext ctx;
+    REQUIRE_THAT(ctx.charge, WithinAbs(0.0f, 1e-6f));
+
+    ForceContext charged{Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, -2.5f};
+    REQUIRE_THAT(charged.charge, WithinAbs(-2.5f, 1e-6f));
+}
+
+TEST_CASE("ForceField: Existing fields ignore charge", "[ForceField][ForceContext]")
+{
+    // A charged context must not change the output of a non-electromagnetic field.
+    GravityField gravity(Vec3f(0.0f, -10.0f, 0.0f));
+
+    Vec3f neutral = gravity.apply({Vec3f(0.0f), Vec3f(0.0f), 2.0f, kTestGravity, 0.0f});
+    Vec3f charged = gravity.apply({Vec3f(0.0f), Vec3f(0.0f), 2.0f, kTestGravity, 5.0f});
+
+    REQUIRE_THAT(charged.x, WithinAbs(neutral.x, 1e-6f));
+    REQUIRE_THAT(charged.y, WithinAbs(neutral.y, 1e-6f));
+    REQUIRE_THAT(charged.z, WithinAbs(neutral.z, 1e-6f));
+}
+
 TEST_CASE("BuoyancyField: Dense object correct magnitude", "[ForceField][BuoyancyField]")
 {
     // object_density = 2000, mass 2 -> V = 0.001; fluid = 1000, gravity = (0,-10,0).
