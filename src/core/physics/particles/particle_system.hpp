@@ -404,8 +404,7 @@ public:
                     {
                         if (p.is_alive())
                         {
-                            Vec3f force =
-                                field->apply({p.position, p.velocity, p.material.mass, ambient_gravity_});
+                            Vec3f force = field->apply({p.position, p.velocity, p.material.mass, ambient_gravity_});
                             p.apply_force(force);
                         }
                     }

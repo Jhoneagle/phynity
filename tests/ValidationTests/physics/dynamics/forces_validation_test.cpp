@@ -18,9 +18,9 @@ using namespace phynity::physics;
 using namespace phynity::physics::constants;
 using namespace phynity::math::vectors;
 using namespace phynity::test::helpers;
+using Catch::Matchers::WithinAbs;
 using phynity::math::quaternions::Quatf;
 using phynity::physics::shapes::AABB;
-using Catch::Matchers::WithinAbs;
 
 // ============================================================================
 // Force Field Validation Tests
@@ -209,8 +209,7 @@ TEST_CASE("Forces Validation - Point gravity supports a bound orbit", "[forces_v
 // quantitatively so the numbers pin down that ctx.gravity actually drives the force.
 // ----------------------------------------------------------------------------
 
-TEST_CASE("Forces Validation - Rigid-body buoyancy reads the system's ambient gravity",
-          "[forces_validation]")
+TEST_CASE("Forces Validation - Rigid-body buoyancy reads the system's ambient gravity", "[forces_validation]")
 {
     const float dt = 0.001f;
     const float mass = 1.0f;
@@ -219,7 +218,8 @@ TEST_CASE("Forces Validation - Rigid-body buoyancy reads the system's ambient gr
     // V = mass / object_density = 1e-3 m³, so the Archimedes force magnitude is
     // fluid_density * V * |g| = |g| (numerically). With no gravity field present,
     // buoyancy is the only force, so after one step v.y = (|F|/m) * dt = |g| * dt.
-    auto step_and_get_vy = [&](const Vec3f &gravity) {
+    auto step_and_get_vy = [&](const Vec3f &gravity)
+    {
         RigidBodySystem system;
         system.set_ambient_gravity(gravity);
         system.add_force_field(std::make_unique<BuoyancyField>(1000.0f, 1000.0f, 0.0f));
