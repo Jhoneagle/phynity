@@ -53,6 +53,7 @@ TEST_CASE("FluidNeighborSearch: neighbor lists are ascending (canonical order)",
 {
     // A tight cluster so every particle sees every other.
     std::vector<Vec3f> positions;
+    positions.reserve(8);
     for (int i = 0; i < 8; ++i)
     {
         positions.emplace_back(0.1f * static_cast<float>(i), 0.0f, 0.0f);
@@ -96,9 +97,12 @@ TEST_CASE("FluidNeighborSearch: neighbor lists contain no duplicates", "[fluids]
 TEST_CASE("FluidNeighborSearch: identical input yields identical ordering (determinism)", "[fluids][neighbors]")
 {
     std::vector<Vec3f> positions;
+    positions.reserve(20);
     for (int i = 0; i < 20; ++i)
     {
-        positions.emplace_back(0.05f * static_cast<float>(i % 5), 0.05f * static_cast<float>(i / 5), 0.0f);
+        const int col = i % 5;
+        const int row = i / 5;
+        positions.emplace_back(0.05f * static_cast<float>(col), 0.05f * static_cast<float>(row), 0.0f);
     }
 
     FluidNeighborSearch a;

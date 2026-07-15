@@ -45,7 +45,10 @@ TEST_CASE("surface tension: off by default contributes no force", "[fluids][tens
 
 TEST_CASE("surface tension: symmetric interior neighborhood yields ~zero net force", "[fluids][tension]")
 {
-    SphFluidSystem system(tension_only_params(1.0f, 0.0f));
+    // Müller's color-field model needs a positive normal-magnitude gate: where
+    // ‖∇c‖ ≈ 0 the interface normal has no direction, so a zero gate would divide
+    // by ~0 and amplify floating-point cancellation noise into a spurious force.
+    SphFluidSystem system(tension_only_params(1.0f, 0.1f));
     system.set_ambient_gravity(Vec3f(0.0f));
 
     const float s = 0.3f;
@@ -68,7 +71,7 @@ TEST_CASE("surface tension: symmetric interior neighborhood yields ~zero net for
 
 TEST_CASE("surface tension: an isolated blob pulls its edges inward (cohesion)", "[fluids][tension]")
 {
-    SphFluidSystem system(tension_only_params(1.0f, 0.0f));
+    SphFluidSystem system(tension_only_params(1.0f, 0.1f));
     system.set_ambient_gravity(Vec3f(0.0f));
 
     // Three particles in a line, centroid at the origin.

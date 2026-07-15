@@ -88,18 +88,10 @@ float max_density(const SphFluidSystem &system)
 
 bool all_finite_and_in_bounds(const SphFluidSystem &system)
 {
-    for (const auto &p : system.particles())
-    {
-        if (!is_finite(p.position.x) || !is_finite(p.position.y) || !is_finite(p.position.z))
-        {
-            return false;
-        }
-        if (!system.parameters().bounds.contains_point(p.position))
-        {
-            return false;
-        }
-    }
-    return true;
+    return std::ranges::all_of(system.particles(), [&](const auto &p) {
+        return is_finite(p.position.x) && is_finite(p.position.y) && is_finite(p.position.z) &&
+               system.parameters().bounds.contains_point(p.position);
+    });
 }
 } // namespace
 
