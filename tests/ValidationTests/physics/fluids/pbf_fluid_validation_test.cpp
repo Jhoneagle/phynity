@@ -83,10 +83,13 @@ template <typename S> float max_density(const S &system)
 
 template <typename S> bool all_finite_and_in_bounds(const S &system)
 {
-    return std::ranges::all_of(system.particles(), [&](const auto &p) {
-        return is_finite(p.position.x) && is_finite(p.position.y) && is_finite(p.position.z) &&
-               system.parameters().sph.bounds.contains_point(p.position);
-    });
+    return std::ranges::all_of(system.particles(),
+                               [&](const auto &p)
+                               {
+                                   return is_finite(p.position.x) && is_finite(p.position.y) &&
+                                          is_finite(p.position.z) &&
+                                          system.parameters().sph.bounds.contains_point(p.position);
+                               });
 }
 } // namespace
 
