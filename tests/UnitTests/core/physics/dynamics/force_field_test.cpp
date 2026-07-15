@@ -16,6 +16,7 @@ using phynity::physics::PointGravityField;
 using phynity::physics::QuadraticDragField;
 using phynity::physics::SpringDamperField;
 using phynity::physics::SpringField;
+using phynity::physics::UniformElectricField;
 using phynity::physics::WindField;
 using phynity::physics::shapes::AABB;
 
@@ -658,6 +659,74 @@ TEST_CASE("ForceField: Existing fields ignore charge", "[ForceField][ForceContex
     REQUIRE_THAT(charged.x, WithinAbs(neutral.x, 1e-6f));
     REQUIRE_THAT(charged.y, WithinAbs(neutral.y, 1e-6f));
     REQUIRE_THAT(charged.z, WithinAbs(neutral.z, 1e-6f));
+}
+
+// ============================================================================
+// Uniform Electric Field Tests
+// ============================================================================
+
+TEST_CASE("UniformElectricField: Positive charge accelerates along +E", "[ForceField][UniformElectricField]")
+{
+    UniformElectricField efield(Vec3f(3.0f, 0.0f, 0.0f));
+    // F = q * E = +2 * (3,0,0) = (6,0,0).
+    Vec3f force = efield.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 2.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(6.0f, 1e-6f));
+    REQUIRE_THAT(force.y, WithinAbs(0.0f, 1e-6f));
+    REQUIRE_THAT(force.z, WithinAbs(0.0f, 1e-6f));
+    REQUIRE(efield.name() == std::string("UniformElectricField"));
+}
+
+TEST_CASE("UniformElectricField: Negative charge accelerates along -E", "[ForceField][UniformElectricField]")
+{
+    UniformElectricField efield(Vec3f(3.0f, 0.0f, 0.0f));
+    // F = q * E = -2 * (3,0,0) = (-6,0,0).
+    Vec3f force = efield.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, -2.0f});
+
+    REQUIRE_THAT(force.x, WithinAbs(-6.0f, 1e-6f));
+}
+
+TEST_CASE("UniformElectricField: Zero charge feels no force", "[ForceField][UniformElectricField]")
+{
+    UniformElectricField efield(Vec3f(3.0f, -1.0f, 5.0f));
+    Vec3f force = efield.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 0.0f});
+
+    REQUIRE_THAT(force.length(), WithinAbs(0.0f, 1e-6f));
+}
+
+TEST_CASE("UniformElectricField: Force scales linearly with charge and field",
+          "[ForceField][UniformElectricField]")
+{
+    UniformElectricField weak(Vec3f(1.0f, 0.0f, 0.0f));
+    UniformElectricField strong(Vec3f(4.0f, 0.0f, 0.0f));
+
+    Vec3f f_q1 = weak.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+    Vec3f f_q3 = weak.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 3.0f});
+    Vec3f f_e4 = strong.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.0f});
+
+    REQUIRE_THAT(f_q3.x / f_q1.x, WithinAbs(3.0f, 1e-6f)); // linear in q
+    REQUIRE_THAT(f_e4.x / f_q1.x, WithinAbs(4.0f, 1e-6f)); // linear in |E|
+}
+
+TEST_CASE("UniformElectricField: Velocity and position independent", "[ForceField][UniformElectricField]")
+{
+    UniformElectricField efield(Vec3f(2.0f, -3.0f, 1.0f));
+
+    Vec3f f1 = efield.apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 1.5f});
+    Vec3f f2 = efield.apply({Vec3f(100.0f, -5.0f, 9.0f), Vec3f(4.0f, 4.0f, 4.0f), 1.0f, kTestGravity, 1.5f});
+
+    REQUIRE_THAT(f1.x, WithinAbs(f2.x, 1e-6f));
+    REQUIRE_THAT(f1.y, WithinAbs(f2.y, 1e-6f));
+    REQUIRE_THAT(f1.z, WithinAbs(f2.z, 1e-6f));
+}
+
+TEST_CASE("ForceField: Polymorphic usage of UniformElectricField", "[ForceField][polymorphism]")
+{
+    std::unique_ptr<ForceField> field = std::make_unique<UniformElectricField>(Vec3f(3.0f, 0.0f, 0.0f));
+
+    Vec3f force = field->apply({Vec3f(0.0f), Vec3f(0.0f), 1.0f, kTestGravity, 2.0f});
+    REQUIRE_THAT(force.x, WithinAbs(6.0f, 1e-6f));
+    REQUIRE(std::string(field->name()) == "UniformElectricField");
 }
 
 TEST_CASE("BuoyancyField: Dense object correct magnitude", "[ForceField][BuoyancyField]")

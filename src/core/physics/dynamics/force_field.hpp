@@ -548,4 +548,48 @@ public:
     }
 };
 
+// ============================================================================
+// Electromagnetic Force Fields
+// ============================================================================
+
+/// Uniform electric field. Applies the electrostatic force on a charged body:
+/// F = q * E, where q is the body's charge (read from the context) and E is the
+/// constant field vector. Charge and field are in simulation units (see
+/// COULOMB_CONSTANT); an uncharged body (q = 0) feels no force.
+class UniformElectricField : public ForceField
+{
+private:
+    Vec3f field_;
+
+public:
+    /// Constructor with the electric field vector.
+    /// @param field Electric field E (simulation units)
+    constexpr explicit UniformElectricField(const Vec3f &field = Vec3f(0.0f)) : field_(field)
+    {
+    }
+
+    /// Apply the electric force: F = q * E
+    Vec3f apply(const ForceContext &ctx) const override
+    {
+        return field_ * ctx.charge;
+    }
+
+    /// Get the electric field vector
+    constexpr Vec3f field() const
+    {
+        return field_;
+    }
+
+    /// Set the electric field vector
+    void set_field(const Vec3f &field)
+    {
+        field_ = field;
+    }
+
+    const char *name() const override
+    {
+        return "UniformElectricField";
+    }
+};
+
 } // namespace phynity::physics
