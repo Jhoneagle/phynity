@@ -142,6 +142,21 @@ public:
         return force_fields_.size();
     }
 
+    /// Set the ambient gravitational acceleration shared with force fields.
+    /// This is the single source of "down" that medium-dependent fields (e.g.
+    /// BuoyancyField) read via the ForceContext, so it stays consistent even
+    /// when gravity changes mid-simulation.
+    void set_ambient_gravity(const Vec3f &gravity)
+    {
+        ambient_gravity_ = gravity;
+    }
+
+    /// Get the ambient gravitational acceleration.
+    Vec3f ambient_gravity() const
+    {
+        return ambient_gravity_;
+    }
+
     // ========================================================================
     // Collision Management
     // ========================================================================
@@ -378,7 +393,8 @@ public:
                                                   {
                                                       return;
                                                   }
-                                                  Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                                                  Vec3f force = field->apply(
+                                                      {p.position, p.velocity, p.material.mass, ambient_gravity_});
                                                   p.apply_force(force);
                                               });
                 }
@@ -388,7 +404,7 @@ public:
                     {
                         if (p.is_alive())
                         {
-                            Vec3f force = field->apply(p.position, p.velocity, p.material.mass);
+                            Vec3f force = field->apply({p.position, p.velocity, p.material.mass, ambient_gravity_});
                             p.apply_force(force);
                         }
                     }
@@ -606,7 +622,8 @@ private:
                                     Particle &part = d->self->particles_[i];
                                     if (!part.is_alive())
                                         continue;
-                                    part.apply_force(field->apply(part.position, part.velocity, part.material.mass));
+                                    part.apply_force(field->apply(
+                                        {part.position, part.velocity, part.material.mass, d->self->ambient_gravity_}));
                                 }
                         },
                         .data = data,
@@ -704,6 +721,9 @@ private:
     ParticleCollisionResolver collision_resolver_{2.0f};
     bool collisions_enabled_ = false;
     float default_collision_radius_ = 0.5f;
+
+    // Ambient gravitational acceleration shared with force fields via ForceContext.
+    Vec3f ambient_gravity_ = constants::EARTH_GRAVITY_VECTOR;
 
     // Continuous Collision Detection (CCD) configuration
     CCDConfig ccd_config_;

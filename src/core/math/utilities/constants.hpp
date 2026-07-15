@@ -65,6 +65,10 @@ template <typename T> struct physics_constants
     static constexpr T gravity_earth = T(9.80665); // m/s^2
     static constexpr T earth_radius = T(6.371e6); // meters
 
+    // Fluid / gas densities (at ~20C, sea level)
+    static constexpr T water_density = T(1000); // kg/m^3
+    static constexpr T air_density = T(1.225); // kg/m^3
+
     // Thermodynamics
     static constexpr T boltzmann = T(1.380649e-23); // J/K
     static constexpr T avogadro = T(6.02214076e23); // 1/mol

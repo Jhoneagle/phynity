@@ -269,6 +269,71 @@ void simulate(float dt) {
 }
 ```
 
+## Force Fields
+
+Force fields are pluggable, polymorphic sources of force. Each derives from
+`ForceField` and implements a single method that receives a `ForceContext`
+(the body's position, velocity, and mass) and returns a force vector:
+
+```cpp
+struct ForceContext {
+    Vec3f position{0.0f};
+    Vec3f velocity{0.0f};
+    float mass{0.0f};
+    // extended additively over time (charge, volume, temperature, ...)
+};
+
+Vec3f ForceField::apply(const ForceContext &ctx) const;
+```
+
+Add any number of fields to a `ParticleSystem` or `RigidBodySystem` via
+`add_force_field(...)`; every field is applied to every body each step. Fields
+are not part of the serialization snapshot — reconstruct them on setup.
+
+### Built-in fields
+
+| Field | Formula | Use for |
+|---|---|---|
+| `GravityField` | `F = m·g` | uniform gravity |
+| `DragField` | `F = -c·v` | linear (low-speed) drag |
+| `QuadraticDragField` | `F = -c·\|v\|·v` | high-speed drag |
+| `SpringField` | `F = -k·(x - center)` | restoring spring |
+| `PointGravityField` | `F = m·G·M/r² toward center` | radial "gravity well" (softened) |
+| `WindField` | `F = c·(wind - v)`, optional AABB region | wind / bounded drag volumes |
+| `SpringDamperField` | `F = -k·(x - center) - c·v` | damped oscillator |
+| `BuoyancyField` | `F = -g·ρ_fluid·(m/ρ_object)` below surface | buoyancy for simple fluids |
+
+### Examples
+
+```cpp
+#include <core/physics/dynamics/force_field.hpp>
+#include <core/physics/config/physics_constants.hpp>
+
+using namespace phynity::physics;
+using namespace phynity::physics::constants;
+
+// A radial gravity well at the origin (G·M = 20), softened near the center.
+system.add_force_field(std::make_unique<PointGravityField>(Vec3f(0.0f), 20.0f, 1e-2f));
+
+// Wind blowing +x, but only inside a bounded corridor.
+shapes::AABB corridor(Vec3f(-6.0f, -2.0f, -2.0f), Vec3f(6.0f, 2.0f, 2.0f));
+system.add_force_field(std::make_unique<WindField>(Vec3f(8.0f, 0.0f, 0.0f), 0.5f, corridor));
+
+// A damped spring that settles a body back to the center.
+system.add_force_field(std::make_unique<SpringDamperField>(Vec3f(0.0f), 10.0f, 2.0f));
+
+// Buoyancy in water: light objects (ρ_object < ρ_fluid) float to the surface.
+// BuoyancyField reads "down" from the system's ambient gravity (shared via the
+// ForceContext), so publish it once with set_ambient_gravity — no per-field copy.
+Vec3f gravity(0.0f, -EARTH_GRAVITY, 0.0f);
+system.set_ambient_gravity(gravity);
+system.add_force_field(std::make_unique<GravityField>(gravity));
+system.add_force_field(std::make_unique<BuoyancyField>(WATER_DENSITY, 500.0f, /*surface=*/0.0f));
+system.add_force_field(std::make_unique<DragField>(1.5f)); // dissipates bobbing
+```
+
+See the `Wind Tunnel` and `Floating Objects` sandbox scenarios for runnable demos.
+
 ## Determinism and Reproducibility
 
 Both scales support **deterministic simulation**:

@@ -57,7 +57,7 @@ tools\run.bat debug
 The physics subsystem is feature-complete for particles and has a working rigid-body pipeline:
 - **Deterministic simulation**: Bit-identical results for identical inputs
 - **Material system**: Preset materials (steel, rubber, wood, fluid) with extensible properties
-- **Force fields**: Pluggable architecture (gravity, drag, custom)
+- **Force fields**: Pluggable architecture — uniform/radial gravity, linear/quadratic drag, wind volumes, springs/dampers, and buoyancy
 - **Collision system**: Broadphase + narrowphase with contact caching and resolution
 - **Timestep control**: Fixed timestep accumulator with overflow handling
 - **Diagnostics**: Real-time energy and momentum tracking

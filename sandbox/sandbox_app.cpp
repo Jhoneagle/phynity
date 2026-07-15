@@ -32,6 +32,8 @@ void SandboxApp::register_scenarios()
     scenario_registry_.push_back({"Low Gravity", [] { return std::make_unique<scenarios::LowGravity>(); }});
     scenario_registry_.push_back({"Zero Gravity", [] { return std::make_unique<scenarios::ZeroGravity>(); }});
     scenario_registry_.push_back({"High Drag", [] { return std::make_unique<scenarios::HighDrag>(); }});
+    scenario_registry_.push_back({"Wind Tunnel", [] { return std::make_unique<scenarios::WindTunnel>(); }});
+    scenario_registry_.push_back({"Floating Objects", [] { return std::make_unique<scenarios::FloatingObjects>(); }});
 
     // Rigid body scenarios
     scenario_registry_.push_back({"Box Stacking", [] { return std::make_unique<scenarios::BoxStacking>(); }});

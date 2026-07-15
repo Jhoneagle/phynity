@@ -196,6 +196,40 @@ public:
     void setup(PhysicsContext &context) override;
 };
 
+/// Wind tunnel: a bounded wind volume carries particles across the region
+class WindTunnel : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Wind Tunnel";
+    }
+
+    const char *description() const override
+    {
+        return "Particles carried downwind inside a bounded wind volume";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
+/// Floating objects: buoyancy lifts submerged particles to the fluid surface
+class FloatingObjects : public Scenario
+{
+public:
+    const char *name() const override
+    {
+        return "Floating Objects";
+    }
+
+    const char *description() const override
+    {
+        return "Buoyancy lifts submerged particles up to the fluid surface";
+    }
+
+    void setup(PhysicsContext &context) override;
+};
+
 // ============================================================================
 // Rigid Body Scenario Implementations
 // ============================================================================
