@@ -3,4 +3,6 @@
 Window: last 14 day(s)
 Threshold: 3 incident(s)
 
-No flaky incidents recorded in the selected window.
+| Test | Incidents | Budget |
+| --- | ---: | --- |
+| validation.performance.ccd | 1 | OK |
