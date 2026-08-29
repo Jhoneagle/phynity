@@ -6,5 +6,4 @@ Threshold: 3 incident(s)
 | Test | Incidents | Budget |
 | --- | ---: | --- |
 | unit.diagnostics.timer | 2 | OK |
-| validation.performance.ccd | 1 | OK |
 | validation.diagnostics.profiler_overhead | 1 | OK |
