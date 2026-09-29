@@ -6,4 +6,4 @@ Threshold: 3 incident(s)
 | Test | Incidents | Budget |
 | --- | ---: | --- |
 | validation.performance.ccd | 2 | OK |
-| validation.physics.collision.broadphase_performance | 1 | OK |
+| validation.physics.collision.broadphase_performance | 2 | OK |
